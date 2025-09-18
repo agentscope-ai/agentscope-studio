@@ -147,28 +147,84 @@ export class SpanProcessor {
         return getTimeDifference(startTime, endTime);
     }
 
+    private static convertGenAI2AS(
+        attributes: Record<string, unknown>,
+    ): Record<string, unknown> {
+        if ('gen_ai.span.kind' in attributes) {
+            const result = { ...attributes };
+            const spanKind: string = (attributes['gen_ai.span.kind'] as string).toUpperCase();
+            result[SpanAttributes.SPAN_KIND] = spanKind as SpanKind;
+            result[SpanAttributes.PROJECT_RUN_ID] = attributes['gen_ai.conversation.id'];
+
+            if (spanKind === SpanKind.AGENT) {
+                result['input.messages'] = attributes['gen_ai.input.messages'];
+                result['output.messages'] = attributes['gen_ai.output.messages'];
+                result['metadata.id'] = attributes['gen_ai.agent.id'];
+                result['metadata.name'] = attributes['gen_ai.agent.name'];
+            }else if(spanKind === SpanKind.LLM){
+                result['input.messages'] = attributes['gen_ai.input.messages'];
+                result['output.messages'] = attributes['gen_ai.output.messages'];
+                result['output.usage.input_tokens'] = attributes['gen_ai.usage.input_tokens']
+                result['output.usage.output_tokens'] = attributes['gen_ai.usage.output_tokens']
+                result['metadata.model_name'] = attributes['gen_ai.request.model'];
+            }else if (spanKind === SpanKind.TOOL){
+                result['input.tool_call.id'] = attributes['gen_ai.tool.call.id'],
+                result['input.tool_call.name'] = attributes['gen_ai.tool.name'],
+                result['input.tool_call.input'] = attributes['gen_ai.tool.call.arguments']
+                result['output.content'] = attributes['gen_ai.tool.call.result'],
+                result['metadata.id'] = attributes['gen_ai.tool.call.id'],
+                result['metadata.type']= 'tool_use',
+                result['metadata.name'] = attributes['gen_ai.tool.name'],
+                result['metadata.input'] = attributes['gen_ai.tool.call.arguments']
+            }else if (spanKind === SpanKind.FORMATTER){
+                result['input.messages'] = attributes['gen_ai.input.messages'];
+                result['output.messages'] = attributes['gen_ai.output.messages'];
+                result['metadata'] = {}
+            }else{
+                result['metadata'] = {}
+            }
+            return result;
+
+        }
+        return attributes;
+    }
     private static decodeKeyValues(
         keyValues: KeyValue[],
     ): Record<string, unknown> {
         const result: Record<string, unknown> = {};
         for (const kv of keyValues) {
+            console.log('key: ', kv.key)
             result[kv.key] = this.decodeAnyValue(kv.value);
         }
-        return result;
+        const as_result = this.convertGenAI2AS(result);
+        return as_result;
     }
 
     private static decodeAnyValue(value: AnyValue): unknown {
-        if (value.string_value !== undefined) return value.string_value;
-        if (value.bool_value !== undefined) return value.bool_value;
+
+        console.log('Complete value object:', JSON.stringify(value, null, 2));
+        if (value.bool_value !== false) return value.bool_value;
+        if (value.int_value !== 0) return value.int_value;
+        if (value.double_value !== 0) return value.double_value;
+        if (value.string_value !== '') return value.string_value;
+        if (value.array_value?.values) {
+            return value.array_value.values.map((v: AnyValue) =>
+                this.decodeAnyValue(v)
+            );
+        }
+
+        if (value.kvlist_value?.values) {
+            return this.decodeKeyValues(value.kvlist_value.values);
+        }
+
+        if (value.bytes_value && Object.keys(value.bytes_value).length > 0) {
+            return value.bytes_value;
+        }
+
         if (value.int_value !== undefined) return value.int_value;
         if (value.double_value !== undefined) return value.double_value;
-        if (value.array_value)
-            return value.array_value.values.map((v: AnyValue) =>
-                this.decodeAnyValue(v),
-            );
-        if (value.kvlist_value)
-            return this.decodeKeyValues(value.kvlist_value.values);
-        if (value.bytes_value) return value.bytes_value;
+        if (value.string_value !== undefined) return value.string_value;
+        if (value.bool_value !== undefined) return value.bool_value;
         return null;
     }
 
