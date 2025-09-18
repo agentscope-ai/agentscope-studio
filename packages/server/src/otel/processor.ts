@@ -193,7 +193,6 @@ export class SpanProcessor {
     ): Record<string, unknown> {
         const result: Record<string, unknown> = {};
         for (const kv of keyValues) {
-            console.log('key: ', kv.key)
             result[kv.key] = this.decodeAnyValue(kv.value);
         }
         const as_result = this.convertGenAI2AS(result);
@@ -202,7 +201,6 @@ export class SpanProcessor {
 
     private static decodeAnyValue(value: AnyValue): unknown {
 
-        console.log('Complete value object:', JSON.stringify(value, null, 2));
         if (value.bool_value !== false) return value.bool_value;
         if (value.int_value !== 0) return value.int_value;
         if (value.double_value !== 0) return value.double_value;
