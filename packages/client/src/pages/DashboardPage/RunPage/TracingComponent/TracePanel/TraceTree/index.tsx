@@ -31,7 +31,7 @@ const SpanNodeTitle = ({
         unknown
     >;
 
-    console.log('spanKind', spanKind, metadata.name);
+    console.log('spanKind', spanKind, metadata?.name);
     let kind: string;
     if (spanKind === SpanKind.AGENT && metadata.name) {
         kind = spanKind + ': ' + String(metadata.name);

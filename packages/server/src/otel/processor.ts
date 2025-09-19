@@ -186,7 +186,9 @@ export class SpanProcessor {
             return result;
 
         }
-        return attributes;
+        return Object.keys(attributes).some(key => key.startsWith('metadata'))
+        ? attributes
+        : { ...attributes, metadata: {} };
     }
     private static decodeKeyValues(
         keyValues: KeyValue[],
