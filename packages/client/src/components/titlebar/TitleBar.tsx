@@ -7,6 +7,9 @@ interface Props {
     title: string;
 }
 
+/**
+ * App title bar with language switcher, using Ant Design Layout.Header.
+ */
 const TitleBar = ({ title }: Props) => {
     const { Header } = Layout;
     return (

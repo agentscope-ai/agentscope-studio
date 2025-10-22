@@ -2,20 +2,27 @@ import { memo, ReactNode, RefObject } from 'react';
 import { Button, ButtonProps, Tooltip } from 'antd';
 import { TooltipPlacement } from 'antd/lib/tooltip';
 
+/**
+ * Extended button props that include tooltip and placement configuration.
+ */
 interface Props extends ButtonProps {
     ref?: RefObject<null> | undefined;
     tooltip: string;
     placement?: TooltipPlacement;
 }
 
+/**
+ * Primary button with rounded corners and tooltip support.
+ * Uses Ant Design's primary type with custom styling.
+ */
 const PrimaryButton = memo(
     ({ ref = undefined, tooltip, ...restProps }: Props) => {
         return (
             <Tooltip title={tooltip}>
                 <Button
                     ref={ref}
-                    color={'default'}
-                    type={'primary'}
+                    color="default"
+                    type="primary"
                     style={{
                         borderRadius: '1rem',
                     }}
@@ -26,6 +33,10 @@ const PrimaryButton = memo(
     },
 );
 
+/**
+ * Secondary button with tooltip support and configurable placement.
+ * Uses Ant Design's default type with minimal styling.
+ */
 const SecondaryButton = ({
     tooltip,
     placement = 'top',
@@ -33,11 +44,14 @@ const SecondaryButton = ({
 }: Props) => {
     return (
         <Tooltip title={tooltip} placement={placement}>
-            <Button color={'default'} type={'default'} {...restProps} />
+            <Button color="default" type="default" {...restProps} />
         </Tooltip>
     );
 };
 
+/**
+ * Props for the switch button component that toggles between active/inactive states.
+ */
 interface SwitchButtonProps extends ButtonProps {
     tooltip: string;
     title?: string;
@@ -46,6 +60,10 @@ interface SwitchButtonProps extends ButtonProps {
     active: boolean;
 }
 
+/**
+ * Toggle button that switches between active and inactive states.
+ * Changes background color, text color, and icon based on the `active` prop.
+ */
 const SwitchButton = ({
     tooltip,
     title,
@@ -54,6 +72,7 @@ const SwitchButton = ({
     active,
     ...restProps
 }: SwitchButtonProps) => {
+    // Dynamic styling based on active state
     const bgColor = active ? 'var(--secondary)' : 'transparent';
     const color = active ? 'var(--secondary-foreground)' : 'var(--hint-color)';
 
@@ -62,7 +81,7 @@ const SwitchButton = ({
             <Button
                 style={{ background: bgColor, color: color }}
                 icon={active ? activeIcon : inactiveIcon}
-                className={'as-switch-button'}
+                className="as-switch-button"
                 {...restProps}
             >
                 {title}

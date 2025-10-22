@@ -1,18 +1,20 @@
-import { Avatar, Col, Flex, Layout, Row, Skeleton } from 'antd';
 import { memo, ReactNode } from 'react';
-import TitleBar from '../../components/titlebar/TitleBar.tsx';
-import ProjectIcon from '../../assets/svgs/project.svg?react';
-import RunIcon from '../../assets/svgs/run.svg?react';
-import TokenIcon from '../../assets/svgs/token.svg?react';
-import ApiIcon from '../../assets/svgs/api.svg?react';
-import PageTitleSpan from '../../components/spans/PageTitleSpan.tsx';
-import { useOverviewRoom } from '../../context/OverviewRoomContext.tsx';
+import { Avatar, Col, Flex, Layout, Row, Skeleton } from 'antd';
+import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
+
+import TitleBar from '@/components/titlebar/TitleBar.tsx';
+import ProjectIcon from '@/assets/svgs/project.svg?react';
+import RunIcon from '@/assets/svgs/run.svg?react';
+import TokenIcon from '@/assets/svgs/token.svg?react';
+import ApiIcon from '@/assets/svgs/api.svg?react';
+import PageTitleSpan from '@/components/spans/PageTitleSpan.tsx';
+import NumberCounter from '../../components/numbers/NumberCounter';
+import extended from '@/pages/ContentPage/utils.ts';
+
+import { useOverviewRoom } from '@/context/OverviewRoomContext.tsx';
 import { RemoveScrollBarStyle, SingleLineEllipsisStyle } from '../../styles.ts';
 import { OverviewData } from '../../../../shared/src/types/trpc';
-import { useTranslation } from 'react-i18next';
-import './index.css';
-import { useNavigate } from 'react-router-dom';
-import NumberCounter from '../../components/numbers/NumberCounter';
 import { RouterPath } from '@/pages/RouterPath.ts';
 import {
     Bar,
@@ -23,7 +25,8 @@ import {
     XAxis,
     YAxis,
 } from 'recharts';
-import extended from '@/pages/ContentPage/utils.ts';
+
+import './index.css';
 
 interface BlockTitleProps {
     title: string;
@@ -89,7 +92,7 @@ const Block = ({ title, number, footer, icon }: BlockProps) => {
                 <Flex
                     vertical={false}
                     style={{ width: '100%' }}
-                    justify={'space-between'}
+                    justify="space-between"
                 >
                     <SubTitle title={title} />
                     {icon}
@@ -144,7 +147,7 @@ const ProjectRow = ({ project, runCount, lastUpdateTime }: ProjectRowProps) => {
     const navigate = useNavigate();
     return (
         <Flex
-            className={'as-project-row'}
+            className="as-project-row"
             style={{
                 height: 50,
                 minHeight: 50,
@@ -155,13 +158,13 @@ const ProjectRow = ({ project, runCount, lastUpdateTime }: ProjectRowProps) => {
                 padding: '0 8px',
             }}
             vertical={false}
-            align={'center'}
-            justify={'space-between'}
+            align="center"
+            justify="space-between"
             onClick={() => navigate('/dashboard/projects/' + project)}
         >
             <Flex
-                gap={'small'}
-                align={'center'}
+                gap="small"
+                align="center"
                 flex={1}
                 style={{ width: '100%', minWidth: 0 }}
             >
@@ -196,7 +199,7 @@ const ProjectRow = ({ project, runCount, lastUpdateTime }: ProjectRowProps) => {
                     </div>
                 </Flex>
             </Flex>
-            <Flex style={{ fontWeight: 500 }} align={'flex-end'}>
+            <Flex style={{ fontWeight: 500 }} align="flex-end">
                 <NumberCounter number={runCount} style={{ fontSize: 14 }} />
                 <div
                     style={{
@@ -418,17 +421,17 @@ const ContentPage = () => {
                             borderRadius: 8,
                         }}
                         vertical={true}
-                        gap={'middle'}
+                        gap="middle"
                     >
                         <PageTitleSpan title={t('common.dashboard')} />
                         <Flex
                             vertical={true}
-                            justify={'space-between'}
+                            justify="space-between"
                             style={{
                                 width: '100%',
                                 height: '100%',
                             }}
-                            gap={'middle'}
+                            gap="middle"
                         >
                             <Row
                                 gutter={16}
@@ -478,7 +481,7 @@ const ContentPage = () => {
                                             height: 325,
                                         }}
                                         vertical={true}
-                                        gap={'large'}
+                                        gap="large"
                                     >
                                         <BlockTitle
                                             title={t('common.overview')}
@@ -493,7 +496,7 @@ const ContentPage = () => {
                                                 minWidth={'100%'}
                                             >
                                                 <BarChart
-                                                    layout={'horizontal'}
+                                                    layout="horizontal"
                                                     data={monthlyRuns.reverse()}
                                                     margin={{
                                                         bottom: -5,
@@ -535,7 +538,7 @@ const ContentPage = () => {
                                                         }}
                                                     />
                                                     <XAxis
-                                                        dataKey={'month'}
+                                                        dataKey="month"
                                                         type="category"
                                                         fontSize={10}
                                                         axisLine={false}
@@ -613,7 +616,7 @@ const ContentPage = () => {
                                                     />
 
                                                     <Bar
-                                                        dataKey={'count'}
+                                                        dataKey="count"
                                                         radius={[6, 6, 0, 0]}
                                                     />
                                                 </BarChart>
@@ -631,7 +634,7 @@ const ContentPage = () => {
                                             height: 325,
                                         }}
                                         vertical={true}
-                                        gap={'small'}
+                                        gap="small"
                                     >
                                         <BlockTitle
                                             title={t('home.recent-projects')}
@@ -655,7 +658,7 @@ const ContentPage = () => {
                                                 overflowY: 'auto',
                                                 ...RemoveScrollBarStyle,
                                             }}
-                                            justify={'start'}
+                                            justify="start"
                                         >
                                             {overviewData
                                                 ? overviewData.recentProjects.map(
@@ -688,7 +691,7 @@ const ContentPage = () => {
                             borderRadius: 8,
                         }}
                         vertical={true}
-                        gap={'middle'}
+                        gap="middle"
                     >
                         <PageTitleSpan title={t('common.application')} />
                         <Flex vertical={true}>
@@ -708,7 +711,7 @@ const ContentPage = () => {
                                         }}
                                     >
                                         <BlockTitle
-                                            title={'AgentScope Friday'}
+                                            title="AgentScope Friday"
                                             description={t(
                                                 'home.as-friday-description',
                                             )}
@@ -730,7 +733,7 @@ const ContentPage = () => {
                                         }}
                                     >
                                         <BlockTitle
-                                            title={'AgentScope X'}
+                                            title="AgentScope X"
                                             description={t(
                                                 'home.as-x-description',
                                             )}

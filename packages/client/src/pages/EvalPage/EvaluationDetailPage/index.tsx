@@ -1,5 +1,6 @@
 import { memo, MouseEvent } from 'react';
 import { Select } from 'antd';
+import { useNavigate } from 'react-router-dom';
 import {
     Area,
     AreaChart,
@@ -11,6 +12,7 @@ import {
     XAxis,
     YAxis,
 } from 'recharts';
+
 import AsTable from '@/components/tables/AsTable';
 import { useEvaluationRoom } from '@/context/EvaluationRoomContext.tsx';
 import { EmptyPage } from '@/pages/DefaultPage';
@@ -19,7 +21,6 @@ import {
     StatusCell,
     TextCell,
 } from '@/components/tables/utils.tsx';
-import { useNavigate } from 'react-router-dom';
 import { EvaluationMetaData } from '@shared/types';
 
 const EvaluationDetailPage = () => {
@@ -31,7 +32,7 @@ const EvaluationDetailPage = () => {
             <div className="max-w-5xl mx-auto px-6 py-6 space-y-6 items-center h-full">
                 <EmptyPage
                     size={200}
-                    title={'No data for the given evaluation ID'}
+                    title="No data for the given evaluation ID"
                 />
             </div>
         );
@@ -307,7 +308,8 @@ const EvaluationDetailPage = () => {
                         <div className="flex flex-ro items-center justify-between space-y-1.5 p-6 pb-2 text-sm font-medium">
                             Result
                             <Select
-                                variant={'filled'}
+                                variant="filled"
+                                defaultValue="accuracy"
                                 options={[
                                     {
                                         label: 'Accuracy',
@@ -318,11 +320,10 @@ const EvaluationDetailPage = () => {
                                         value: 'tool-usage',
                                     },
                                 ]}
-                                defaultValue={'accuracy'}
                             />
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 p-6 pt-3 w-full h-[150px]">
-                            <ResponsiveContainer height={'100%'} width={'100%'}>
+                            <ResponsiveContainer height="100%" width="100%">
                                 <BarChart
                                     data={[
                                         {
@@ -358,14 +359,14 @@ const EvaluationDetailPage = () => {
                                         dataKey="accuracy"
                                         fill="var(--muted-foreground)"
                                         maxBarSize={20}
-                                        stackId={'modelName'}
+                                        stackId="modelName"
                                     />
                                     <YAxis type="number" />
                                     <XAxis dataKey="name" type="category" />
                                 </BarChart>
                             </ResponsiveContainer>
 
-                            <ResponsiveContainer height={'100%'} width={'100%'}>
+                            <ResponsiveContainer height="100%" width="100%">
                                 <AreaChart
                                     data={[
                                         {
@@ -389,7 +390,7 @@ const EvaluationDetailPage = () => {
                                     }}
                                 >
                                     <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="name" type={'number'} />
+                                    <XAxis dataKey="name" type="number" />
                                     <YAxis />
                                     <Tooltip />
                                     <Area

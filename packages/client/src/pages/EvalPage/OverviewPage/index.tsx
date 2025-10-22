@@ -1,7 +1,9 @@
 import { memo, useState } from 'react';
-import { BenchmarkListRoomContextProvider } from '@/context/BenchmarkListRoomContext.tsx';
-import Context from '@/pages/EvalPage/OverviewPage/Content.tsx';
+
 import Sider from '@/pages/EvalPage/OverviewPage/Sider';
+import Context from '@/pages/EvalPage/OverviewPage/Content.tsx';
+
+import { BenchmarkListRoomContextProvider } from '@/context/BenchmarkListRoomContext.tsx';
 import { EvaluationListRoomContextProvider } from '@/context/EvaluationListRoomContext.tsx';
 
 const OverviewPage = () => {

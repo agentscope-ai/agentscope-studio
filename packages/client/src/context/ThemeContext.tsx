@@ -1,5 +1,6 @@
-import { ThemeColors } from '../theme/color.ts';
 import { createContext, useCallback, useContext, useState } from 'react';
+
+import { ThemeColors } from '../theme/color.ts';
 import { updateCSSVariables } from '../theme/utils.ts';
 
 const defaultTheme: ThemeColors = {

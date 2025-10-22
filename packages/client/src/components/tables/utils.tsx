@@ -1,22 +1,33 @@
-import { SortOrder } from 'antd/lib/table/interface';
+import { memo } from 'react';
+import { Progress } from 'antd';
+import { useTranslation } from 'react-i18next';
+
 import SortIcon from '@/assets/svgs/sort.svg?react';
+import NumberCounter from '../numbers/NumberCounter';
 import ArrowUpIcon from '@/assets/svgs/arrow-up.svg?react';
 import ArrowDownIcon from '@/assets/svgs/arrow-down.svg?react';
 import RunningStatus from '@/assets/svgs/status-running.svg?react';
 import UnknownStatus from '@/assets/svgs/status-unknown.svg?react';
 import PendingStatus from '@/assets/svgs/status-pending.svg?react';
 import DoneStatus from '@/assets/svgs/status-done.svg?react';
-import { memo } from 'react';
-import NumberCounter from '../numbers/NumberCounter';
-import { Progress } from 'antd';
-import { Status } from '@shared/types';
-import { useTranslation } from 'react-i18next';
 
+import { Status } from '@shared/types';
+import { SortOrder } from 'antd/lib/table/interface';
+
+/**
+ * Props for the progress cell inside a table.
+ * `progress` is a percentage value (0-100).
+ * `selected` toggles highlight styling to match selected row state.
+ */
 interface TableProgressProps {
     progress: number;
     selected: boolean;
 }
 
+/**
+ * Render a compact progress visual with percentage text.
+ * Uses Ant Design `Progress` with step style for readability in table rows.
+ */
 export const ProgressCell = memo(
     ({ progress, selected }: TableProgressProps) => {
         return (
@@ -46,6 +57,9 @@ export const ProgressCell = memo(
     },
 );
 
+/**
+ * Render a status badge with localized text and corresponding icon.
+ */
 export const StatusCell = memo(
     ({ status, selected }: { status: Status; selected: boolean }) => {
         const { t } = useTranslation();
@@ -85,6 +99,9 @@ export const StatusCell = memo(
     },
 );
 
+/**
+ * Render an animated number using NumberCounter with optional selected styling.
+ */
 export const NumberCell = memo(
     ({ number, selected }: { number: number; selected: boolean }) => {
         return (
@@ -95,6 +112,10 @@ export const NumberCell = memo(
     },
 );
 
+/**
+ * Render a duration (in minutes) as a compact `Xd Yh Zm` triplet.
+ * Accepts total minutes and derives days, hours, and remaining minutes.
+ */
 export const DurationCell = memo(
     ({ number, selected }: { number: number; selected: boolean }) => {
         let day = 0;
@@ -107,7 +128,7 @@ export const DurationCell = memo(
             hour = Math.floor(number / 60);
             min = number % 60;
         } else if (number >= 60 * 24) {
-            console.log('ere');
+            // For days or longer, derive days/hours/minutes.
             day = Math.floor(number / (60 * 24));
             hour = Math.floor((number % (60 * 24)) / 60);
             min = number % 60;
@@ -137,6 +158,9 @@ export const DurationCell = memo(
     },
 );
 
+/**
+ * Render a truncated text cell with optional selected styling.
+ */
 export const TextCell = memo(
     ({ text, selected }: { text: string; selected: boolean }) => {
         return (
@@ -149,6 +173,10 @@ export const TextCell = memo(
     },
 );
 
+/**
+ * Return a sorting icon based on Ant Design's SortOrder.
+ * If `nullAsDefault` is true, show a neutral icon when sortOrder is null.
+ */
 export const renderSortIcon = (
     sortOrder: { sortOrder: SortOrder },
     nullAsDefault: boolean = false,
@@ -168,6 +196,9 @@ export const renderSortIcon = (
     }
 };
 
+/**
+ * Render a non-selectable table header title with consistent styling.
+ */
 export const renderTitle = (title: string, fontSize = 12) => {
     return (
         <span
