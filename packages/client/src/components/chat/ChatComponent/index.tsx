@@ -1,16 +1,19 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import { Avatar, Flex, Tooltip } from 'antd';
+import { useTranslation } from 'react-i18next';
+import { isMacOs } from 'react-device-detect';
+
 import MessageBubble from '@/components/chat/bubbles/MessageBubble';
-import { ContentBlocks, MessageData, InputRequestData } from '@shared/types';
 import MarkdownIcon from '@/assets/svgs/markdown.svg?react';
 import CheckCircleIcon from '@/assets/svgs/check-circle.svg?react';
+import UnifiedUserInput from '@/components/chat/UnifiedUserInput';
+
 import { RemoveScrollBarStyle } from '@/styles.ts';
 import { SwitchButton } from '../../buttons/ASButton';
-import { useTranslation } from 'react-i18next';
-import './index.css';
-import { isMacOs } from 'react-device-detect';
 import { useTour } from '@/context/TourContext.tsx';
-import UnifiedUserInput from '@/components/chat/UnifiedUserInput';
+import { ContentBlocks, MessageData, InputRequestData } from '@shared/types';
+
+import './index.css';
 
 interface Props {
     messages: MessageData[];

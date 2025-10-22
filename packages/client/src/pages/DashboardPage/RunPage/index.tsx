@@ -1,16 +1,15 @@
 import { memo, useEffect, useState } from 'react';
 import { Flex, Layout, Splitter } from 'antd';
-import TracingComponent from './TracingComponent';
-import ChatComponent from '../../../components/chat/ChatComponent';
-import ProjectRunSider from './ProjectRunSider';
 import { Route, Routes, useNavigate, useParams } from 'react-router-dom';
-import { ProjectRoomContextProvider } from '../../../context/ProjectRoomContext';
+
+import TracingComponent from './TracingComponent';
+import ProjectRunSider from './ProjectRunSider';
+import ChatComponent from '@/components/chat/ChatComponent';
+
+import { MessageData } from '@shared/types/trpc';
+import { ProjectRoomContextProvider } from '@/context/ProjectRoomContext';
 import { EmptyRunPage, ProjectNotFoundPage } from '../../DefaultPage';
-import {
-    RunRoomContextProvider,
-    useRunRoom,
-} from '../../../context/RunRoomContext';
-import { MessageData } from '../../../../../shared/src/types/trpc';
+import { RunRoomContextProvider, useRunRoom } from '@/context/RunRoomContext';
 
 const RunContentPage = () => {
     const [displayedMsg, setDisplayedMsg] = useState<MessageData | null>(null);
@@ -48,7 +47,7 @@ const RunContentPage = () => {
             }}
             flex={1}
             vertical={true}
-            gap={'middle'}
+            gap="middle"
         >
             <Splitter style={{ width: '100%' }}>
                 <Splitter.Panel className="flex w-full justify-center">
@@ -109,9 +108,9 @@ const RunPage = () => {
                     >
                         <Routes>
                             <Route index element={<EmptyRunPage />} />
-                            <Route path={'runs'} element={<EmptyRunPage />} />
+                            <Route path="runs" element={<EmptyRunPage />} />
                             <Route
-                                path={'runs/:runId'}
+                                path="runs/:runId"
                                 element={
                                     <RunRoomContextProvider>
                                         <RunContentPage />

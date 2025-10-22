@@ -12,11 +12,12 @@ import {
     useEffect,
     useState,
 } from 'react';
+import stripAnsi from 'strip-ansi';
+import { useTranslation } from 'react-i18next';
+
 import { useSocket } from '@/context/SocketContext.tsx';
 import { useMessageApi } from '@/context/MessageApiContext.tsx';
 import { useNotification } from '@/context/NotificationContext.tsx';
-import { useTranslation } from 'react-i18next';
-import stripAnsi from 'strip-ansi';
 
 interface FridayAppRoomContextType {
     replies: ReplyData[];

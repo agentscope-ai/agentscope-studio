@@ -62,7 +62,7 @@ const DiscreteMetric = () => {
                             uv: 100,
                         },
                     ]}
-                    layout={'horizontal'}
+                    layout="horizontal"
                     margin={{
                         bottom: 5,
                         left: 0,

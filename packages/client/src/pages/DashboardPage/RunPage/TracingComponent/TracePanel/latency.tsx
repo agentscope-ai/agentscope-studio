@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
+
 import NumberCounter from '@/components/numbers/NumberCounter';
 
 interface LatencyProps {

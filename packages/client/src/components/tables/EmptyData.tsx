@@ -1,8 +1,13 @@
 import { Flex } from 'antd';
 import { memo } from 'react';
-import PageEmptyIcon from '../../assets/svgs/page-empty.svg?react';
 import { useTranslation } from 'react-i18next';
 
+import PageEmptyIcon from '@/assets/svgs/page-empty.svg?react';
+
+/**
+ * Lightweight placeholder for empty table states.
+ * Renders a centered illustration and a localized message.
+ */
 const EmptyData = () => {
     const { t } = useTranslation();
     return (

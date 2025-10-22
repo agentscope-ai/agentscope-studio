@@ -2,9 +2,14 @@ import { memo } from 'react';
 import Form from '@rjsf/antd';
 import { Flex, Modal } from 'antd';
 import validator from '@rjsf/validator-ajv8';
-import './index.css';
+
 import { RemoveScrollBarStyle } from '../../../../styles.ts';
 
+import './index.css';
+
+/**
+ * Props for structured input modal rendered via react-jsonschema-form (RJSF).
+ */
 interface Props {
     open: boolean;
     structuredInputSchema: Record<string, unknown>;
@@ -12,6 +17,10 @@ interface Props {
     onCancel: () => void;
 }
 
+/**
+ * Modal dialog that collects structured input from user based on a JSON schema.
+ * Uses RJSF (AJV8 validator) to render the form; submit button is hidden and
+ */
 const StructuredInputModal = ({
     open,
     structuredInputSchema,
@@ -29,7 +38,7 @@ const StructuredInputModal = ({
             onCancel={onCancel}
             centered
             width={800}
-            title={'Structured Input'}
+            title="Structured Input"
             styles={{
                 content: {
                     height: 500,
@@ -67,7 +76,7 @@ const StructuredInputModal = ({
                 style={{
                     width: '100%',
                     minHeight: 0,
-                    overflowY: 'auto', // 使这个容器滚动
+                    overflowY: 'auto', // Scrollable container for long forms
                     ...RemoveScrollBarStyle,
                 }}
                 flex={1}

@@ -1,5 +1,6 @@
 import { memo, ReactNode } from 'react';
 import { Col, Flex, Row } from 'antd';
+
 import NumberCounter from '../../../../components/numbers/NumberCounter';
 
 interface MetaDataSectionProps {
@@ -68,9 +69,8 @@ export const MetaDataSection = memo(({ title, data }: MetaDataSectionProps) => {
     };
 
     return (
-        <Flex vertical={true} gap={'small'}>
+        <Flex vertical={true} gap="small">
             {renderSectionTitle(title)}
-
             {Object.entries(data).map(([key, value]) => {
                 return renderRow(key, value);
             })}

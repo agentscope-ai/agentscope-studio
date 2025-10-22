@@ -1,17 +1,25 @@
 import { Button, Flex } from 'antd';
 import { memo, useState } from 'react';
-import CopyIcon from '../../../../assets/svgs/copy.svg?react';
-import CheckIcon from '../../../../assets/svgs/check.svg?react';
-import './index.css';
 import ReactMarkdown from 'react-markdown';
-import { copyToClipboard } from '@/utils/common.ts';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { materialDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
+import CopyIcon from '@/assets/svgs/copy.svg?react';
+import CheckIcon from '@/assets/svgs/check.svg?react';
+
+import { copyToClipboard } from '@/utils/common.ts';
+
+import './index.css';
 interface Props {
     text: string;
 }
 
+/**
+ * Render markdown content with custom styling and code block support.
+ * - Links: emphasized with underline and bold style
+ * - Inline code: keeps inline flow with wrapping
+ * - Code blocks: syntax highlighted with copy-to-clipboard header
+ */
 const MarkdownRender = ({ text }: Props) => {
     return (
         <ReactMarkdown
@@ -86,6 +94,10 @@ interface CodeHeaderProps {
     onCopyBtnClick: () => Promise<boolean>;
 }
 
+/**
+ * Header for code blocks that displays the language and a copy button.
+ * Shows success feedback temporarily after copying.
+ */
 const CodeHeader = ({ language, onCopyBtnClick }: CodeHeaderProps) => {
     const [copyState, setCopyState] = useState<'wait' | 'success' | 'error'>(
         'wait',

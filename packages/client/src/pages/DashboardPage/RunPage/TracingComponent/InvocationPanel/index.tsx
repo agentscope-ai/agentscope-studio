@@ -16,7 +16,7 @@ const InvocationPanel = () => {
                 height: '100%',
                 ...RemoveScrollBarStyle,
             }}
-            gap={'large'}
+            gap="large"
         >
             <MetaDataSection
                 title={t('common.arguments')}
@@ -27,7 +27,7 @@ const InvocationPanel = () => {
             />
             {renderSectionTitle('MESSages')}
             <Collapse
-                size={'small'}
+                size="small"
                 items={[
                     {
                         label: 'Bob (user)',
