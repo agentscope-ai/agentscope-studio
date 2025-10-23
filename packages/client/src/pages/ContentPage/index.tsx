@@ -9,13 +9,13 @@ import RunIcon from '@/assets/svgs/run.svg?react';
 import TokenIcon from '@/assets/svgs/token.svg?react';
 import ApiIcon from '@/assets/svgs/api.svg?react';
 import PageTitleSpan from '@/components/spans/PageTitleSpan.tsx';
-import NumberCounter from '../../components/numbers/NumberCounter';
+import NumberCounter from '@/components/numbers/NumberCounter';
 import extended from '@/pages/ContentPage/utils.ts';
 
-import { useOverviewRoom } from '@/context/OverviewRoomContext.tsx';
-import { RemoveScrollBarStyle, SingleLineEllipsisStyle } from '../../styles.ts';
-import { OverviewData } from '../../../../shared/src/types/trpc';
+import { OverviewData } from '@shared/types/trpc';
 import { RouterPath } from '@/pages/RouterPath.ts';
+import { useOverviewRoom } from '@/context/OverviewRoomContext.tsx';
+import { RemoveScrollBarStyle, SingleLineEllipsisStyle } from '@/styles.ts';
 import {
     Bar,
     BarChart,

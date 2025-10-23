@@ -1,13 +1,13 @@
 import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Collapse, Flex, Image, Switch, Tooltip } from 'antd';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { materialDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 import MarkdownRender from '@/components/chat/bubbles/MarkdownRender';
 import FoldDownIcon from '@/assets/svgs/fold-down.svg?react';
 
 import { SingleLineEllipsisStyle } from '@/styles.ts';
-import { materialDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import {
     Base64Source,
     BlockType,

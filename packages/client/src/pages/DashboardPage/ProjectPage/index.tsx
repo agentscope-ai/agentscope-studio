@@ -25,11 +25,12 @@ interface DataType {
 }
 
 const ProjectPage = () => {
-    const { projects, deleteProjects } = useProjectListRoom();
     const { t } = useTranslation();
-    const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
     const navigate = useNavigate();
+    const { projects, deleteProjects } = useProjectListRoom();
+
     const [searchText, setSearchText] = useState<string>('');
+    const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
 
     const rowSelection = {
         selectedRowKeys,

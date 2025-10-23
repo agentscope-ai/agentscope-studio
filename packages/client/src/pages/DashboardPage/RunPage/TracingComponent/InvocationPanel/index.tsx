@@ -1,8 +1,9 @@
 import { memo } from 'react';
 import { Collapse, Flex } from 'antd';
-import { MetaDataSection, renderSectionTitle } from '../ShareComponents.tsx';
-import { RemoveScrollBarStyle } from '../../../../../styles.ts';
 import { useTranslation } from 'react-i18next';
+
+import { RemoveScrollBarStyle } from '@/styles.ts';
+import { MetaDataSection, renderSectionTitle } from '../ShareComponents.tsx';
 
 const InvocationPanel = () => {
     const { t } = useTranslation();

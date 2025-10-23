@@ -54,7 +54,7 @@ const UserInputComponent = ({
             }}
         >
             {attachmentChildren}
-            <Flex vertical={true} gap={'small'}>
+            <Flex vertical={true} gap="small">
                 <Input.TextArea
                     variant={'borderless'}
                     placeholder={t('placeholder.input-friday-app', {
