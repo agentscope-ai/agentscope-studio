@@ -1,20 +1,24 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { BlockType, ContentBlocks, ReplyData } from '@shared/types';
 import { Button, Flex, Tooltip, Upload, UploadFile } from 'antd';
-import ArrowDownIcon from '../../../assets/svgs/arrow-down.svg?react';
-import DeleteIcon from '../../../assets/svgs/delete.svg?react';
+import Lottie from 'lottie-react';
+
+import DeleteIcon from '@/assets/svgs/delete.svg?react';
+import ReplyBubble from '@/components/chat/bubbles/ReplyBubble';
+import UserInputComponent from '@/components/chat/UserInput';
+import ArrowDownIcon from '@/assets/svgs/arrow-down.svg?react';
+import loadingData from '@/assets/lottie/loading.json';
+
 import { RemoveScrollBarStyle } from '@/styles.ts';
 import { useTranslation } from 'react-i18next';
-import ReplyBubble from '@/components/chat/bubbles/ReplyBubble';
 import { useMessageApi } from '@/context/MessageApiContext.tsx';
-import Lottie from 'lottie-react';
-import loadingData from '@/assets/lottie/loading.json';
-import UserInputComponent from '@/components/chat/UserInput';
+import { BlockType, ContentBlocks, ReplyData } from '@shared/types';
 
 import type { GetProp, UploadProps } from 'antd';
-
 type FileType = Parameters<GetProp<UploadProps, 'beforeUpload'>>[0];
 
+/**
+ * Props for the main chat component that handles conversation display and user input.
+ */
 interface Props {
     replies: ReplyData[];
     isReplying: boolean;
@@ -25,11 +29,14 @@ interface Props {
     isCleaningHistory: boolean;
 }
 
+/**
+ * Main chat component that displays conversation history and handles user input.
+ * Supports text input, file attachments, and real-time message updates.
+ */
 const AppChatComponent = ({
     replies,
     onUserInput,
     isReplying,
-    moreReplies,
     onInterruptReply,
     onCleanHistory,
     isCleaningHistory,
@@ -41,8 +48,10 @@ const AppChatComponent = ({
     const messageContainerRef = useRef<HTMLDivElement>(null);
     const { messageApi } = useMessageApi();
 
+    // Check if there are any unfinished replies in the conversation
     const hasUnFinished = replies.some((reply) => !reply.finished);
 
+    // Auto-scroll to bottom when new messages arrive and user is at bottom
     useEffect(() => {
         if (isAtBottom) {
             if (messageContainerRef.current) {
@@ -52,6 +61,10 @@ const AppChatComponent = ({
         }
     }, [replies, isAtBottom]);
 
+    /**
+     * Handle sending user input (text + attachments) or interrupting current reply.
+     * Combines text input with attachments into ContentBlocks format.
+     */
     const sendUserInput = useCallback(() => {
         if (isReplying) {
             onInterruptReply();
@@ -77,9 +90,12 @@ const AppChatComponent = ({
         }
     }, [attachment, inputText, isReplying]);
 
-    const [previewOpen, setPreviewOpen] = useState(false);
-    const [previewImage, setPreviewImage] = useState('');
+    // File upload state
     const [fileList, setFileList] = useState<UploadFile[]>([]);
+    
+    /**
+     * Convert file to base64 string for preview functionality.
+     */
     const getBase64 = (file: FileType): Promise<string> =>
         new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -88,15 +104,20 @@ const AppChatComponent = ({
             reader.onerror = (error) => reject(error);
         });
 
+    /**
+     * Handle file preview - convert to base64 if needed.
+     * Note: Preview functionality is prepared but not fully implemented.
+     */
     const handlePreview = async (file: UploadFile) => {
         if (!file.url && !file.preview) {
             file.preview = await getBase64(file.originFileObj as FileType);
         }
-
-        setPreviewImage(file.url || (file.preview as string));
-        setPreviewOpen(true);
+        // Preview modal implementation would go here
     };
 
+    /**
+     * Handle file list changes from upload component.
+     */
     const handleChange: UploadProps['onChange'] = ({
         fileList: newFileList,
     }) => {
@@ -130,6 +151,7 @@ const AppChatComponent = ({
                 gap={'middle'}
                 onScrollEnd={(e) => {
                     const target = e.target as HTMLDivElement;
+                    // Check if user is near bottom (within 100px) to enable auto-scroll
                     const isAtBottom =
                         target.scrollHeight -
                             target.scrollTop -
@@ -185,6 +207,7 @@ const AppChatComponent = ({
                         </Button>
                     </Tooltip>
 
+                    {/* Show scroll-to-bottom button when not at bottom and has messages */}
                     {isAtBottom || replies.length == 0 ? null : (
                         <Tooltip title={t('tooltip.button.scroll-to-bottom')}>
                             <Button

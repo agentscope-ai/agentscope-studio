@@ -1,12 +1,17 @@
-import { Avatar, Flex } from 'antd';
 import { memo } from 'react';
-import { ContentBlocks } from '@shared/types';
-import BubbleBlock from '@/components/chat/bubbles/BubbleBlock';
+import { Avatar, Flex } from 'antd';
 import { useTranslation } from 'react-i18next';
+
+import BubbleBlock from '@/components/chat/bubbles/BubbleBlock';
 import loadingData from '@/assets/lottie/loading.json';
 import Lottie from 'lottie-react';
 import LogoIcon from '@/assets/svgs/logo-font.svg?react';
 
+import { ContentBlocks } from '@shared/types';
+
+/**
+ * Props for a reply bubble representing a single assistant/user message.
+ */
 interface Props {
     name: string;
     role: string;
@@ -16,6 +21,10 @@ interface Props {
     finished: boolean;
 }
 
+/**
+ * Render a single reply bubble with author, content blocks and metadata.
+ * Shows a loader when the reply is still streaming; displays total time when available.
+ */
 const ReplyBubble = ({
     name,
     role,

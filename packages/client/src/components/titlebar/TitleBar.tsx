@@ -1,12 +1,17 @@
 import { memo } from 'react';
 import { Flex, Layout } from 'antd';
+
 import LanguageSwitchButton from '../buttons/LanguageSwitchButton';
+
 import './TitleBar.css';
 
 interface Props {
     title: string;
 }
 
+/**
+ * App title bar with language switcher, using Ant Design Layout.Header.
+ */
 const TitleBar = ({ title }: Props) => {
     const { Header } = Layout;
     return (

@@ -2,41 +2,57 @@ import { Button, Flex, Input, Layout, Tooltip } from 'antd';
 import { Key, memo, useEffect, useRef, useState } from 'react';
 import { useMatch, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useProjectRoom } from '../../../../context/ProjectRoomContext.tsx';
-import './index.css';
-import DeleteIcon from '../../../../assets/svgs/delete.svg?react';
-import EyeIcon from '../../../../assets/svgs/eye.svg?react';
-import EyeInvisibleIcon from '../../../../assets/svgs/eye-invisible.svg?react';
-import ExitIcon from '../../../../assets/svgs/exit.svg?react';
-import { StatusCell, TextCell } from '../../../../components/tables/utils.tsx';
+
+import AsTable from '@/components/tables/AsTable';
+import EyeIcon from '@/assets/svgs/eye.svg?react';
+import ExitIcon from '@/assets/svgs/exit.svg?react';
+import DeleteIcon from '@/assets/svgs/delete.svg?react';
+import EyeInvisibleIcon from '@/assets/svgs/eye-invisible.svg?react';
+
+import { useTour } from '@/context/TourContext.tsx';
+import { RemoveScrollBarStyle } from '@/styles.ts';
+import { StatusCell, TextCell } from '@/components/tables/utils.tsx';
 import {
     SecondaryButton,
     SwitchButton,
-} from '../../../../components/buttons/ASButton';
-import { RemoveScrollBarStyle } from '../../../../styles.ts';
-import { useTour } from '@/context/TourContext.tsx';
-import AsTable from '@/components/tables/AsTable';
+} from '@/components/buttons/ASButton';
+import { useProjectRoom } from '@/context/ProjectRoomContext.tsx';
 
+import './index.css';
+
+const { Sider } = Layout;
+
+/**
+ * Sider width configurations for folded and unfolded states.
+ */
 enum SiderDrawerWidth {
     UNFOLDED = '80vw',
     FOLDED = 280,
 }
 
+/**
+ * Props for the project run sidebar component.
+ */
 interface Props {
     onRunClick: (runId: string) => void;
 }
 
+/**
+ * Sidebar component for displaying and managing project runs.
+ * Features run table, search, auto-focus on latest run, and tour integration.
+ */
 const ProjectRunSider = ({ onRunClick }: Props) => {
     const { t } = useTranslation();
-    const { Sider } = Layout;
     const { runs } = useProjectRoom();
+    const { registerRunPageTourStep } = useTour();
+    const navigate = useNavigate();
+    const refTable = useRef(null);
+
     const [folded] = useState<boolean>(true);
     const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
     const [focusOnLatestRun, setFocusOnLatestRun] = useState<boolean>(true);
-    const navigate = useNavigate();
-    const { registerRunPageTourStep } = useTour();
-    const refTable = useRef(null);
 
+    // Register tour step for the run table
     useEffect(() => {
         registerRunPageTourStep({
             title: t('tour.run.run-table-title'),
@@ -46,20 +62,14 @@ const ProjectRunSider = ({ onRunClick }: Props) => {
         });
     }, []);
 
+    // Extract current run and project from URL
     const match = useMatch('/dashboard/projects/:projectName/runs/:runId');
     const runId = match?.params?.runId;
     const project = match?.params?.projectName;
 
-    const rowSelection = {
-        selectedRowKeys,
-        onChange: (newSelectedRowKeys: Key[]) => {
-            setSelectedRowKeys(newSelectedRowKeys);
-        },
-    };
-
+    // Auto-navigate to latest run when focus mode is enabled
     useEffect(() => {
         if (focusOnLatestRun && runs.length > 0) {
-            // 跳转到最新的run，先通过比较timestamp字段获得这个run的id，再跳转
             const latestRun = runs.reduce((prev, current) => {
                 return prev.timestamp > current.timestamp ? prev : current;
             });
@@ -70,6 +80,14 @@ const ProjectRunSider = ({ onRunClick }: Props) => {
         }
     }, [runs, focusOnLatestRun]);
 
+    // Row selection configuration for multi-select functionality
+    const rowSelection = {
+        selectedRowKeys,
+        onChange: (newSelectedRowKeys: Key[]) => {
+            setSelectedRowKeys(newSelectedRowKeys);
+        },
+    };
+
     return (
         <Sider
             width={SiderDrawerWidth.FOLDED}
@@ -77,7 +95,7 @@ const ProjectRunSider = ({ onRunClick }: Props) => {
         >
             <Flex
                 ref={refTable}
-                className={'animated-sider-content'}
+                className="animated-sider-content"
                 style={{
                     width: folded
                         ? SiderDrawerWidth.FOLDED
@@ -93,16 +111,17 @@ const ProjectRunSider = ({ onRunClick }: Props) => {
                     borderRight: '1px solid var(--border)',
                 }}
                 vertical={true}
-                gap={'middle'}
+                gap="middle"
             >
+                {/* Header with back button and project name */}
                 <Flex
                     vertical={false}
-                    align={'center'}
-                    gap={'small'}
+                    align="center"
+                    gap="small"
                     style={{ maxWidth: '100%' }}
                 >
                     <Button
-                        variant={'filled'}
+                        variant="filled"
                         icon={
                             <ExitIcon
                                 width={14}
@@ -110,7 +129,7 @@ const ProjectRunSider = ({ onRunClick }: Props) => {
                                 style={{ transform: 'rotate(180deg)' }}
                             />
                         }
-                        color={'default'}
+                        color="default"
                         onClick={() => {
                             navigate('/dashboard/');
                         }}
@@ -133,14 +152,15 @@ const ProjectRunSider = ({ onRunClick }: Props) => {
                     </Tooltip>
                 </Flex>
 
-                <Flex vertical={false} gap={'small'} justify={'space-between'}>
+                {/* Search and control buttons */}
+                <Flex vertical={false} gap="small" justify="space-between">
                     <Input
                         style={{
                             maxWidth: 300,
                             borderRadius: 'calc(var(--radius) - 2px)',
                             flex: 1,
                         }}
-                        variant={'outlined'}
+                        variant="outlined"
                         placeholder={t('placeholder.search-run')}
                     />
 
@@ -160,14 +180,16 @@ const ProjectRunSider = ({ onRunClick }: Props) => {
                         {folded ? null : 'Latest'}
                     </SwitchButton>
 
+                    {/* Delete button only shown when unfolded */}
                     {folded ? null : (
                         <SecondaryButton
-                            tooltip={'Delete the selected runs'}
+                            tooltip="Delete the selected runs"
                             icon={<DeleteIcon width={13} height={13} />}
                         />
                     )}
                 </Flex>
 
+                {/* Runs table with conditional columns and row selection */}
                 <AsTable
                     columns={[
                         {
@@ -252,6 +274,7 @@ const ProjectRunSider = ({ onRunClick }: Props) => {
                     dataSource={runs}
                     onRow={(record) => {
                         const styleProps: Record<string, unknown> = {};
+                        // Highlight current run row
                         if (runId === record.id) {
                             styleProps['background'] = 'var(--primary-200)';
                         }
@@ -268,7 +291,7 @@ const ProjectRunSider = ({ onRunClick }: Props) => {
                         };
                     }}
                     pagination={false}
-                    rowKey={'id'}
+                    rowKey="id"
                     rowSelection={folded ? undefined : rowSelection}
                     showSorterTooltip={!folded}
                     style={{

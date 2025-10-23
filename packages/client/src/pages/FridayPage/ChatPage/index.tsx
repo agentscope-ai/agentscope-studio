@@ -1,10 +1,12 @@
 import { Button } from 'antd';
-import AppChatComponent from '@/components/chat/AppChatComponent';
 import { memo } from 'react';
-import { useFridayAppRoom } from '@/context/FridayAppRoomContext.tsx';
-import SettingIcon from '@/assets/svgs/setting.svg?react';
 import { useNavigate } from 'react-router-dom';
+
+import SettingIcon from '@/assets/svgs/setting.svg?react';
+import AppChatComponent from '@/components/chat/AppChatComponent';
+
 import { RouterPath } from '@/pages/RouterPath';
+import { useFridayAppRoom } from '@/context/FridayAppRoomContext.tsx';
 
 const ChatPage = () => {
     const {
@@ -34,7 +36,7 @@ const ChatPage = () => {
             <div className="flex w-[48px] h-full border-l border-l-border py-2 justify-center gap-y-2">
                 <Button
                     icon={<SettingIcon width={15} height={15} />}
-                    type={'text'}
+                    type="text"
                     onClick={() => {
                         navigate(
                             `${RouterPath.FRIDAY}/${RouterPath.FRIDAY_SETTING}`,

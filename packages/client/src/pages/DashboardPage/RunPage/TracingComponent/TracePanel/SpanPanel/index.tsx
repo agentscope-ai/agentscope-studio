@@ -1,9 +1,10 @@
 import { memo, ReactNode } from 'react';
-import { SpanData } from '@shared/types/trace.ts';
-import { materialDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { useTranslation } from 'react-i18next';
 import moment from 'moment';
+import { useTranslation } from 'react-i18next';
+
+import { SpanData } from '@shared/types/trace.ts';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { materialDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 interface SpanSectionProps {
     title: string;
@@ -19,7 +20,7 @@ const SpanSection = memo((props: SpanSectionProps) => {
                 {props.description}
             </div>
             <SyntaxHighlighter
-                language={'JSON'}
+                language="JSON"
                 style={materialDark}
                 showLineNumbers={true}
                 customStyle={{

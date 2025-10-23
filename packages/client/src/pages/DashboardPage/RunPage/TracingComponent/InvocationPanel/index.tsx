@@ -1,8 +1,9 @@
 import { memo } from 'react';
 import { Collapse, Flex } from 'antd';
-import { MetaDataSection, renderSectionTitle } from '../ShareComponents.tsx';
-import { RemoveScrollBarStyle } from '../../../../../styles.ts';
 import { useTranslation } from 'react-i18next';
+
+import { RemoveScrollBarStyle } from '@/styles.ts';
+import { MetaDataSection, renderSectionTitle } from '../ShareComponents.tsx';
 
 const InvocationPanel = () => {
     const { t } = useTranslation();
@@ -16,7 +17,7 @@ const InvocationPanel = () => {
                 height: '100%',
                 ...RemoveScrollBarStyle,
             }}
-            gap={'large'}
+            gap="large"
         >
             <MetaDataSection
                 title={t('common.arguments')}
@@ -27,7 +28,7 @@ const InvocationPanel = () => {
             />
             {renderSectionTitle('MESSages')}
             <Collapse
-                size={'small'}
+                size="small"
                 items={[
                     {
                         label: 'Bob (user)',

@@ -1,6 +1,6 @@
 import { createContext, ReactNode, useContext, useState } from 'react';
 import { EvaluationData } from '@shared/types';
-import { useMatch } from 'react-router-dom';
+// import { useMatch } from 'react-router-dom';
 
 interface EvaluationRoomContextType {
     evaluationData: EvaluationData | null;
@@ -16,7 +16,7 @@ interface Props {
 }
 
 export function EvaluationRoomContextProvider({ children }: Props) {
-    const initialState = {
+    const initialState: EvaluationData = {
         id: '2',
         name: 'Evaluation 2',
         status: 'pending',

@@ -6,6 +6,7 @@ import {
     useState,
 } from 'react';
 import { io, Socket } from 'socket.io-client';
+
 import { ClientConfig } from '@shared/config/client';
 
 const SocketContext = createContext<Socket | null>(null);

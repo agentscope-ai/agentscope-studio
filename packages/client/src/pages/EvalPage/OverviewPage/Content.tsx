@@ -1,13 +1,16 @@
-import PageTitleSpan from '@/components/spans/PageTitleSpan.tsx';
-import { Input, TableColumnsType } from 'antd';
-import { SecondaryButton } from '@/components/buttons/ASButton';
-import AsTable from '@/components/tables/AsTable';
-import { EvaluationMetaData } from '@shared/types';
 import { Key, memo, MouseEvent, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Input, TableColumnsType } from 'antd';
 import { useTranslation } from 'react-i18next';
+
+import PageTitleSpan from '@/components/spans/PageTitleSpan.tsx';
+import AsTable from '@/components/tables/AsTable';
 import DeleteIcon from '@/assets/svgs/delete.svg?react';
 import CompareIcon from '@/assets/svgs/compare.svg?react';
-import { useNavigate } from 'react-router-dom';
+
+import { EvaluationMetaData } from '@shared/types';
+import { EmptyPage } from '@/pages/DefaultPage';
+import { SecondaryButton } from '@/components/buttons/ASButton';
 import { useEvaluationListRoom } from '@/context/EvaluationListRoomContext.tsx';
 import {
     DurationCell,
@@ -16,7 +19,6 @@ import {
     StatusCell,
     TextCell,
 } from '@/components/tables/utils.tsx';
-import { EmptyPage } from '@/pages/DefaultPage';
 
 const Context = () => {
     const { t } = useTranslation();
@@ -110,14 +112,14 @@ const Context = () => {
                         onChange={(event) => {
                             setSearchText(event.target.value);
                         }}
-                        variant={'filled'}
+                        variant="filled"
                         placeholder={t('placeholder.search-evaluation')}
                     />
 
                     <SecondaryButton
                         tooltip={t('tooltip.button.compare-evaluation')}
                         icon={<CompareIcon width={12} height={12} />}
-                        variant={'dashed'}
+                        variant="dashed"
                         disabled={selectedRowKeys.length !== 2}
                         onClick={() => {}}
                     >
@@ -136,7 +138,7 @@ const Context = () => {
                         }
                         icon={<DeleteIcon width={13} height={13} />}
                         disabled={selectedRowKeys.length === 0}
-                        variant={'dashed'}
+                        variant="dashed"
                         onClick={() => {}}
                     >
                         {t('action.delete')}
@@ -149,7 +151,7 @@ const Context = () => {
                             emptyText: (
                                 <EmptyPage
                                     size={100}
-                                    title={'No evaluation histories'}
+                                    title="No evaluation histories"
                                 />
                             ),
                         }}
@@ -169,7 +171,7 @@ const Context = () => {
                         }}
                         columns={columns}
                         showSorterTooltip={{ target: 'full-header' }}
-                        rowKey={'id'}
+                        rowKey="id"
                         rowSelection={rowSelection}
                         pagination={false}
                     />

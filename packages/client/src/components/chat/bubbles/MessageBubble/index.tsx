@@ -1,15 +1,24 @@
-import { Avatar, Flex, Tooltip } from 'antd';
 import { memo } from 'react';
+import { Avatar, Flex, Tooltip } from 'antd';
+
 import { MessageData } from '@shared/types/trpc.ts';
-import '../index.css';
 import BubbleBlock from '@/components/chat/bubbles/BubbleBlock';
 
+import '../index.css';
+
+/**
+ * Props for a single message bubble in the chat history.
+ */
 interface Props {
     msg: MessageData;
     markdown: boolean;
     onClick?: () => void;
 }
 
+/**
+ * Render a message bubble with avatar, author name and content blocks.
+ * Supports rendering string or structured ContentBlocks via BubbleBlock.
+ */
 const MessageBubble = ({ msg, markdown, onClick }: Props) => {
     const renderAvatar = () => {
         return (
