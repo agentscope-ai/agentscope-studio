@@ -1,6 +1,6 @@
 import { CSSProperties, memo } from 'react';
-import SlotCounter from 'react-slot-counter';
 import { Flex } from 'antd';
+import SlotCounter from 'react-slot-counter';
 
 /**
  * Props for animated number counter.

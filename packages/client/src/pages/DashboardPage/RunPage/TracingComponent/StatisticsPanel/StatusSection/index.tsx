@@ -2,9 +2,9 @@ import { memo } from 'react';
 import { Col, Flex, Row } from 'antd';
 import { useTranslation } from 'react-i18next';
 
-import { SingleLineEllipsisStyle } from '../../../../../../styles.ts';
-import { Status } from '../../../../../../../../shared/src/types/messageForm';
-import NumberCounter from '../../../../../../components/numbers/NumberCounter';
+import { SingleLineEllipsisStyle } from '@/styles.ts';
+import { Status } from '@shared/types/messageForm';
+import NumberCounter from '@/components/numbers/NumberCounter';
 
 interface Props {
     status: string | undefined;

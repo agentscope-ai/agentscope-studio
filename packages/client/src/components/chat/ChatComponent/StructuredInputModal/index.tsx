@@ -3,7 +3,7 @@ import Form from '@rjsf/antd';
 import { Flex, Modal } from 'antd';
 import validator from '@rjsf/validator-ajv8';
 
-import { RemoveScrollBarStyle } from '../../../../styles.ts';
+import { RemoveScrollBarStyle } from '@/styles.ts';
 
 import './index.css';
 

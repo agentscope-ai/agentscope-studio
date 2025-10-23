@@ -1,7 +1,7 @@
 import { memo, ReactNode } from 'react';
 import { Col, Flex, Row } from 'antd';
 
-import NumberCounter from '../../../../components/numbers/NumberCounter';
+import NumberCounter from '@/components/numbers/NumberCounter';
 
 interface MetaDataSectionProps {
     title: string;

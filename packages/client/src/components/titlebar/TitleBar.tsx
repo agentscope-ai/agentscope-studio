@@ -1,6 +1,8 @@
 import { memo } from 'react';
 import { Flex, Layout } from 'antd';
+
 import LanguageSwitchButton from '../buttons/LanguageSwitchButton';
+
 import './TitleBar.css';
 
 interface Props {

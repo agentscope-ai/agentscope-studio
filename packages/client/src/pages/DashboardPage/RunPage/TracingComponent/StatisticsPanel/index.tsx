@@ -13,8 +13,8 @@ import {
 
 import StatusSection from './StatusSection';
 import { MetaDataSection } from '../ShareComponents.tsx';
-import { useRunRoom } from '../../../../../context/RunRoomContext.tsx';
-import { RemoveScrollBarStyle } from '../../../../../styles.ts';
+import { useRunRoom } from '@/context/RunRoomContext.tsx';
+import { RemoveScrollBarStyle } from '@/styles.ts';
 
 const StatisticsPanel = () => {
     const { runData, modelInvocationData } = useRunRoom();

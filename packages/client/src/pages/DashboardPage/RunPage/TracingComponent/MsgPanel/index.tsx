@@ -1,11 +1,11 @@
 import { Flex } from 'antd';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
-
-import { MessageData } from '../../../../../../../shared/src/types/trpc';
-import { RemoveScrollBarStyle } from '../../../../../styles.ts';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { ContentType } from '../../../../../../../shared/src/types/messageForm';
+
+import { MessageData } from '@shared/types/trpc';
+import { RemoveScrollBarStyle } from '@/styles.ts';
+import { ContentType } from '@shared/types/messageForm';
 import { MetaDataSection } from '../ShareComponents.tsx';
 import { EmptyMessagePage } from '../../../../DefaultPage';
 
