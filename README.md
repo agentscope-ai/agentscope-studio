@@ -48,11 +48,17 @@
 </p>
 
 AgentScope Studio is a powerful **local visualization toolkit** for the development of agent applications, supporting
-project **management**, **runtime visualization**, **tracing** and **agent evaluation**.
 
-Additionally, AgentScope Studio built-in a Copilot named **Friday** as 1) a development assistant, 2) playground for
-rapid secondary development, and 3) integration of advanced features in
-[AgentScope](https://github.com/agentscope-ai/agentscope).
+- project **management**, 
+- **chatbot-style** visualization, 
+- **tracing**, and 
+- **agent evaluation**.
+
+In addition, AgentScope Studio built-in a Copilot named **Friday** as 
+
+- a development assistant, 
+- playground for rapid secondary development, and 
+- integration of advanced features in [AgentScope](https://github.com/agentscope-ai/agentscope).
 
 <p align="center">
     <img
@@ -99,6 +105,8 @@ npm install -g @agentscope/studio  # or npm install @agentscope/studio
 as_studio
 ```
 
+> Note: For Windows users, it's recommended to use WSL (Windows Subsystem for Linux) to install and run AgentScope Studio.
+
 ## 🚀 QuickStart
 
 To connect AgentScope applications, you need to set the `studio_url` field in the `AgentScope` initializer as follows:
@@ -107,12 +115,20 @@ To connect AgentScope applications, you need to set the `studio_url` field in th
 import agentscope
 
 agentscope.init(
-    # ...
-    studio_url="http://localhost:3000"
+    studio_url="http://localhost:{port}"  # replace {port} with the actual port number
 )
 
 # ...
 ```
+
+## 📚 About AgentScope Friday
+
+Friday is implemented based on [AgentScope](https://github.com/agentscope-ai/agentscope).
+
+We are keeping integrating more advanced features into Friday, such as:
+- [x] Meta tool
+- [ ] Long-term memory
+- [ ] Dynamic Add MCP
 
 ## ⚖️ License
 

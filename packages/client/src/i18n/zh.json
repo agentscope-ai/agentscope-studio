@@ -5,6 +5,7 @@
         "compare": "比较",
         "delete": "删除",
         "focus-on-latest-run": "自动切换到最新运行",
+        "import-evaluation": "导入评测结果目录",
         "ok": "确认"
     },
     "chat": {
@@ -149,6 +150,7 @@
         "column": {
             "benchmark": "基准",
             "createdAt": "创建时间",
+            "evaluationDir": "评测目录",
             "finished": "已结束",
             "ground-truth": "正确答案",
             "id": "ID",
@@ -160,7 +162,8 @@
             "running": "运行中",
             "status": "状态",
             "time": "用时",
-            "total": "总计"
+            "total": "总计",
+            "totalRepeats": "重复次数"
         }
     },
     "tooltip": {
@@ -175,6 +178,7 @@
             "delete-selected-projects": "删除当前选中的 {{number}} 个项目",
             "delete-selected-projects-disable": "从表格中选择项目以删除",
             "focus-on-latest-run": "自动切换到最新运行实例",
+            "import-evaluation": "导入评测结果文件夹",
             "interrupt-reply": "中断回复",
             "send-message": "按 {{shortcutKeys}} 键发送消息",
             "send-message-disable": "当前输入请求为空",

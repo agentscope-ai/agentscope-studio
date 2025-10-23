@@ -16,7 +16,7 @@ import DashboardIcon from '../../assets/svgs/dashboard.svg?react';
 import TutorialIcon from '../../assets/svgs/tutorial.svg?react';
 import ApiIcon from '../../assets/svgs/api.svg?react';
 import CopilotIcon from '../../assets/svgs/copilot.svg?react';
-// import EvaluationIcon from '../../assets/svgs/evaluation.svg?react';
+import EvaluationIcon from '../../assets/svgs/evaluation.svg?react';
 import ContentPage from '../ContentPage';
 import EvalPage from '../EvalPage';
 import { OverviewRoomContextProvider } from '../../context/OverviewRoomContext.tsx';
@@ -186,12 +186,11 @@ const HomePage = () => {
                             label: collapse ? undefined : t('common.dashboard'),
                             icon: <DashboardIcon width={15} height={15} />,
                         },
-                        // TODO: build evaluation pages
-                        // {
-                        //     key: RouterPath.EVAL,
-                        //     label: collapse ? undefined : t('common.evaluation'),
-                        //     icon: <EvaluationIcon width={16} height={16} />
-                        // },
+                        {
+                            key: RouterPath.EVAL,
+                            label: collapse ? undefined : t('common.evaluation'),
+                            icon: <EvaluationIcon width={16} height={16} />
+                        },
                         {
                             key: '/apps',
                             label: t('common.apps'),
@@ -272,7 +271,10 @@ const HomePage = () => {
                     path={`${RouterPath.DASHBOARD}/*`}
                     element={<DashboardPage />}
                 />
-                <Route path={`${RouterPath.EVAL}/*`} element={<EvalPage />} />
+                <Route
+                    path={`${RouterPath.EVAL}/*`}
+                    element={<EvalPage />}
+                />
                 <Route
                     path={`${RouterPath.FRIDAY}/*`}
                     element={<FridayPage />}

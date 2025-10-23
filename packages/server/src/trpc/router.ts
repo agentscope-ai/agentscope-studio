@@ -1,5 +1,6 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';
+import fs from 'fs';
 import { InputRequestData, RunData } from '../../../shared/src';
 import {
     BlockType,
@@ -13,6 +14,10 @@ import { MessageDao } from '../dao/Message';
 import { SocketManager } from './socket';
 import { FridayConfigManager } from '../../../shared/src/config/friday';
 import { FridayAppMessageDao } from '../dao/FridayAppMessage';
+import { verifyMetadataByVersion } from '@/trpc/utils-evaluation';
+import path from 'path';
+import { EvaluationDao } from '@/dao/evaluation';
+import { Benchmark, EvaluationForm } from '../../../shared/src/types/evaluation';
 
 const textBlock = z.object({
     text: z.string(),
@@ -286,6 +291,108 @@ export const appRouter = t.router({
     clientGetFridayConfig: t.procedure.query(async () => {
         return FridayConfigManager.getInstance().getConfig();
     }),
+
+    importEvaluation: t.procedure
+        .input(
+            z.object(
+                {
+                    evaluationDir: z.string(),
+                }
+            )
+        )
+        .mutation(
+            async ({ input }) => {
+                try {
+                    // Check if the directory exists
+                    if (fs.existsSync(input.evaluationDir) && fs.lstatSync(input.evaluationDir).isDirectory()) {
+                        // Read the evaluation_meta.json file in the directory
+                        const metaFile = `${input.evaluationDir}/evaluation_meta.json`;
+                        if (fs.existsSync(metaFile)) {
+                            // Read and parse the meta.json file
+                            const metaData = JSON.parse(fs.readFileSync(metaFile, 'utf-8'));
+                            // First the metaData should be an object
+                            if (typeof metaData === 'object') {
+                                // verify the metadata by version
+                                verifyMetadataByVersion(metaData);
+
+                                // 从metadata的下划线转成驼峰，并且添加evaluationDir字段记录地址
+                                EvaluationDao.saveEvaluation(
+                                    {
+                                        id: `${metaData.benchmark.name}-${metaData.createdAt}`,
+                                        evaluationName: metaData.evaluation_name,
+                                        createdAt: metaData.created_at,
+                                        totalRepeats: metaData.total_repeats,
+                                        schemaVersion: metaData.schema_version,
+                                        evaluationDir: input.evaluationDir,
+                                        benchmark: {
+                                            name: metaData.benchmark.name,
+                                            description: metaData.benchmark.description,
+                                            totalTasks: metaData.benchmark.total_tasks,
+                                        } as Benchmark
+                                    } as EvaluationForm
+                                )
+                                    .then(
+                                        async () => {
+                                            // Broadcast the new evaluation to all clients
+                                            await SocketManager.broadcastEvaluationsToEvaluationRoom();
+                                        }
+                                    )
+                                return { success: true, message: "Import evaluation successfully!", data: metaData };
+                            } else {
+                                return { success: false, message: "evaluation_meta is not a valid json object" };
+                            }
+
+                        } else {
+                            return { success: false, message: `evaluation_meta.json file not found in ${input.evaluationDir}` };
+                        }
+                    } else {
+                        return { success: false, message: "Directory not found or is not a directory" };
+                    }
+                } catch (error) {
+                    console.error(error);
+                    return { success: false, message: `Error: ${error}` };
+                }
+            }
+        ),
+
+    listDir: t.procedure
+        .input(
+            z.object(
+                {path: z.string()}
+            )
+        )
+        .mutation(
+            async ({ input }) => {
+                // TODO: check if the request is from localhost
+
+                try {
+                    if (fs.existsSync(input.path)) {
+                        // 获取该目录下所有的文件和文件夹，只获取他们的名字，是否是文件夹，修改时间
+                        const fileNames = fs.readdirSync(input.path).map(
+                            fileName => {
+                                const filePath = path.join(input.path, fileName);
+                                const stats = fs.statSync(filePath);
+                                return {
+                                    name: fileName,
+                                    path: filePath,
+                                    isDirectory: stats.isDirectory(),
+                                };
+                            }
+                        );
+                        return {
+                            success: true,
+                            message: 'Directory listed successfully',
+                            data: fileNames,
+                        };
+                    }
+                    return { success: false, message: "Directory not exists" };
+
+                } catch (error) {
+                    console.error(error);
+                    return { success: false, message: `Error: ${error}` };
+                }
+            }
+        )
 });
 
 export type AppRouter = typeof appRouter;

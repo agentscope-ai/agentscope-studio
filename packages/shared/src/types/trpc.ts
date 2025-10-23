@@ -5,6 +5,7 @@ export const SocketRoomName = {
     ProjectListRoom: 'ProjectListRoom',
     OverviewRoom: 'OverviewRoom',
     FridayAppRoom: 'FridayAppRoom',
+    EvaluationRoom: 'EvaluationRoom',
 };
 
 export const SocketEvents = {
@@ -30,6 +31,8 @@ export const SocketEvents = {
         pushReplies: 'pushReplies',
         pushReplyingState: 'pushReplyingState',
         interruptReply: 'interrupt',
+        // Evaluation room
+        pushEvaluations: 'pushEvaluations',
         // To python:
         //  send the user input
         forwardUserInput: 'forwardUserInput',
@@ -40,6 +43,7 @@ export const SocketEvents = {
         joinProjectListRoom: 'joinProjectListRoom',
         joinProjectRoom: 'joinProjectRoom',
         joinRunRoom: 'joinRunRoom',
+        joinEvaluationRoom: 'joinEvaluationRoom',
         getFridayConfig: 'getFridayConfig',
         saveFridayConfig: 'saveFridayConfig',
         installFridayRequirements: 'installFridayRequirements',
@@ -51,6 +55,11 @@ export const SocketEvents = {
         interruptReplyOfFridayApp: 'interruptReplyOfFridayApp',
         deleteProjects: 'deleteProjects',
         deleteRuns: 'deleteRuns',
+        deleteBenchmark: 'deleteBenchmark',
+        deleteEvaluations: 'deleteEvaluations',
+        getEvaluationResult: 'getEvaluationResult',
+        getSolutionResult: 'getSolutionResult',
+        listDir: 'listDir',
     },
 };
 
@@ -176,81 +185,4 @@ export interface BackendResponse {
     success: boolean;
     message: string;
     data?: unknown;
-}
-
-interface Metric {
-    name: string;
-    type: 'discrete';
-    enum: (string | number)[];
-}
-
-export interface EvaluationMeta {
-    id: string;
-    benchmark: string;
-    createdAt: string;
-    time: string;
-    repeat: number;
-    dir: string;
-}
-
-export interface EvaluationResult {
-    results: Record<string, Record<string, unknown>>;
-}
-
-export interface DiscreteMetricRes {
-    name: string;
-    type: 'category' | 'number';
-    value: string | number;
-    enum: (string | number)[];
-    multipleOf?: number;
-}
-
-export interface ContinuousMetricRes {
-    name: string;
-    type: 'number';
-    minimum?: number;
-    maximum?: number;
-    multipleOf?: number;
-    exclusiveMinimum?: number;
-    exclusiveMaximum?: number;
-    description?: string;
-}
-
-export interface EvaluationMetaData {
-    id: string;
-    name: string;
-    status: string;
-    progress: number;
-    createdAt: string;
-    time: number;
-    metrics: Metric[];
-    repeat: number;
-    report_dir: string;
-}
-
-export interface Task {
-    id: string;
-    question: string;
-    ground_truth: string;
-    repeat: string;
-    status: Status;
-
-    answers: string | null;
-    result: Record<string, any>;
-}
-
-export interface EvaluationData {
-    // Metadata
-    id: string;
-    name: string;
-    status: string;
-    benchmark: string;
-    progress: number;
-    createdAt: string;
-    time: number;
-    metrics: Metric[];
-    repeat: number;
-    report_dir: string;
-    // Data
-    results: Record<string, unknown>;
 }

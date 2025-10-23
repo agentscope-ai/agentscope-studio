@@ -12,7 +12,7 @@ interface Props {
 }
 
 export function BenchmarkListRoomContextProvider({ children }: Props) {
-    const [benchmarkList] = useState<string[]>([]);
+    const [benchmarkList] = useState<string[]>(['GAIA', 'ACEBench evaluation 2 jitetfdfdfdf', 'GAIA2']);
 
     return (
         <BenchmarkListRoomContext.Provider value={{ benchmarkList }}>

@@ -2,62 +2,34 @@ import PageTitleSpan from '@/components/spans/PageTitleSpan.tsx';
 import { Input, TableColumnsType } from 'antd';
 import { SecondaryButton } from '@/components/buttons/ASButton';
 import AsTable from '@/components/tables/AsTable';
-import { EvaluationMetaData } from '@shared/types';
 import { Key, memo, MouseEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import DeleteIcon from '@/assets/svgs/delete.svg?react';
 import CompareIcon from '@/assets/svgs/compare.svg?react';
 import { useNavigate } from 'react-router-dom';
-import { useEvaluationListRoom } from '@/context/EvaluationListRoomContext.tsx';
-import {
-    DurationCell,
-    NumberCell,
-    ProgressCell,
-    StatusCell,
-    TextCell,
-} from '@/components/tables/utils.tsx';
+import { NumberCell, TextCell } from '@/components/tables/utils.tsx';
 import { EmptyPage } from '@/pages/DefaultPage';
+import { Benchmark, Evaluation } from '@shared/types/evaluation.ts';
 
-const Context = () => {
+
+interface Props {
+    benchmark: Benchmark | null;
+}
+
+
+const Context = ({benchmark}: Props) => {
     const { t } = useTranslation();
     const [searchText, setSearchText] = useState<string>('');
     const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
     const navigate = useNavigate();
-    const { loading, evaluationListData } = useEvaluationListRoom();
 
-    const columns: TableColumnsType<EvaluationMetaData> = [
+    const columns: TableColumnsType<Evaluation> = [
         {
-            key: 'id',
+            title: t('common.name'),
+            key: 'evaluationName',
             render: (value, record) => (
                 <TextCell
                     text={value}
-                    selected={selectedRowKeys.includes(record.id)}
-                />
-            ),
-        },
-        {
-            key: 'name',
-            render: (value, record) => (
-                <TextCell
-                    text={value}
-                    selected={selectedRowKeys.includes(record.id)}
-                />
-            ),
-        },
-        {
-            key: 'status',
-            render: (value, record) => (
-                <StatusCell
-                    status={value}
-                    selected={selectedRowKeys.includes(record.id)}
-                />
-            ),
-        },
-        {
-            key: 'progress',
-            render: (value, record) => (
-                <ProgressCell
-                    progress={value}
                     selected={selectedRowKeys.includes(record.id)}
                 />
             ),
@@ -72,16 +44,7 @@ const Context = () => {
             ),
         },
         {
-            key: 'time',
-            render: (value, record) => (
-                <DurationCell
-                    number={value}
-                    selected={selectedRowKeys.includes(record.id)}
-                />
-            ),
-        },
-        {
-            key: 'repeat',
+            key: 'totalRepeats',
             render: (value, record) => (
                 <NumberCell
                     number={value}
@@ -89,6 +52,15 @@ const Context = () => {
                 />
             ),
         },
+        {
+            key: 'evaluationDir',
+            render: (value, record) => (
+                <TextCell
+                    text={value}
+                    selected={selectedRowKeys.includes(record.id)}
+                />
+            )
+        }
     ];
 
     const rowSelection = {
@@ -98,9 +70,15 @@ const Context = () => {
         },
     };
 
+    const title = t('common.evaluation-history') + (benchmark ? ` of ${benchmark.name}` : '');
+
     return (
         <div className="flex flex-col flex-1 space-y-6 p-8 pl-12 pr-12">
-            <PageTitleSpan title={t('common.evaluation-history')} />
+
+            <PageTitleSpan
+                title={title}
+                description={benchmark ? benchmark.description : undefined}
+            />
 
             <div className="flex flex-col flex-1 space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-2">
@@ -144,7 +122,7 @@ const Context = () => {
                 </div>
 
                 <div className="flex-1">
-                    <AsTable<EvaluationMetaData>
+                    <AsTable<Evaluation>
                         locale={{
                             emptyText: (
                                 <EmptyPage
@@ -153,13 +131,12 @@ const Context = () => {
                                 />
                             ),
                         }}
-                        dataSource={evaluationListData}
-                        loading={loading}
-                        onRow={(record: EvaluationMetaData) => {
+                        dataSource={benchmark ? benchmark.evaluations : []}
+                        onRow={(record: Evaluation) => {
                             return {
                                 onClick: (event: MouseEvent) => {
-                                    if (event.type === 'click') {
-                                        navigate(`/eval/${record.id}`);
+                                    if (event.type === 'click' && benchmark) {
+                                        navigate(`/eval/${benchmark.name}/${record.id}`);
                                     }
                                 },
                                 style: {
@@ -173,9 +150,6 @@ const Context = () => {
                         rowSelection={rowSelection}
                         pagination={false}
                     />
-                    <div>df</div>
-                    <div>df</div>
-                    <div>df</div>
                 </div>
             </div>
         </div>

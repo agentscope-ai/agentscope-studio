@@ -7,9 +7,10 @@ import {
 } from 'react';
 import { useSocket } from './SocketContext';
 import {
+    BackendResponse,
     ProjectData,
     SocketEvents,
-    SocketRoomName,
+    SocketRoomName
 } from '../../../shared/src/types/trpc';
 import { useMessageApi } from './MessageApiContext.tsx';
 
@@ -69,7 +70,7 @@ export function ProjectListRoomContextProvider({ children }: Props) {
             socket.emit(
                 SocketEvents.client.deleteProjects,
                 projects,
-                (response: { success: boolean; message?: string }) => {
+                (response: BackendResponse) => {
                     if (response.success) {
                         messageApi.success('Projects deleted successfully.');
                     } else {

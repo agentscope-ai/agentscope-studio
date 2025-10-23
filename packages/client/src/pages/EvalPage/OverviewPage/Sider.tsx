@@ -1,27 +1,77 @@
-import { memo, useEffect, useState } from 'react';
+import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Input, List } from 'antd';
+import { Input, List, Modal } from 'antd';
 import { EmptyPage } from '@/pages/DefaultPage';
-import { useBenchmarkListRoom } from '@/context/BenchmarkListRoomContext.tsx';
+import { SecondaryButton } from '@/components/buttons/ASButton';
+import ImportIcon from '@/assets/svgs/import.svg?react';
+import LocalFilePicker from '@/components/picker/LocalFilePicker';
+import { useEvaluationRoom } from '@/context/EvaluationRoomContext.tsx';
+import { useMessageApi } from '@/context/MessageApiContext.tsx';
 
 interface Props {
     selectedBenchmark: string | null;
     onSelect: (benchmark: string) => void;
+    benchmarkNames: string[];
 }
 
-const Sider = ({ selectedBenchmark, onSelect }: Props) => {
+const Sider = ({ selectedBenchmark, onSelect, benchmarkNames }: Props) => {
     const { t } = useTranslation();
     const [searchText, setSearchText] = useState<string>('');
-    const { benchmarkList } = useBenchmarkListRoom();
+    const { importBenchmark } = useEvaluationRoom();
+    const [open, setOpen] = useState<boolean>(false);
+    const [importDir, setImportDir] = useState<string|null>(null);
+    const [importing, setImporting] = useState<boolean>(false);
+    const { messageApi } = useMessageApi();
 
-    useEffect(() => {
-        if (selectedBenchmark === null && benchmarkList.length > 0) {
-            onSelect(benchmarkList[0]);
+    const onImport = useCallback(async () => {
+        if (importDir === null) {
+            messageApi.error('Please select a directory first');
+
+        } else {
+            setImporting(true);
+            importBenchmark(importDir)
+                .then(
+                    (success) => {
+                        if (success) {
+                            setOpen(false);
+                        }
+                    }
+                )
+                .catch(
+                    (error) => messageApi.error(`Error: ${error.message}`)
+                )
+                .finally(
+                    () => {
+                        setImporting(false);
+                    }
+                )
         }
-    }, [benchmarkList, selectedBenchmark]);
+
+    }, [importDir]);
 
     return (
         <div className="flex flex-col min-w-[240px] h-full border-r border-r-border p-8 pl-4 pr-4">
+
+            <Modal
+                className={'h-[calc(100vh-200px)]'}
+                classNames={
+                    {
+                        content: 'max-h-[calc(100vh-200px)] overflow-hidden',
+                        body: 'max-h-[calc(100vh-40px-200px-76px)] h-[calc(100vh-40px-200px-76px)]',
+                    }
+                }
+                title={'Select a directory to import evaluation'}
+                open={open}
+                onOk={onImport}
+                loading={importing}
+                onCancel={() => setOpen(false)}
+            >
+                <LocalFilePicker
+                    type={'directory'}
+                    onSelect={setImportDir}
+                />
+            </Modal>
+
             <div className="font-bold text-xl truncate mb-6 h-fit">
                 {t('common.benchmark')}
             </div>
@@ -34,6 +84,17 @@ const Sider = ({ selectedBenchmark, onSelect }: Props) => {
                 placeholder={t('placeholder.search-benchmark')}
             />
 
+            <SecondaryButton
+                className={'mt-2'}
+                tooltip={t('tooltip.button.import-evaluation')}
+                icon={<ImportIcon width={13} height={13} className='mb-1' />}
+                variant={'outlined'}
+                placement={'right'}
+                onClick={() => setOpen(true)}
+            >
+                {t('action.import-evaluation')}
+            </SecondaryButton>
+
             <div className="flex-1 overflow-auto mt-4">
                 <List<string>
                     locale={{
@@ -42,11 +103,12 @@ const Sider = ({ selectedBenchmark, onSelect }: Props) => {
                         ),
                     }}
                     className="h-full"
-                    dataSource={benchmarkList.filter((benchmark) =>
-                        benchmark
-                            .toLowerCase()
-                            .includes(searchText.toLowerCase()),
-                    )}
+                    dataSource={
+                        benchmarkNames.filter(
+                        (name) =>
+                            name.toLowerCase().includes(searchText.toLowerCase()),
+                        )
+                    }
                     renderItem={(benchmark) => {
                         const isSelected = selectedBenchmark === benchmark;
                         return (

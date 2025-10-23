@@ -9,6 +9,8 @@ import { InputRequestDao } from './dao/InputRequest';
 import { ModelInvocationView } from './models/ModelInvocationView';
 import { FridayAppMessageTable, FridayAppReplyTable } from './models/FridayApp';
 import { FridayAppReplyView } from './models/FridayAppView';
+import { EvaluationTable } from '@/models/evaluation/evaluation';
+import { BenchmarkTable } from '@/models/evaluation/benchmark';
 
 export const initializeDatabase = async (databaseConfig: DataSourceOptions) => {
     try {
@@ -24,6 +26,8 @@ export const initializeDatabase = async (databaseConfig: DataSourceOptions) => {
                 FridayAppMessageTable,
                 FridayAppReplyTable,
                 FridayAppReplyView,
+                EvaluationTable,
+                BenchmarkTable,
             ],
             synchronize: true,
             logging: false,

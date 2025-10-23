@@ -7,6 +7,6 @@ export enum RouterPath {
     FRIDAY_SETTING = 'setting',
 
     EVAL = '/eval',
-    EVAL_EVALUATION = ':evalId',
-    EVAL_TASK = ':evalId/task/:taskId',
+    EVAL_EVALUATION = ':benchmarkName/:evalId',
+    EVAL_TASK = ':benchmarkName/:evalId/task/:taskId',
 }
