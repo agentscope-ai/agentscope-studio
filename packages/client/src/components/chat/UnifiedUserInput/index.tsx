@@ -8,6 +8,7 @@ import {
     UploadFile,
     type UploadProps,
 } from 'antd';
+
 import { PrimaryButton, SecondaryButton } from '@/components/buttons/ASButton';
 import AttachSvg from '@/assets/svgs/attachment.svg?react';
 import InterruptSvg from '@/assets/svgs/interrupt.svg?react';
@@ -21,6 +22,9 @@ import {
 } from '@shared/types';
 import { useMessageApi } from '@/context/MessageApiContext';
 
+/**
+ * Props for the unified user input component that handles text and file attachments.
+ */
 interface Props {
     placeholder: string;
     isReplying: boolean;
@@ -34,6 +38,9 @@ interface Props {
 
 type FileType = Parameters<GetProp<UploadProps, 'beforeUpload'>>[0];
 
+/**
+ * Convert file to base64 data URL for embedding in content blocks.
+ */
 const fileToBase64 = (file: FileType): Promise<string> =>
     new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -42,6 +49,10 @@ const fileToBase64 = (file: FileType): Promise<string> =>
         reader.onerror = (error) => reject(error);
     });
 
+/**
+ * Convert uploaded file to a content block (image/video/audio) with base64 source.
+ * Determines block type from MIME type rather than file extension.
+ */
 const fileToBlock = async (file: UploadFile) => {
     const base64Data = await fileToBase64(file.originFileObj as FileType);
     // const extension = file.name.split('.').at(-1);
@@ -60,6 +71,10 @@ const fileToBlock = async (file: UploadFile) => {
     } as ImageBlock | VideoBlock | AudioBlock;
 };
 
+/**
+ * Unified input component that combines text input with file attachments.
+ * Supports sending text and media files, with interrupt capability during replies.
+ */
 const UnifiedUserInput = ({
     placeholder,
     isReplying,
@@ -76,6 +91,7 @@ const UnifiedUserInput = ({
     const uploadRef = useRef<unknown>(null);
     const { messageApi } = useMessageApi();
 
+    // Dynamic send button icon: interrupt when replying, enter otherwise
     const sendIcon =
         isReplying && onInterrupt ? (
             <InterruptSvg width={13} height={13} />
@@ -83,16 +99,20 @@ const UnifiedUserInput = ({
             <EnterSvg width={15} height={15} />
         );
 
+    /**
+     * Handle send action: combine text and attachments into ContentBlocks.
+     * Validates that at least one content block exists before sending.
+     */
     const onSendClick = async () => {
         const content: ContentBlocks = [];
-        // text
+        // Add text content if present
         if (text.length !== 0) {
             content.push({
                 type: BlockType.TEXT,
                 text: text,
             });
         }
-        // attachments
+        // Add attachment content blocks
         await Promise.all(
             fileList.map(async (file) => {
                 const block = await fileToBlock(file);
@@ -100,14 +120,14 @@ const UnifiedUserInput = ({
             }),
         );
 
-        // check
+        // Validate content exists
         if (content.length === 0) {
             messageApi.error(t('error.empty-input'));
             return;
         }
 
         sendUserInput(content);
-        // clear
+        // Clear input state after sending
         setText('');
         setFileList([]);
     };
@@ -137,6 +157,7 @@ const UnifiedUserInput = ({
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={async (e) => {
+                    // Send on Cmd+Enter (Mac) or Ctrl+Enter
                     if (e.key === 'Enter' && e.metaKey) {
                         await onSendClick();
                     }

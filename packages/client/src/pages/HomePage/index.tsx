@@ -7,26 +7,28 @@ import {
     useLocation,
     useNavigate,
 } from 'react-router-dom';
-import DashboardPage from '../DashboardPage';
-import GitHubIcon from '../../assets/svgs/github.svg?react';
-import DiscordIcon from '../../assets/svgs/discord.svg?react';
-import DingTalkIcon from '../../assets/svgs/dingtalk.svg?react';
-import HomeIcon from '../../assets/svgs/home.svg?react';
-import DashboardIcon from '../../assets/svgs/dashboard.svg?react';
-import TutorialIcon from '../../assets/svgs/tutorial.svg?react';
-import ApiIcon from '../../assets/svgs/api.svg?react';
-import CopilotIcon from '../../assets/svgs/copilot.svg?react';
-// import EvaluationIcon from '../../assets/svgs/evaluation.svg?react';
-import ContentPage from '../ContentPage';
-import EvalPage from '../EvalPage';
-import { OverviewRoomContextProvider } from '../../context/OverviewRoomContext.tsx';
 import { useTranslation } from 'react-i18next';
+
+import EvalPage from '../EvalPage';
 import FridayPage from '../FridayPage';
+import ContentPage from '../ContentPage';
+import DashboardPage from '../DashboardPage';
+import ApiIcon from '@/assets/svgs/api.svg?react';
+import HomeIcon from '@/assets/svgs/home.svg?react';
+import GitHubIcon from '@/assets/svgs/github.svg?react';
+import DiscordIcon from '@/assets/svgs/discord.svg?react';
+import DingTalkIcon from '@/assets/svgs/dingtalk.svg?react';
+import DashboardIcon from '@/assets/svgs/dashboard.svg?react';
+import TutorialIcon from '@/assets/svgs/tutorial.svg?react';
+import CopilotIcon from '@/assets/svgs/copilot.svg?react';
+import LogoIcon from '@/assets/svgs/logo-font.svg?react';
+// import EvaluationIcon from '@/assets/svgs/evaluation.svg?react';
+
 import { RouterPath } from '../RouterPath.ts';
-import LogoIcon from '../../assets/svgs/logo-font.svg?react';
 import { SingleLineEllipsisStyle } from '@/styles.ts';
 import { checkForUpdates } from '@/utils/versionCheck.ts';
-import { useNotification } from '../../context/NotificationContext.tsx';
+import { useNotification } from '@/context/NotificationContext.tsx';
+import { OverviewRoomContextProvider } from '@/context/OverviewRoomContext.tsx';
 
 enum SiderWidth {
     COLLAPSE = 72,

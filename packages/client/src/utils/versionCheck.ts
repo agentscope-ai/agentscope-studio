@@ -1,15 +1,27 @@
 import { compare } from 'semver';
 import packageJson from '../../../../package.json';
 
+/**
+ * Minimal npm package info used for version comparison.
+ */
 interface NpmPackageInfo {
     'dist-tags': {
         latest: string;
     };
 }
 
+/**
+ * Check whether a newer version of the app is available on npm.
+ *
+ * - Fetches the latest dist-tag for `@agentscope/studio` from the npm registry
+ * - Compares it with the current bundled version
+ *
+ * @returns If newer: { hasUpdate: true, currentVersion, latestVersion };
+ *          otherwise: { hasUpdate: false, currentVersion, latestVersion };
+ *          on error: { hasUpdate: false, error: true }.
+ */
 export async function checkForUpdates() {
     try {
-        // 从 npm registry 获取包信息
         const response = await fetch(
             'https://registry.npmjs.org/@agentscope/studio',
         );

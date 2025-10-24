@@ -1,3 +1,4 @@
+
 import { EvaluationMetaData } from '@shared/types';
 import {
     createContext,
@@ -7,14 +8,24 @@ import {
     useState,
 } from 'react';
 
+/**
+ * Context value shape for the Evaluation list room.
+ */
 interface EvaluationListRoomContextType {
     evaluationListData: EvaluationMetaData[] | undefined;
     loading: boolean;
 }
 
+/**
+ * React context that provides evaluation list data and loading state.
+ */
 const EvaluationListRoomContext =
     createContext<EvaluationListRoomContextType | null>(null);
 
+/**
+ * Props for the EvaluationListRoomContextProvider. Supply the current
+ * benchmark (or null) and wrap any subtree that needs access to the data.
+ */
 interface Props {
     benchmark: string | null;
     children: ReactNode;
@@ -24,6 +35,8 @@ export function EvaluationListRoomContextProvider({
     benchmark,
     children,
 }: Props) {
+    // Demo placeholder data for evaluations. Replace with server-fetched data
+    // when API integration is available.
     const initialData: EvaluationMetaData[] = [
         {
             id: '1',
@@ -45,7 +58,6 @@ export function EvaluationListRoomContextProvider({
                 },
             ],
             repeat: 3,
-            results: {},
             report_dir: '',
         },
         {
@@ -68,7 +80,6 @@ export function EvaluationListRoomContextProvider({
                 },
             ],
             repeat: 3,
-            results: {},
             report_dir: '',
         },
         {
@@ -91,7 +102,6 @@ export function EvaluationListRoomContextProvider({
                 },
             ],
             repeat: 3,
-            results: {},
             report_dir: '',
         },
         {
@@ -114,18 +124,20 @@ export function EvaluationListRoomContextProvider({
                 },
             ],
             repeat: 3,
-            results: {},
             report_dir: '',
         },
     ];
 
+    // Holds the list of evaluations for the current benchmark context.
     const [evaluationListData] = useState<EvaluationMetaData[] | undefined>(
         initialData,
     );
+    // Loading flag for async fetching lifecycle.
     const [loading] = useState<boolean>(false);
 
     useEffect(() => {
-        // TODO:
+        // TODO: Fetch evaluation list for the given benchmark and update state.
+        // Keep memoized inputs minimal and handle cancellation on rapid changes.
     }, [benchmark]);
 
     return (
@@ -137,6 +149,10 @@ export function EvaluationListRoomContextProvider({
     );
 }
 
+/**
+ * Hook to access evaluation list data and loading state.
+ * Must be used within an EvaluationListRoomContextProvider.
+ */
 export function useEvaluationListRoom() {
     const context = useContext(EvaluationListRoomContext);
     if (!context) {

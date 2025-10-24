@@ -1,10 +1,12 @@
 import { memo, ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+
+import TraceTree from './TraceTree';
+import Latency from '@/pages/DashboardPage/RunPage/TracingComponent/TracePanel/latency.tsx';
+
 import { EmptyPage } from '@/pages/DefaultPage';
 import { useRunRoom } from '@/context/RunRoomContext.tsx';
-import TraceTree from './TraceTree';
-import { useTranslation } from 'react-i18next';
 import { MetaDataSection } from '@/pages/DashboardPage/RunPage/TracingComponent/ShareComponents.tsx';
-import Latency from '@/pages/DashboardPage/RunPage/TracingComponent/TracePanel/latency.tsx';
 
 export const TracePanel = () => {
     const { trace, spans } = useRunRoom();
@@ -19,6 +21,7 @@ export const TracePanel = () => {
     metadata[t('common.status')] = trace.status;
     metadata[t('common.span-number')] = spans.length;
     metadata[t('common.latency')] = <Latency latency={trace.latencyMs} />;
+
     return (
         <div className="flex flex-col max-w-full w-full h-full p-4 gap-4">
             <MetaDataSection title={t('common.metadata')} data={metadata} />

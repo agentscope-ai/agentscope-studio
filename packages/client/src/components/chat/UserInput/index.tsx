@@ -1,12 +1,17 @@
 import { Flex, Input } from 'antd';
-import { PrimaryButton, SecondaryButton } from '@/components/buttons/ASButton';
 import { memo, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import AttachmentIcon from '../../../assets/svgs/attachment.svg?react';
-import InterruptIcon from '../../../assets/svgs/interrupt.svg?react';
 import { isMacOs } from 'react-device-detect';
-import EnterIcon from '../../../assets/svgs/enter.svg?react';
 
+import AttachmentIcon from '@/assets/svgs/attachment.svg?react';
+import InterruptIcon from '@/assets/svgs/interrupt.svg?react';
+import EnterIcon from '@/assets/svgs/enter.svg?react';
+
+import { PrimaryButton, SecondaryButton } from '@/components/buttons/ASButton';
+
+/**
+ * Props for the user input component with text area and action buttons.
+ */
 interface Props {
     value: string;
     onChange: (value: string) => void;
@@ -17,6 +22,10 @@ interface Props {
     onAttachClick: () => void;
 }
 
+/**
+ * User input component with text area, attachment support, and send/interrupt functionality.
+ * Supports keyboard shortcuts and dynamic button states based on loading/disabled props.
+ */
 const UserInputComponent = ({
     value,
     onChange,
@@ -28,6 +37,7 @@ const UserInputComponent = ({
 }: Props) => {
     const { t } = useTranslation();
 
+    // Platform-specific keyboard shortcut display
     const shortcutKeys = isMacOs ? 'Command + Enter' : 'fCtrl + Enter';
 
     return (
@@ -44,7 +54,7 @@ const UserInputComponent = ({
             }}
         >
             {attachmentChildren}
-            <Flex vertical={true} gap={'small'}>
+            <Flex vertical={true} gap="small">
                 <Input.TextArea
                     variant={'borderless'}
                     placeholder={t('placeholder.input-friday-app', {
@@ -55,6 +65,7 @@ const UserInputComponent = ({
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     onKeyDown={(e) => {
+                        // Send on Cmd+Enter (Mac) or Ctrl+Enter
                         if (e.key === 'Enter' && e.metaKey) {
                             onSendClick();
                         }
@@ -86,6 +97,7 @@ const UserInputComponent = ({
                             <EnterIcon width={15} height={15} />
                         )
                     }
+                    // Disable when not loading and explicitly disabled
                     disabled={!sendBtnLoading && sendBtnDisabled}
                     onClick={onSendClick}
                 />

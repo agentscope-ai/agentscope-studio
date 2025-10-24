@@ -1,15 +1,17 @@
 import { memo, ReactNode, useEffect, useMemo, useState } from 'react';
 import { Button, Flex, Form, Input, Select, Spin, Switch } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import PageTitleSpan from '@/components/spans/PageTitleSpan.tsx';
+import { useTranslation } from 'react-i18next';
+
 import QwenLogo from '@/assets/svgs/qwen.svg?react';
 import OpenAILogo from '@/assets/svgs/logo-openai.svg?react';
 import OllamaLogo from '@/assets/svgs/logo-ollama.svg?react';
-import AnthropicLogo from '@/assets/svgs/logo-anthropic.svg?react';
 import CheckSvg from '@/assets/svgs/check-circle.svg?react';
 import GoogleLogo from '@/assets/svgs/logo-google.svg?react';
+import PageTitleSpan from '@/components/spans/PageTitleSpan.tsx';
+import AnthropicLogo from '@/assets/svgs/logo-anthropic.svg?react';
+
 import { FridayConfig } from '@shared/config/friday.ts';
-import { useTranslation } from 'react-i18next';
 import { useMessageApi } from '@/context/MessageApiContext.tsx';
 import { RouterPath } from '@/pages/RouterPath.ts';
 import { useFridaySettingRoom } from '@/context/FridaySettingRoomContext.tsx';
@@ -21,7 +23,7 @@ interface ModelOptionProps {
 
 const ModelOption = ({ logo, name }: ModelOptionProps) => {
     return (
-        <Flex gap={'small'} align={'center'}>
+        <Flex gap="small" align="center">
             {logo}
             {name}
         </Flex>
@@ -86,7 +88,7 @@ const SettingPage = () => {
     return (
         <div className="flex flex-col w-full h-full pl-12 pr-12 pt-8 pb-8 gap-13">
             <div className="flex flex-col w-full gap-2">
-                <PageTitleSpan title={'Friday'} />
+                <PageTitleSpan title="Friday" />
                 <Flex style={{ color: 'var(--muted-foreground)' }}>
                     {t('description.friday')}
                 </Flex>
@@ -95,7 +97,7 @@ const SettingPage = () => {
             <Spin spinning={loadingConfig}>
                 <Form
                     className="flex flex-col gap-y-6"
-                    variant={'filled'}
+                    variant="filled"
                     form={form}
                     initialValues={{
                         writePermission: false,
@@ -113,7 +115,7 @@ const SettingPage = () => {
                                 <CheckSvg
                                     width={14}
                                     height={14}
-                                    fill={'#04b304'}
+                                    fill="#04b304"
                                 />,
                             );
                             setBtnText(
@@ -137,7 +139,7 @@ const SettingPage = () => {
                                     <CheckSvg
                                         width={14}
                                         height={14}
-                                        fill={'#04b304'}
+                                        fill="#04b304"
                                     />,
                                 );
                                 setBtnText(
@@ -167,8 +169,8 @@ const SettingPage = () => {
                     {...formItemLayout}
                 >
                     <Form.Item
-                        name={'pythonEnv'}
-                        label={'Python Environment'}
+                        name="pythonEnv"
+                        label="Python Environment"
                         hasFeedback={true}
                         rules={[
                             {
@@ -188,11 +190,7 @@ const SettingPage = () => {
                     >
                         <Input placeholder={t('help.friday.python-env')} />
                     </Form.Item>
-                    <Form.Item
-                        name={'llmProvider'}
-                        label={'LLM Provider'}
-                        required
-                    >
+                    <Form.Item name="llmProvider" label="LLM Provider" required>
                         <Select
                             options={[
                                 {
@@ -204,7 +202,7 @@ const SettingPage = () => {
                                                     height={17}
                                                 />
                                             }
-                                            name={'DashScope'}
+                                            name="DashScope"
                                         />
                                     ),
                                     value: 'dashscope',
@@ -218,7 +216,7 @@ const SettingPage = () => {
                                                     height={17}
                                                 />
                                             }
-                                            name={'OpenAI'}
+                                            name="OpenAI"
                                         />
                                     ),
                                     value: 'openai',
@@ -232,7 +230,7 @@ const SettingPage = () => {
                                                     height={17}
                                                 />
                                             }
-                                            name={'Ollama'}
+                                            name="Ollama"
                                         />
                                     ),
                                     value: 'ollama',
@@ -246,7 +244,7 @@ const SettingPage = () => {
                                                     height={20}
                                                 />
                                             }
-                                            name={'Anthropic'}
+                                            name="Anthropic"
                                         />
                                     ),
                                     value: 'anthropic',
@@ -260,7 +258,7 @@ const SettingPage = () => {
                                                     height={17}
                                                 />
                                             }
-                                            name={'Google Gemini'}
+                                            name="Google Gemini"
                                         />
                                     ),
                                     value: 'gemini',
@@ -269,29 +267,29 @@ const SettingPage = () => {
                         />
                     </Form.Item>
                     <Form.Item
-                        name={'modelName'}
-                        label={'Model Name'}
+                        name="modelName"
+                        label="Model Name"
                         required
                         help={t('help.friday.model-name', { llmProvider })}
                     >
                         <Input />
                     </Form.Item>
                     <Form.Item
-                        name={'apiKey'}
-                        label={'API Key'}
+                        name="apiKey"
+                        label="API Key"
                         required={requiredAPIKey}
                         dependencies={['model']}
                         help={t('help.friday.api-key', { llmProvider })}
                     >
-                        <Input type={'password'} disabled={disabledAPIKey} />
+                        <Input type="password" disabled={disabledAPIKey} />
                     </Form.Item>
 
                     {!['dashscope', 'gemini', 'anthropic'].includes(
                         llmProvider,
                     ) && (
                         <Form.Item
-                            name={'baseUrl'}
-                            label={'Base URL'}
+                            name="baseUrl"
+                            label="Base URL"
                             help={t('help.friday.base-url')}
                         >
                             <Input
@@ -303,17 +301,17 @@ const SettingPage = () => {
                     )}
 
                     <Form.Item
-                        name={'writePermission'}
-                        label={'Write Permission'}
+                        name="writePermission"
+                        label="Write Permission"
                         help={t('help.friday.write-permission')}
                     >
-                        <Switch size={'small'} />
+                        <Switch size="small" />
                     </Form.Item>
 
                     <Form.Item {...tailFormItemLayout}>
                         <Button
-                            type={'primary'}
-                            htmlType={'submit'}
+                            type="primary"
+                            htmlType="submit"
                             loading={
                                 loading
                                     ? btnIcon

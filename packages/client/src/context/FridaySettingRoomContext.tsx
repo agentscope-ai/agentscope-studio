@@ -1,4 +1,3 @@
-import { ResponseBody, SocketEvents } from '@shared/types';
 import {
     createContext,
     ReactNode,
@@ -6,10 +5,11 @@ import {
     useEffect,
     useState,
 } from 'react';
-import { useSocket } from '@/context/SocketContext.tsx';
-import { FridayConfig } from '@shared/config/friday.ts';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { RouterPath } from '@/pages/RouterPath.ts';
+import { useSocket } from '@/context/SocketContext.tsx';
+import { FridayConfig } from '@shared/config/friday.ts';
+import { ResponseBody, SocketEvents } from '@shared/types';
 
 interface FridaySettingRoomContextType {
     saveFridayConfig: (config: FridayConfig) => Promise<ResponseBody>;
