@@ -18,7 +18,6 @@ type FileType = Parameters<GetProp<UploadProps, 'beforeUpload'>>[0];
 interface Props {
     replies: ReplyData[];
     isReplying: boolean;
-    moreReplies: boolean;
     onUserInput: (blocksInput: ContentBlocks) => void;
     onInterruptReply: () => void;
     onCleanHistory: () => void;
@@ -29,7 +28,6 @@ const AppChatComponent = ({
     replies,
     onUserInput,
     isReplying,
-    moreReplies,
     onInterruptReply,
     onCleanHistory,
     isCleaningHistory,
@@ -77,8 +75,8 @@ const AppChatComponent = ({
         }
     }, [attachment, inputText, isReplying]);
 
-    const [previewOpen, setPreviewOpen] = useState(false);
-    const [previewImage, setPreviewImage] = useState('');
+    const [setPreviewOpen] = useState(false);
+    const [setPreviewImage] = useState('');
     const [fileList, setFileList] = useState<UploadFile[]>([]);
     const getBase64 = (file: FileType): Promise<string> =>
         new Promise((resolve, reject) => {
@@ -102,7 +100,7 @@ const AppChatComponent = ({
     }) => {
         setFileList(newFileList);
     };
-    const uploadRef = useRef<any>(null);
+    const uploadRef = useRef<unknown>(null);
 
     return (
         <Flex

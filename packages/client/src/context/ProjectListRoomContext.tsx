@@ -12,7 +12,7 @@ import {
     SocketRoomName,
     TableData,
     ResponseBody,
-    TableRequestParams
+    TableRequestParams,
 } from '@shared/types';
 import { useMessageApi } from './MessageApiContext.tsx';
 import { trpcClient } from '@/api/trpc';
@@ -20,7 +20,9 @@ import { trpcClient } from '@/api/trpc';
 // 定义 Context 类型
 interface ProjectListRoomContextType {
     projects: ProjectData[];
-    getProjects: (params: TableRequestParams) => Promise<ResponseBody<TableData<ProjectData>>>;
+    getProjects: (
+        params: TableRequestParams,
+    ) => Promise<ResponseBody<TableData<ProjectData>>>;
     deleteProjects: (projects: string[]) => void;
 }
 
@@ -76,10 +78,10 @@ export function ProjectListRoomContextProvider({ children }: Props) {
     ): Promise<ResponseBody<TableData<ProjectData>>> => {
         try {
             // TODO: setProjects
-            const res = await trpcClient.getProjects.query(params);
-            return res.data.list
+            return await trpcClient.getProjects.query(params);
         } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
+            const errorMessage =
+                error instanceof Error ? error.message : String(error);
             messageApi.error(errorMessage);
             return {
                 success: false,
@@ -91,7 +93,7 @@ export function ProjectListRoomContextProvider({ children }: Props) {
     // TODO: 这里为测试代码！最终需要删除
     useEffect(() => {
         getProjects({
-            pagination: { page: 1, pageSize: 10 }
+            pagination: { page: 1, pageSize: 10 },
         }).then((res) => {
             console.log('Fetched projects:', res);
         });

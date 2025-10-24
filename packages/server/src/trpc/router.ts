@@ -322,29 +322,30 @@ export const appRouter = t.router({
      */
     getProjects: t.procedure
         .input(TableRequestParamsSchema)
-        .query(
-            async ({ input }) => {
-                try {
-                    const result = await RunDao.getProjects(
-                        input.pagination,
-                        input.sort,
-                        input.filters,
-                    );
+        .query(async ({ input }) => {
+            try {
+                const result = await RunDao.getProjects(
+                    input.pagination,
+                    input.sort,
+                    input.filters,
+                );
 
-                    return {
-                        success: true,
-                        message: 'Projects fetched successfully',
-                        data: result,
-                    } as ResponseBody<TableData<ProjectData>>;
-                } catch (error) {
-                    console.error('Error fetching projects:', error);
-                    return {
-                        success: false,
-                        message: error instanceof Error ? error.message : 'Unknown error',
-                    } as ResponseBody<TableData<ProjectData>>;
-                }
+                return {
+                    success: true,
+                    message: 'Projects fetched successfully',
+                    data: result,
+                } as ResponseBody<TableData<ProjectData>>;
+            } catch (error) {
+                console.error('Error fetching projects:', error);
+                return {
+                    success: false,
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : 'Unknown error',
+                } as ResponseBody<TableData<ProjectData>>;
             }
-        ),
+        }),
 });
 
 export type AppRouter = typeof appRouter;

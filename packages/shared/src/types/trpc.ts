@@ -2,30 +2,23 @@ import { ContentBlocks, ContentType, Status } from './messageForm';
 import { Usage } from './usage';
 import { z } from 'zod';
 
-
 /**
  * Zod schema for table request parameters.
  * This schema validates the structure of the request parameters used for table-related operations.
  */
-export const TableRequestParamsSchema = z.object(
-    {
-        pagination: z.object(
-            {
-                page: z.number().int().min(1),
-                pageSize: z.number().int().min(10),
-            }
-        ),
-        sort: z
-            .object(
-                {
-                field: z.string(),
-                order: z.enum(['asc', 'desc']),
-            }
-        )
+export const TableRequestParamsSchema = z.object({
+    pagination: z.object({
+        page: z.number().int().min(1),
+        pageSize: z.number().int().min(10),
+    }),
+    sort: z
+        .object({
+            field: z.string(),
+            order: z.enum(['asc', 'desc']),
+        })
         .optional(),
-        filters: z.record(z.unknown()).optional(),
-    }
-);
+    filters: z.record(z.unknown()).optional(),
+});
 export type TableRequestParams = z.infer<typeof TableRequestParamsSchema>;
 
 export const SocketRoomName = {

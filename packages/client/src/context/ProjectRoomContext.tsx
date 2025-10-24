@@ -6,12 +6,7 @@ import {
     useState,
 } from 'react';
 import { useSocket } from './SocketContext';
-import {
-    SocketEvents,
-    RunData,
-    ResponseBody,
-
-} from '@shared/types';
+import { SocketEvents, RunData, ResponseBody } from '@shared/types';
 import { useMessageApi } from './MessageApiContext.tsx';
 
 // 定义 Context 类型

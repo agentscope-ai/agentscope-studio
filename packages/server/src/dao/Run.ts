@@ -84,12 +84,12 @@ export class RunDao {
             pageSize: number;
         },
         sort?: {
-            field: string,
-            order: 'asc' | 'desc',
+            field: string;
+            order: 'asc' | 'desc';
         },
         filters?: {
             [key: string]: unknown;
-        }
+        },
     ): Promise<TableData<ProjectData>> {
         try {
             // Build base query with aggregations using parameterized queries
@@ -118,14 +118,19 @@ export class RunDao {
 
             // Apply filters using HAVING (since we're using GROUP BY)
             if (filters?.project) {
-                queryBuilder = queryBuilder.having('run.project LIKE :projectFilter', {
-                    projectFilter: `%${filters.project}%`,
-                });
+                queryBuilder = queryBuilder.having(
+                    'run.project LIKE :projectFilter',
+                    {
+                        projectFilter: `%${filters.project}%`,
+                    },
+                );
             }
 
             // Apply sorting
             const sortField = sort?.field || 'createdAt';
-            const sortOrder = (sort?.order?.toUpperCase() || 'DESC') as 'ASC' | 'DESC';
+            const sortOrder = (sort?.order?.toUpperCase() || 'DESC') as
+                | 'ASC'
+                | 'DESC';
 
             switch (sortField) {
                 case 'project':

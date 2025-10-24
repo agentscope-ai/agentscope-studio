@@ -1,4 +1,7 @@
-import { FridayAppMessageTable, FridayAppReplyTable } from '../models/FridayApp';
+import {
+    FridayAppMessageTable,
+    FridayAppReplyTable,
+} from '../models/FridayApp';
 import { ContentBlocks, ReplyData } from '../../../shared/src';
 import { FridayAppReplyView } from '../models/FridayAppView';
 import { LessThan } from 'typeorm';
@@ -58,6 +61,7 @@ export class FridayAppMessageDao {
                 replyId: replyId,
                 name: msg.name,
                 role: msg.role,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 content: msg.content as any,
                 timestamp: msg.timestamp,
             })

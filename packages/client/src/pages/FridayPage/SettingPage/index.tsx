@@ -286,16 +286,22 @@ const SettingPage = () => {
                         <Input type={'password'} disabled={disabledAPIKey} />
                     </Form.Item>
 
-                    {!["dashscope","gemini","anthropic"].includes(llmProvider) && (
+                    {!['dashscope', 'gemini', 'anthropic'].includes(
+                        llmProvider,
+                    ) && (
                         <Form.Item
                             name={'baseUrl'}
                             label={'Base URL'}
                             help={t('help.friday.base-url')}
                         >
-                            <Input placeholder={t('help.friday.base-url-placeholder')} />
+                            <Input
+                                placeholder={t(
+                                    'help.friday.base-url-placeholder',
+                                )}
+                            />
                         </Form.Item>
                     )}
-                    
+
                     <Form.Item
                         name={'writePermission'}
                         label={'Write Permission'}

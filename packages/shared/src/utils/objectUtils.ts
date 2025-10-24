@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export function getNestedValue(
     obj: Record<string, any> | undefined,
     path: string | string[],
@@ -50,12 +51,11 @@ export function parseByMimeType(value: string, mime_type: string | undefined) {
     try {
         switch (mime_type) {
             case 'application/json':
-                const jsonData = JSON.parse(value);
-                return jsonData;
+                return JSON.parse(value);
             default:
                 return value;
         }
-    } catch (error) {
+    } catch {
         return value;
     }
 }

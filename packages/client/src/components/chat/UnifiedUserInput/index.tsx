@@ -73,7 +73,7 @@ const UnifiedUserInput = ({
     const { t } = useTranslation();
     const [fileList, setFileList] = useState<UploadFile[]>([]);
     const [text, setText] = useState<string>('');
-    const uploadRef = useRef<any>(null);
+    const uploadRef = useRef<unknown>(null);
     const { messageApi } = useMessageApi();
 
     const sendIcon =
