@@ -10,16 +10,21 @@ import {
     ProjectData,
     SocketEvents,
     SocketRoomName,
-} from '../../../shared/src/types/trpc';
+    TableData,
+    ResponseBody,
+    TableRequestParams
+} from '@shared/types';
 import { useMessageApi } from './MessageApiContext.tsx';
+import { trpcClient } from '@/api/trpc';
 
 // 定义 Context 类型
 interface ProjectListRoomContextType {
     projects: ProjectData[];
+    getProjects: (params: TableRequestParams) => Promise<ResponseBody<TableData<ProjectData>>>;
     deleteProjects: (projects: string[]) => void;
 }
 
-// 创建 Context
+// Create context
 const ProjectListRoomContext = createContext<ProjectListRoomContextType | null>(
     null,
 );
@@ -60,6 +65,38 @@ export function ProjectListRoomContextProvider({ children }: Props) {
         };
     }, [socket]);
 
+    /**
+     * Get paginated projects with optional sorting and filtering
+     *
+     * @param params - Parameters for pagination, sorting, and filtering
+     * @returns Promise resolving to ResponseBody containing TableData with projects
+     */
+    const getProjects = async (
+        params: TableRequestParams,
+    ): Promise<ResponseBody<TableData<ProjectData>>> => {
+        try {
+            // TODO: setProjects
+            const res = await trpcClient.getProjects.query(params);
+            return res.data.list
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            messageApi.error(errorMessage);
+            return {
+                success: false,
+                message: errorMessage,
+            } as ResponseBody<TableData<ProjectData>>;
+        }
+    };
+
+    // TODO: 这里为测试代码！最终需要删除
+    useEffect(() => {
+        getProjects({
+            pagination: { page: 1, pageSize: 10 }
+        }).then((res) => {
+            console.log('Fetched projects:', res);
+        });
+    }, []);
+
     const deleteProjects = (projects: string[]) => {
         if (!socket) {
             messageApi.error(
@@ -83,7 +120,9 @@ export function ProjectListRoomContextProvider({ children }: Props) {
     };
 
     return (
-        <ProjectListRoomContext.Provider value={{ projects, deleteProjects }}>
+        <ProjectListRoomContext.Provider
+            value={{ projects, getProjects, deleteProjects }}
+        >
             {children}
         </ProjectListRoomContext.Provider>
     );
