@@ -13,7 +13,6 @@ const ChatPage = () => {
         replies,
         isReplying,
         handleUserInput,
-        moreReplies,
         interruptReply,
         cleaningHistory,
         cleanCurrentHistory,
@@ -25,7 +24,6 @@ const ChatPage = () => {
             <AppChatComponent
                 replies={replies}
                 isReplying={isReplying}
-                moreReplies={moreReplies}
                 onUserInput={(contentBlocks) => {
                     handleUserInput('user', 'user', contentBlocks);
                 }}

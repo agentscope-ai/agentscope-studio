@@ -1,0 +1,44 @@
+name: Pre-commit
+
+on: [push, pull_request]
+
+jobs:
+    run:
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: true
+            matrix:
+                os: [ubuntu-latest]
+        env:
+            OS: ${{ matrix.os }}
+            NODE_VERSION: '18'
+        steps:
+            - uses: actions/checkout@master
+
+            - name: Setup Node.js
+              uses: actions/setup-node@master
+              with:
+                  node-version: '18'
+
+            - name: Install dependencies
+              run: |
+                  npm ci
+
+            - name: Format check starts
+              run: |
+                  npm run format > format.log 2>&1 || true
+                  cat format.log
+                  if ! npm run format; then
+                    echo -e "\e[41m  [**FAIL**] Format check failed! Please run 'npm run format' locally and fix the issues. \e[0m"
+                    exit 1
+                  fi
+
+            - name: Check for uncommitted changes
+              run: |
+                  if [[ -n $(git status --porcelain) ]]; then
+                    echo -e "\e[41m  [**FAIL**] Code formatting produced changes. Please run 'npm run format' locally and commit the changes. \e[0m"
+                    git status --short
+                    git diff
+                    exit 1
+                  fi
+                  echo -e "\e[46m  ********************************Passed******************************** \e[0m"
