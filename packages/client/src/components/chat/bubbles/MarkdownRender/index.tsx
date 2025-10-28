@@ -1,15 +1,13 @@
-import { Button, Flex } from 'antd';
 import { memo, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { materialDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-
-import CopyIcon from '@/assets/svgs/copy.svg?react';
-import CheckIcon from '@/assets/svgs/check.svg?react';
-
+import { CheckIcon, CopyIcon } from 'lucide-react';
 import { copyToClipboard } from '@/utils/common.ts';
 
 import './index.css';
+import remarkGfm from 'remark-gfm';
+import { Button } from '@/components/ui/button.tsx';
 interface Props {
     text: string;
 }
@@ -23,7 +21,96 @@ interface Props {
 const MarkdownRender = ({ text }: Props) => {
     return (
         <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
             components={{
+                p: ({ ...props }) => (
+                    <p
+                        className="leading-7 [&:not(:first-child)]:mt-6"
+                        {...props}
+                    />
+                ),
+                h1: ({ ...props }) => (
+                    <h1
+                        className="scroll-m-20 text-4xl font-extrabold tracking-tight text-balance"
+                        {...props}
+                    />
+                ),
+                h2: ({ ...props }) => (
+                    <h2
+                        className="croll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0"
+                        {...props}
+                    />
+                ),
+                h3: ({ ...props }) => (
+                    <h3
+                        className="scroll-m-20 text-2xl font-semibold tracking-tight"
+                        {...props}
+                    />
+                ),
+                h4: ({ ...props }) => (
+                    <h4
+                        className="scroll-m-20 text-xl font-semibold tracking-tight"
+                        {...props}
+                    />
+                ),
+                h5: ({ ...props }) => (
+                    <h5
+                        className="scroll-m-20 text-sm font-semibold tracking-tight"
+                        {...props}
+                    />
+                ),
+                h6: ({ ...props }) => (
+                    <h6
+                        className="scroll-m-20 text-sm font-semibold tracking-tight"
+                        {...props}
+                    />
+                ),
+                ul: ({ className, ...props }) => {
+                    const classes = `list-disc my-3 ml-6 [&>li]:mt-2 ${className || ''}`;
+                    return <ul className={classes} {...props} />;
+                },
+                ol: ({ className, ...props }) => {
+                    const classes = `list-decimal my-3 ml-6 [&>li]:mt-2 ${className || ''}`;
+                    return <ol className={classes} {...props} />;
+                },
+                blockquote: ({ ...props }) => (
+                    <blockquote
+                        className="mt-6 border-l-2 pl-6 italic"
+                        {...props}
+                    />
+                ),
+                table: ({ ...props }) => (
+                    <table
+                        className="table-auto w-full my-2 border-collapse"
+                        {...props}
+                    />
+                ),
+                thead: ({ ...props }) => (
+                    <thead className="bg-gray-100" {...props} />
+                ),
+                tbody: ({ ...props }) => <tbody {...props} />,
+                tr: ({ ...props }) => <tr {...props} />,
+                th: ({ ...props }) => (
+                    <th className="px-3 py-2 border" {...props} />
+                ),
+                td: ({ ...props }) => (
+                    <td className="px-3 py-2 border" {...props} />
+                ),
+                img: ({ ...props }) => (
+                    <img className="max-w-full rounded my-2" {...props} />
+                ),
+                hr: ({ ...props }) => (
+                    <hr className="border-t my-4" {...props} />
+                ),
+                input: ({ ...props }) => (
+                    // used by remark-gfm task lists; keep inputs disabled to avoid interaction in chat UI
+                    <input
+                        type="checkbox"
+                        disabled
+                        className="mr-2 align-middle"
+                        {...props}
+                    />
+                ),
                 a: function ({ ...props }) {
                     return (
                         <a
@@ -35,50 +122,48 @@ const MarkdownRender = ({ text }: Props) => {
                         />
                     );
                 },
-                code: function ({ className, children, ...props }) {
-                    if (className === undefined) {
+                code: function ({ className, children, node, ...props }) {
+                    // First check if it's a code block with three backticks ```
+                    if (
+                        node &&
+                        node.position &&
+                        node.position.end.line > node.position.start.line
+                    ) {
+                        const match = /language-(\w+)/.exec(className || '');
+                        const language = match ? match[1] : 'text';
+
+                        return (
+                            <div className="flex flex-col w-full max-w-full mt-1 mb-1">
+                                <CodeHeader
+                                    onCopyBtnClick={() =>
+                                        copyToClipboard(String(children))
+                                    }
+                                    language={language}
+                                />
+
+                                <SyntaxHighlighter
+                                    language={language}
+                                    style={materialDark}
+                                    showLineNumbers={true}
+                                    customStyle={{
+                                        margin: 0,
+                                        borderRadius: '0 0 8px 8px',
+                                    }}
+                                >
+                                    {String(children)}
+                                </SyntaxHighlighter>
+                            </div>
+                        );
+                    } else {
                         return (
                             <code
-                                style={{
-                                    display: 'inline',
-                                    whiteSpace: 'pre-wrap',
-                                    wordBreak: 'break-all',
-                                }}
+                                className="inline whitespace-pre-wrap break-all bg-primary-300 px-[0.3rem] py-[0.2rem] font-mono rounded"
                                 {...props}
                             >
                                 {children}
                             </code>
                         );
                     }
-
-                    const match = /language-(\w+)/.exec(className || '');
-                    const language = match ? match[1] : 'text';
-
-                    return (
-                        <Flex
-                            vertical={true}
-                            style={{ margin: '6px 0', width: '100%' }}
-                        >
-                            <CodeHeader
-                                onCopyBtnClick={() =>
-                                    copyToClipboard(String(children))
-                                }
-                                language={language}
-                            />
-
-                            <SyntaxHighlighter
-                                language={language}
-                                style={materialDark}
-                                showLineNumbers={true}
-                                customStyle={{
-                                    margin: 0,
-                                    borderRadius: '0 0 8px 8px',
-                                }}
-                            >
-                                {String(children)}
-                            </SyntaxHighlighter>
-                        </Flex>
-                    );
                 },
             }}
         >
@@ -104,32 +189,11 @@ const CodeHeader = ({ language, onCopyBtnClick }: CodeHeaderProps) => {
     );
 
     return (
-        <Flex
-            justify="space-between"
-            align="center"
-            style={{
-                padding: '8px 16px',
-                background: 'var(--zinc-400)',
-                borderRadius: '8px 8px 0 0',
-                height: 30,
-                color: 'var(--white)',
-            }}
-        >
-            <span>{language.toUpperCase()}</span>
+        <div className="flex flex-row justify-between items-center px-4 bg-primary-400 rounded-t-lg h-8 text-white">
+            <span className="truncate">{language.toUpperCase()}</span>
             <Button
-                type="text"
-                size={'small'}
-                icon={
-                    copyState === 'success' ? (
-                        <CheckIcon fill={'white'} width={13} height={13} />
-                    ) : copyState === 'wait' ? (
-                        <CopyIcon
-                            width={13}
-                            height={13}
-                            style={{ color: 'var(--white)' }}
-                        />
-                    ) : null
-                }
+                className="text-white hover:bg-primary-300 h-7 w-7"
+                variant="ghost"
                 onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
@@ -151,7 +215,13 @@ const CodeHeader = ({ language, onCopyBtnClick }: CodeHeaderProps) => {
                             });
                     }
                 }}
-            />
-        </Flex>
+            >
+                {copyState === 'success' ? (
+                    <CheckIcon className="text-white" />
+                ) : copyState === 'wait' ? (
+                    <CopyIcon className="text-white" />
+                ) : null}
+            </Button>
+        </div>
     );
 };

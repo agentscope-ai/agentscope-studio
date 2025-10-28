@@ -1,5 +1,15 @@
 import { ContentBlocks, ContentType, Status } from './messageForm';
 import { Usage } from './usage';
+import { z } from 'zod';
+
+export const RegisterReplyParamsSchema = z.object({
+    runId: z.string(),
+    replyId: z.string(),
+    replyRole: z.string(),
+    replyName: z.string(),
+    createdAt: z.string(),
+});
+export type RegisterReplyParams = z.infer<typeof RegisterReplyParamsSchema>;
 
 export const SocketRoomName = {
     ProjectListRoom: 'ProjectListRoom',
@@ -92,6 +102,25 @@ export interface MessageData {
     metadata: object;
     timestamp: string;
 }
+
+export interface Reply {
+    replyId: string;
+    replyName: string;
+    replyRole: string;
+    createdAt: string;
+    finishedAt?: string;
+    messages: Message[];
+}
+
+export interface Message {
+    id: string;
+    name: string;
+    role: string;
+    content: ContentType;
+    timestamp: string;
+    metadata: object;
+}
+
 
 export interface ReplyData {
     id: string;

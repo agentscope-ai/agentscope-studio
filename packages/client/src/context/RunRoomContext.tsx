@@ -9,10 +9,9 @@ import { useSocket } from './SocketContext';
 import {
     BackendResponse,
     InputRequestData,
-    MessageData,
-    ModelInvocationData,
+    ModelInvocationData, Reply,
     RunData,
-    SocketEvents,
+    SocketEvents
 } from '../../../shared/src/types/trpc';
 
 import {
@@ -27,7 +26,7 @@ import { useMessageApi } from './MessageApiContext.tsx';
 import { getTimeDifference } from '../../../shared/src/utils/timeUtils';
 
 interface RunRoomContextType {
-    messages: MessageData[];
+    replies: Reply[];
     trace: TraceData | null;
     spans: SpanData[];
     inputRequests: InputRequestData[];
@@ -75,7 +74,7 @@ export function RunRoomContextProvider({ children }: Props) {
 
     const socket = useSocket();
     const roomName = `run-${runId}`;
-    const [messages, setMessages] = useState<MessageData[]>([]);
+    const [replies, setReplies] = useState<Reply[]>([]);
 
     const [spans, setSpans] = useState<SpanData[]>([]);
     const [trace, setTrace] = useState<TraceData | null>(null);
@@ -100,6 +99,7 @@ export function RunRoomContextProvider({ children }: Props) {
             }
         }
     }, [spans]);
+
     useEffect(() => {
         if (!socket) {
             // TODO: 通过message提示用户
@@ -108,7 +108,7 @@ export function RunRoomContextProvider({ children }: Props) {
 
         // Clear the data first
         setInputRequests([]);
-        setMessages([]);
+        setReplies([]);
         setSpans([]);
         setRunData(null);
         setModelInvocationData(null);
@@ -126,21 +126,8 @@ export function RunRoomContextProvider({ children }: Props) {
         // New messages
         socket.on(
             SocketEvents.server.pushMessages,
-            (newMessages: MessageData[]) => {
-                setMessages((prevMessages) => {
-                    const updatedMessages = [...prevMessages];
-                    newMessages.forEach((newMessage) => {
-                        const index = updatedMessages.findIndex(
-                            (message) => message.id === newMessage.id,
-                        );
-                        if (index === -1) {
-                            updatedMessages.push(newMessage);
-                        } else {
-                            updatedMessages[index] = newMessage;
-                        }
-                    });
-                    return updatedMessages;
-                });
+            (newReplies: Reply[]) => {
+                setReplies(newReplies);
             },
         );
 
@@ -238,7 +225,7 @@ export function RunRoomContextProvider({ children }: Props) {
         <RunRoomContext.Provider
             value={{
                 runId,
-                messages,
+                replies,
                 trace,
                 spans,
                 inputRequests,

@@ -10,6 +10,7 @@
     "chat": {
         "title-attachment": "总计 {{length}} 个 URL 附件",
         "title-attachments": "总计 {{length}} 个 URL 附件",
+        "title-hint-message": "提示消息",
         "title-using-tool": "调用工具 ",
         "title-time-total": "总耗时: {{totalTime}}s",
         "title-tool-result": "运行结果"
@@ -32,6 +33,7 @@
         "docs": "文档",
         "evaluation": "评测分析",
         "evaluation-history": "评测历史",
+        "hint": "提示",
         "home": "主页",
         "input": "输入",
         "input-tokens": "输入 Token 数",
@@ -40,6 +42,7 @@
         "llm-invocation": "模型调用",
         "llm-invocations": "模型调用",
         "message": "消息",
+        "messages": "消息",
         "metadata": "元数据",
         "model-category": "模型种类",
         "name": "名称",
@@ -103,6 +106,7 @@
     },
     "hint": {
         "empty-trace": "数据为空",
+        "messages": "AgentScope 一次回复（reply）可能包含多个消息，每条消息有对应的 role 和 name 字段",
         "select-run": "点击运行实例以查看详细数据",
         "select-message": "点击消息以查看详细数据",
         "select-trace": "点击运行实例以查看跟踪数据"
@@ -182,6 +186,9 @@
         },
         "chart": {
             "invocation": "调用次数"
+        },
+        "header": {
+            "hint-message": "以用户口吻表达的消息，用于引导智能体的行为"
         },
         "switch": {
             "display-raw-data": "显式原始数据"

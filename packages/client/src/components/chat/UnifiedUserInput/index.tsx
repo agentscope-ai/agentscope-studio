@@ -10,7 +10,7 @@ import {
 } from 'antd';
 
 import { PrimaryButton, SecondaryButton } from '@/components/buttons/ASButton';
-import AttachSvg from '@/assets/svgs/attachment.svg?react';
+import AttachSvg from '@/assets/svgs/attach.svg?react';
 import InterruptSvg from '@/assets/svgs/interrupt.svg?react';
 import EnterSvg from '@/assets/svgs/enter.svg?react';
 import {

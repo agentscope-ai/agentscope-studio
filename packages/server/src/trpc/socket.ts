@@ -159,9 +159,22 @@ export class SocketManager {
                                     SocketEvents.server.pushInputRequests,
                                     data.inputRequests,
                                 );
+                                // 对data.replies.messages按时间排序
+                                data.replies.forEach(
+                                    reply => {
+                                        reply.messages.sort(
+                                            (a, b) => {
+                                                return a.timestamp.localeCompare(
+                                                    b.timestamp,
+                                                );
+                                            }
+                                        )
+                                    }
+                                );
+
                                 socket.emit(
                                     SocketEvents.server.pushMessages,
-                                    data.messages,
+                                    data.replies,
                                 );
                                 socket.emit(
                                     SocketEvents.server.pushSpans,

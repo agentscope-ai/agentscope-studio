@@ -10,6 +10,7 @@
     "chat": {
         "title-attachment": "Total {{length}} URL is attached",
         "title-attachments": "Total {{length}} URLs are attached",
+        "title-hint-message": "Hint message",
         "title-using-tool": "Using tool ",
         "title-time-total": "Total time: {{totalTime}}s",
         "title-tool-result": "Tool result of"
@@ -32,6 +33,7 @@
         "docs": "Docs",
         "evaluation": "Evaluation",
         "evaluation-history": "Evaluation History",
+        "hint": "Hint",
         "home": "Home",
         "id": "ID",
         "input": "Input",
@@ -40,6 +42,7 @@
         "llm-invocation": "Invocation",
         "llm-invocations": "Invocations",
         "message": "Message",
+        "messages": "Messages",
         "metadata": "Metadata",
         "model-category": "Model Category",
         "name": "Name",
@@ -103,6 +106,7 @@
     },
     "hint": {
         "empty-trace": "No data available",
+        "messages": "In AgentScope, a reply consists of multiple messages with different roles and names",
         "select-run": "Click on a run to view details",
         "select-message": "Click on a message to view details",
         "select-trace": "Click on a run to view trace data"
@@ -190,6 +194,9 @@
         },
         "chart": {
             "invocation": "# of invocation"
+        },
+        "header": {
+            "hint-message": "A message that speaks in the user's voice to guide how the agent should behave"
         },
         "switch": {
             "display-raw-data": "Display raw data"

@@ -3,7 +3,7 @@ import { memo, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { isMacOs } from 'react-device-detect';
 
-import AttachmentIcon from '@/assets/svgs/attachment.svg?react';
+import AttachmentIcon from '@/assets/svgs/attach.svg?react';
 import InterruptIcon from '@/assets/svgs/interrupt.svg?react';
 import EnterIcon from '@/assets/svgs/enter.svg?react';
 

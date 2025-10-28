@@ -1,6 +1,10 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { InputRequestData, RunData } from '../../../shared/src';
+import {
+    InputRequestData,
+    RegisterReplyParamsSchema,
+    RunData,
+} from '../../../shared/src';
 import {
     BlockType,
     ContentBlocks,
@@ -13,6 +17,7 @@ import { MessageDao } from '../dao/Message';
 import { SocketManager } from './socket';
 import { FridayConfigManager } from '../../../shared/src/config/friday';
 import { FridayAppMessageDao } from '../dao/FridayAppMessage';
+import { ReplyDao } from '@/dao/Reply';
 
 const textBlock = z.object({
     text: z.string(),
@@ -172,11 +177,25 @@ export const appRouter = t.router({
             }
         }),
 
+    registerReply: t.procedure
+        .input(RegisterReplyParamsSchema)
+        .mutation(async ({ input }) => {
+            try {
+                await ReplyDao.saveReply(input);
+            } catch (error) {
+                console.error(error);
+                throw new TRPCError({
+                    code: 'BAD_REQUEST',
+                    message: `Failed to register reply for error: ${error}`,
+                });
+            }
+        }),
+
     pushMessage: t.procedure
         .input(
             z.object({
                 runId: z.string(),
-                replyId: z.string().nullable(),
+                replyId: z.string().optional().nullable(),
                 msg: z.object({
                     id: z.string(),
                     name: z.string(),
@@ -197,6 +216,16 @@ export const appRouter = t.router({
                 });
             }
 
+            // Check if the replyId exists if provided
+            if (input.replyId) {
+                if (!(await ReplyDao.doesReplyExist(input.replyId))) {
+                    throw new TRPCError({
+                        code: 'NOT_FOUND',
+                        message: `Reply with id ${input.replyId} does not exist`,
+                    });
+                }
+            }
+
             // Save the message to the database
             const msgFormData = {
                 id: input.msg.id,
@@ -210,6 +239,7 @@ export const appRouter = t.router({
                     timestamp: input.msg.timestamp,
                 },
             } as MessageForm;
+
             MessageDao.saveMessage(msgFormData)
                 .then(() => {
                     console.debug(`RUN-${input.runId}: message saved`);

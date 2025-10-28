@@ -92,7 +92,7 @@ const AppChatComponent = ({
 
     // File upload state
     const [fileList, setFileList] = useState<UploadFile[]>([]);
-    
+
     /**
      * Convert file to base64 string for preview functionality.
      */
