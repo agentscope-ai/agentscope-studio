@@ -32,17 +32,35 @@ const ReplyPanel = ({ reply }: Props) => {
 
         return (
             <div className="flex flex-col w-full border border-primary-200">
+                <Accordion
+                    className="w-full"
+                    type="single"
+                    collapsible
+                >
+                    <AccordionItem value={title}>
+                        <AccordionTrigger
+                            className="px-2 h-[36px] items-center"
+                        >
+                            {title}
+                        </AccordionTrigger>
+                        <AccordionContent>
+                            {JSON.stringify(reply, null, 2)}
+                        </AccordionContent>
+                    </AccordionItem>
+                </Accordion>
                 <Flex
-                    style={{
-                        background: 'var(--primary-100)',
-                        borderRadius: '0.5rem 0.5rem 0 0',
-                        padding: '4px 8px',
-                        color: 'var(--muted-foreground)',
-                        fontSize: 12,
-                        fontWeight: 500,
-                        boxSizing: 'border-box',
-                        borderBottom: '1px solid var(--border)',
-                    }}
+                    style={
+                        {
+                            background: 'var(--primary-100)',
+                            borderRadius: '0.5rem 0.5rem 0 0',
+                            padding: '4px 8px',
+                            color: 'var(--muted-foreground)',
+                            fontSize: 12,
+                            fontWeight: 500,
+                            boxSizing: 'border-box',
+                            borderBottom: '1px solid var(--border)',
+                        }
+                    }
                     justify="space-between"
                 >
                     <span>{title}</span>
