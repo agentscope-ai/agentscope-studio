@@ -1,4 +1,4 @@
-import { Key, memo, useState, useCallback, useRef } from 'react';
+import { Key, memo, useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from 'antd';
 import { useTranslation } from 'react-i18next';
@@ -11,6 +11,7 @@ import PageTitleSpan from '@/components/spans/PageTitleSpan.tsx';
 import { trpcClient } from '@/api/trpc';
 import { SecondaryButton } from '@/components/buttons/ASButton';
 import { NumberCell, TextCell } from '@/components/tables/utils.tsx';
+import { useProjectListRoom } from '@/context/ProjectListRoomContext.tsx';
 import type {
     ProjectData,
     TableRequestParams,
@@ -21,6 +22,7 @@ import type {
 const ProjectPage = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
+    const { projects, deleteProjects } = useProjectListRoom();
 
     const [searchText, setSearchText] = useState<string>('');
     const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
@@ -28,6 +30,15 @@ const ProjectPage = () => {
 
     // Update ref when searchText changes
     searchTextRef.current = searchText;
+
+    useEffect(() => {
+        const existedProjects = projects.map((proj) => proj.project);
+        setSelectedRowKeys((prevRowKeys) =>
+            prevRowKeys.filter((project) =>
+                existedProjects.includes(project as string),
+            ),
+        );
+    }, [projects]);
 
     /**
      * tRPC API function
@@ -67,14 +78,6 @@ const ProjectPage = () => {
         [getProjects],
     );
 
-    /**
-     * Delete project
-     */
-    const deleteProjects = (projects: string[]) => {
-        // TODO: Implement delete logic, possibly through tRPC or socket
-        console.log('Delete project:', projects);
-    };
-
     const columns: TableColumn<ProjectData>[] = [
         {
             title: t('common.project'),
@@ -82,11 +85,7 @@ const ProjectPage = () => {
             dataIndex: 'project',
             width: '40%',
             sorter: true,
-                render: (value: unknown) => (
-                <TextCell
-                    text={String(value)}
-                />
-            ),
+            render: (value: unknown) => <TextCell text={String(value)} />,
         },
         {
             title: 'createdAt',
@@ -94,11 +93,7 @@ const ProjectPage = () => {
             dataIndex: 'createdAt',
             width: '20%',
             sorter: true,
-                render: (value: unknown) => (
-                <TextCell
-                    text={String(value)}
-                />
-            ),
+            render: (value: unknown) => <TextCell text={String(value)} />,
         },
         {
             title: 'running',
@@ -106,11 +101,7 @@ const ProjectPage = () => {
             dataIndex: 'running',
             align: 'right',
             sorter: true,
-                render: (value: unknown) => (
-                <NumberCell
-                    number={Number(value)}
-                />
-            ),
+            render: (value: unknown) => <NumberCell number={Number(value)} />,
         },
         {
             title: 'finished',
@@ -118,11 +109,7 @@ const ProjectPage = () => {
             dataIndex: 'finished',
             align: 'right',
             sorter: true,
-                render: (value: unknown) => (
-                <NumberCell
-                    number={Number(value)}
-                />
-            ),
+            render: (value: unknown) => <NumberCell number={Number(value)} />,
         },
         {
             title: 'pending',
@@ -130,11 +117,7 @@ const ProjectPage = () => {
             dataIndex: 'pending',
             align: 'right',
             sorter: true,
-                render: (value: unknown) => (
-                <NumberCell
-                    number={Number(value)}
-                />
-            ),
+            render: (value: unknown) => <NumberCell number={Number(value)} />,
         },
         {
             title: 'total',
@@ -142,13 +125,11 @@ const ProjectPage = () => {
             dataIndex: 'total',
             align: 'right',
             sorter: true,
-                render: (value: unknown) => (
-                <NumberCell
-                    number={Number(value)}
-                />
-            ),
+            render: (value: unknown) => <NumberCell number={Number(value)} />,
         },
     ];
+
+    const tableApiRef = useRef<{ reload: () => void } | null>(null);
 
     return (
         <div className="w-full h-full p-8 space-y-4">
@@ -191,8 +172,9 @@ const ProjectPage = () => {
                               })
                     }
                     disabled={selectedRowKeys.length === 0}
-                    onClick={() => {
-                        deleteProjects(selectedRowKeys as string[]);
+                    onClick={async () => {
+                        await deleteProjects(selectedRowKeys as string[]);
+                        tableApiRef.current?.reload();
                     }}
                     className="flex items-center space-x-2"
                 >
@@ -211,6 +193,9 @@ const ProjectPage = () => {
             <ShadcnTable<ProjectData>
                 columns={columns}
                 apiFunction={getProjectsWithSearch}
+                onReady={(api) => {
+                    tableApiRef.current = api;
+                }}
                 rowKey="project"
                 rowSelection={{
                     selectedRowKeys,

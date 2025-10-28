@@ -14,6 +14,7 @@ import { useMessageApi } from '@/context/MessageApiContext';
 import { Button } from '@/components/shadcn-ui/Button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/shadcn-ui/Select';
 import { Checkbox } from '@/components/shadcn-ui/Checkbox';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/shadcn-ui';
 import type { TableRequestParams } from '@shared/types';
 import type { ShadcnTableProps, SortOrder, PaginationState } from './types';
 
@@ -35,6 +36,7 @@ const ShadcnTable = <T extends Record<string, unknown> = Record<string, unknown>
     // size: _size = 'middle', // Not used yet, reserved for future expansion
     bordered = true,
     sticky = false,
+    onReady,
 }: ShadcnTableProps<T>) => {
     const { t } = useTranslation();
     const { messageApi } = useMessageApi();
@@ -128,6 +130,29 @@ const ShadcnTable = <T extends Record<string, unknown> = Record<string, unknown>
             loadInitialData();
         }
     }, [apiFunction, messageApi]);
+
+    // Expose imperative API via onReady
+    useEffect(() => {
+        if (!onReady) return;
+        onReady({
+            reload: () => {
+                const params: TableRequestParams = {
+                    pagination: {
+                        page: paginationState.current,
+                        pageSize: paginationState.pageSize,
+                    },
+                };
+                if (sortField && sortOrder) {
+                    params.sort = {
+                        field: sortField,
+                        order: sortOrder === 'ascend' ? 'asc' : 'desc',
+                    };
+                }
+                loadData(params);
+            },
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [onReady, paginationState.current, paginationState.pageSize, sortField, sortOrder]);
 
     /**
      * Handling table changes (paging, sorting, filtering)
@@ -318,20 +343,23 @@ const ShadcnTable = <T extends Record<string, unknown> = Record<string, unknown>
             {/* Table container */}
             <div
                 className={cn(
-                    'relative overflow-hidden rounded-lg',
+                    'relative rounded-lg',
                     bordered && 'border border-border',
-                    sticky && 'max-h-[600px] overflow-auto',
                 )}
             >
-                <div className="relative overflow-x-auto">
-                    <table className="w-full caption-bottom text-sm">
-                        {/* thead */}
-                        <thead className="[&_tr]:border-b [&_tr]:border-border">
-                            <tr className="border-b border-border transition-colors hover:bg-muted/50">
+                <div 
+                    className={cn(
+                        'relative overflow-x-auto',
+                        sticky && 'overflow-y-auto',
+                    )}
+                    style={sticky ? { maxHeight: '53vh' } : undefined}
+                >
+                    <Table>
+                        <TableHeader className="sticky top-0 z-10 bg-background">
+                            <TableRow>
                                 {/* Select columns */}
                                 {rowSelection && (
-                                    <th 
-                                        className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0"
+                                    <TableHead
                                         onClick={(e) => e.stopPropagation()}
                                     >
                                         <Checkbox
@@ -347,15 +375,14 @@ const ShadcnTable = <T extends Record<string, unknown> = Record<string, unknown>
                                                 e.stopPropagation();
                                             }}
                                         />
-                                    </th>
+                                    </TableHead>
                                 )}
 
                                 {/* Data columns */}
                                 {columns.map((column, index) => (
-                                    <th
+                                    <TableHead
                                         key={column.key as string}
                                         className={cn(
-                                            'h-12 px-4 text-left align-middle font-medium text-muted-foreground',
                                             column.align === 'center' &&
                                                 'text-center',
                                             column.align === 'right' &&
@@ -383,16 +410,14 @@ const ShadcnTable = <T extends Record<string, unknown> = Record<string, unknown>
                                                     column.key as string,
                                                 )}
                                         </div>
-                                    </th>
+                                    </TableHead>
                                 ))}
-                            </tr>
-                        </thead>
-
-                        {/* tbody */}
-                        <tbody className="[&_tr:last-child]:border-0">
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
                             {isLoading ? (
-                                <tr>
-                                    <td
+                                <TableRow>
+                                    <TableCell
                                         colSpan={
                                             columns.length +
                                             (rowSelection ? 1 : 0)
@@ -403,11 +428,11 @@ const ShadcnTable = <T extends Record<string, unknown> = Record<string, unknown>
                                             <Loader2 className="h-4 w-4 animate-spin" />
                                             <span>loading...</span>
                                         </div>
-                                    </td>
-                                </tr>
+                                    </TableCell>
+                                </TableRow>
                             ) : dataSource.length === 0 ? (
-                                <tr>
-                                    <td
+                                <TableRow>
+                                    <TableCell
                                         colSpan={
                                             columns.length +
                                             (rowSelection ? 1 : 0)
@@ -415,14 +440,14 @@ const ShadcnTable = <T extends Record<string, unknown> = Record<string, unknown>
                                         className="h-24 text-center text-muted-foreground"
                                     >
                                         No data yet
-                                    </td>
-                                </tr>
+                                    </TableCell>
+                                </TableRow>
                             ) : (
                                 dataSource.map((record, index) => {
                                     const rowProps =
                                         onRow?.(record, index) || {};
                                     return (
-                                        <tr
+                                        <TableRow
                                             key={getRowKey(record, index)}
                                             className={cn(
                                                 'border-b border-border transition-colors hover:bg-muted/50',
@@ -433,8 +458,8 @@ const ShadcnTable = <T extends Record<string, unknown> = Record<string, unknown>
                                         >
                                             {/* Select columns */}
                                             {rowSelection && (
-                                                <td 
-                                                    className="p-4 align-middle [&:has([role=checkbox])]:pr-0"
+                                                <TableCell 
+                                                    className="[&:has([role=checkbox])]:pr-0"
                                                     onClick={(e) => e.stopPropagation()}
                                                 >
                                                     <Checkbox
@@ -454,15 +479,14 @@ const ShadcnTable = <T extends Record<string, unknown> = Record<string, unknown>
                                                             e.stopPropagation();
                                                         }}
                                                     />
-                                                </td>
+                                                </TableCell>
                                             )}
 
                                             {/* Data columns */}
                                             {columns.map((column) => (
-                                                <td
+                                                <TableCell
                                                     key={column.key as string}
                                                     className={cn(
-                                                        'p-4 align-middle',
                                                         column.align ===
                                                             'center' &&
                                                             'text-center',
@@ -499,14 +523,14 @@ const ShadcnTable = <T extends Record<string, unknown> = Record<string, unknown>
                                                                   ] ||
                                                                   '',
                                                           )}
-                                                </td>
+                                                </TableCell>
                                             ))}
-                                        </tr>
+                                        </TableRow>
                                     );
                                 })
                             )}
-                        </tbody>
-                    </table>
+                        </TableBody>
+                    </Table>
                 </div>
             </div>
 
@@ -605,3 +629,4 @@ const ShadcnTable = <T extends Record<string, unknown> = Record<string, unknown>
 };
 
 export default memo(ShadcnTable) as typeof ShadcnTable;
+

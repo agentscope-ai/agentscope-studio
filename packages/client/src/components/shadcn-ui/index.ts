@@ -23,3 +23,15 @@ export {
 
 // Checkbox component
 export { Checkbox } from './Checkbox';
+
+// Table components
+export {
+    Table,
+    TableHeader,
+    TableBody,
+    TableFooter,
+    TableRow,
+    TableHead,
+    TableCell,
+    TableCaption,
+} from './Table';
