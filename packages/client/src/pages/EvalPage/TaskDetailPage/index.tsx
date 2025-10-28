@@ -47,7 +47,7 @@ const TaskDetailPage = () => {
                                 </div>
                             </div>
                             <div
-                                className={'p-6 min-h-[5.5rem] pt-2 space-y-4'}
+                                className="p-6 min-h-[5.5rem] pt-2 space-y-4"
                             >
                                 <div>Unkown</div>
                                 <div>progress: 12%</div>
@@ -61,7 +61,7 @@ const TaskDetailPage = () => {
                             </h3>
                         </div>
                         <div
-                            className={'p-6 min-h-[5.5rem] pt-2 space-y-4'}
+                            className="p-6 min-h-[5.5rem] pt-2 space-y-4"
                         ></div>
                     </div>
 
@@ -72,12 +72,12 @@ const TaskDetailPage = () => {
                             </h3>
                         </div>
                         <div
-                            className={'p-6 min-h-[5.5rem] pt-2 space-y-4'}
+                            className="p-6 min-h-[5.5rem] pt-2 space-y-4"
                         ></div>
                     </div>
 
                     <Segmented
-                        className={'col-span-full'}
+                        className="col-span-full"
                         // block={true}
                         options={[
                             'Overview',
@@ -94,7 +94,7 @@ const TaskDetailPage = () => {
                             </h3>
                         </div>
                         <div
-                            className={'p-6 min-h-[5.5rem] pt-2 space-y-4'}
+                            className="p-6 min-h-[5.5rem] pt-2 space-y-4"
                         ></div>
                     </div>
 
@@ -105,7 +105,7 @@ const TaskDetailPage = () => {
                             </h3>
                         </div>
                         <div
-                            className={'p-6 min-h-[5.5rem] pt-2 space-y-4'}
+                            className="p-6 min-h-[5.5rem] pt-2 space-y-4"
                         ></div>
                     </div>
                 </div>

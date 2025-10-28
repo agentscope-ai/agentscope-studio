@@ -492,8 +492,8 @@ const ContentPage = () => {
 
                                         <Flex flex={1}>
                                             <ResponsiveContainer
-                                                width={'100%'}
-                                                minWidth={'100%'}
+                                                width="100%"
+                                                minWidth="100%"
                                             >
                                                 <BarChart
                                                     layout="horizontal"

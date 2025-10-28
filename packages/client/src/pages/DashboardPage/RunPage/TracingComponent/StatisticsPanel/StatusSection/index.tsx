@@ -77,12 +77,10 @@ const StatusSection = ({ status, invocations, tokens }: Props) => {
                     </Flex>
                 </Col>
                 <Col span={8} style={{ overflow: 'hidden' }}>
-                    {
-                        <Flex style={valueStyle} align="center">
+                    <Flex style={valueStyle} align="center">
                             <NumberCounter number={value3 ? value3 : 0} />
                             &nbsp;{unitString3}
                         </Flex>
-                    }
                 </Col>
             </Row>
         );

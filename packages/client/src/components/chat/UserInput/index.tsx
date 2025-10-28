@@ -56,7 +56,7 @@ const UserInputComponent = ({
             {attachmentChildren}
             <Flex vertical={true} gap="small">
                 <Input.TextArea
-                    variant={'borderless'}
+                    variant="borderless"
                     placeholder={t('placeholder.input-friday-app', {
                         shortcutKeys,
                     })}
@@ -75,9 +75,9 @@ const UserInputComponent = ({
             <Flex
                 style={{ marginTop: 8 }}
                 vertical={false}
-                gap={'small'}
-                justify={'end'}
-                align={'center'}
+                gap="small"
+                justify="end"
+                align="center"
             >
                 <SecondaryButton
                     tooltip={t('tooltip.button.attachment-add')}

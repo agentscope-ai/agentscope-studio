@@ -85,9 +85,9 @@ const ChatComponent = ({
                     messages.length === 0 ? 'flex-end' : 'space-between',
             }}
             vertical={true}
-            align={'center'}
-            justify={'space-between'}
-            gap={'small'}
+            align="center"
+            justify="space-between"
+            gap="small"
         >
             <Flex
                 ref={messageContainerRef}
@@ -100,7 +100,7 @@ const ChatComponent = ({
                 }}
                 vertical={true}
                 flex={1}
-                gap={'middle'}
+                gap="middle"
             >
                 {messages.map((msg) => {
                     return (
@@ -114,11 +114,11 @@ const ChatComponent = ({
                 })}
             </Flex>
 
-            <Flex vertical={true} style={{ width: '100%' }} gap={'small'}>
+            <Flex vertical={true} style={{ width: '100%' }} gap="small">
                 <Flex vertical={false}>
                     <SwitchButton
-                        tooltip={'Markdown'}
-                        title={'Markdown'}
+                        tooltip="Markdown"
+                        title="Markdown"
                         activeIcon={<CheckCircleIcon width={18} height={18} />}
                         inactiveIcon={<MarkdownIcon width={18} height={18} />}
                         active={markdown}
@@ -161,7 +161,7 @@ const ChatComponent = ({
                                         name: request.agentName,
                                     })}
                                 >
-                                    <Avatar size={'small'}>
+                                    <Avatar size="small">
                                         {request.agentName.slice(0, 2)}
                                     </Avatar>
                                 </Tooltip>

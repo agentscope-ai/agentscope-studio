@@ -1,135 +1,184 @@
-import { Key, memo, MouseEvent, useEffect, useState } from 'react';
+import { Key, memo, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Flex, Input, TableColumnsType } from 'antd';
+import { Input } from 'antd';
 import { useTranslation } from 'react-i18next';
 
-import AsTable from '@/components/tables/AsTable';
+import ShadcnTable from '@/components/shadcnTable';
+import type { TableColumn } from '@/components/shadcnTable/types';
 import DeleteIcon from '@/assets/svgs/delete.svg?react';
 import PageTitleSpan from '@/components/spans/PageTitleSpan.tsx';
 
-import { useProjectListRoom } from '@/context/ProjectListRoomContext.tsx';
+import { trpcClient } from '@/api/trpc';
 import { SecondaryButton } from '@/components/buttons/ASButton';
-import {
-    NumberCell,
-    renderTitle,
-    TextCell,
-} from '@/components/tables/utils.tsx';
-
-interface DataType {
-    project: string;
-    running: number;
-    pending: number;
-    finished: number;
-    total: number;
-    createdAt: string;
-}
+import { NumberCell, TextCell } from '@/components/tables/utils.tsx';
+import type {
+    ProjectData,
+    TableRequestParams,
+    ResponseBody,
+    TableData,
+} from '@shared/types';
 
 const ProjectPage = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { projects, deleteProjects } = useProjectListRoom();
 
     const [searchText, setSearchText] = useState<string>('');
     const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
+    const searchTextRef = useRef(searchText);
 
-    const rowSelection = {
-        selectedRowKeys,
-        onChange: (newSelectedRowKeys: Key[]) => {
-            setSelectedRowKeys(newSelectedRowKeys);
+    // Update ref when searchText changes
+    searchTextRef.current = searchText;
+
+    /**
+     * tRPC API function
+     */
+    const getProjects = useCallback(
+        async (
+            params: TableRequestParams,
+        ): Promise<ResponseBody<TableData<ProjectData>>> => {
+            try {
+                return await trpcClient.getProjects.query(params);
+            } catch (error) {
+                return {
+                    success: false,
+                    message:
+                        error instanceof Error ? error.message : '请求失败',
+                };
+            }
         },
+        [],
+    );
+
+    /**
+     * API function with search - using ref to avoid StrictMode duplicate calls
+     */
+    const getProjectsWithSearch = useCallback(
+        async (
+            params: TableRequestParams,
+        ): Promise<ResponseBody<TableData<ProjectData>>> => {
+            const searchParams = {
+                ...params,
+                filters: searchTextRef.current
+                    ? { project: searchTextRef.current }
+                    : undefined,
+            };
+            return getProjects(searchParams);
+        },
+        [getProjects],
+    );
+
+    /**
+     * Delete project
+     */
+    const deleteProjects = (projects: string[]) => {
+        // TODO: Implement delete logic, possibly through tRPC or socket
+        console.log('Delete project:', projects);
     };
 
-    useEffect(() => {
-        const existedProjects = projects.map((proj) => proj.project);
-        setSelectedRowKeys((prevRowKeys) =>
-            prevRowKeys.filter((project) =>
-                existedProjects.includes(project as string),
-            ),
-        );
-    }, [projects]);
-
-    const columns: TableColumnsType<DataType> = [
+    const columns: TableColumn<ProjectData>[] = [
         {
-            title: renderTitle(t('common.project'), 14),
+            title: t('common.project'),
             key: 'project',
+            dataIndex: 'project',
             width: '40%',
-            defaultSortOrder: undefined,
-            render: (value, record) => (
+            sorter: true,
+                render: (value: unknown) => (
                 <TextCell
-                    text={value}
-                    selected={selectedRowKeys.includes(record.project)}
+                    text={String(value)}
                 />
             ),
         },
         {
+            title: 'createdAt',
             key: 'createdAt',
-            defaultSortOrder: 'descend',
+            dataIndex: 'createdAt',
             width: '20%',
-            render: (value, record) => (
+            sorter: true,
+                render: (value: unknown) => (
                 <TextCell
-                    text={value}
-                    selected={selectedRowKeys.includes(record.project)}
+                    text={String(value)}
                 />
             ),
         },
         {
+            title: 'running',
             key: 'running',
-            render: (value, record) => (
+            dataIndex: 'running',
+            align: 'right',
+            sorter: true,
+                render: (value: unknown) => (
                 <NumberCell
-                    number={value}
-                    selected={selectedRowKeys.includes(record.project)}
+                    number={Number(value)}
                 />
             ),
         },
         {
+            title: 'finished',
             key: 'finished',
-            render: (value, record) => (
+            dataIndex: 'finished',
+            align: 'right',
+            sorter: true,
+                render: (value: unknown) => (
                 <NumberCell
-                    number={value}
-                    selected={selectedRowKeys.includes(record.project)}
+                    number={Number(value)}
                 />
             ),
         },
         {
+            title: 'pending',
             key: 'pending',
-            render: (value, record) => (
+            dataIndex: 'pending',
+            align: 'right',
+            sorter: true,
+                render: (value: unknown) => (
                 <NumberCell
-                    number={value}
-                    selected={selectedRowKeys.includes(record.project)}
+                    number={Number(value)}
                 />
             ),
         },
         {
+            title: 'total',
             key: 'total',
-            render: (value, record) => (
+            dataIndex: 'total',
+            align: 'right',
+            sorter: true,
+                render: (value: unknown) => (
                 <NumberCell
-                    number={value}
-                    selected={selectedRowKeys.includes(record.project)}
+                    number={Number(value)}
                 />
             ),
         },
     ];
 
     return (
-        <Flex
-            style={{ width: '100%', height: '100%', padding: '32px 48px' }}
-            vertical={true}
-            gap="middle"
-        >
+        <div className="w-full h-full p-8 space-y-4">
+            {/* Page title */}
             <PageTitleSpan title={t('common.projects')} />
-            <Flex vertical={false} gap="middle" align="center">
-                <Input
-                    value={searchText}
-                    onChange={(event) => {
-                        setSearchText(event.target.value);
-                    }}
-                    style={{
-                        width: 300,
-                        borderRadius: 'calc(var(--radius) - 2px)',
-                    }}
-                    variant="outlined"
-                    placeholder={t('placeholder.search-project')}
-                />
+
+            {/* Search and operation bar */}
+            <div className="flex items-center justify-between mt-6">
+                <div className="flex items-center space-x-4">
+                    <Input
+                        value={searchText}
+                        onChange={(event) => {
+                            setSearchText(event.target.value);
+                        }}
+                        onPressEnter={() => {
+                            // 触发搜索，重新调用 API
+                            if (getProjectsWithSearch) {
+                                const params = {
+                                    pagination: {
+                                        page: 1,
+                                        pageSize: 10,
+                                    },
+                                };
+                                getProjectsWithSearch(params);
+                            }
+                        }}
+                        style={{ width: '400px' }}
+                        placeholder={t('placeholder.search-project')}
+                    />
+                </div>
 
                 <SecondaryButton
                     tooltip={
@@ -141,40 +190,45 @@ const ProjectPage = () => {
                                   number: selectedRowKeys.length,
                               })
                     }
-                    icon={<DeleteIcon width={13} height={13} />}
                     disabled={selectedRowKeys.length === 0}
-                    variant="dashed"
                     onClick={() => {
                         deleteProjects(selectedRowKeys as string[]);
                     }}
+                    className="flex items-center space-x-2"
                 >
-                    {t('action.delete')}
+                    <DeleteIcon className="h-4 w-4" />
+                    <span>
+                        {selectedRowKeys.length === 0
+                            ? t('action.delete')
+                            : t('tooltip.button.delete-selected-projects', {
+                                  number: selectedRowKeys.length,
+                              })}
+                    </span>
                 </SecondaryButton>
-            </Flex>
+            </div>
 
-            <AsTable<DataType>
+            {/* Table */}
+            <ShadcnTable<ProjectData>
                 columns={columns}
-                dataSource={projects.filter((proj) =>
-                    proj.project.includes(searchText),
-                )}
-                loading={false}
-                onRow={(record: DataType) => {
-                    return {
-                        onClick: (event: MouseEvent) => {
-                            if (event.type === 'click') {
-                                navigate(`projects/${record.project}`);
-                            }
-                        },
-                        style: {
-                            cursor: 'pointer',
-                        },
-                    };
-                }}
-                pagination={false}
+                apiFunction={getProjectsWithSearch}
                 rowKey="project"
-                rowSelection={rowSelection}
+                rowSelection={{
+                    selectedRowKeys,
+                    onChange: setSelectedRowKeys,
+                }}
+                onRow={(record: ProjectData) => ({
+                    onClick: () => navigate(`projects/${record.project}`),
+                    className: 'cursor-pointer hover:bg-muted/50',
+                })}
+                pagination={{
+                    showSizeChanger: false,
+                    showQuickJumper: true,
+                    showTotal: (total) => `Total ${total} items`,
+                }}
+                className="rounded-lg"
+                sticky
             />
-        </Flex>
+        </div>
     );
 };
 

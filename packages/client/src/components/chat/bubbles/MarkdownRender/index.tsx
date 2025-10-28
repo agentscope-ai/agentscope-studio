@@ -118,10 +118,10 @@ const CodeHeader = ({ language, onCopyBtnClick }: CodeHeaderProps) => {
             <span>{language.toUpperCase()}</span>
             <Button
                 type="text"
-                size={'small'}
+                size="small"
                 icon={
                     copyState === 'success' ? (
-                        <CheckIcon fill={'white'} width={13} height={13} />
+                        <CheckIcon fill="white" width={13} height={13} />
                     ) : copyState === 'wait' ? (
                         <CopyIcon
                             width={13}

@@ -90,8 +90,8 @@ const StructuredInputModal = ({
                             label: false,
                         },
                     }}
-                    showErrorList={'bottom'}
-                    className={'as-structured-input-form'}
+                    showErrorList="bottom"
+                    className="as-structured-input-form"
                     schema={structuredInputSchema}
                     validator={validator}
                 />

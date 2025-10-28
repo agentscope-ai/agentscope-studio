@@ -100,6 +100,7 @@ export interface ProjectData {
     finished: number;
     total: number;
     createdAt: string;
+    [key: string]: unknown;
 }
 
 export interface MessageData {
