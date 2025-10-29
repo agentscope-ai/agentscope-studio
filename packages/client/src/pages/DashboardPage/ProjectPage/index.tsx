@@ -1,91 +1,66 @@
-import { Key, memo, useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Input } from 'antd';
+import { Key, memo, MouseEvent, useEffect, useState } from 'react';
+import { Flex, Input, TableColumnsType, Table } from 'antd';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 
-import ShadcnTable from '@/components/shadcnTable';
-import type { TableColumn } from '@/components/shadcnTable/types';
 import DeleteIcon from '@/assets/svgs/delete.svg?react';
 import PageTitleSpan from '@/components/spans/PageTitleSpan.tsx';
 
-import { trpcClient } from '@/api/trpc';
+import type { ProjectData } from '@shared/types';
 import { SecondaryButton } from '@/components/buttons/ASButton';
-import { NumberCell, TextCell } from '@/components/tables/utils.tsx';
+import {
+    NumberCell,
+    renderTitle,
+    renderSortIcon,
+    TextCell,
+} from '@/components/tables/utils.tsx';
 import { useProjectListRoom } from '@/context/ProjectListRoomContext.tsx';
-import type {
-    ProjectData,
-    TableRequestParams,
-    ResponseBody,
-    TableData,
-} from '@shared/types';
+
 
 const ProjectPage = () => {
+    const { 
+        deleteProjects, 
+        searchText, 
+        setSearchText,
+        tableDataSource,
+        tableLoading,
+        pagination,
+        onTableChange,
+    } = useProjectListRoom();
     const { t } = useTranslation();
-    const navigate = useNavigate();
-    const { projects, deleteProjects } = useProjectListRoom();
-
-    const [searchText, setSearchText] = useState<string>('');
     const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
-    const searchTextRef = useRef(searchText);
+    const navigate = useNavigate();
 
-    // Update ref when searchText changes
-    searchTextRef.current = searchText;
+    const rowSelection = {
+        selectedRowKeys,
+        onChange: (newSelectedRowKeys: Key[]) => {
+            setSelectedRowKeys(newSelectedRowKeys);
+        },
+    };
 
     useEffect(() => {
-        const existedProjects = projects.map((proj) => proj.project);
+        const existedProjects = tableDataSource.map((proj) => proj.project);
         setSelectedRowKeys((prevRowKeys) =>
             prevRowKeys.filter((project) =>
                 existedProjects.includes(project as string),
             ),
         );
-    }, [projects]);
+    }, [tableDataSource]);
 
-    /**
-     * tRPC API function
-     */
-    const getProjects = useCallback(
-        async (
-            params: TableRequestParams,
-        ): Promise<ResponseBody<TableData<ProjectData>>> => {
-            try {
-                return await trpcClient.getProjects.query(params);
-            } catch (error) {
-                return {
-                    success: false,
-                    message:
-                        error instanceof Error ? error.message : '请求失败',
-                };
-            }
-        },
-        [],
-    );
-
-    /**
-     * API function with search - using ref to avoid StrictMode duplicate calls
-     */
-    const getProjectsWithSearch = useCallback(
-        async (
-            params: TableRequestParams,
-        ): Promise<ResponseBody<TableData<ProjectData>>> => {
-            const searchParams = {
-                ...params,
-                filters: searchTextRef.current
-                    ? { project: searchTextRef.current }
-                    : undefined,
-            };
-            return getProjects(searchParams);
-        },
-        [getProjects],
-    );
-
-    const columns: TableColumn<ProjectData>[] = [
+    const columns: TableColumnsType<ProjectData> = [
         {
-            title: t('common.project'),
+            title: renderTitle(t('common.project'), 14),
             key: 'project',
             dataIndex: 'project',
             width: '40%',
             sorter: true,
-            render: (value: unknown) => <TextCell text={String(value)} />,
+            sortIcon: (sortOrder) => renderSortIcon(sortOrder, true),
+            render: (value, record) => (
+                <TextCell
+                    text={value}
+                    selected={selectedRowKeys.includes(record.project)}
+                />
+            ),
         },
         {
             title: 'createdAt',
@@ -93,7 +68,13 @@ const ProjectPage = () => {
             dataIndex: 'createdAt',
             width: '20%',
             sorter: true,
-            render: (value: unknown) => <TextCell text={String(value)} />,
+            sortIcon: (sortOrder) => renderSortIcon(sortOrder, true),
+            render: (value, record) => (
+                <TextCell
+                    text={value}
+                    selected={selectedRowKeys.includes(record.project)}
+                />
+            ),
         },
         {
             title: 'running',
@@ -101,7 +82,13 @@ const ProjectPage = () => {
             dataIndex: 'running',
             align: 'right',
             sorter: true,
-            render: (value: unknown) => <NumberCell number={Number(value)} />,
+            sortIcon: (sortOrder) => renderSortIcon(sortOrder, true),
+            render: (value, record) => (
+                <NumberCell
+                    number={value}
+                    selected={selectedRowKeys.includes(record.project)}
+                />
+            ),
         },
         {
             title: 'finished',
@@ -109,7 +96,13 @@ const ProjectPage = () => {
             dataIndex: 'finished',
             align: 'right',
             sorter: true,
-            render: (value: unknown) => <NumberCell number={Number(value)} />,
+            sortIcon: (sortOrder) => renderSortIcon(sortOrder, true),
+            render: (value, record) => (
+                <NumberCell
+                    number={value}
+                    selected={selectedRowKeys.includes(record.project)}
+                />
+            ),
         },
         {
             title: 'pending',
@@ -117,7 +110,13 @@ const ProjectPage = () => {
             dataIndex: 'pending',
             align: 'right',
             sorter: true,
-            render: (value: unknown) => <NumberCell number={Number(value)} />,
+            sortIcon: (sortOrder) => renderSortIcon(sortOrder, true),
+            render: (value, record) => (
+                <NumberCell
+                    number={value}
+                    selected={selectedRowKeys.includes(record.project)}
+                />
+            ),
         },
         {
             title: 'total',
@@ -125,41 +124,37 @@ const ProjectPage = () => {
             dataIndex: 'total',
             align: 'right',
             sorter: true,
-            render: (value: unknown) => <NumberCell number={Number(value)} />,
+            sortIcon: (sortOrder) => renderSortIcon(sortOrder, true),
+            render: (value, record) => (
+                <NumberCell
+                    number={value}
+                    selected={selectedRowKeys.includes(record.project)}
+                />
+            ),
         },
     ];
 
-    const tableApiRef = useRef<{ reload: () => void } | null>(null);
-
     return (
-        <div className="w-full h-full p-8 space-y-4">
-            {/* Page title */}
+        <Flex
+            style={{ width: '100%', height: '100%', padding: '32px 48px' }}
+            vertical={true}
+            gap="middle"
+        >
             <PageTitleSpan title={t('common.projects')} />
-
-            {/* Search and operation bar */}
-            <div className="flex items-center justify-between mt-6">
-                <div className="flex items-center space-x-4">
-                    <Input
-                        value={searchText}
-                        onChange={(event) => {
-                            setSearchText(event.target.value);
-                        }}
-                        onPressEnter={() => {
-                            // 触发搜索，重新调用 API
-                            if (getProjectsWithSearch) {
-                                const params = {
-                                    pagination: {
-                                        page: 1,
-                                        pageSize: 10,
-                                    },
-                                };
-                                getProjectsWithSearch(params);
-                            }
-                        }}
-                        style={{ width: '400px' }}
-                        placeholder={t('placeholder.search-project')}
-                    />
-                </div>
+            <Flex vertical={false} gap="middle" align="center">
+                <Input
+                    value={searchText}
+                    onChange={(event) => {
+                        setSearchText(event.target.value);
+                    }}
+                    style={{
+                        width: 300,
+                        borderRadius: 'calc(var(--radius) - 2px)',
+                    }}
+                    variant="outlined"
+                    placeholder={t('placeholder.search-project')}
+                    allowClear
+                />
 
                 <SecondaryButton
                     tooltip={
@@ -171,49 +166,68 @@ const ProjectPage = () => {
                                   number: selectedRowKeys.length,
                               })
                     }
+                    icon={<DeleteIcon width={13} height={13} />}
                     disabled={selectedRowKeys.length === 0}
-                    onClick={async () => {
-                        await deleteProjects(selectedRowKeys as string[]);
-                        tableApiRef.current?.reload();
+                    variant="dashed"
+                    onClick={() => {
+                        deleteProjects(selectedRowKeys as string[]);
                     }}
-                    className="flex items-center space-x-2"
                 >
-                    <DeleteIcon className="h-4 w-4" />
-                    <span>
-                        {selectedRowKeys.length === 0
-                            ? t('action.delete')
-                            : t('tooltip.button.delete-selected-projects', {
-                                  number: selectedRowKeys.length,
-                              })}
-                    </span>
+                    {t('action.delete')}
                 </SecondaryButton>
-            </div>
+            </Flex>
 
-            {/* Table */}
-            <ShadcnTable<ProjectData>
-                columns={columns}
-                apiFunction={getProjectsWithSearch}
-                onReady={(api) => {
-                    tableApiRef.current = api;
+            <div
+            style={{ 
+                height: 'calc(100vh - 200px)', 
+                maxHeight: '600px', // 设置最大高度
+                border: '1px solid var(--border)',
+                borderRadius: 'calc(var(--radius) - 2px)',
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column'
                 }}
-                rowKey="project"
-                rowSelection={{
-                    selectedRowKeys,
-                    onChange: setSelectedRowKeys,
-                }}
-                onRow={(record: ProjectData) => ({
-                    onClick: () => navigate(`projects/${record.project}`),
-                    className: 'cursor-pointer hover:bg-muted/50',
-                })}
-                pagination={{
-                    showSizeChanger: false,
-                    showQuickJumper: true,
-                    showTotal: (total) => `Total ${total} items`,
-                }}
-                className="rounded-lg"
-                sticky
-            />
-        </div>
+            >
+                <Table<ProjectData>
+                    columns={columns}
+                    size="small"
+                    dataSource={tableDataSource}
+                    loading={tableLoading}
+                    scroll={{ 
+                        y: 'calc(100vh - 320px)', // 表格内容区域可滚动高度
+                        x: 'max-content' // 水平滚动
+                    }}
+                    pagination={{
+                        current: pagination.current,
+                        pageSize: pagination.pageSize,
+                        total: pagination.total,
+                        showSizeChanger: true,
+                        showQuickJumper: true,
+                        showTotal: (total) => `${total} items in total`,
+                        pageSizeOptions: ['10', '20', '50', '100'],
+                        hideOnSinglePage: false,
+                        style: {
+                            marginRight: '16px', // 增加右边距
+                        },
+                    }}
+                    onChange={onTableChange}
+                    onRow={(record: ProjectData) => {
+                        return {
+                            onClick: (event: MouseEvent) => {
+                                if (event.type === 'click') {
+                                    navigate(`projects/${record.project}`);
+                                }
+                            },
+                            style: {
+                                cursor: 'pointer',
+                            },
+                        };
+                    }}
+                    rowKey="project"
+                    rowSelection={rowSelection}
+                />
+            </div>
+        </Flex>
     );
 };
 

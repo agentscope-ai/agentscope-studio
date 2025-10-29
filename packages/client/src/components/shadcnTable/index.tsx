@@ -150,6 +150,34 @@ const ShadcnTable = <T extends Record<string, unknown> = Record<string, unknown>
                 }
                 loadData(params);
             },
+            silentReload: async () => {
+                if (!apiFunction) return;
+                const params: TableRequestParams = {
+                    pagination: {
+                        page: paginationState.current,
+                        pageSize: paginationState.pageSize,
+                    },
+                };
+                if (sortField && sortOrder) {
+                    params.sort = {
+                        field: sortField,
+                        order: sortOrder === 'ascend' ? 'asc' : 'desc',
+                    };
+                }
+                try {
+                    const response = await apiFunction(params);
+                    if (response.success && response.data) {
+                        setData(response.data.list);
+                        setPaginationState({
+                            current: response.data.page,
+                            pageSize: response.data.pageSize,
+                            total: response.data.total,
+                        });
+                    }
+                } catch {
+                    // 忽略轮询异常，保持静默
+                }
+            },
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [onReady, paginationState.current, paginationState.pageSize, sortField, sortOrder]);

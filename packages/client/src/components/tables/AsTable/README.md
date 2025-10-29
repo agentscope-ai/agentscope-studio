@@ -1,241 +1,140 @@
-# AsTable 组件使用指南
+# AsTable (Presentational Wrapper for Ant Design Table)
 
-增强版的 AsTable 组件，支持分页、排序和 tRPC 集成。
+AsTable is a thin, presentational wrapper around Ant Design's `Table`. It does not fetch data. It focuses on:
 
-## 功能特性
+- Default i18n-friendly column titles via `t('table.column.${key}')`
+- Consistent sorting UI (custom sort icons + sticky header)
+- A small set of sensible defaults (small size, sticky header, bordered container)
+- Keeping your data layer (pagination/sort/search) outside the component
 
-- ✅ **分页支持** - 可配置分页或禁用分页
-- ✅ **排序支持** - 客户端排序（静态数据）和服务端排序（API 数据）
-- ✅ **tRPC 集成** - 直接传入 tRPC 函数即可自动处理数据获取
-- ✅ **国际化** - 内置多语言支持
-- ✅ **类型安全** - 完整的 TypeScript 类型支持
+If you need server-side pagination/sort/search, wire them up in your page or context and pass the resulting props to `AsTable`.
 
-## 基础用法
+## Key Differences vs antd Table
 
-### 1. 静态数据（无分页）
+- Columns are passed in as usual, but AsTable will:
+  - Auto-generate a translated `title` using the column's `key` (you can still override it)
+  - Add `ellipsis: true` by default
+  - Render a unified sort icon via `renderSortIcon`
+  - Fix the first column to the left by default
+- Everything else is forwarded to antd `Table` through `...rest`.
+- There is no `apiFunction`, `searchText`, or internal state. AsTable is UI-only.
 
-```tsx
-import { AsTable } from '@/components/tables/AsTable';
+## When to Use
 
-const columns = [
-    { key: 'id', dataIndex: 'id' },
-    { key: 'name', dataIndex: 'name' },
-    { key: 'status', dataIndex: 'status' },
-];
+- You want an antd `Table` with:
+  - Unified styling and sort icons
+  - Sticky header and small size by default
+  - i18n-friendly column titles
+- You already manage data in a Context, store, or container component.
 
-const data = [
-    { id: '1', name: '项目1', status: 'active' },
-    { id: '2', name: '项目2', status: 'inactive' },
-];
+## Props
 
-<AsTable
-    columns={columns}
-    dataSource={data}
-    pagination={false}
-/>
+AsTable accepts all antd `TableProps<T>` except it requires `columns: TableColumnsType<T>` explicitly.
+
+```ts
+interface AsTableProps<T> extends Omit<TableProps<T>, 'columns'> {
+  columns: TableColumnsType<T>;
+}
 ```
 
-### 2. 静态数据（带分页）
+Commonly passed props (from your data layer):
+
+- `dataSource: T[]`
+- `loading: boolean`
+- `pagination: TablePaginationConfig | false`
+- `onChange: (pagination, filters, sorter) => void` (handle server-side pagination/sort)
+- `rowSelection`
+- `locale` (will be merged with AsTable defaults)
+
+## Basic Example (server-side pagination/sort)
 
 ```tsx
-<AsTable
-    columns={columns}
-    dataSource={data}
-    pagination={{
-        pageSize: 10,
-        showSizeChanger: true,
-    }}
-/>
+import AsTable from '@/components/tables/AsTable';
+import type { TableColumnsType } from 'antd';
+import type { SorterResult, TablePaginationConfig } from 'antd/es/table/interface';
+import type { ProjectData } from '@shared/types';
+import { useProjectListRoom } from '@/context/ProjectListRoomContext';
+
+export default function ProjectList() {
+  const {
+    tableDataSource,
+    tableLoading,
+    pagination,
+    onTableChange,
+  } = useProjectListRoom();
+
+  const columns: TableColumnsType<ProjectData> = [
+    {
+      key: 'project',
+      dataIndex: 'project',
+      sorter: true, // server-side: UI only; handle in onTableChange
+    },
+    { key: 'createdAt', dataIndex: 'createdAt', sorter: true },
+    { key: 'running', dataIndex: 'running', sorter: true, align: 'right' },
+    { key: 'finished', dataIndex: 'finished', sorter: true, align: 'right' },
+    { key: 'pending', dataIndex: 'pending', sorter: true, align: 'right' },
+    { key: 'total', dataIndex: 'total', sorter: true, align: 'right' },
+  ];
+
+  return (
+    <AsTable<ProjectData>
+      columns={columns}
+      dataSource={tableDataSource}
+      loading={tableLoading}
+      pagination={pagination}
+      onChange={onTableChange}
+      rowKey="project"
+    />
+  );
+}
 ```
 
-### 3. tRPC API 数据（推荐）
+## i18n Title Resolution
 
-```tsx
-import { trpcClient } from '@/api/trpc';
+For each column:
+- If you do not provide `title`, AsTable will set
+  ```ts
+  title = t(`table.column.${key.replace('_', '-')}`)
+  ```
+- Provide your own `title` to override.
 
-const getProjects = async (params: TableRequestParams): Promise<ResponseBody<TableData<ProjectData>>> => {
-    try {
-        return await trpcClient.getProjects.query(params);
-    } catch (error) {
-        return {
-            success: false,
-            message: error instanceof Error ? error.message : '请求失败',
-        };
-    }
+## Styling Defaults
+
+- `size="small"`
+- `sticky` header enabled
+- Outer container classes: `h-full w-full border border-border rounded-md`
+- Column defaults: `ellipsis: true`, first column `fixed: 'left'`
+- Sort tooltip target: `{ target: 'full-header' }`
+
+You can still customize via normal antd props (`className`, `scroll`, `rowClassName`, etc.).
+
+## Server-side Sorting and Pagination
+
+- Set `sorter: true` (or your own sorter config) on columns to show sort UI
+- Handle `onChange(pagination, _, sorter)` in your data layer (e.g., a Context)
+- Do not provide client-side `sorter.compare` if the backend controls sorting
+
+Example handler sketch (in your Context):
+
+```ts
+const onTableChange = (
+  pageInfo: TablePaginationConfig,
+  _ignored: unknown,
+  sorter: SorterResult<ProjectData> | SorterResult<ProjectData>[]
+) => {
+  // derive next page, pageSize, sort field/order
+  // call your fetch function with these params
 };
-
-<AsTable
-    columns={columns}
-    apiFunction={getProjects}
-    pagination={{
-        pageSize: 20,
-    }}
-/>
 ```
 
-### 4. 带初始参数
+## Migration Notes (from older AsTable)
 
-```tsx
-<AsTable
-    columns={columns}
-    apiFunction={getProjects}
-    initialParams={{
-        pagination: { page: 1, pageSize: 10 },
-        sort: { field: 'project', order: 'asc' },
-        filters: { status: 'active' },
-    }}
-/>
-```
+- Removed: `apiFunction`, `initialParams`, `searchText`, `searchField`, and any internal fetching/state
+- New pattern: manage data in a Context/container and pass `dataSource`, `loading`, `pagination`, and `onChange`
+- Sorting: leave `sorter: true` and handle server-side sorting in `onTableChange`
 
-## 属性说明
+## Tips
 
-### 基础属性
-
-| 属性 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `columns` | `TableColumnsType<T>` | - | 表格列配置（必需） |
-| `dataSource` | `T[]` | - | 静态数据源 |
-| `loading` | `boolean` | - | 加载状态 |
-| `pagination` | `PaginationConfig \| false` | `{}` | 分页配置，`false` 禁用分页 |
-
-### API 相关属性
-
-| 属性 | 类型 | 说明 |
-|------|------|------|
-| `apiFunction` | `(params: TableRequestParams) => Promise<ResponseBody<TableData<T>>>` | tRPC API 函数 |
-| `initialParams` | `Partial<TableRequestParams>` | 初始请求参数 |
-
-### 分页配置
-
-```tsx
-interface PaginationConfig {
-    page?: number;                    // 当前页
-    pageSize?: number;               // 每页条数
-    showSizeChanger?: boolean;       // 显示页面大小选择器
-    showQuickJumper?: boolean;       // 显示快速跳转
-    showTotal?: (total: number, range: [number, number]) => string; // 显示总数
-    pageSizeOptions?: string[];      // 页面大小选项
-}
-```
-
-## 排序功能
-
-### 客户端排序（静态数据）
-- 自动支持数字和字符串排序
-- 无需额外配置
-
-### 服务端排序（API 数据）
-- 点击列头触发服务端排序
-- 自动传递 `sort.field` 和 `sort.order` 参数
-- 支持多列排序状态管理
-
-## tRPC 函数要求
-
-tRPC 函数需要返回以下格式的数据：
-
-```tsx
-interface ResponseBody<T> {
-    success: boolean;
-    message: string;
-    data?: T;
-}
-
-interface TableData<T> {
-    list: T[];
-    total: number;
-    page: number;
-    pageSize: number;
-}
-```
-
-## 完整示例
-
-```tsx
-import React from 'react';
-import { Card, Space, Input } from 'antd';
-import { AsTable } from '@/components/tables/AsTable';
-import { trpcClient } from '@/api/trpc';
-import type { ProjectData, TableRequestParams, ResponseBody, TableData } from '@shared/types';
-
-const { Search } = Input;
-
-function ProjectList() {
-    const [keyword, setKeyword] = React.useState('');
-
-    const columns = [
-        {
-            key: 'project',
-            dataIndex: 'project',
-        },
-        {
-            key: 'running',
-            dataIndex: 'running',
-        },
-        {
-            key: 'total',
-            dataIndex: 'total',
-        },
-        {
-            key: 'createdAt',
-            dataIndex: 'createdAt',
-        },
-    ];
-
-    const getProjects = async (params: TableRequestParams): Promise<ResponseBody<TableData<ProjectData>>> => {
-        try {
-            return await trpcClient.getProjects.query(params);
-        } catch (error) {
-            return {
-                success: false,
-                message: error instanceof Error ? error.message : '请求失败',
-            };
-        }
-    };
-
-    return (
-        <Card title="项目列表">
-            <Space style={{ marginBottom: 16 }}>
-                <Search
-                    placeholder="搜索项目..."
-                    value={keyword}
-                    onChange={(e) => setKeyword(e.target.value)}
-                    style={{ width: 200 }}
-                />
-            </Space>
-            
-            <AsTable<ProjectData>
-                columns={columns}
-                apiFunction={(params) => getProjects({
-                    ...params,
-                    filters: keyword ? { project: keyword } : undefined,
-                })}
-                pagination={{
-                    pageSize: 20,
-                    showSizeChanger: true,
-                    showQuickJumper: true,
-                    showTotal: (total, range) => 
-                        `显示 ${range[0]}-${range[1]} 条，共 ${total} 条`,
-                }}
-            />
-        </Card>
-    );
-}
-```
-
-## 注意事项
-
-1. **数据源优先级**: 如果同时提供 `dataSource` 和 `apiFunction`，优先使用 `dataSource`
-2. **排序模式**: 有 `apiFunction` 时使用服务端排序，否则使用客户端排序
-3. **分页配置**: 传入 `false` 可完全禁用分页
-4. **类型安全**: 建议为数据项定义明确的 TypeScript 类型
-5. **错误处理**: 组件会自动处理 API 错误并显示消息提示
-
-## 国际化
-
-组件内置支持以下翻译键：
-
-- `table.column.{columnKey}` - 列标题
-- `table.pagination.show-total` - 分页总数显示
-- `tooltip.table.*` - 排序相关提示
-
-确保在 i18n 配置中添加相应的翻译文本。
+- If you need fixed header + scroll, pass antd's `scroll={{ y: ..., x: ... }}`
+- If your first column should not be fixed, set `fixed: undefined` on that column
+- Provide `locale` to extend/override AsTable defaults (empty state, tooltips, etc.)

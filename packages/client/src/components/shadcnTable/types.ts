@@ -43,7 +43,7 @@ export interface ShadcnTableProps<T extends Record<string, unknown> = Record<str
     /**
      * Called when the table is ready. Provides imperative APIs like reload.
      */
-    onReady?: (api: { reload: () => void }) => void;
+    onReady?: (api: { reload: () => void; silentReload?: () => void }) => void;
     apiFunction?: (params: TableRequestParams) => Promise<ResponseBody<TableData<T>>>;
     initialParams?: Partial<TableRequestParams>;
     rowKey?: keyof T | string | ((record: T) => string);
