@@ -16,11 +16,10 @@ import {
 } from '@/components/tables/utils.tsx';
 import { useProjectListRoom } from '@/context/ProjectListRoomContext.tsx';
 
-
 const ProjectPage = () => {
-    const { 
-        deleteProjects, 
-        searchText, 
+    const {
+        deleteProjects,
+        searchText,
         setSearchText,
         tableDataSource,
         tableLoading,
@@ -28,8 +27,8 @@ const ProjectPage = () => {
         onTableChange,
     } = useProjectListRoom();
     const { t } = useTranslation();
-    const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
     const navigate = useNavigate();
+    const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
 
     const rowSelection = {
         selectedRowKeys,
@@ -178,24 +177,24 @@ const ProjectPage = () => {
             </Flex>
 
             <div
-            style={{ 
-                height: 'calc(100vh - 200px)', 
-                maxHeight: '600px', // 设置最大高度
-                border: '1px solid var(--border)',
-                borderRadius: 'calc(var(--radius) - 2px)',
-                overflow: 'hidden',
-                display: 'flex',
-                flexDirection: 'column'
+                style={{
+                    height: 'calc(100vh - 200px)',
+                    maxHeight: '600px',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'calc(var(--radius) - 2px)',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column',
                 }}
             >
                 <Table<ProjectData>
-                    columns={columns}
                     size="small"
+                    columns={columns}
                     dataSource={tableDataSource}
                     loading={tableLoading}
-                    scroll={{ 
-                        y: 'calc(100vh - 320px)', // 表格内容区域可滚动高度
-                        x: 'max-content' // 水平滚动
+                    scroll={{
+                        y: 'calc(100vh - 320px)',
+                        x: 'max-content',
                     }}
                     pagination={{
                         current: pagination.current,
@@ -206,9 +205,7 @@ const ProjectPage = () => {
                         showTotal: (total) => `${total} items in total`,
                         pageSizeOptions: ['10', '20', '50', '100'],
                         hideOnSinglePage: false,
-                        style: {
-                            marginRight: '16px', // 增加右边距
-                        },
+                        style: { marginRight: '16px' },
                     }}
                     onChange={onTableChange}
                     onRow={(record: ProjectData) => {
@@ -218,9 +215,7 @@ const ProjectPage = () => {
                                     navigate(`projects/${record.project}`);
                                 }
                             },
-                            style: {
-                                cursor: 'pointer',
-                            },
+                            style: { cursor: 'pointer' },
                         };
                     }}
                     rowKey="project"
