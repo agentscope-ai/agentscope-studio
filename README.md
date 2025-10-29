@@ -87,6 +87,7 @@ rapid secondary development, and 3) integration of advanced features in
 
 ```bash
 git clone https://github.com/agentscope-ai/agentscope-studio
+cd agentscope-studio
 npm install
 npm run dev
 ```
