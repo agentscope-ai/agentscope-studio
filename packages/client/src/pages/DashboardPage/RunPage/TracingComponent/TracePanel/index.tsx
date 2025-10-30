@@ -8,7 +8,6 @@ import TraceTree from './TraceTree';
 
 export const TracePanel = () => {
     const { trace, spans } = useRunRoom();
-    console.log('[TracePanel] spans', spans);
     const { t } = useTranslation();
 
     if (!trace || spans.length === 0) {
