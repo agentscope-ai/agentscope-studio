@@ -112,7 +112,7 @@ const VideoBlockDiv = ({ source }: { source: Base64Source | URLSource }) => {
     }
     return (
         <audio key={url} controls>
-            <source src={url} type={'audio/mpeg'} />
+            <source src={url} type="audio/mpeg" />
         </audio>
     );
 };
@@ -130,7 +130,7 @@ const AudioBlockDiv = ({ source }: { source: Base64Source | URLSource }) => {
     }
     return (
         <video key={url} controls>
-            <source src={url} type={'video/mp4'} />
+            <source src={url} type="video/mp4" />
         </video>
     );
 };
@@ -155,7 +155,7 @@ const ToolUseBlockDiv = ({ block }: { block: ToolUseBlock }) => {
                     />
                 )
             }
-            size={'small'}
+            size="small"
             items={[
                 {
                     key: BlockType.TOOL_USE + block.id,
@@ -173,7 +173,7 @@ const ToolUseBlockDiv = ({ block }: { block: ToolUseBlock }) => {
                     ),
                     children: (
                         <SyntaxHighlighter
-                            language={'json'}
+                            language="json"
                             style={materialDark}
                             showLineNumbers={true}
                             customStyle={{
@@ -225,7 +225,7 @@ const ToolResultBlockDiv = ({ block }: { block: ToolResultBlock }) => {
                     />
                 )
             }
-            size={'small'}
+            size="small"
             items={[
                 {
                     key: BlockType.TOOL_RESULT + block.id,
@@ -242,7 +242,7 @@ const ToolResultBlockDiv = ({ block }: { block: ToolResultBlock }) => {
                     ),
                     children: (
                         <SyntaxHighlighter
-                            language={'json'}
+                            language="json"
                             style={materialDark}
                             showLineNumbers={true}
                             customStyle={{
@@ -260,7 +260,7 @@ const ToolResultBlockDiv = ({ block }: { block: ToolResultBlock }) => {
                         <Tooltip title={t('tooltip.switch.display-raw-data')}>
                             <Flex
                                 style={{ height: 22 }}
-                                align={'center'}
+                                align="center"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     e.preventDefault();
@@ -268,7 +268,7 @@ const ToolResultBlockDiv = ({ block }: { block: ToolResultBlock }) => {
                             >
                                 <Switch
                                     value={displayRaw}
-                                    size={'small'}
+                                    size="small"
                                     style={{
                                         background: 'var(--muted-foreground)',
                                     }}

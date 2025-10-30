@@ -88,7 +88,7 @@ const UnifiedUserInput = ({
     const { t } = useTranslation();
     const [fileList, setFileList] = useState<UploadFile[]>([]);
     const [text, setText] = useState<string>('');
-    const uploadRef = useRef<any>(null);
+    const uploadRef = useRef<unknown>(null);
     const { messageApi } = useMessageApi();
 
     // Dynamic send button icon: interrupt when replying, enter otherwise
@@ -138,9 +138,9 @@ const UnifiedUserInput = ({
             className="flex flex-col w-full border border-border shadow rounded-[8px] p-2 mt-auto"
         >
             <Upload
-                name={'attachment'}
+                name="attachment"
                 beforeUpload={() => false}
-                listType={'picture'}
+                listType="picture"
                 fileList={fileList}
                 onChange={({ fileList: newFileList }) => {
                     setFileList(newFileList);
@@ -150,7 +150,7 @@ const UnifiedUserInput = ({
             </Upload>
 
             <Input.TextArea
-                variant={'borderless'}
+                variant="borderless"
                 placeholder={placeholder}
                 draggable={false}
                 autoSize={{ minRows: 1, maxRows: 3 }}

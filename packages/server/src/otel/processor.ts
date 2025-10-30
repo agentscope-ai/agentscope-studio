@@ -100,6 +100,7 @@ export class SpanProcessor {
         attributes: Record<string, unknown> | undefined,
         key: string | string[],
         separator: string = '.',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ): any {
         return getNestedValue(attributes, key, separator);
     }

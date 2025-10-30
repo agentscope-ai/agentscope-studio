@@ -22,7 +22,6 @@ type FileType = Parameters<GetProp<UploadProps, 'beforeUpload'>>[0];
 interface Props {
     replies: ReplyData[];
     isReplying: boolean;
-    moreReplies: boolean;
     onUserInput: (blocksInput: ContentBlocks) => void;
     onInterruptReply: () => void;
     onCleanHistory: () => void;
@@ -92,7 +91,7 @@ const AppChatComponent = ({
 
     // File upload state
     const [fileList, setFileList] = useState<UploadFile[]>([]);
-    
+
     /**
      * Convert file to base64 string for preview functionality.
      */
@@ -123,7 +122,7 @@ const AppChatComponent = ({
     }) => {
         setFileList(newFileList);
     };
-    const uploadRef = useRef<any>(null);
+    const uploadRef = useRef<unknown>(null);
 
     return (
         <Flex
@@ -134,8 +133,8 @@ const AppChatComponent = ({
                 justifyContent: 'flex-end',
             }}
             vertical={true}
-            align={'center'}
-            justify={'space-between'}
+            align="center"
+            justify="space-between"
         >
             <Flex
                 ref={messageContainerRef}
@@ -148,7 +147,7 @@ const AppChatComponent = ({
                 }}
                 vertical={true}
                 flex={1}
-                gap={'middle'}
+                gap="middle"
                 onScrollEnd={(e) => {
                     const target = e.target as HTMLDivElement;
                     // Check if user is near bottom (within 100px) to enable auto-scroll
@@ -159,7 +158,7 @@ const AppChatComponent = ({
                         100;
                     setIsAtBottom(isAtBottom);
                 }}
-                align={'center'}
+                align="center"
             >
                 {replies.map((reply) => {
                     return (
@@ -186,19 +185,19 @@ const AppChatComponent = ({
             <Flex
                 vertical={true}
                 style={{ width: '100%', maxWidth: 'var(--chat-max-width)' }}
-                gap={'small'}
-                align={'center'}
+                gap="small"
+                align="center"
             >
                 <Flex
                     style={{ height: 32, width: '100%', position: 'relative' }}
-                    justify={'center'}
+                    justify="center"
                     vertical={false}
                 >
                     <Tooltip title={t('tooltip.button.clean-history')}>
                         <Button
                             style={{ position: 'absolute', left: 0 }}
                             icon={<DeleteIcon width={13} height={13} />}
-                            type={'dashed'}
+                            type="dashed"
                             disabled={isReplying}
                             loading={isCleaningHistory}
                             onClick={onCleanHistory}
@@ -220,8 +219,8 @@ const AppChatComponent = ({
                                         }}
                                     />
                                 }
-                                size={'middle'}
-                                shape={'circle'}
+                                size="middle"
+                                shape="circle"
                                 onClick={() => {
                                     if (messageContainerRef.current) {
                                         messageContainerRef.current.scrollTop =
@@ -238,10 +237,10 @@ const AppChatComponent = ({
                     onChange={setInputText}
                     attachmentChildren={
                         <Upload
-                            name={'attachment'}
+                            name="attachment"
                             beforeUpload={() => false}
-                            action={''}
-                            listType={'picture'}
+                            action=""
+                            listType="picture"
                             fileList={fileList}
                             onPreview={handlePreview}
                             onChange={handleChange}

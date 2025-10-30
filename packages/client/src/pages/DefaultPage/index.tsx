@@ -78,7 +78,7 @@ export const WipPage = memo(() => {
     return (
         <BaseDefaultPage
             icon={<WipIcon width={250} height={250} />}
-            title={'Coming soon ...'}
+            title="Coming soon ..."
         />
     );
 });

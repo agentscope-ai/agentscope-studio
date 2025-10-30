@@ -32,14 +32,14 @@ const MessageBubble = ({ msg, markdown, onClick }: Props) => {
 
     return (
         <Flex
-            className={'as-message-bubble'}
+            className="as-message-bubble"
             style={{
                 width: '100%',
                 padding: 8,
                 borderRadius: 8,
             }}
             vertical={false}
-            gap={'small'}
+            gap="small"
             onClick={onClick}
         >
             {renderAvatar()}

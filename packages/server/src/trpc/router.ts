@@ -1,6 +1,13 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { InputRequestData, RunData } from '../../../shared/src';
+import {
+    InputRequestData,
+    RunData,
+    TableData,
+    ProjectData,
+    TableRequestParamsSchema,
+    ResponseBody,
+} from '../../../shared/src';
 import {
     BlockType,
     ContentBlocks,
@@ -286,6 +293,59 @@ export const appRouter = t.router({
     clientGetFridayConfig: t.procedure.query(async () => {
         return FridayConfigManager.getInstance().getConfig();
     }),
+
+    /**
+     * Get paginated projects with optional sorting and filtering
+     *
+     * @param pagination - Pagination parameters (page number and page size)
+     * @param sort - Optional sorting configuration (field name and order)
+     * @param filters - Optional filters for project search (e.g., project name)
+     * @returns ResponseBody containing TableData with project list and metadata
+     *
+     * @example
+     * Input: {
+     *   pagination: { page: 1, pageSize: 10 },
+     *   sort: { field: 'createdAt', order: 'desc' },
+     *   filters: { project: 'my-project' }
+     * }
+     *
+     * Output: {
+     *   success: true,
+     *   message: 'Projects fetched successfully',
+     *   data: {
+     *     list: [...],
+     *     total: 100,
+     *     page: 1,
+     *     pageSize: 10
+     *   }
+     * }
+     */
+    getProjects: t.procedure
+        .input(TableRequestParamsSchema)
+        .query(async ({ input }) => {
+            try {
+                const result = await RunDao.getProjects(
+                    input.pagination,
+                    input.sort,
+                    input.filters,
+                );
+
+                return {
+                    success: true,
+                    message: 'Projects fetched successfully',
+                    data: result,
+                } as ResponseBody<TableData<ProjectData>>;
+            } catch (error) {
+                console.error('Error fetching projects:', error);
+                return {
+                    success: false,
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : 'Unknown error',
+                } as ResponseBody<TableData<ProjectData>>;
+            }
+        }),
 });
 
 export type AppRouter = typeof appRouter;

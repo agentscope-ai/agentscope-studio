@@ -1,35 +1,33 @@
 import { Key, memo, MouseEvent, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Flex, Input, TableColumnsType } from 'antd';
+import { Flex, Input, TableColumnsType, Table } from 'antd';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 
-import AsTable from '@/components/tables/AsTable';
 import DeleteIcon from '@/assets/svgs/delete.svg?react';
 import PageTitleSpan from '@/components/spans/PageTitleSpan.tsx';
 
-import { useProjectListRoom } from '@/context/ProjectListRoomContext.tsx';
+import type { ProjectData } from '@shared/types';
 import { SecondaryButton } from '@/components/buttons/ASButton';
 import {
     NumberCell,
     renderTitle,
+    renderSortIcon,
     TextCell,
 } from '@/components/tables/utils.tsx';
-
-interface DataType {
-    project: string;
-    running: number;
-    pending: number;
-    finished: number;
-    total: number;
-    createdAt: string;
-}
+import { useProjectListRoom } from '@/context/ProjectListRoomContext.tsx';
 
 const ProjectPage = () => {
+    const {
+        deleteProjects,
+        searchText,
+        setSearchText,
+        tableDataSource,
+        tableLoading,
+        pagination,
+        onTableChange,
+    } = useProjectListRoom();
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { projects, deleteProjects } = useProjectListRoom();
-
-    const [searchText, setSearchText] = useState<string>('');
     const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
 
     const rowSelection = {
@@ -40,20 +38,22 @@ const ProjectPage = () => {
     };
 
     useEffect(() => {
-        const existedProjects = projects.map((proj) => proj.project);
+        const existedProjects = tableDataSource.map((proj) => proj.project);
         setSelectedRowKeys((prevRowKeys) =>
             prevRowKeys.filter((project) =>
                 existedProjects.includes(project as string),
             ),
         );
-    }, [projects]);
+    }, [tableDataSource]);
 
-    const columns: TableColumnsType<DataType> = [
+    const columns: TableColumnsType<ProjectData> = [
         {
             title: renderTitle(t('common.project'), 14),
             key: 'project',
+            dataIndex: 'project',
             width: '40%',
-            defaultSortOrder: undefined,
+            sorter: true,
+            sortIcon: (sortOrder) => renderSortIcon(sortOrder, true),
             render: (value, record) => (
                 <TextCell
                     text={value}
@@ -62,9 +62,12 @@ const ProjectPage = () => {
             ),
         },
         {
+            title: 'createdAt',
             key: 'createdAt',
-            defaultSortOrder: 'descend',
+            dataIndex: 'createdAt',
             width: '20%',
+            sorter: true,
+            sortIcon: (sortOrder) => renderSortIcon(sortOrder, true),
             render: (value, record) => (
                 <TextCell
                     text={value}
@@ -73,7 +76,12 @@ const ProjectPage = () => {
             ),
         },
         {
+            title: 'running',
             key: 'running',
+            dataIndex: 'running',
+            align: 'right',
+            sorter: true,
+            sortIcon: (sortOrder) => renderSortIcon(sortOrder, true),
             render: (value, record) => (
                 <NumberCell
                     number={value}
@@ -82,7 +90,12 @@ const ProjectPage = () => {
             ),
         },
         {
+            title: 'finished',
             key: 'finished',
+            dataIndex: 'finished',
+            align: 'right',
+            sorter: true,
+            sortIcon: (sortOrder) => renderSortIcon(sortOrder, true),
             render: (value, record) => (
                 <NumberCell
                     number={value}
@@ -91,7 +104,12 @@ const ProjectPage = () => {
             ),
         },
         {
+            title: 'pending',
             key: 'pending',
+            dataIndex: 'pending',
+            align: 'right',
+            sorter: true,
+            sortIcon: (sortOrder) => renderSortIcon(sortOrder, true),
             render: (value, record) => (
                 <NumberCell
                     number={value}
@@ -100,7 +118,12 @@ const ProjectPage = () => {
             ),
         },
         {
+            title: 'total',
             key: 'total',
+            dataIndex: 'total',
+            align: 'right',
+            sorter: true,
+            sortIcon: (sortOrder) => renderSortIcon(sortOrder, true),
             render: (value, record) => (
                 <NumberCell
                     number={value}
@@ -129,6 +152,7 @@ const ProjectPage = () => {
                     }}
                     variant="outlined"
                     placeholder={t('placeholder.search-project')}
+                    allowClear
                 />
 
                 <SecondaryButton
@@ -152,28 +176,52 @@ const ProjectPage = () => {
                 </SecondaryButton>
             </Flex>
 
-            <AsTable<DataType>
-                columns={columns}
-                dataSource={projects.filter((proj) =>
-                    proj.project.includes(searchText),
-                )}
-                loading={false}
-                onRow={(record: DataType) => {
-                    return {
-                        onClick: (event: MouseEvent) => {
-                            if (event.type === 'click') {
-                                navigate(`projects/${record.project}`);
-                            }
-                        },
-                        style: {
-                            cursor: 'pointer',
-                        },
-                    };
+            <div
+                style={{
+                    height: 'calc(100vh - 200px)',
+                    maxHeight: '600px',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'calc(var(--radius) - 2px)',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column',
                 }}
-                pagination={false}
-                rowKey="project"
-                rowSelection={rowSelection}
-            />
+            >
+                <Table<ProjectData>
+                    size="small"
+                    columns={columns}
+                    dataSource={tableDataSource}
+                    loading={tableLoading}
+                    scroll={{
+                        y: 'calc(100vh - 320px)',
+                        x: 'max-content',
+                    }}
+                    pagination={{
+                        current: pagination.current,
+                        pageSize: pagination.pageSize,
+                        total: pagination.total,
+                        showSizeChanger: true,
+                        showQuickJumper: true,
+                        showTotal: (total) => `${total} items in total`,
+                        pageSizeOptions: ['10', '20', '50', '100'],
+                        hideOnSinglePage: false,
+                        style: { marginRight: '16px' },
+                    }}
+                    onChange={onTableChange}
+                    onRow={(record: ProjectData) => {
+                        return {
+                            onClick: (event: MouseEvent) => {
+                                if (event.type === 'click') {
+                                    navigate(`projects/${record.project}`);
+                                }
+                            },
+                            style: { cursor: 'pointer' },
+                        };
+                    }}
+                    rowKey="project"
+                    rowSelection={rowSelection}
+                />
+            </div>
         </Flex>
     );
 };

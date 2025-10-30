@@ -23,10 +23,10 @@ const TitleBar = ({ title }: Props) => {
             }}
         >
             <Flex
-                className={'title-bar'}
+                className="title-bar"
                 vertical={false}
-                align={'center'}
-                justify={'space-between'}
+                align="center"
+                justify="space-between"
             >
                 <span style={{ fontSize: 16, fontWeight: 500 }}>{title}</span>
                 <LanguageSwitchButton />

@@ -53,14 +53,14 @@ const ReplyBubble = ({
             gap={3}
         >
             <Flex
-                className={'as-reply-bubble'}
+                className="as-reply-bubble"
                 style={{
                     width: '100%',
                     padding: 8,
                     borderRadius: 8,
                 }}
                 vertical={false}
-                gap={'small'}
+                gap="small"
             >
                 {role === 'user' ? null : (
                     <Avatar
@@ -80,7 +80,7 @@ const ReplyBubble = ({
                             width: 'fit-content',
                             fontWeight: 500,
                         }}
-                        align={'center'}
+                        align="center"
                     >
                         {name}
                     </Flex>
@@ -110,8 +110,8 @@ const ReplyBubble = ({
                     height: 16,
                 }}
                 vertical={false}
-                align={'center'}
-                gap={'small'}
+                align="center"
+                gap="small"
             >
                 <div>{startTimeStamp.split('.')[0]}</div>
 
