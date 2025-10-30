@@ -1,14 +1,15 @@
+import { FindOptionsWhere, In } from 'typeorm';
 import {
     InputRequestData,
     MessageData,
     ProjectData,
     RunData,
+    Status,
 } from '../../../shared/src';
 import { RunTable } from '../models/Run';
-import { checkProcessByPid } from '../utils';
 import { RunView } from '../models/RunView';
-import { FindOptionsWhere, In } from 'typeorm';
-import { Status } from '../../../shared/src';
+import { checkProcessByPid } from '../utils';
+import { SpanDao } from './Trace';
 
 export class RunDao {
     static async doesProjectExist(project: string) {
@@ -141,8 +142,10 @@ export class RunDao {
         try {
             const result = await RunTable.findOne({
                 where: { id: runId },
-                relations: ['messages', 'inputRequests', 'spans'],
+                relations: ['messages', 'inputRequests'],
             });
+
+            const spans = await SpanDao.getSpansByRunId(runId);
 
             if (result) {
                 return {
@@ -173,7 +176,7 @@ export class RunDao {
                                 ...row.msg,
                             }) as MessageData,
                     ),
-                    spans: result.spans,
+                    spans: spans
                 };
             } else {
                 throw new Error(`Run with id ${runId} not found`);

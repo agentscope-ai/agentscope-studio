@@ -1,11 +1,10 @@
 import {
     createContext,
-    useContext,
     ReactNode,
+    useContext,
     useEffect,
     useState,
 } from 'react';
-import { useSocket } from './SocketContext';
 import {
     BackendResponse,
     InputRequestData,
@@ -14,17 +13,18 @@ import {
     RunData,
     SocketEvents,
 } from '../../../shared/src/types/trpc';
+import { useSocket } from './SocketContext';
 
+import { useParams } from 'react-router-dom';
+import { ContentBlocks } from '../../../shared/src/types/messageForm';
 import {
-    TraceData,
     SpanData,
+    TraceData,
     TraceStatus,
 } from '../../../shared/src/types/trace';
-import { useParams } from 'react-router-dom';
+import { getTimeDifferenceNano } from '../../../shared/src/utils/timeUtils';
 import { ProjectNotFoundPage } from '../pages/DefaultPage';
-import { ContentBlocks } from '../../../shared/src/types/messageForm';
 import { useMessageApi } from './MessageApiContext.tsx';
-import { getTimeDifference } from '../../../shared/src/utils/timeUtils';
 
 interface RunRoomContextType {
     messages: MessageData[];
@@ -50,20 +50,29 @@ interface Props {
 const calculateTraceData = (spans: SpanData[]) => {
     if (!spans.length) return null;
 
-    const startTimes = spans.map((span) => new Date(span.startTime).getTime());
-    const endTimes = spans.map((span) => new Date(span.endTime).getTime());
+    // Find earliest start time and latest end time by comparing nanosecond timestamps directly
+    const startTimes = spans.map((span) => parseInt(span.startTimeUnixNano));
+    const endTimes = spans.map((span) => parseInt(span.endTimeUnixNano));
 
-    const earliestStart = new Date(Math.min(...startTimes)).toISOString();
-    const latestEnd = new Date(Math.max(...endTimes)).toISOString();
+    const earliestStartNano = Math.min(...startTimes);
+    const latestEndNano = Math.max(...endTimes);
 
-    const status = spans.some((span) => span.status === TraceStatus.ERROR)
+    // Convert to Date objects for display
+    const earliestStart = new Date(earliestStartNano / 1000000).toISOString();
+    const latestEnd = new Date(latestEndNano / 1000000).toISOString();
+
+    const status = spans.some((span) => span.status.code === 2) // ERROR status code
         ? TraceStatus.ERROR
         : TraceStatus.OK;
 
+    // Calculate duration directly from nanosecond timestamps
+    const durationNano = getTimeDifferenceNano(earliestStartNano, latestEndNano);
+
+    console.log('durationNano', durationNano);
     const data = {
         startTime: earliestStart,
         endTime: latestEnd,
-        duration: getTimeDifference(earliestStart, latestEnd),
+        duration: durationNano,
         status: status,
     };
     return data;
@@ -93,7 +102,7 @@ export function RunRoomContextProvider({ children }: Props) {
                 setTrace({
                     startTime: traceData.startTime,
                     endTime: traceData.endTime,
-                    latencyMs: traceData.duration,
+                    latencyNs: traceData.duration, // duration is already in nanoseconds
                     status: traceData.status,
                     runId: runId,
                 } as TraceData);
@@ -149,7 +158,7 @@ export function RunRoomContextProvider({ children }: Props) {
                 const updatedSpans = [...prevSpans];
                 newSpans.forEach((newSpan) => {
                     const index = updatedSpans.findIndex(
-                        (span) => span.id === newSpan.id,
+                        (span) => span.spanId === newSpan.spanId,
                     );
                     if (index === -1) {
                         updatedSpans.push(newSpan);
@@ -159,7 +168,7 @@ export function RunRoomContextProvider({ children }: Props) {
                 });
 
                 return updatedSpans.sort((a, b) => {
-                    return a.startTime.localeCompare(b.startTime);
+                    return parseInt(a.startTimeUnixNano) - parseInt(b.startTimeUnixNano);
                 });
             });
         });

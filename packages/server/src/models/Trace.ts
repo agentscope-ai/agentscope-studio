@@ -2,55 +2,112 @@ import {
     BaseEntity,
     Column,
     Entity,
-    JoinColumn,
-    ManyToOne,
-    PrimaryColumn,
+    Index,
+    PrimaryColumn
 } from 'typeorm';
-import { RunTable } from './Run';
 
+// Span table - optimized for trace listing and filtering
 @Entity()
+@Index(['traceId']) // 用于按traceId查询
+@Index(['spanId']) // 用于按spanId查询
+@Index(['parentSpanId']) // 用于构建span树结构
+@Index(['startTimeUnixNano']) // 用于时间范围查询
+@Index(['status']) // 用于状态过滤
+@Index(['latencyNs']) // 用于性能分析
+@Index(['serviceName']) // 用于按服务名过滤
+@Index(['operationName']) // 用于按操作名过滤
+@Index(['instrumentationName']) // 用于按instrumentation过滤
+@Index(['model']) // 用于按模型过滤
+@Index(['inputTokens']) // 用于token统计
+@Index(['outputTokens']) // 用于token统计
+@Index(['runId']) // 用于按runId过滤
 export class SpanTable extends BaseEntity {
     @PrimaryColumn({ nullable: false })
     id: string;
 
-    @Column({ nullable: true })
+    @Column()
     traceId: string;
 
-    @Column({ nullable: true })
-    parentSpanId: string;
+    @Column()
+    spanId: string;
 
-    @ManyToOne(() => RunTable, { nullable: false, onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'run_id' })
-    runId: string;
+    @Column({ nullable: true })
+    traceState?: string;
+
+    @Column({ nullable: true })
+    parentSpanId?: string;
+
+    @Column({ nullable: true })
+    flags?: number;
 
     @Column()
     name: string;
 
     @Column()
-    spanKind: string;
+    kind: number; // SpanKind enum value (OpenTelemetry API enum)
+
+    @Column()
+    startTimeUnixNano: string;
+
+    @Column()
+    endTimeUnixNano: string;
 
     @Column('json')
     attributes: Record<string, unknown>;
 
-    @Column()
-    startTime: string;
+    @Column({ nullable: true })
+    droppedAttributesCount?: number;
 
-    @Column()
-    endTime: string;
+    @Column('json', { nullable: true })
+    events?: Record<string, unknown>[];
 
-    @Column('float')
-    latencyMs: number;
+    @Column({ nullable: true })
+    droppedEventsCount?: number;
 
-    @Column()
-    status: string;
+    @Column('json', { nullable: true })
+    links?: Record<string, unknown>[];
 
-    @Column()
-    statusMessage: string;
+    @Column({ nullable: true })
+    droppedLinksCount?: number;
 
     @Column('json')
-    events: {
-        name: string;
-        timestamp: string;
-        attributes: Record<string, unknown>;
-    }[];
+    status: Record<string, unknown>;
+
+    // Resource information - 直接嵌入，避免JOIN
+    @Column('json')
+    resource: Record<string, unknown>;
+
+    // InstrumentationScope information - 直接嵌入，避免JOIN
+    @Column('json')
+    scope: Record<string, unknown>;
+
+    // 提取的关键字段用于索引和快速查询
+    @Column({ nullable: true })
+    serviceName?: string; // resource.service.name
+
+    @Column({ nullable: true })
+    operationName?: string; // attributes.gen_ai.operation.name
+
+    @Column({ nullable: true })
+    instrumentationName?: string; // instrumentationScope.name
+
+    @Column({ nullable: true })
+    instrumentationVersion?: string; // instrumentationScope.version
+
+
+    @Column({ nullable: true })
+    model?: string; // attributes.gen_ai.request.model
+
+    @Column({ nullable: true })
+    inputTokens?: number; // attributes.gen_ai.usage.input_token
+
+    @Column({ nullable: true })
+    outputTokens?: number; // attributes.gen_ai.usage.output_token
+
+    // Additional fields for our application
+    @Column({ nullable: true })
+    runId?: string;
+
+    @Column('float')
+    latencyNs: number;
 }

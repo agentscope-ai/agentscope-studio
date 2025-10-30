@@ -1,11 +1,11 @@
-import { Tabs } from 'antd';
-import StatisticsPanel from './StatisticsPanel';
-import MsgPanel from './MsgPanel';
-import TracePanel from './TracePanel';
-import { MessageData } from '@shared/types';
-import { useTranslation } from 'react-i18next';
 import { useTour } from '@/context/TourContext.tsx';
+import { MessageData } from '@shared/types';
+import { Tabs } from 'antd';
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import MsgPanel from './MsgPanel';
+import StatisticsPanel from './StatisticsPanel';
+import TracePanel from './TracePanel';
 
 interface Props {
     activateTab: string;

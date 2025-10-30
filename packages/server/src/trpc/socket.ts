@@ -1,6 +1,11 @@
-import { Server } from 'socket.io';
+import { spawn } from 'child_process';
 import { Server as HttpServer } from 'http';
-import { RunDao } from '../dao/Run';
+import { Server } from 'socket.io';
+import {
+    ContentBlocks,
+    MessageForm,
+    Status,
+} from '../../../shared/src/types/messageForm';
 import {
     BackendResponse,
     InputRequestData,
@@ -11,25 +16,20 @@ import {
     SocketEvents,
     SocketRoomName,
 } from '../../../shared/src/types/trpc';
-import { spawn } from 'child_process';
-import {
-    ContentBlocks,
-    MessageForm,
-    Status,
-} from '../../../shared/src/types/messageForm';
+import { RunDao } from '../dao/Run';
 
-import { SpanData } from '../../../shared/src/types/trace';
-import { InputRequestDao } from '../dao/InputRequest';
-import { FridayAppMessageDao } from '../dao/FridayAppMessage';
 import dayjs from 'dayjs';
-import { ConfigManager, PATHS } from '../../../shared/src';
-import { ReplyingStateManager } from '../services/ReplyingStateManager';
 import * as fs from 'node:fs';
+import { ConfigManager, PATHS } from '../../../shared/src';
 import {
     FridayConfig,
     FridayConfigManager,
 } from '../../../shared/src/config/friday';
+import { SpanData } from '../../../shared/src/types/trace';
+import { FridayAppMessageDao } from '../dao/FridayAppMessage';
+import { InputRequestDao } from '../dao/InputRequest';
 import { SpanDao } from '../dao/Trace';
+import { ReplyingStateManager } from '../services/ReplyingStateManager';
 
 export class SocketManager {
     private static io: Server;

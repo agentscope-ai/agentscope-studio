@@ -1,15 +1,15 @@
 import express, { Request, Response } from 'express';
 
-import { gunzip, inflate } from 'zlib';
 import { promisify } from 'util';
-import { SpanProcessor } from '../otel/processor';
+import { gunzip, inflate } from 'zlib';
 import { SpanDao } from '../dao/Trace';
+import { SpanProcessor } from '../otel/processor';
 import { SocketManager } from '../trpc/socket';
+import { opentelemetry } from './opentelemetry/proto/trace/v1/trace';
 const gunzipAsync = promisify(gunzip);
 const inflateAsync = promisify(inflate);
 
 const otelRouter = express.Router();
-import { opentelemetry } from './opentelemetry/proto/trace/v1/trace';
 
 // Request: POST /v1/traces
 otelRouter.post('/traces', async (req: Request, res: Response) => {

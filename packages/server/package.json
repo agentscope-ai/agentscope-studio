@@ -8,6 +8,7 @@
         "build": "tsc -p tsconfig.json"
     },
     "dependencies": {
+        "@opentelemetry/otlp-transformer": "^0.207.0",
         "@trpc/server": "^11.0.1",
         "@types/google-protobuf": "^3.15.12",
         "cors": "^2.8.5",
@@ -15,9 +16,11 @@
         "find-process": "^1.4.10",
         "google-protobuf": "^3.21.4",
         "opener": "^1.5.2",
-        "protobufjs": "^7.5.3",
+        "protobufjs": "^7.5.4",
+        "protoc-gen-ts": "^0.8.7",
         "socket.io": "^4.8.1",
         "sqlite3": "^5.1.7",
+        "ts-proto": "^2.8.2",
         "typeorm": "^0.3.21",
         "ws": "^8.18.1",
         "zod": "^3.24.2"
