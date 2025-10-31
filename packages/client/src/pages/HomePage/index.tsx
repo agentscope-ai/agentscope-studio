@@ -1,4 +1,4 @@
-import { Flex, Layout, Menu } from 'antd';
+import { Layout, Menu } from 'antd';
 import { useEffect, useState } from 'react';
 import {
     Navigate,
@@ -25,7 +25,6 @@ import LogoIcon from '@/assets/svgs/logo-font.svg?react';
 // import EvaluationIcon from '@/assets/svgs/evaluation.svg?react';
 
 import { RouterPath } from '../RouterPath.ts';
-import { SingleLineEllipsisStyle } from '@/styles.ts';
 import { checkForUpdates } from '@/utils/versionCheck.ts';
 import { useNotification } from '@/context/NotificationContext.tsx';
 import { OverviewRoomContextProvider } from '@/context/OverviewRoomContext.tsx';
@@ -112,25 +111,12 @@ const HomePage = () => {
                     borderRight: '1px solid var(--border)',
                 }}
             >
-                <Flex
-                    style={{
-                        fontSize: 24,
-                        fontWeight: 'bolder',
-                        padding: '20px 0',
-                        width: '100%',
-                        height: 92,
-                    }}
-                    justify="center"
-                >
-                    <Flex
-                        style={SingleLineEllipsisStyle}
-                        align="center"
-                        gap="small"
-                    >
+                <div className="w-full h-[92px] py-5 text-[24px] font-extrabold flex justify-center">
+                    <div className="w-full flex items-center gap-2 truncate">
                         <LogoIcon fill="#000" width={29} height={29} />
                         {collapse ? null : 'Studio'}
-                    </Flex>
-                </Flex>
+                    </div>
+                </div>
                 <Menu
                     defaultSelectedKeys={[RouterPath.HOME]}
                     selectedKeys={[currentPath]}
