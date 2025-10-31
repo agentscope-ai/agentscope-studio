@@ -140,7 +140,7 @@ export class SpanProcessor {
      * @param span The original span object (for additional context if needed)
      * @returns Converted attributes in new format
      */
-    private static convertOldProtocolToNew(
+    public static convertOldProtocolToNew(
         attributes: Record<string, unknown>,
         span: any,
     ): Record<string, any> {
