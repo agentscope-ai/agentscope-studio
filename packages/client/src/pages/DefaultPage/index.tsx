@@ -1,8 +1,9 @@
 import { memo, ReactNode } from 'react';
-import NotFoundIcon from '../../assets/svgs/page-notFound.svg?react';
-import EmptyIcon from '../../assets/svgs/page-empty.svg?react';
 import { useTranslation } from 'react-i18next';
-import WipIcon from '../../assets/svgs/page-wip.svg?react';
+
+import WipIcon from '@/assets/svgs/page-wip.svg?react';
+import EmptyIcon from '@/assets/svgs/page-empty.svg?react';
+import NotFoundIcon from '@/assets/svgs/page-notFound.svg?react';
 
 interface Props {
     icon: ReactNode;

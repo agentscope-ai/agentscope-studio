@@ -1,14 +1,9 @@
-
-import {
-    Attributes,
-    SpanKind,
-    SpanStatus
-} from '@opentelemetry/api';
+import { Attributes, SpanKind, SpanStatus } from '@opentelemetry/api';
 
 // Trace status enum
 export enum TraceStatus {
     OK = 'OK',
-    ERROR = 'ERROR'
+    ERROR = 'ERROR',
 }
 
 // Trace data interface
@@ -43,7 +38,6 @@ export interface SpanResource {
     attributes: SpanAttributes;
     schemaUrl?: string;
 }
-
 
 export interface SpanScope {
     name: string;

@@ -176,7 +176,7 @@ export class RunDao {
                                 ...row.msg,
                             }) as MessageData,
                     ),
-                    spans: spans
+                    spans: spans,
                 };
             } else {
                 throw new Error(`Run with id ${runId} not found`);

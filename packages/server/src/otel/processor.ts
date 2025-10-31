@@ -5,14 +5,16 @@ import {
     SpanEvent,
     SpanLink,
     SpanResource,
-    SpanScope
+    SpanScope,
 } from '../../../shared/src/types/trace';
 import {
     getNestedValue,
     unflattenObject,
 } from '../../../shared/src/utils/objectUtils';
-import { decodeUnixNano, getTimeDifferenceNano } from '../../../shared/src/utils/timeUtils';
-
+import {
+    decodeUnixNano,
+    getTimeDifferenceNano,
+} from '../../../shared/src/utils/timeUtils';
 
 export class SpanProcessor {
     public static validateOTLPSpan(span: any): boolean {
@@ -51,7 +53,9 @@ export class SpanProcessor {
         // console.debug('[SpanProcessor] span', span);
         const traceId = this.decodeIdentifier(span.trace_id);
         const spanId = this.decodeIdentifier(span.span_id);
-        const parentId = span.parent_span_id ? this.decodeIdentifier(span.parent_span_id) : undefined;
+        const parentId = span.parent_span_id
+            ? this.decodeIdentifier(span.parent_span_id)
+            : undefined;
         const startTimeUnixNano = decodeUnixNano(span.start_time_unix_nano);
         const endTimeUnixNano = decodeUnixNano(span.end_time_unix_nano);
 
@@ -96,7 +100,10 @@ export class SpanProcessor {
             resource: resource,
             scope: scope,
             runId: this.getRunId(attributes),
-            latencyNs: getTimeDifferenceNano(startTimeUnixNano, endTimeUnixNano),
+            latencyNs: getTimeDifferenceNano(
+                startTimeUnixNano,
+                endTimeUnixNano,
+            ),
         } as SpanData;
     }
 
@@ -107,7 +114,6 @@ export class SpanProcessor {
     ): any {
         return getNestedValue(attributes, key, separator);
     }
-
 
     private static getRunId(attributes: Record<string, unknown>): string {
         // Try new format first
@@ -120,10 +126,7 @@ export class SpanProcessor {
             return String(newRunId);
         }
         // Fallback to old format
-        const oldRunId = this.getAttributeValue(
-            attributes,
-            'project.run_id',
-        );
+        const oldRunId = this.getAttributeValue(attributes, 'project.run_id');
         return oldRunId ? String(oldRunId) : 'unknown';
     }
 
@@ -156,17 +159,18 @@ export class SpanProcessor {
         }
 
         const newAttributes: Record<string, unknown> = {
-            'gen_ai': {
-                'conversation': {},
-                'request': {},
-                'operation': {},
-            }, 'agentscope': {
-                'function': {
-                    'input': {},
-                    'metadata': {},
-                    'output': {}
-                }
-            }
+            gen_ai: {
+                conversation: {},
+                request: {},
+                operation: {},
+            },
+            agentscope: {
+                function: {
+                    input: {},
+                    metadata: {},
+                    output: {},
+                },
+            },
         } as Record<string, unknown>;
 
         const genAi = newAttributes.gen_ai as Record<string, unknown>;
@@ -174,12 +178,14 @@ export class SpanProcessor {
         const request = genAi.request as Record<string, unknown>;
         const operation = genAi.operation as Record<string, unknown>;
         const agentscope = newAttributes.agentscope as Record<string, unknown>;
-        const agentscopeFunction = agentscope.function as Record<string, unknown>;
+        const agentscopeFunction = agentscope.function as Record<
+            string,
+            unknown
+        >;
 
         agentscopeFunction.name = span.name;
         conversation.id = this.getAttributeValue(attributes, 'project.run_id');
         const span_kind = this.getAttributeValue(attributes, 'span.kind');
-
 
         // Convert input -> agentscope.function.input
         const inputValue = this.getAttributeValue(attributes, 'input');
@@ -191,17 +197,22 @@ export class SpanProcessor {
         if (metadataValue) {
             agentscopeFunction.metadata = metadataValue;
         }
-        const outputValue = this.getAttributeValue(attributes, 'output') as Record<string, unknown> | undefined;
+        const outputValue = this.getAttributeValue(attributes, 'output') as
+            | Record<string, unknown>
+            | undefined;
         if (outputValue) {
             agentscopeFunction.output = outputValue;
             if (outputValue.usage && typeof outputValue.usage === 'object') {
-
                 if (!genAi.usage) {
                     genAi.usage = {};
                 }
                 const usage = genAi.usage as Record<string, unknown>;
-                usage.input_tokens = (outputValue.usage as Record<string, unknown>).input_tokens;
-                usage.output_tokens = (outputValue.usage as Record<string, unknown>).output_tokens;
+                usage.input_tokens = (
+                    outputValue.usage as Record<string, unknown>
+                ).input_tokens;
+                usage.output_tokens = (
+                    outputValue.usage as Record<string, unknown>
+                ).output_tokens;
             }
         }
 
@@ -214,17 +225,19 @@ export class SpanProcessor {
             span_name = operation.name + ' ' + (metadataValue?.name || '');
         } else if (span_kind === OldSpanKind.LLM) {
             operation.name = 'chat';
-            span_name = operation.name + ' ' + (metadataValue?.model_name || '');
+            span_name =
+                operation.name + ' ' + (metadataValue?.model_name || '');
         } else if (span_kind === OldSpanKind.EMBEDDING) {
             operation.name = 'embedding';
-            span_name = operation.name + ' ' + (metadataValue?.model_name || '');
+            span_name =
+                operation.name + ' ' + (metadataValue?.model_name || '');
         } else if (span_kind === OldSpanKind.FORMATTER) {
             operation.name = 'format';
         } else {
             operation.name = 'unknown';
         }
 
-        return { 'span_name': span_name, 'attributes': newAttributes };
+        return { span_name: span_name, attributes: newAttributes };
     }
 
     private static decodeIdentifier(
@@ -235,10 +248,7 @@ export class SpanProcessor {
         return Buffer.from(identifier).toString('hex');
     }
 
-
-    private static decodeKeyValues(
-        keyValues: any[],
-    ): Record<string, unknown> {
+    private static decodeKeyValues(keyValues: any[]): Record<string, unknown> {
         const result: Record<string, unknown> = {};
         for (const kv of keyValues) {
             result[kv.key] = this.decodeAnyValue(kv.value!);
@@ -247,14 +257,13 @@ export class SpanProcessor {
     }
 
     private static decodeAnyValue(value: any): unknown {
-
         if (value.bool_value !== false) return value.bool_value;
         if (value.int_value !== 0) return value.int_value;
         if (value.double_value !== 0) return value.double_value;
         if (value.string_value !== '') return value.string_value;
         if (value.array_value?.values) {
             return value.array_value.values.map((v: any) =>
-                this.decodeAnyValue(v)
+                this.decodeAnyValue(v),
             );
         }
 
@@ -289,7 +298,9 @@ export class SpanProcessor {
             name: event.name || '',
             time: decodeUnixNano(event.time_unix_nano),
             attributes: this.unflattenAttributes(
-                this.loadJsonStrings(this.decodeKeyValues(event.attributes || [])),
+                this.loadJsonStrings(
+                    this.decodeKeyValues(event.attributes || []),
+                ),
             ) as Attributes,
             droppedAttributesCount: event.dropped_attributes_count,
         };
@@ -302,7 +313,9 @@ export class SpanProcessor {
             traceState: link.trace_state,
             flags: link.flags,
             attributes: this.unflattenAttributes(
-                this.loadJsonStrings(this.decodeKeyValues(link.attributes || [])),
+                this.loadJsonStrings(
+                    this.decodeKeyValues(link.attributes || []),
+                ),
             ) as Attributes,
             droppedAttributesCount: link.dropped_attributes_count,
         };
@@ -332,11 +345,11 @@ export class SpanProcessor {
         return result;
     }
 
-    private static decodeResource(
-        resource: any,
-    ): SpanResource {
+    private static decodeResource(resource: any): SpanResource {
         const attributes = this.unflattenAttributes(
-            this.loadJsonStrings(this.decodeKeyValues(resource.attributes || [])),
+            this.loadJsonStrings(
+                this.decodeKeyValues(resource.attributes || []),
+            ),
         ) as Attributes;
 
         return {
@@ -345,9 +358,7 @@ export class SpanProcessor {
         };
     }
 
-    private static decodeScope(
-        scope: any,
-    ): SpanScope {
+    private static decodeScope(scope: any): SpanScope {
         const attributes = this.unflattenAttributes(
             this.loadJsonStrings(this.decodeKeyValues(scope.attributes || [])),
         ) as Attributes;
@@ -359,7 +370,6 @@ export class SpanProcessor {
             schemaUrl: scope.schema_url,
         };
     }
-
 
     public static safeDecodeOTLPSpan(
         span: any,
@@ -377,9 +387,7 @@ export class SpanProcessor {
         }
     }
 
-    public static batchProcessOTLPTraces(
-        resourceSpans: any[],
-    ): SpanData[] {
+    public static batchProcessOTLPTraces(resourceSpans: any[]): SpanData[] {
         const spans: SpanData[] = [];
         try {
             for (const resourceSpan of resourceSpans) {
@@ -399,8 +407,11 @@ export class SpanProcessor {
                     }
 
                     for (const span of scopeSpan.spans) {
-                        const processedSpan =
-                            SpanProcessor.safeDecodeOTLPSpan(span, resource, scope);
+                        const processedSpan = SpanProcessor.safeDecodeOTLPSpan(
+                            span,
+                            resource,
+                            scope,
+                        );
                         if (processedSpan) {
                             spans.push(processedSpan);
                         }

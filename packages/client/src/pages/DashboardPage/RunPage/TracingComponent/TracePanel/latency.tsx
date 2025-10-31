@@ -1,10 +1,10 @@
 import NumberCounter from '@/components/numbers/NumberCounter';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
+
 interface LatencyProps {
     latencyNs: number | undefined;
 }
-
 
 function nanoToMilliseconds(nanoTimestamp: string | number): number {
     return Number(nanoTimestamp) / 1_000_000;

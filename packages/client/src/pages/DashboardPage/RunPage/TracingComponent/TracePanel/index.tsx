@@ -1,10 +1,12 @@
-import { useRunRoom } from '@/context/RunRoomContext.tsx';
-import { MetaDataSection } from '@/pages/DashboardPage/RunPage/TracingComponent/ShareComponents.tsx';
-import Latency from '@/pages/DashboardPage/RunPage/TracingComponent/TracePanel/latency.tsx';
-import { EmptyPage } from '@/pages/DefaultPage';
 import { memo, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+
+import Latency from '@/pages/DashboardPage/RunPage/TracingComponent/TracePanel/latency.tsx';
 import TraceTree from './TraceTree';
+
+import { useRunRoom } from '@/context/RunRoomContext.tsx';
+import { MetaDataSection } from '@/pages/DashboardPage/RunPage/TracingComponent/ShareComponents.tsx';
+import { EmptyPage } from '@/pages/DefaultPage';
 
 export const TracePanel = () => {
     const { trace, spans } = useRunRoom();

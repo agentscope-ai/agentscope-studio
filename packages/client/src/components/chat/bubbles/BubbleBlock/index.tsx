@@ -1,3 +1,13 @@
+import { memo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Collapse, Flex, Image, Switch, Tooltip } from 'antd';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { materialDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+
+import MarkdownRender from '@/components/chat/bubbles/MarkdownRender';
+import FoldDownIcon from '@/assets/svgs/fold-down.svg?react';
+
+import { SingleLineEllipsisStyle } from '@/styles.ts';
 import {
     Base64Source,
     BlockType,
@@ -7,20 +17,19 @@ import {
     ToolUseBlock,
     URLSource,
 } from '@shared/types';
-import { memo, useState } from 'react';
-import MarkdownRender from '@/components/chat/bubbles/MarkdownRender';
-import { Collapse, Flex, Image, Switch, Tooltip } from 'antd';
-import { SingleLineEllipsisStyle } from '@/styles.ts';
-import FoldDownIcon from '../../../../assets/svgs/fold-down.svg?react';
-import { useTranslation } from 'react-i18next';
-import { materialDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 
+/**
+ * Props for the BubbleBlock component that renders different types of content blocks.
+ */
 interface Props {
     block: ContentBlock | string;
     markdown?: boolean;
 }
 
+/**
+ * Render text content with optional markdown support.
+ * Falls back to plain text with proper word wrapping if markdown is disabled.
+ */
 const TextBlockDiv = ({
     text,
     markdown,
@@ -46,6 +55,10 @@ const TextBlockDiv = ({
     );
 };
 
+/**
+ * Render thinking content with special styling and optional markdown support.
+ * Displays with a left border and muted colors to distinguish from regular text.
+ */
 const ThinkingBlockDiv = ({
     thinking,
     markdown,
@@ -70,6 +83,10 @@ const ThinkingBlockDiv = ({
     );
 };
 
+/**
+ * Render image content from base64 or URL sources.
+ * Supports both embedded base64 data and external URLs.
+ */
 const ImageBlockDiv = ({ source }: { source: Base64Source | URLSource }) => {
     let url: string;
     if (source.type === SourceType.BASE64) {
@@ -82,6 +99,10 @@ const ImageBlockDiv = ({ source }: { source: Base64Source | URLSource }) => {
     return <Image width={150} key={url} src={url} alt={url} />;
 };
 
+/**
+ * Render video content from base64 or URL sources.
+ * Note: Currently renders as audio element - may need correction for actual video.
+ */
 const VideoBlockDiv = ({ source }: { source: Base64Source | URLSource }) => {
     let url: string;
     if (source.type === 'base64') {
@@ -96,6 +117,10 @@ const VideoBlockDiv = ({ source }: { source: Base64Source | URLSource }) => {
     );
 };
 
+/**
+ * Render audio content from base64 or URL sources.
+ * Note: Currently renders as video element - may need correction for actual audio.
+ */
 const AudioBlockDiv = ({ source }: { source: Base64Source | URLSource }) => {
     let url: string;
     if (source.type === 'base64') {
@@ -110,6 +135,10 @@ const AudioBlockDiv = ({ source }: { source: Base64Source | URLSource }) => {
     );
 };
 
+/**
+ * Render tool usage information in a collapsible panel.
+ * Shows tool name and full JSON details with syntax highlighting.
+ */
 const ToolUseBlockDiv = ({ block }: { block: ToolUseBlock }) => {
     const { t } = useTranslation();
     return (
@@ -162,10 +191,15 @@ const ToolUseBlockDiv = ({ block }: { block: ToolUseBlock }) => {
     );
 };
 
+/**
+ * Render tool execution results in a collapsible panel.
+ * Supports switching between formatted content and raw JSON output.
+ */
 const ToolResultBlockDiv = ({ block }: { block: ToolResultBlock }) => {
     const { t } = useTranslation();
     const [displayRaw, setDisplayRaw] = useState<boolean>(false);
 
+    // Extract display content from tool output (string or text blocks)
     let displayContent: string = '';
     if (typeof block.output === 'string') {
         displayContent = block.output;
@@ -257,6 +291,10 @@ const ToolResultBlockDiv = ({ block }: { block: ToolResultBlock }) => {
     );
 };
 
+/**
+ * Main component that renders different types of content blocks in chat bubbles.
+ * Supports text, thinking, media (image/video/audio), and tool-related content.
+ */
 const BubbleBlock = ({ block, markdown = true }: Props) => {
     if (typeof block === 'string') {
         return <TextBlockDiv text={block} markdown={markdown} />;

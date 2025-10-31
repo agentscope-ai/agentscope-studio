@@ -1,10 +1,4 @@
-import {
-    BaseEntity,
-    Column,
-    Entity,
-    Index,
-    PrimaryColumn
-} from 'typeorm';
+import { BaseEntity, Column, Entity, Index, PrimaryColumn } from 'typeorm';
 
 // Span table - optimized for trace listing and filtering
 @Entity()
@@ -93,7 +87,6 @@ export class SpanTable extends BaseEntity {
 
     @Column({ nullable: true })
     instrumentationVersion?: string; // instrumentationScope.version
-
 
     @Column({ nullable: true })
     model?: string; // attributes.gen_ai.request.model

@@ -1,4 +1,7 @@
-import { FridayAppMessageTable, FridayAppReplyTable } from '../models/FridayApp';
+import {
+    FridayAppMessageTable,
+    FridayAppReplyTable,
+} from '../models/FridayApp';
 import { ContentBlocks, ReplyData } from '../../../shared/src';
 import { FridayAppReplyView } from '../models/FridayAppView';
 import { LessThan } from 'typeorm';

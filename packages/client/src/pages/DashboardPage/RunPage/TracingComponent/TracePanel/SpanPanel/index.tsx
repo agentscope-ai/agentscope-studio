@@ -1,7 +1,8 @@
-import { SpanData } from '@shared/types/trace.ts';
 import moment from 'moment';
 import { memo, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+
+import { SpanData } from '@shared/types/trace.ts';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { materialDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
@@ -19,7 +20,7 @@ const SpanSection = memo((props: SpanSectionProps) => {
                 {props.description}
             </div>
             <SyntaxHighlighter
-                language={'JSON'}
+                language="JSON"
                 style={materialDark}
                 showLineNumbers={true}
                 customStyle={{
@@ -51,8 +52,10 @@ const SpanPanel = ({ span }: Props) => {
         return null;
     }
 
-    const attributes = span.attributes?.agentscope?.function as unknown as Record<string, unknown>;
-    const operation_name = span.attributes?.gen_ai?.operation?.name as unknown as string;
+    const attributes = span.attributes?.agentscope
+        ?.function as unknown as Record<string, unknown>;
+    const operation_name = span.attributes?.gen_ai?.operation
+        ?.name as unknown as string;
     const renderCol = (title: string, value: string | ReactNode) => {
         return (
             <div className="flex col-span-1 pt-4 pb-4 pl-4">
@@ -71,33 +74,46 @@ const SpanPanel = ({ span }: Props) => {
     return (
         <div className="flex flex-1 flex-col gap-y-8">
             <div className="grid grid-cols-1 sm:grid-cols-3 border rounded-md">
-                {renderCol(t('common.status'), span.status.code === 2 ? 'ERROR' : 'OK')}
+                {renderCol(
+                    t('common.status'),
+                    span.status.code === 2 ? 'ERROR' : 'OK',
+                )}
                 {renderCol(t('common.span-name'), span.name)}
                 {renderCol(
                     t('common.start-time'),
-                    moment(parseInt(span.startTimeUnixNano) / 1000000).format('YYYY-MM-DD HH:mm:ss'),
+                    moment(parseInt(span.startTimeUnixNano) / 1000000).format(
+                        'YYYY-MM-DD HH:mm:ss',
+                    ),
                 )}
                 {renderCol('', '')}
                 {renderCol(t('common.span-kind'), operation_name)}
                 {renderCol(
                     t('common.end-time'),
-                    moment(parseInt(span.endTimeUnixNano) / 1000000).format('YYYY-MM-DD HH:mm:ss'),
+                    moment(parseInt(span.endTimeUnixNano) / 1000000).format(
+                        'YYYY-MM-DD HH:mm:ss',
+                    ),
                 )}
             </div>
             <SpanSection
                 title={t('common.metadata')}
                 description={t('description.trace.metadata')}
-                content={attributes?.metadata as unknown as Record<string, unknown>}
+                content={
+                    attributes?.metadata as unknown as Record<string, unknown>
+                }
             />
             <SpanSection
                 title={t('common.input')}
                 description={t('description.trace.input')}
-                content={attributes?.input as unknown as Record<string, unknown>}
+                content={
+                    attributes?.input as unknown as Record<string, unknown>
+                }
             />
             <SpanSection
                 title={t('common.output')}
                 description={t('description.trace.output')}
-                content={attributes?.output as unknown as Record<string, unknown>}
+                content={
+                    attributes?.output as unknown as Record<string, unknown>
+                }
             />
         </div>
     );

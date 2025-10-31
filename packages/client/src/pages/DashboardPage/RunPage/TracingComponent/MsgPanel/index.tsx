@@ -1,14 +1,15 @@
 import { Flex } from 'antd';
 import { memo } from 'react';
-import { MessageData } from '../../../../../../../shared/src/types/trpc';
-import { RemoveScrollBarStyle } from '../../../../../styles.ts';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import styles from '@/components/chat/bubbles/MarkdownRender/styles.ts';
-import { ContentType } from '../../../../../../../shared/src/types/messageForm';
-import { MetaDataSection } from '../ShareComponents.tsx';
 import { useTranslation } from 'react-i18next';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+
+import { MessageData } from '@shared/types/trpc';
+import { RemoveScrollBarStyle } from '@/styles.ts';
+import { ContentType } from '@shared/types/messageForm';
+import { MetaDataSection } from '../ShareComponents.tsx';
 import { EmptyMessagePage } from '../../../../DefaultPage';
 
+import styles from '@/components/chat/bubbles/MarkdownRender/styles.ts';
 interface Props {
     msg: MessageData | null;
 }
@@ -48,12 +49,12 @@ const MsgPanel = ({ msg }: Props) => {
                         boxSizing: 'border-box',
                         borderBottom: '1px solid var(--border)',
                     }}
-                    justify={'space-between'}
+                    justify="space-between"
                 >
                     <span>{title}</span>
                 </Flex>
                 <SyntaxHighlighter
-                    language={'JSON'}
+                    language="JSON"
                     style={styles}
                     showLineNumbers={true}
                     wrapLines={true}
@@ -80,7 +81,7 @@ const MsgPanel = ({ msg }: Props) => {
                 height: '100%',
                 ...RemoveScrollBarStyle,
             }}
-            gap={'large'}
+            gap="large"
         >
             <MetaDataSection
                 title={t('common.metadata')}

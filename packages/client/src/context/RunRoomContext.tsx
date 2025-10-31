@@ -66,7 +66,10 @@ const calculateTraceData = (spans: SpanData[]) => {
         : TraceStatus.OK;
 
     // Calculate duration directly from nanosecond timestamps
-    const durationNano = getTimeDifferenceNano(earliestStartNano, latestEndNano);
+    const durationNano = getTimeDifferenceNano(
+        earliestStartNano,
+        latestEndNano,
+    );
 
     console.log('durationNano', durationNano);
     const data = {
@@ -168,7 +171,10 @@ export function RunRoomContextProvider({ children }: Props) {
                 });
 
                 return updatedSpans.sort((a, b) => {
-                    return parseInt(a.startTimeUnixNano) - parseInt(b.startTimeUnixNano);
+                    return (
+                        parseInt(a.startTimeUnixNano) -
+                        parseInt(b.startTimeUnixNano)
+                    );
                 });
             });
         });

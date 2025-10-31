@@ -1,8 +1,18 @@
 import { SpanKind as OTSpanKind } from '@opentelemetry/api';
 import { DataSource } from 'typeorm';
-import { OldSpanKind, SpanData, SpanEvent, SpanLink, SpanResource, SpanScope } from '../../../shared/src/types/trace';
+import {
+    OldSpanKind,
+    SpanData,
+    SpanEvent,
+    SpanLink,
+    SpanResource,
+    SpanScope,
+} from '../../../shared/src/types/trace';
 import { getNestedValue } from '../../../shared/src/utils/objectUtils';
-import { encodeUnixNano, getTimeDifferenceNano } from '../../../shared/src/utils/timeUtils';
+import {
+    encodeUnixNano,
+    getTimeDifferenceNano,
+} from '../../../shared/src/utils/timeUtils';
 import { SpanTable } from '../models/Trace';
 import { SpanProcessor } from '../otel/processor';
 
@@ -17,11 +27,14 @@ enum SpanKind {
 }
 
 // Status code mapping
-function convertStatus(status: string, statusMessage?: string): { code: number; message: string } {
+function convertStatus(
+    status: string,
+    statusMessage?: string,
+): { code: number; message: string } {
     const statusMap: Record<string, number> = {
-        'OK': 1,
-        'ERROR': 2,
-        'UNSET': 0,
+        OK: 1,
+        ERROR: 2,
+        UNSET: 0,
     };
 
     const upperStatus = (status || 'UNSET').toUpperCase();
@@ -76,7 +89,10 @@ function convertOldRecordToSpanData(oldRecord: any): SpanData {
 
     // Convert old protocol attributes to new format using processor logic
     const mockSpan = { name: oldRecord.name || '' };
-    const convertedResult = SpanProcessor.convertOldProtocolToNew(attributes, mockSpan);
+    const convertedResult = SpanProcessor.convertOldProtocolToNew(
+        attributes,
+        mockSpan,
+    );
     const spanName = convertedResult.span_name || oldRecord.name || '';
     attributes = convertedResult.attributes || attributes;
 
@@ -114,7 +130,10 @@ function convertOldRecordToSpanData(oldRecord: any): SpanData {
     let latencyNs: number;
     if (oldRecord.latencyMs !== null && oldRecord.latencyMs !== undefined) {
         latencyNs = convertLatencyMsToNs(oldRecord.latencyMs);
-    } else if (oldRecord.latencyNs !== null && oldRecord.latencyNs !== undefined) {
+    } else if (
+        oldRecord.latencyNs !== null &&
+        oldRecord.latencyNs !== undefined
+    ) {
         latencyNs = oldRecord.latencyNs;
     } else {
         latencyNs = getTimeDifferenceNano(startTimeUnixNano, endTimeUnixNano);
@@ -122,12 +141,17 @@ function convertOldRecordToSpanData(oldRecord: any): SpanData {
 
     // Convert status - check if it's already JSON object or string
     let status: { code: number; message: string };
-    if (typeof oldRecord.status === 'object' && oldRecord.status !== null && oldRecord.status.code !== undefined) {
+    if (
+        typeof oldRecord.status === 'object' &&
+        oldRecord.status !== null &&
+        oldRecord.status.code !== undefined
+    ) {
         // Already in new format (JSON object with code)
         status = oldRecord.status;
     } else {
         // Old format (string) - convert to JSON object
-        const statusStr = typeof oldRecord.status === 'string' ? oldRecord.status : '';
+        const statusStr =
+            typeof oldRecord.status === 'string' ? oldRecord.status : '';
         status = convertStatus(statusStr, oldRecord.statusMessage);
     }
 
@@ -146,8 +170,9 @@ function convertOldRecordToSpanData(oldRecord: any): SpanData {
         }
 
         events = eventsArray.map((event: any) => {
-            const timeUnixNano = event.timestamp ? encodeUnixNano(event.timestamp) :
-                (event.timeUnixNano || event.time || '0');
+            const timeUnixNano = event.timestamp
+                ? encodeUnixNano(event.timestamp)
+                : event.timeUnixNano || event.time || '0';
             return {
                 name: event.name || '',
                 time: timeUnixNano,
@@ -158,13 +183,19 @@ function convertOldRecordToSpanData(oldRecord: any): SpanData {
     }
 
     // Build resource from attributes
-    const serviceName = getNestedValue(attributes, 'service.name') || getNestedValue(attributes, 'project.service_name');
+    const serviceName =
+        getNestedValue(attributes, 'service.name') ||
+        getNestedValue(attributes, 'project.service_name');
     const resourceAttributes: Record<string, unknown> = {};
     if (serviceName) {
         resourceAttributes['service.name'] = serviceName;
     }
     // Copy other resource-related attributes if any
-    const resourceKeys = ['service.namespace', 'service.version', 'service.instance.id'];
+    const resourceKeys = [
+        'service.namespace',
+        'service.version',
+        'service.instance.id',
+    ];
     for (const key of resourceKeys) {
         const value = getNestedValue(attributes, key);
         if (value !== undefined) {
@@ -183,7 +214,8 @@ function convertOldRecordToSpanData(oldRecord: any): SpanData {
     };
 
     // Get runId from attributes or record
-    const runId = getNestedValue(attributes, 'gen_ai.conversation.id') ||
+    const runId =
+        getNestedValue(attributes, 'gen_ai.conversation.id') ||
         getNestedValue(attributes, 'project.run_id') ||
         oldRecord.runId ||
         oldRecord.run_id ||
@@ -191,14 +223,17 @@ function convertOldRecordToSpanData(oldRecord: any): SpanData {
 
     // Get spanId - in old data, the 'id' field maps to the new 'spanId'
     // Old table's primary key 'id' becomes new table's 'spanId'
-    const spanId = oldRecord.id ||
+    const spanId =
+        oldRecord.id ||
         oldRecord.spanId ||
         getNestedValue(attributes, 'span.id') ||
         getNestedValue(attributes, 'spanId');
 
     // Ensure spanId is not null/undefined (it's used as primary key)
     if (!spanId) {
-        throw new Error(`Cannot determine spanId for record. Record has no 'id' field: ${JSON.stringify(oldRecord)}`);
+        throw new Error(
+            `Cannot determine spanId for record. Record has no 'id' field: ${JSON.stringify(oldRecord)}`,
+        );
     }
 
     // Build SpanData
@@ -228,7 +263,6 @@ function convertOldRecordToSpanData(oldRecord: any): SpanData {
     return spanData;
 }
 
-
 export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
     console.log('[Migration] Starting SpanTable migration...');
 
@@ -247,7 +281,9 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
         const tableExists = await queryRunner.hasTable(tableName);
 
         if (!tableExists) {
-            console.log('[Migration] span_table does not exist, skipping migration.');
+            console.log(
+                '[Migration] span_table does not exist, skipping migration.',
+            );
             await queryRunner.commitTransaction();
             transactionActive = false;
             return;
@@ -256,7 +292,9 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
         // Get table structure to check which columns exist
         const table = await queryRunner.getTable(tableName);
         if (!table) {
-            console.log('[Migration] Cannot get table structure, skipping migration.');
+            console.log(
+                '[Migration] Cannot get table structure, skipping migration.',
+            );
             await queryRunner.commitTransaction();
             transactionActive = false;
             return;
@@ -264,11 +302,14 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
 
         // Check if table has the new structure (has spanId column)
         const hasSpanIdColumn = table.findColumnByName('spanId') !== undefined;
-        const hasInstrumentationVersion = table.findColumnByName('instrumentationVersion') !== undefined;
+        const hasInstrumentationVersion =
+            table.findColumnByName('instrumentationVersion') !== undefined;
 
         // If table already has the new structure, skip migration
         if (hasSpanIdColumn && hasInstrumentationVersion) {
-            console.log('[Migration] Table already has new structure, skipping migration.');
+            console.log(
+                '[Migration] Table already has new structure, skipping migration.',
+            );
             await queryRunner.commitTransaction();
             transactionActive = false;
             return;
@@ -278,7 +319,9 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
         const viewName = 'model_invocation_view';
         const viewExists = await queryRunner.hasTable(viewName);
         if (viewExists) {
-            console.log(`[Migration] Dropping view ${viewName} before migration...`);
+            console.log(
+                `[Migration] Dropping view ${viewName} before migration...`,
+            );
             // Use raw SQL to drop view (TypeORM doesn't have a dropView method for all databases)
             await queryRunner.query(`DROP VIEW IF EXISTS ${viewName}`);
             console.log(`[Migration] View ${viewName} dropped.`);
@@ -292,10 +335,12 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
         // Step 3: Verify view is actually dropped by checking schema
         const viewStillExists = await queryRunner.query(
             `SELECT name FROM sqlite_master WHERE type='view' AND name=?`,
-            [viewName]
+            [viewName],
         );
         if (viewStillExists.length > 0) {
-            console.log(`[Migration] Warning: View ${viewName} still exists after drop, trying to drop again...`);
+            console.log(
+                `[Migration] Warning: View ${viewName} still exists after drop, trying to drop again...`,
+            );
             await queryRunner.query(`DROP VIEW IF EXISTS ${viewName}`);
         }
 
@@ -307,7 +352,9 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
         oldTableName = 'span_table_old_backup';
         console.log(`[Migration] Renaming old table to ${oldTableName}...`);
         // Use raw SQL ALTER TABLE RENAME instead of TypeORM's renameTable to avoid view dependency checks
-        await queryRunner.query(`ALTER TABLE "${tableName}" RENAME TO "${oldTableName}"`);
+        await queryRunner.query(
+            `ALTER TABLE "${tableName}" RENAME TO "${oldTableName}"`,
+        );
 
         // Step 6: Commit the rename before creating new table
         await queryRunner.commitTransaction();
@@ -325,36 +372,47 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
 
         try {
             // Step 8: Start a new transaction to migrate data
-            const newQueryRunner = migrationDataSourceWithSync.createQueryRunner();
+            const newQueryRunner =
+                migrationDataSourceWithSync.createQueryRunner();
             await newQueryRunner.connect();
             await newQueryRunner.startTransaction();
 
             try {
                 // Step 9: Get all records from the old table (using original queryRunner)
-                const oldRecords = await queryRunner.query(`SELECT * FROM ${oldTableName}`);
+                const oldRecords = await queryRunner.query(
+                    `SELECT * FROM ${oldTableName}`,
+                );
 
                 if (oldRecords.length === 0) {
-                    console.log('[Migration] No records found, dropping old table.');
+                    console.log(
+                        '[Migration] No records found, dropping old table.',
+                    );
                     await newQueryRunner.dropTable(oldTableName);
                     await newQueryRunner.commitTransaction();
                     await newQueryRunner.release();
                     return;
                 }
 
-                console.log(`[Migration] Found ${oldRecords.length} records to migrate.`);
+                console.log(
+                    `[Migration] Found ${oldRecords.length} records to migrate.`,
+                );
 
                 // Step 10: Convert old records to SpanData and batch process
                 let migratedCount = 0;
-                let skippedCount = 0;
+                const skippedCount = 0;
                 let errorCount = 0;
                 const spanDataArray: SpanTable[] = [];
-                const spanRepository = migrationDataSourceWithSync.getRepository(SpanTable);
+                const spanRepository =
+                    migrationDataSourceWithSync.getRepository(SpanTable);
 
                 for (const oldRecord of oldRecords) {
                     try {
                         // Validate that old record has an id (primary key from old table)
                         if (!oldRecord.id) {
-                            console.error(`[Migration] Record missing 'id' field, skipping:`, Object.keys(oldRecord));
+                            console.error(
+                                `[Migration] Record missing 'id' field, skipping:`,
+                                Object.keys(oldRecord),
+                            );
                             errorCount++;
                             continue;
                         }
@@ -365,17 +423,40 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
 
                         // Create SpanTable instance manually (similar to SpanDao.saveSpans logic)
                         // Extract key fields for indexing
-                        const serviceName = getNestedValue(spanData.resource.attributes, 'service.name');
-                        const operationName = getNestedValue(spanData.attributes, 'gen_ai.operation.name');
+                        const serviceName = getNestedValue(
+                            spanData.resource.attributes,
+                            'service.name',
+                        );
+                        const operationName = getNestedValue(
+                            spanData.attributes,
+                            'gen_ai.operation.name',
+                        );
                         // Use scope.name and scope.version directly (per SpanTable comments),
                         // but fallback to attributes for backward compatibility
-                        const instrumentationName = spanData.scope.name ||
-                            getNestedValue(spanData.scope.attributes || {}, 'server.name');
-                        const instrumentationVersion = spanData.scope.version ||
-                            getNestedValue(spanData.scope.attributes || {}, 'server.version');
-                        const model = getNestedValue(spanData.attributes, 'gen_ai.request.model');
-                        const inputTokens = getNestedValue(spanData.attributes, 'gen_ai.usage.input_tokens');
-                        const outputTokens = getNestedValue(spanData.attributes, 'gen_ai.usage.output_tokens');
+                        const instrumentationName =
+                            spanData.scope.name ||
+                            getNestedValue(
+                                spanData.scope.attributes || {},
+                                'server.name',
+                            );
+                        const instrumentationVersion =
+                            spanData.scope.version ||
+                            getNestedValue(
+                                spanData.scope.attributes || {},
+                                'server.version',
+                            );
+                        const model = getNestedValue(
+                            spanData.attributes,
+                            'gen_ai.request.model',
+                        );
+                        const inputTokens = getNestedValue(
+                            spanData.attributes,
+                            'gen_ai.usage.input_tokens',
+                        );
+                        const outputTokens = getNestedValue(
+                            spanData.attributes,
+                            'gen_ai.usage.output_tokens',
+                        );
 
                         const span = new SpanTable();
                         Object.assign(span, {
@@ -390,7 +471,8 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
                             startTimeUnixNano: spanData.startTimeUnixNano,
                             endTimeUnixNano: spanData.endTimeUnixNano,
                             attributes: spanData.attributes,
-                            droppedAttributesCount: spanData.droppedAttributesCount,
+                            droppedAttributesCount:
+                                spanData.droppedAttributesCount,
                             events: spanData.events,
                             droppedEventsCount: spanData.droppedEventsCount,
                             links: spanData.links,
@@ -415,13 +497,20 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
                         if (spanDataArray.length >= 100) {
                             await spanRepository.save(spanDataArray);
                             migratedCount += spanDataArray.length;
-                            console.log(`[Migration] Progress: ${migratedCount}/${oldRecords.length} records migrated...`);
+                            console.log(
+                                `[Migration] Progress: ${migratedCount}/${oldRecords.length} records migrated...`,
+                            );
                             spanDataArray.length = 0; // Clear array
                         }
                     } catch (error) {
-                        console.error(`[Migration] Error converting record with id: ${oldRecord.id || 'unknown'}`, error);
+                        console.error(
+                            `[Migration] Error converting record with id: ${oldRecord.id || 'unknown'}`,
+                            error,
+                        );
                         if (error instanceof Error) {
-                            console.error(`[Migration] Error message: ${error.message}`);
+                            console.error(
+                                `[Migration] Error message: ${error.message}`,
+                            );
                         }
                         errorCount++;
                     }
@@ -433,12 +522,17 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
                         await spanRepository.save(spanDataArray);
                         migratedCount += spanDataArray.length;
                     } catch (error) {
-                        console.error('[Migration] Error saving final batch:', error);
+                        console.error(
+                            '[Migration] Error saving final batch:',
+                            error,
+                        );
                         errorCount += spanDataArray.length;
                     }
                 }
 
-                console.log(`[Migration] Migration completed. Migrated: ${migratedCount}, Skipped: ${skippedCount}, Errors: ${errorCount}`);
+                console.log(
+                    `[Migration] Migration completed. Migrated: ${migratedCount}, Skipped: ${skippedCount}, Errors: ${errorCount}`,
+                );
 
                 // Step 11: Drop the old backup table
                 console.log('[Migration] Dropping old backup table...');
@@ -460,7 +554,10 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
             try {
                 await queryRunner.rollbackTransaction();
             } catch (rollbackError) {
-                console.error('[Migration] Error during rollback:', rollbackError);
+                console.error(
+                    '[Migration] Error during rollback:',
+                    rollbackError,
+                );
             }
         }
         throw error;

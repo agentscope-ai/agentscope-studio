@@ -1,11 +1,13 @@
-import { useTour } from '@/context/TourContext.tsx';
-import { MessageData } from '@shared/types';
 import { Tabs } from 'antd';
 import { useEffect, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
+
 import MsgPanel from './MsgPanel';
 import StatisticsPanel from './StatisticsPanel';
 import TracePanel from './TracePanel';
+
+import { useTour } from '@/context/TourContext.tsx';
+import { MessageData } from '@shared/types';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
     activateTab: string;
@@ -66,7 +68,7 @@ const TracingComponent = ({ activateTab, onTabChange, msg }: Props) => {
                     className="w-full h-full [&_.ant-tabs-content]:h-full"
                     activeKey={activateTab}
                     items={items}
-                    size={'small'}
+                    size="small"
                     onChange={onTabChange}
                 />
             </div>

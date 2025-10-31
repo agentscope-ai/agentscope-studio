@@ -1,12 +1,12 @@
-import Latency from '@/pages/DashboardPage/RunPage/TracingComponent/TracePanel/latency.tsx';
-import SpanPanel from '@/pages/DashboardPage/RunPage/TracingComponent/TracePanel/SpanPanel';
-import { SpanData } from '@shared/types/trace.ts';
 import { Input, Modal, Tree } from 'antd';
 import type { DataNode } from 'antd/es/tree';
 import moment from 'moment';
 import { Key, memo, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import Latency from '@/pages/DashboardPage/RunPage/TracingComponent/TracePanel/latency.tsx';
+import SpanPanel from '@/pages/DashboardPage/RunPage/TracingComponent/TracePanel/SpanPanel';
+import { SpanData } from '@shared/types/trace.ts';
 
 interface TraceSpanNode extends SpanData {
     children: TraceSpanNode[];
@@ -25,10 +25,8 @@ const SpanNodeTitle = ({
     latencyNs,
     attributes,
 }: SpanNodeTitleProps) => {
-    const metadata: Record<string, unknown> = attributes.agentscope?.function?.metadata as Record<
-        string,
-        unknown
-    >;
+    const metadata: Record<string, unknown> = attributes.agentscope?.function
+        ?.metadata as Record<string, unknown>;
     const operationName = attributes.gen_ai?.operation?.name as string;
 
     let displayKind: string;
@@ -36,7 +34,10 @@ const SpanNodeTitle = ({
         displayKind = operationName + ': ' + String(metadata.name);
     } else if (operationName === 'execute_tool' && metadata?.name) {
         displayKind = operationName + ': ' + String(metadata.name);
-    } else if (operationName === 'chat' || operationName === 'chat_model' && metadata?.model_name) {
+    } else if (
+        operationName === 'chat' ||
+        (operationName === 'chat_model' && metadata?.model_name)
+    ) {
         displayKind = operationName + ': ' + String(metadata.model_name);
     } else if (operationName === 'embedding' && metadata?.model_name) {
         displayKind = operationName + ': ' + String(metadata.model_name);
@@ -67,7 +68,9 @@ const SpanNodeTitle = ({
                 </div>
 
                 <div className="col-span-1 truncate break-all text-[13px]">
-                    {moment(parseInt(startTimeUnixNano) / 1000000).format('HH:mm:ss')}
+                    {moment(parseInt(startTimeUnixNano) / 1000000).format(
+                        'HH:mm:ss',
+                    )}
                 </div>
             </div>
         </div>
@@ -141,7 +144,11 @@ export const TraceTree = ({ spans }: Props) => {
                 key: node.spanId,
                 title: (
                     <SpanNodeTitle
-                        name={node.attributes.agentscope?.function?.name as unknown as string || node.name as string}
+                        name={
+                            (node.attributes.agentscope?.function
+                                ?.name as unknown as string) ||
+                            (node.name as string)
+                        }
                         startTimeUnixNano={node.startTimeUnixNano}
                         latencyNs={node.latencyNs}
                         attributes={node.attributes}
@@ -158,17 +165,17 @@ export const TraceTree = ({ spans }: Props) => {
         <div className="flex flex-col flex-1 w-full h-full overflow-x-hidden gap-y-4">
             <Modal
                 open={open}
-                title={'Span'}
+                title="Span"
                 onCancel={() => setOpen(false)}
-                width={'calc(100% - 100px)'}
-                height={'calc(100vh - 100px)'}
+                width="calc(100% - 100px)"
+                height="calc(100vh - 100px)"
                 footer={null}
                 centered={true}
             >
                 <SpanPanel span={currentSpan} />
             </Modal>
             <Input.Search
-                variant={'filled'}
+                variant="filled"
                 placeholder={t('placeholder.search-span')}
                 value={searchText}
                 onChange={(e) => {

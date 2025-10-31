@@ -1,4 +1,6 @@
-export function decodeUnixNano(timeUnixNano: string | number | any | null): string {
+export function decodeUnixNano(
+    timeUnixNano: string | number | any | null,
+): string {
     if (timeUnixNano === null || timeUnixNano === undefined) {
         return '0';
     }
@@ -18,9 +20,12 @@ export function decodeUnixNano(timeUnixNano: string | number | any | null): stri
             return timeUnixNano.toNumber().toString();
         }
         // Check if it's a Long object with low/high properties
-        if (typeof timeUnixNano.low === 'number' && typeof timeUnixNano.high === 'number') {
+        if (
+            typeof timeUnixNano.low === 'number' &&
+            typeof timeUnixNano.high === 'number'
+        ) {
             // Convert Long to number (this might lose precision for very large numbers)
-            const value = timeUnixNano.low + (timeUnixNano.high * 0x100000000);
+            const value = timeUnixNano.low + timeUnixNano.high * 0x100000000;
             return value.toString();
         }
     }
@@ -76,7 +81,7 @@ export function getTimeDifferenceNano(
 ): number {
     const start = Number(startNano);
     const end = Number(endNano);
-    return (end - start);
+    return end - start;
 }
 
 export function nanoToISOString(nanoTimestamp: string | number): string {
@@ -89,7 +94,7 @@ export function secondsToNano(seconds: number): number {
 }
 
 export function millisecondsToNano(milliseconds: number): number {
-    return Number(milliseconds) * 1_000_000
+    return Number(milliseconds) * 1_000_000;
 }
 
 export function isValidNanoTimestamp(nanoTimestamp: string | number): boolean {

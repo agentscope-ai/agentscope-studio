@@ -32,20 +32,27 @@ export const initializeDatabase = async (databaseConfig: DataSourceOptions) => {
             const tableExists = await queryRunner.hasTable('span_table');
             if (tableExists) {
                 const table = await queryRunner.getTable('span_table');
-                const hasInstrumentationVersion = table?.findColumnByName('instrumentationVersion') !== undefined;
+                const hasInstrumentationVersion =
+                    table?.findColumnByName('instrumentationVersion') !==
+                    undefined;
                 needsMigration = !hasInstrumentationVersion;
             }
 
             await queryRunner.release();
         } catch (error) {
-            console.error('[Migration] Error checking migration status:', error);
+            console.error(
+                '[Migration] Error checking migration status:',
+                error,
+            );
         } finally {
             await tempDataSource.destroy();
         }
 
         // Step 3: If migration is needed, do it BEFORE synchronize
         if (needsMigration) {
-            console.log('[Migration] Starting data migration before synchronize...');
+            console.log(
+                '[Migration] Starting data migration before synchronize...',
+            );
             const migrationDataSource = new DataSource({
                 ...databaseConfig,
                 entities: [SpanTable],
@@ -56,9 +63,14 @@ export const initializeDatabase = async (databaseConfig: DataSourceOptions) => {
 
             try {
                 await migrateSpanTable(migrationDataSource);
-                console.log('[Migration] Data migration completed successfully.');
+                console.log(
+                    '[Migration] Data migration completed successfully.',
+                );
             } catch (error) {
-                console.error('[Migration] Error during data migration:', error);
+                console.error(
+                    '[Migration] Error during data migration:',
+                    error,
+                );
                 await migrationDataSource.destroy();
                 throw error; // Fail if migration fails
             } finally {
