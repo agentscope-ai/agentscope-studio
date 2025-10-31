@@ -1,5 +1,5 @@
 import { memo, ReactNode } from 'react';
-import { Avatar, Col, Flex, Layout, Row, Skeleton } from 'antd';
+import { Avatar, Layout, Skeleton } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
@@ -15,7 +15,7 @@ import extended from '@/pages/ContentPage/utils.ts';
 import { OverviewData } from '@shared/types/trpc';
 import { RouterPath } from '@/pages/RouterPath.ts';
 import { useOverviewRoom } from '@/context/OverviewRoomContext.tsx';
-import { RemoveScrollBarStyle, SingleLineEllipsisStyle } from '@/styles.ts';
+import { RemoveScrollBarStyle } from '@/styles.ts';
 import {
     Bar,
     BarChart,
@@ -35,33 +35,18 @@ interface BlockTitleProps {
 
 const BlockTitle = ({ title, description }: BlockTitleProps) => {
     return (
-        <Flex vertical={true} gap={3}>
+        <div className="flex flex-col gap-1">
             <SubTitle title={title} />
-            <span
-                style={{
-                    color: 'var(--muted-foreground)',
-                    height: 15,
-                    fontSize: 12,
-                    ...SingleLineEllipsisStyle,
-                }}
-            >
+            <span className="text-[12px] h-[15px] text-muted-foreground truncate">
                 {description}
             </span>
-        </Flex>
+        </div>
     );
 };
 
 const SubTitle = ({ title }: { title: string }) => {
     return (
-        <span
-            style={{
-                fontSize: 14,
-                fontWeight: 500,
-                height: 20,
-                maxHeight: 20,
-                ...SingleLineEllipsisStyle,
-            }}
-        >
+        <span className="text-[14px] font-medium h-5 max-h-5 truncate">
             {title}
         </span>
     );
@@ -76,62 +61,26 @@ interface BlockProps {
 
 const Block = ({ title, number, footer, icon }: BlockProps) => {
     return (
-        <Col span={6}>
-            <Flex
-                style={{
-                    width: '100%',
-                    border: '1px solid var(--border)',
-                    boxShadow: 'var(--box-shadow)',
-                    borderRadius: 8,
-                    padding: 24,
-                    height: '100%',
-                }}
-                vertical={true}
-                gap={8}
-            >
-                <Flex
-                    vertical={false}
-                    style={{ width: '100%' }}
-                    justify="space-between"
-                >
-                    <SubTitle title={title} />
-                    {icon}
-                </Flex>
+        <div className="border border-border rounded-lg p-6 h-full flex flex-col gap-2 shadow-sm">
+            <div className="flex justify-between w-full">
+                <SubTitle title={title} />
+                {icon}
+            </div>
 
-                <Flex vertical={true} gap={0}>
-                    {number !== undefined ? (
-                        <NumberCounter
-                            number={number}
-                            style={{ fontSize: 24, fontWeight: 700 }}
-                        />
-                    ) : (
-                        <Skeleton.Node
-                            active
-                            style={{ height: 30, width: '100%' }}
-                        />
-                    )}
+            <div className="flex flex-col gap-0">
+                {number !== undefined ? (
+                    <NumberCounter number={number} style={{ fontSize: 24, fontWeight: 700 }} />
+                ) : (
+                    <Skeleton.Node active style={{ height: 30, width: '100%' }} />
+                )}
 
-                    {footer ? (
-                        <div
-                            style={{
-                                fontSize: 12,
-                                color: 'var(--muted-foreground)',
-                                width: '100%',
-                                height: 15,
-                                ...SingleLineEllipsisStyle,
-                            }}
-                        >
-                            {footer}
-                        </div>
-                    ) : (
-                        <Skeleton.Node
-                            active
-                            style={{ width: '100%', height: 15 }}
-                        />
-                    )}
-                </Flex>
-            </Flex>
-        </Col>
+                {footer ? (
+                    <div className="text-[12px] text-muted-foreground w-full h-[15px] max-h-[15px] truncate">
+                        {footer}
+                    </div>
+                ) : null}
+            </div>
+        </div>
     );
 };
 
@@ -146,71 +95,26 @@ const ProjectRow = ({ project, runCount, lastUpdateTime }: ProjectRowProps) => {
     const unit = runCount > 1 ? t('unit.runs') : t('unit.run');
     const navigate = useNavigate();
     return (
-        <Flex
-            className="as-project-row"
-            style={{
-                height: 50,
-                minHeight: 50,
-                width: '100%',
-                minWidth: 0,
-                cursor: 'pointer',
-                borderRadius: 6,
-                padding: '0 8px',
-            }}
-            vertical={false}
-            align="center"
-            justify="space-between"
+        <div
+            className="as-project-row flex items-center justify-between h-[50px] min-h-[50px] w-full min-w-0 cursor-pointer rounded-md px-2"
             onClick={() => navigate('/dashboard/projects/' + project)}
         >
-            <Flex
-                gap="small"
-                align="center"
-                flex={1}
-                style={{ width: '100%', minWidth: 0 }}
-            >
+            <div className="flex items-center w-full min-w-0 gap-2">
                 <Avatar style={{ flexShrink: 0 }}>{project.slice(0, 1)}</Avatar>
-                <Flex
-                    vertical={true}
-                    flex={1}
-                    style={{ minWidth: 0, width: 0 }}
-                    gap={2}
-                >
-                    <div
-                        style={{
-                            fontSize: 14,
-                            width: '100%',
-                            minWidth: 0,
-                            fontWeight: 500,
-                            ...SingleLineEllipsisStyle,
-                        }}
-                    >
+                <div className="flex flex-col min-w-0 w-0 flex-1 gap-0.5">
+                    <div className="text-[14px] w-full min-w-0 font-medium truncate">
                         {project}
                     </div>
-                    <div
-                        style={{
-                            fontSize: 12,
-                            fontWeight: 400,
-                            color: 'var(--muted-foreground)',
-                            flexShrink: 0,
-                            ...SingleLineEllipsisStyle,
-                        }}
-                    >
+                    <div className="text-[12px] font-normal text-muted-foreground shrink-0 truncate">
                         {t('home.last-update', { time: lastUpdateTime })}
                     </div>
-                </Flex>
-            </Flex>
-            <Flex style={{ fontWeight: 500 }} align="flex-end">
-                <NumberCounter number={runCount} style={{ fontSize: 14 }} />
-                <div
-                    style={{
-                        fontSize: 12,
-                        color: 'var(--muted-foreground)',
-                    }}
-                >
-                    &nbsp;{unit}
                 </div>
-            </Flex>
-        </Flex>
+            </div>
+            <div className="flex items-end font-medium">
+                <NumberCounter number={runCount} style={{ fontSize: 14 }} />
+                <div className="text-[12px] text-muted-foreground">&nbsp;{unit}</div>
+            </div>
+        </div>
     );
 };
 
@@ -235,8 +139,7 @@ const ContentPage = () => {
     const yAxisMin = Math.min(...monthlyRuns.map((item) => item.count));
     const ticks = extended(yAxisMin, yAxisMax, 4);
     const maxTick = ticks[ticks.length - 1];
-    const yAxisWidth =
-        maxTick < 10 ? 20 : maxTick < 100 ? 25 : maxTick < 1000 ? 30 : 42;
+    const yAxisWidth = maxTick < 10 ? 20 : maxTick < 100 ? 25 : maxTick < 1000 ? 30 : 42;
 
     const obtainRatioOrNumber = (
         nPast: number,
@@ -406,344 +309,128 @@ const ContentPage = () => {
         <Layout>
             <TitleBar title={t('common.home')} />
 
-            <Content style={{ height: '100%' }}>
-                <Flex
-                    vertical={true}
-                    style={{
-                        padding: '32px 48px',
-                        width: '100%',
-                    }}
-                    gap={32}
-                >
-                    <Flex
-                        style={{
-                            width: '100%',
-                            borderRadius: 8,
-                        }}
-                        vertical={true}
-                        gap="middle"
-                    >
+            <Content className="h-full overflow-y-auto">
+                <div className="flex flex-col w-full px-12 py-8 gap-8">
+                    <div className="flex flex-col w-full rounded-lg gap-4">
                         <PageTitleSpan title={t('common.dashboard')} />
-                        <Flex
-                            vertical={true}
-                            justify="space-between"
-                            style={{
-                                width: '100%',
-                                height: '100%',
-                            }}
-                            gap="middle"
-                        >
-                            <Row
-                                gutter={16}
-                                style={{ width: '100%' }}
-                                wrap={false}
-                            >
-                                <Block
-                                    title={t('common.projects')}
-                                    number={overviewData?.totalProjects}
-                                    footer={renderProjectHint(overviewData)}
-                                    icon={
-                                        <ProjectIcon width={16} height={16} />
-                                    }
+
+                        {/* Stats cards */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-6 w-full">
+                            <Block
+                                title={t('common.projects')}
+                                number={overviewData?.totalProjects}
+                                footer={renderProjectHint(overviewData)}
+                                icon={<ProjectIcon width={16} height={16} />}
+                            />
+                            <Block
+                                title={t('common.runs')}
+                                number={overviewData?.totalRuns}
+                                footer={renderRunHint(overviewData)}
+                                icon={<RunIcon width={16} height={16} />}
+                            />
+                            <Block
+                                title={t('common.total-tokens')}
+                                number={overviewData?.totalTokens}
+                                footer={renderTokenHint(overviewData)}
+                                icon={<TokenIcon width={16} height={16} />}
+                            />
+                            <Block
+                                title={t('common.llm-invocations')}
+                                number={overviewData?.totalModelInvocations}
+                                footer={renderModelInvocation(overviewData)}
+                                icon={<ApiIcon width={16} height={16} />}
+                            />
+                        </div>
+
+                        {/* Chart + Recent projects */}
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 w-full">
+                            <div className="lg:col-span-7 border border-border rounded-lg p-6 h-[325px] flex flex-col gap-6 shadow-sm">
+                                <BlockTitle title={t('common.overview')} description={t('home.overview-description')} />
+                                <div className="flex flex-1">
+                                    <ResponsiveContainer width="100%" minWidth="100%">
+                                        <BarChart layout="horizontal" data={monthlyRuns.reverse()} margin={{ bottom: -5, top: 0 }}>
+                                            <CartesianGrid strokeDasharray="1 10" vertical={false} />
+                                            <YAxis
+                                                type="number"
+                                                fontSize={10}
+                                                allowDecimals={false}
+                                                width={yAxisWidth}
+                                                axisLine={false}
+                                                tickLine={false}
+                                                domain={[ticks[0], ticks[-1]]}
+                                                ticks={ticks}
+                                                tickFormatter={(count: number) => {
+                                                    if (count >= 10000) {
+                                                        return count.toExponential(1);
+                                                    } else if (count >= 1000) {
+                                                        return count.toLocaleString();
+                                                    } else {
+                                                        return count.toLocaleString();
+                                                    }
+                                                }}
+                                            />
+                                            <XAxis
+                                                dataKey="month"
+                                                type="category"
+                                                fontSize={10}
+                                                axisLine={false}
+                                                tickLine={false}
+                                                tickFormatter={(month: string) => {
+                                                    const numericMonth = parseInt(month.split('-')[1]);
+                                                    return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][numericMonth - 1];
+                                                }}
+                                            />
+                                            <Tooltip
+                                                contentStyle={{ borderRadius: 6, border: '1px solid var(--border)' }}
+                                                labelStyle={{ fontWeight: 500 }}
+                                                labelFormatter={(label) => {
+                                                    const numericMonth = parseInt(label.split('-')[1]);
+                                                    const year = parseInt(label.split('-')[0]);
+                                                    const strMonth = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][numericMonth - 1];
+                                                    return `${strMonth}, ${year}`;
+                                                }}
+                                                formatter={(value) => [value, t('home.run-number')]}
+                                            />
+                                            <Bar dataKey="count" radius={[6, 6, 0, 0]} />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+                            <div className="lg:col-span-5 border border-border rounded-lg p-6 h-[325px] flex flex-col gap-2 shadow-sm">
+                                <BlockTitle
+                                    title={t('home.recent-projects')}
+                                    description={overviewData && overviewData.recentProjects.length > 0 ? t('home.recent-projects-description') : t('home.recent-projects-empty')}
                                 />
-                                <Block
-                                    title={t('common.runs')}
-                                    number={overviewData?.totalRuns}
-                                    footer={renderRunHint(overviewData)}
-                                    icon={<RunIcon width={16} height={16} />}
-                                />
-                                <Block
-                                    title={t('common.total-tokens')}
-                                    number={overviewData?.totalTokens}
-                                    footer={renderTokenHint(overviewData)}
-                                    icon={<TokenIcon width={16} height={16} />}
-                                />
-                                <Block
-                                    title={t('common.llm-invocations')}
-                                    number={overviewData?.totalModelInvocations}
-                                    footer={renderModelInvocation(overviewData)}
-                                    icon={<ApiIcon width={16} height={16} />}
-                                />
-                            </Row>
+                                <div className="flex flex-col flex-1" style={RemoveScrollBarStyle}>
+                                    {overviewData
+                                        ? overviewData.recentProjects.map((proj) => (
+                                              <ProjectRow key={proj.name} project={proj.name} runCount={proj.runCount} lastUpdateTime={proj.lastUpdateTime} />
+                                          ))
+                                        : null}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-                            <Row
-                                gutter={16}
-                                style={{ width: '100%' }}
-                                wrap={false}
-                            >
-                                <Col span={14}>
-                                    <Flex
-                                        style={{
-                                            border: '1px solid var(--border)',
-                                            boxShadow: 'var(--box-shadow)',
-                                            padding: 24,
-                                            borderRadius: 8,
-                                            height: 325,
-                                        }}
-                                        vertical={true}
-                                        gap="large"
-                                    >
-                                        <BlockTitle
-                                            title={t('common.overview')}
-                                            description={t(
-                                                'home.overview-description',
-                                            )}
-                                        />
-
-                                        <Flex flex={1}>
-                                            <ResponsiveContainer
-                                                width={'100%'}
-                                                minWidth={'100%'}
-                                            >
-                                                <BarChart
-                                                    layout="horizontal"
-                                                    data={monthlyRuns.reverse()}
-                                                    margin={{
-                                                        bottom: -5,
-                                                        top: 0,
-                                                    }}
-                                                >
-                                                    <CartesianGrid
-                                                        strokeDasharray="1 10"
-                                                        vertical={false}
-                                                    />
-                                                    <YAxis
-                                                        type="number"
-                                                        fontSize={10}
-                                                        allowDecimals={false}
-                                                        width={yAxisWidth}
-                                                        axisLine={false}
-                                                        tickLine={false}
-                                                        domain={[
-                                                            ticks[0],
-                                                            ticks[-1],
-                                                        ]}
-                                                        ticks={ticks}
-                                                        tickFormatter={(
-                                                            count: number,
-                                                        ) => {
-                                                            if (
-                                                                count >= 10000
-                                                            ) {
-                                                                return count.toExponential(
-                                                                    1,
-                                                                );
-                                                            } else if (
-                                                                count >= 1000
-                                                            ) {
-                                                                return count.toLocaleString();
-                                                            } else {
-                                                                return count.toLocaleString();
-                                                            }
-                                                        }}
-                                                    />
-                                                    <XAxis
-                                                        dataKey="month"
-                                                        type="category"
-                                                        fontSize={10}
-                                                        axisLine={false}
-                                                        tickLine={false}
-                                                        tickFormatter={(
-                                                            month: string,
-                                                        ) => {
-                                                            const numericMonth =
-                                                                parseInt(
-                                                                    month.split(
-                                                                        '-',
-                                                                    )[1],
-                                                                );
-                                                            return [
-                                                                'Jan',
-                                                                'Feb',
-                                                                'Mar',
-                                                                'Apr',
-                                                                'May',
-                                                                'Jun',
-                                                                'Jul',
-                                                                'Aug',
-                                                                'Sep',
-                                                                'Oct',
-                                                                'Nov',
-                                                                'Dec',
-                                                            ][numericMonth - 1];
-                                                        }}
-                                                    />
-                                                    <Tooltip
-                                                        contentStyle={{
-                                                            borderRadius: 6,
-                                                            border: '1px solid var(--border)',
-                                                        }}
-                                                        labelStyle={{
-                                                            fontWeight: 500,
-                                                        }}
-                                                        labelFormatter={(
-                                                            label,
-                                                        ) => {
-                                                            const numericMonth =
-                                                                parseInt(
-                                                                    label.split(
-                                                                        '-',
-                                                                    )[1],
-                                                                );
-                                                            const year =
-                                                                parseInt(
-                                                                    label.split(
-                                                                        '-',
-                                                                    )[0],
-                                                                );
-                                                            const strMonth = [
-                                                                'Jan',
-                                                                'Feb',
-                                                                'Mar',
-                                                                'Apr',
-                                                                'May',
-                                                                'Jun',
-                                                                'Jul',
-                                                                'Aug',
-                                                                'Sep',
-                                                                'Oct',
-                                                                'Nov',
-                                                                'Dec',
-                                                            ][numericMonth - 1];
-                                                            return `${strMonth}, ${year}`;
-                                                        }}
-                                                        formatter={(value) => [
-                                                            value,
-                                                            t(
-                                                                'home.run-number',
-                                                            ),
-                                                        ]}
-                                                    />
-
-                                                    <Bar
-                                                        dataKey="count"
-                                                        radius={[6, 6, 0, 0]}
-                                                    />
-                                                </BarChart>
-                                            </ResponsiveContainer>
-                                        </Flex>
-                                    </Flex>
-                                </Col>
-                                <Col span={10}>
-                                    <Flex
-                                        style={{
-                                            border: '1px solid var(--border)',
-                                            boxShadow: 'var(--box-shadow)',
-                                            padding: 24,
-                                            borderRadius: 8,
-                                            height: 325,
-                                        }}
-                                        vertical={true}
-                                        gap="small"
-                                    >
-                                        <BlockTitle
-                                            title={t('home.recent-projects')}
-                                            description={
-                                                overviewData &&
-                                                overviewData.recentProjects
-                                                    .length > 0
-                                                    ? t(
-                                                          'home.recent-projects-description',
-                                                      )
-                                                    : t(
-                                                          'home.recent-projects-empty',
-                                                      )
-                                            }
-                                        />
-
-                                        <Flex
-                                            flex={1}
-                                            vertical={true}
-                                            style={{
-                                                overflowY: 'auto',
-                                                ...RemoveScrollBarStyle,
-                                            }}
-                                            justify="start"
-                                        >
-                                            {overviewData
-                                                ? overviewData.recentProjects.map(
-                                                      (proj) => (
-                                                          <ProjectRow
-                                                              key={proj.name}
-                                                              project={
-                                                                  proj.name
-                                                              }
-                                                              runCount={
-                                                                  proj.runCount
-                                                              }
-                                                              lastUpdateTime={
-                                                                  proj.lastUpdateTime
-                                                              }
-                                                          />
-                                                      ),
-                                                  )
-                                                : null}
-                                        </Flex>
-                                    </Flex>
-                                </Col>
-                            </Row>
-                        </Flex>
-                    </Flex>
-
-                    <Flex
-                        style={{
-                            width: '100%',
-                            borderRadius: 8,
-                        }}
-                        vertical={true}
-                        gap="middle"
-                    >
+                    {/* Applications */}
+                    <div className="flex flex-col w-full rounded-lg gap-4">
                         <PageTitleSpan title={t('common.application')} />
-                        <Flex vertical={true}>
-                            <Row gutter={16} wrap={false}>
-                                <Col span={12}>
-                                    <Flex
-                                        vertical={true}
-                                        style={{
-                                            border: '1px solid var(--border)',
-                                            boxShadow: 'var(--box-shadow)',
-                                            padding: 24,
-                                            borderRadius: 8,
-                                            cursor: 'pointer',
-                                        }}
-                                        onClick={() => {
-                                            navigate(RouterPath.FRIDAY_SETTING);
-                                        }}
-                                    >
-                                        <BlockTitle
-                                            title="AgentScope Friday"
-                                            description={t(
-                                                'home.as-friday-description',
-                                            )}
-                                        />
-                                    </Flex>
-                                </Col>
-                                <Col span={12}>
-                                    <Flex
-                                        vertical={true}
-                                        style={{
-                                            border: '1px solid var(--border)',
-                                            boxShadow: 'var(--box-shadow)',
-                                            padding: 24,
-                                            borderRadius: 8,
-                                            cursor: 'pointer',
-                                        }}
-                                        onClick={() => {
-                                            navigate(RouterPath.EVAL);
-                                        }}
-                                    >
-                                        <BlockTitle
-                                            title="AgentScope X"
-                                            description={t(
-                                                'home.as-x-description',
-                                            )}
-                                        />
-                                    </Flex>
-                                </Col>
-                            </Row>
-                        </Flex>
-                    </Flex>
-                </Flex>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                            <div
+                                className="border border-border rounded-lg p-6 cursor-pointer flex flex-col shadow-sm"
+                                onClick={() => navigate(RouterPath.FRIDAY_SETTING)}
+                            >
+                                <BlockTitle title="AgentScope Friday" description={t('home.as-friday-description')} />
+                            </div>
+                            <div
+                                className="border border-border rounded-lg p-6 cursor-pointer flex flex-col shadow-sm"
+                                onClick={() => navigate(RouterPath.EVAL)}
+                            >
+                                <BlockTitle title="AgentScope X" description={t('home.as-x-description')} />
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </Content>
         </Layout>
     );

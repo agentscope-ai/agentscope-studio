@@ -1,8 +1,5 @@
 import { memo } from 'react';
-import { Col, Flex, Row } from 'antd';
 import { useTranslation } from 'react-i18next';
-
-import { SingleLineEllipsisStyle } from '@/styles.ts';
 import { Status } from '@shared/types/messageForm';
 import NumberCounter from '@/components/numbers/NumberCounter';
 
@@ -20,25 +17,18 @@ const StatusSection = ({ status, invocations, tokens }: Props) => {
         title2: string,
         title3: string,
     ) => {
-        const titleStyle = {
-            fontWeight: 550,
-            fontSize: 12,
-            color: 'var(--muted-foreground)',
-            width: '100%',
-            ...SingleLineEllipsisStyle,
-        };
         return (
-            <Row>
-                <Col span={8}>
-                    <div style={titleStyle}>{title1.toUpperCase()}</div>
-                </Col>
-                <Col span={8}>
-                    <div style={titleStyle}>{title2.toUpperCase()}</div>
-                </Col>
-                <Col span={8}>
-                    <div style={titleStyle}>{title3.toUpperCase()}</div>
-                </Col>
-            </Row>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="w-full text-[12px] font-semibold text-[var(--muted-foreground)] truncate">
+                    {title1.toUpperCase()}
+                </div>
+                <div className="w-full text-[12px] font-semibold text-[var(--muted-foreground)] truncate">
+                    {title2.toUpperCase()}
+                </div>
+                <div className="w-full text-[12px] font-semibold text-[var(--muted-foreground)] truncate">
+                    {title3.toUpperCase()}
+                </div>
+            </div>
         );
     };
 
@@ -47,15 +37,6 @@ const StatusSection = ({ status, invocations, tokens }: Props) => {
         value2: number | undefined,
         value3: number | undefined,
     ) => {
-        const valueStyle = {
-            height: 24,
-            fontWeight: 'bold',
-            fontSize: 13,
-            color: 'var(--foreground)',
-            width: '100%',
-            ...SingleLineEllipsisStyle,
-        };
-
         const status = value1 ? t(`status.${value1}`) : Status.UNKNOWN;
 
         const unitString2 =
@@ -64,42 +45,31 @@ const StatusSection = ({ status, invocations, tokens }: Props) => {
             value3 && value3 > 1 ? t('unit.tokens') : t('unit.token');
 
         return (
-            <Row>
-                <Col span={8} style={{ overflow: 'hidden', height: 24 }}>
-                    <Flex style={valueStyle} align="center">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="overflow-hidden h-6">
+                    <div className="w-full h-6 flex items-center font-bold text-[13px] text-[var(--foreground)] truncate">
                         {status.toUpperCase()}
-                    </Flex>
-                </Col>
-                <Col span={8} style={{ overflow: 'hidden' }}>
-                    <Flex style={valueStyle} align="center">
+                    </div>
+                </div>
+                <div className="overflow-hidden h-6">
+                    <div className="w-full h-6 flex items-center font-bold text-[13px] text-[var(--foreground)] truncate">
                         <NumberCounter number={value2 ? value2 : 0} />
-                        &nbsp;{unitString2}
-                    </Flex>
-                </Col>
-                <Col span={8} style={{ overflow: 'hidden' }}>
-                    {
-                        <Flex style={valueStyle} align="center">
-                            <NumberCounter number={value3 ? value3 : 0} />
-                            &nbsp;{unitString3}
-                        </Flex>
-                    }
-                </Col>
-            </Row>
+                        <span className="ml-1">{unitString2}</span>
+                    </div>
+                </div>
+                <div className="overflow-hidden h-6">
+                    <div className="w-full h-6 flex items-center font-bold text-[13px] text-[var(--foreground)] truncate">
+                        <NumberCounter number={value3 ? value3 : 0} />
+                        <span className="ml-1">{unitString3}</span>
+                    </div>
+                </div>
+            </div>
         );
     };
 
     return (
-        <Flex
-            vertical={true}
-            style={{
-                width: '100%',
-                border: '2px solid var(--primary)',
-                boxShadow: 'var(--box-shadow)',
-                borderRadius: 6,
-                padding: '1rem',
-                // background: 'linear-gradient(to bottom, var(--primary-300), var(--primary-50) 20%, var(--primary-50) 80%, var(--primary-300))'
-            }}
-            gap="small"
+        <div
+            className="w-full rounded-md p-4 space-y-2 border-2 border-[var(--primary)] shadow-[var(--box-shadow)]"
         >
             {renderStatusTitleRow(
                 t('common.status'),
@@ -107,7 +77,7 @@ const StatusSection = ({ status, invocations, tokens }: Props) => {
                 t('common.total-tokens'),
             )}
             {renderStatusValueRow(status, invocations, tokens)}
-        </Flex>
+        </div>
     );
 };
 
