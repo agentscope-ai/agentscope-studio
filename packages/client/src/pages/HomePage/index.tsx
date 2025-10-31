@@ -112,7 +112,7 @@ const HomePage = () => {
                 }}
             >
                 <div className="w-full h-[92px] py-5 text-[24px] font-extrabold flex justify-center">
-                    <div className="w-full flex items-center gap-2 truncate">
+                    <div className="w-full flex items-center gap-2 truncate justify-center">
                         <LogoIcon fill="#000" width={29} height={29} />
                         {collapse ? null : 'Studio'}
                     </div>
