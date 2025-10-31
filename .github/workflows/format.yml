@@ -1,0 +1,32 @@
+name: Pre-commit
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch: {}
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check formatting with Prettier
+        run: npx prettier --check .
+
+      - name: Lint with ESLint (no warnings allowed)
+        run: npx eslint . --ext .js,.jsx,.ts,.tsx --max-warnings=0
+
+
