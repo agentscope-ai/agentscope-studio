@@ -77,12 +77,10 @@ const StatusSection = ({ status, invocations, tokens }: Props) => {
                     </Flex>
                 </Col>
                 <Col span={8} style={{ overflow: 'hidden' }}>
-                    {
-                        <Flex style={valueStyle} align="center">
-                            <NumberCounter number={value3 ? value3 : 0} />
-                            &nbsp;{unitString3}
-                        </Flex>
-                    }
+                    <Flex style={valueStyle} align="center">
+                        <NumberCounter number={value3 ? value3 : 0} />
+                        &nbsp;{unitString3}
+                    </Flex>
                 </Col>
             </Row>
         );
@@ -91,14 +89,16 @@ const StatusSection = ({ status, invocations, tokens }: Props) => {
     return (
         <Flex
             vertical={true}
-            style={{
-                width: '100%',
-                border: '2px solid var(--primary)',
-                boxShadow: 'var(--box-shadow)',
-                borderRadius: 6,
-                padding: '1rem',
-                // background: 'linear-gradient(to bottom, var(--primary-300), var(--primary-50) 20%, var(--primary-50) 80%, var(--primary-300))'
-            }}
+            style={Object.assign(
+                {
+                    width: '100%',
+                    border: '2px solid var(--primary)',
+                    boxShadow: 'var(--box-shadow)',
+                    borderRadius: 6,
+                    padding: '1rem',
+                    // background: 'linear-gradient(to bottom, var(--primary-300), var(--primary-50) 20%, var(--primary-50) 80%, var(--primary-300))'
+                },
+            )}
             gap="small"
         >
             {renderStatusTitleRow(

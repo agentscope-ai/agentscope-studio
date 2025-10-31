@@ -120,14 +120,14 @@ const HomePage = () => {
                         width: '100%',
                         height: 92,
                     }}
-                    justify={'center'}
+                    justify="center"
                 >
                     <Flex
                         style={SingleLineEllipsisStyle}
-                        align={'center'}
-                        gap={'small'}
+                        align="center"
+                        gap="small"
                     >
-                        <LogoIcon fill={'#000'} width={29} height={29} />
+                        <LogoIcon fill="#000" width={29} height={29} />
                         {collapse ? null : 'Studio'}
                     </Flex>
                 </Flex>
