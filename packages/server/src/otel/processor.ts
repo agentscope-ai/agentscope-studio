@@ -1,5 +1,6 @@
 import { Attributes, SpanStatus } from '@opentelemetry/api';
 import {
+    OldSpanKind,
     SpanData,
     SpanEvent,
     SpanLink,
@@ -10,7 +11,7 @@ import {
     getNestedValue,
     unflattenObject,
 } from '../../../shared/src/utils/objectUtils';
-import { getTimeDifferenceNano } from '../../../shared/src/utils/timeUtils';
+import { decodeUnixNano, getTimeDifferenceNano } from '../../../shared/src/utils/timeUtils';
 
 
 export class SpanProcessor {
@@ -51,13 +52,21 @@ export class SpanProcessor {
         const traceId = this.decodeIdentifier(span.trace_id);
         const spanId = this.decodeIdentifier(span.span_id);
         const parentId = span.parent_span_id ? this.decodeIdentifier(span.parent_span_id) : undefined;
-        const startTimeUnixNano = this.decodeUnixNano(span.start_time_unix_nano);
-        const endTimeUnixNano = this.decodeUnixNano(span.end_time_unix_nano);
+        const startTimeUnixNano = decodeUnixNano(span.start_time_unix_nano);
+        const endTimeUnixNano = decodeUnixNano(span.end_time_unix_nano);
 
         // The self-calculated attributes
-        const attributes = this.unflattenAttributes(
+        let attributes = this.unflattenAttributes(
             this.loadJsonStrings(this.decodeKeyValues(span.attributes)),
         ) as Attributes;
+
+        // Detect and convert old protocol format to new format
+        const newValues = this.convertOldProtocolToNew(attributes, span);
+        const span_name = newValues.span_name;
+        attributes = newValues.attributes;
+
+        console.log('[SpanProcessor] new attributes', attributes);
+
         const events: SpanEvent[] = Array.isArray(span.events)
             ? span.events.map((event: any) => this.decodeEvent(event))
             : [];
@@ -73,7 +82,7 @@ export class SpanProcessor {
             traceState: span.trace_state,
             parentSpanId: parentId,
             flags: span.flags,
-            name: span.name,
+            name: span_name,
             kind: span.kind,
             startTimeUnixNano: startTimeUnixNano,
             endTimeUnixNano: endTimeUnixNano,
@@ -101,10 +110,121 @@ export class SpanProcessor {
 
 
     private static getRunId(attributes: Record<string, unknown>): string {
-        return this.getAttributeValue(
+        // Try new format first
+        const newRunId = this.getAttributeValue(
             attributes,
             'gen_ai.conversation.id',
-        ) || 'unknown';
+        );
+
+        if (newRunId) {
+            return String(newRunId);
+        }
+        // Fallback to old format
+        const oldRunId = this.getAttributeValue(
+            attributes,
+            'project.run_id',
+        );
+        return oldRunId ? String(oldRunId) : 'unknown';
+    }
+
+    /**
+     * Convert old protocol format attributes to new format
+     *
+     * Old format -> New format mappings:
+     * - project.run_id -> gen_ai.conversation.id
+     * - output.usage.* -> gen_ai.usage.*
+     * - output.model -> gen_ai.request.model
+     * - output.response.* -> gen_ai.response.*
+     *
+     * @param attributes The attributes object to convert
+     * @param span The original span object (for additional context if needed)
+     * @returns Converted attributes in new format
+     */
+    private static convertOldProtocolToNew(
+        attributes: Record<string, unknown>,
+        span: any,
+    ): Record<string, any> {
+        if (!attributes || typeof attributes !== 'object') {
+            return attributes || {};
+        }
+
+        // Check if already in new format by looking for gen_ai attributes
+        if (this.getAttributeValue(attributes, 'gen_ai')) {
+            // Already in new format, but might have mixed old and new attributes
+            // Continue to convert any remaining old format attributes
+            return attributes;
+        }
+
+        const newAttributes: Record<string, unknown> = {
+            'gen_ai': {
+                'conversation': {},
+                'request': {},
+                'operation': {},
+            }, 'agentscope': {
+                'function': {
+                    'input': {},
+                    'metadata': {},
+                    'output': {}
+                }
+            }
+        } as Record<string, unknown>;
+
+        const genAi = newAttributes.gen_ai as Record<string, unknown>;
+        const conversation = genAi.conversation as Record<string, unknown>;
+        const request = genAi.request as Record<string, unknown>;
+        const operation = genAi.operation as Record<string, unknown>;
+        const agentscope = newAttributes.agentscope as Record<string, unknown>;
+        const agentscopeFunction = agentscope.function as Record<string, unknown>;
+
+        agentscopeFunction.name = span.name;
+        conversation.id = this.getAttributeValue(attributes, 'project.run_id');
+        const span_kind = this.getAttributeValue(attributes, 'span.kind');
+
+
+        // Convert input -> agentscope.function.input
+        const inputValue = this.getAttributeValue(attributes, 'input');
+        if (inputValue) {
+            agentscopeFunction.input = inputValue;
+        }
+
+        const metadataValue = this.getAttributeValue(attributes, 'metadata');
+        if (metadataValue) {
+            agentscopeFunction.metadata = metadataValue;
+        }
+        const outputValue = this.getAttributeValue(attributes, 'output') as Record<string, unknown> | undefined;
+        if (outputValue) {
+            agentscopeFunction.output = outputValue;
+            if (outputValue.usage && typeof outputValue.usage === 'object') {
+
+                if (!genAi.usage) {
+                    genAi.usage = {};
+                }
+                const usage = genAi.usage as Record<string, unknown>;
+                usage.input_tokens = (outputValue.usage as Record<string, unknown>).input_tokens;
+                usage.output_tokens = (outputValue.usage as Record<string, unknown>).output_tokens;
+            }
+        }
+
+        let span_name = span.name;
+        if (span_kind === OldSpanKind.AGENT) {
+            operation.name = 'invoke_agent';
+            span_name = operation.name + ' ' + (metadataValue?.name || '');
+        } else if (span_kind === OldSpanKind.TOOL) {
+            operation.name = 'execute_tool';
+            span_name = operation.name + ' ' + (metadataValue?.name || '');
+        } else if (span_kind === OldSpanKind.LLM) {
+            operation.name = 'chat';
+            span_name = operation.name + ' ' + (metadataValue?.model_name || '');
+        } else if (span_kind === OldSpanKind.EMBEDDING) {
+            operation.name = 'embedding';
+            span_name = operation.name + ' ' + (metadataValue?.model_name || '');
+        } else if (span_kind === OldSpanKind.FORMATTER) {
+            operation.name = 'format';
+        } else {
+            operation.name = 'unknown';
+        }
+
+        return { 'span_name': span_name, 'attributes': newAttributes };
     }
 
     private static decodeIdentifier(
@@ -113,65 +233,6 @@ export class SpanProcessor {
         if (!identifier) return '';
         if (typeof identifier === 'string') return identifier;
         return Buffer.from(identifier).toString('hex');
-    }
-
-    private static decodeUnixNano(timeUnixNano: string | number | any | null): string {
-        if (timeUnixNano === null || timeUnixNano === undefined) {
-            return '0';
-        }
-
-        if (typeof timeUnixNano === 'number') {
-            return timeUnixNano.toString();
-        }
-
-        if (typeof timeUnixNano === 'string') {
-            return timeUnixNano;
-        }
-
-        // Handle Long type from protobuf
-        if (timeUnixNano && typeof timeUnixNano === 'object') {
-            // Check if it's a Long object with toNumber method
-            if (typeof timeUnixNano.toNumber === 'function') {
-                return timeUnixNano.toNumber().toString();
-            }
-            // Check if it's a Long object with low/high properties
-            if (typeof timeUnixNano.low === 'number' && typeof timeUnixNano.high === 'number') {
-                // Convert Long to number (this might lose precision for very large numbers)
-                const value = timeUnixNano.low + (timeUnixNano.high * 0x100000000);
-                return value.toString();
-            }
-        }
-
-        return '0';
-    }
-
-    private static decodeUnixNanoToNumber(timeUnixNano: string | number | any | null): number {
-        if (timeUnixNano === null || timeUnixNano === undefined) {
-            return 0;
-        }
-
-        if (typeof timeUnixNano === 'number') {
-            return timeUnixNano;
-        }
-
-        if (typeof timeUnixNano === 'string') {
-            return parseInt(timeUnixNano, 10);
-        }
-
-        // Handle Long type from protobuf
-        if (timeUnixNano && typeof timeUnixNano === 'object') {
-            // Check if it's a Long object with toNumber method
-            if (typeof timeUnixNano.toNumber === 'function') {
-                return timeUnixNano.toNumber();
-            }
-            // Check if it's a Long object with low/high properties
-            if (typeof timeUnixNano.low === 'number' && typeof timeUnixNano.high === 'number') {
-                // Convert Long to number (this might lose precision for very large numbers)
-                return timeUnixNano.low + (timeUnixNano.high * 0x100000000);
-            }
-        }
-
-        return 0;
     }
 
 
@@ -226,7 +287,7 @@ export class SpanProcessor {
     private static decodeEvent(event: any): SpanEvent {
         return {
             name: event.name || '',
-            time: this.decodeUnixNanoToNumber(event.time_unix_nano),
+            time: decodeUnixNano(event.time_unix_nano),
             attributes: this.unflattenAttributes(
                 this.loadJsonStrings(this.decodeKeyValues(event.attributes || [])),
             ) as Attributes,

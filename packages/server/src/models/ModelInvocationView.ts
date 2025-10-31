@@ -8,20 +8,20 @@ import { SpanTable } from './Trace';
             .from(SpanTable, 'span')
             .select(
                 `COUNT(CASE
-                    WHEN (json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat'
-                         OR json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat_model')
+                    WHEN (span.operationName = 'chat'
+                         OR span.operationName = 'chat_model')
                     THEN 1
                 END)`,
                 'totalModelInvocations',
             )
             .addSelect(
                 `COALESCE(SUM(CASE
-            WHEN json_extract(span.attributes, '$.gen_ai.usage') IS NOT NULL
-            AND (json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat'
-                 OR json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat_model')
+            WHEN (span.inputTokens IS NOT NULL OR span.outputTokens IS NOT NULL)
+            AND (span.operationName = 'chat'
+                 OR span.operationName = 'chat_model')
             THEN (
-                CAST(COALESCE(json_extract(span.attributes, '$.gen_ai.usage.input_tokens'), 0) AS INTEGER) +
-                CAST(COALESCE(json_extract(span.attributes, '$.gen_ai.usage.output_tokens'), 0) AS INTEGER)
+                CAST(COALESCE(span.inputTokens, 0) AS INTEGER) +
+                CAST(COALESCE(span.outputTokens, 0) AS INTEGER)
             )
             ELSE 0
         END), 0)`,
@@ -29,9 +29,9 @@ import { SpanTable } from './Trace';
             )
             .addSelect(
                 `COUNT(CASE
-            WHEN json_extract(span.attributes, '$.gen_ai.usage') IS NOT NULL
-            AND (json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat'
-                 OR json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat_model')
+            WHEN (span.inputTokens IS NOT NULL OR span.outputTokens IS NOT NULL)
+            AND (span.operationName = 'chat'
+                 OR span.operationName = 'chat_model')
             THEN 1
         END)`,
                 'chatModelInvocations',
@@ -39,13 +39,13 @@ import { SpanTable } from './Trace';
             // 一个月前的统计
             .addSelect(
                 `COALESCE(SUM(CASE
-            WHEN json_extract(span.attributes, '$.gen_ai.usage') IS NOT NULL
-            AND (json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat'
-                 OR json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat_model')
+            WHEN (span.inputTokens IS NOT NULL OR span.outputTokens IS NOT NULL)
+            AND (span.operationName = 'chat'
+                 OR span.operationName = 'chat_model')
             AND span.startTimeUnixNano > (strftime('%s', 'now', '-1 month') * 1000000000)
             THEN (
-                CAST(COALESCE(json_extract(span.attributes, '$.gen_ai.usage.input_tokens'), 0) AS INTEGER) +
-                CAST(COALESCE(json_extract(span.attributes, '$.gen_ai.usage.output_tokens'), 0) AS INTEGER)
+                CAST(COALESCE(span.inputTokens, 0) AS INTEGER) +
+                CAST(COALESCE(span.outputTokens, 0) AS INTEGER)
             )
             ELSE 0
         END), 0)`,
@@ -54,13 +54,13 @@ import { SpanTable } from './Trace';
             // 一周前的统计
             .addSelect(
                 `COALESCE(SUM(CASE
-            WHEN json_extract(span.attributes, '$.gen_ai.usage') IS NOT NULL
-            AND (json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat'
-                 OR json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat_model')
+            WHEN (span.inputTokens IS NOT NULL OR span.outputTokens IS NOT NULL)
+            AND (span.operationName = 'chat'
+                 OR span.operationName = 'chat_model')
             AND span.startTimeUnixNano > (strftime('%s', 'now', '-7 days') * 1000000000)
             THEN (
-                CAST(COALESCE(json_extract(span.attributes, '$.gen_ai.usage.input_tokens'), 0) AS INTEGER) +
-                CAST(COALESCE(json_extract(span.attributes, '$.gen_ai.usage.output_tokens'), 0) AS INTEGER)
+                CAST(COALESCE(span.inputTokens, 0) AS INTEGER) +
+                CAST(COALESCE(span.outputTokens, 0) AS INTEGER)
             )
             ELSE 0
         END), 0)`,
@@ -69,13 +69,13 @@ import { SpanTable } from './Trace';
             // 一年前的统计
             .addSelect(
                 `COALESCE(SUM(CASE
-            WHEN json_extract(span.attributes, '$.gen_ai.usage') IS NOT NULL
-            AND (json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat'
-                 OR json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat_model')
+            WHEN (span.inputTokens IS NOT NULL OR span.outputTokens IS NOT NULL)
+            AND (span.operationName = 'chat'
+                 OR span.operationName = 'chat_model')
             AND span.startTimeUnixNano > (strftime('%s', 'now', '-1 year') * 1000000000)
             THEN (
-                CAST(COALESCE(json_extract(span.attributes, '$.gen_ai.usage.input_tokens'), 0) AS INTEGER) +
-                CAST(COALESCE(json_extract(span.attributes, '$.gen_ai.usage.output_tokens'), 0) AS INTEGER)
+                CAST(COALESCE(span.inputTokens, 0) AS INTEGER) +
+                CAST(COALESCE(span.outputTokens, 0) AS INTEGER)
             )
             ELSE 0
         END), 0)`,
@@ -84,8 +84,8 @@ import { SpanTable } from './Trace';
             // 一个月内的调用次数
             .addSelect(
                 `COUNT(CASE
-                    WHEN (json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat'
-                         OR json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat_model')
+                    WHEN (span.operationName = 'chat'
+                         OR span.operationName = 'chat_model')
                     AND span.startTimeUnixNano > (strftime('%s', 'now', '-1 month') * 1000000000)
                     THEN 1
                 END)`,
@@ -94,8 +94,8 @@ import { SpanTable } from './Trace';
             // 一周内的调用次数
             .addSelect(
                 `COUNT(CASE
-                    WHEN (json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat'
-                         OR json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat_model')
+                    WHEN (span.operationName = 'chat'
+                         OR span.operationName = 'chat_model')
                     AND span.startTimeUnixNano > (strftime('%s', 'now', '-7 days') * 1000000000)
                     THEN 1
                 END)`,
@@ -104,8 +104,8 @@ import { SpanTable } from './Trace';
             // 一年内的调用次数
             .addSelect(
                 `COUNT(CASE
-                    WHEN (json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat'
-                         OR json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat_model')
+                    WHEN (span.operationName = 'chat'
+                         OR span.operationName = 'chat_model')
                     AND span.startTimeUnixNano > (strftime('%s', 'now', '-1 year') * 1000000000)
                     THEN 1
                 END)`,

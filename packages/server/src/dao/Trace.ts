@@ -1,7 +1,6 @@
 import { SpanAttributes, SpanData, SpanResource, SpanScope } from '../../../shared/src/types/trace';
 import { ModelInvocationData } from '../../../shared/src/types/trpc';
 import { getNestedValue } from '../../../shared/src/utils/objectUtils';
-import { getTimeDifferenceNano } from '../../../shared/src/utils/timeUtils';
 import { ModelInvocationView } from '../models/ModelInvocationView';
 import { SpanTable } from '../models/Trace';
 
@@ -19,8 +18,6 @@ export class SpanDao {
                 const inputTokens = this.extractInputTokens(data.attributes);
                 const outputTokens = this.extractOutputTokens(data.attributes);
 
-                const runId = this.extractRunId(data.attributes);
-                const latencyNs = getTimeDifferenceNano(data.startTimeUnixNano, data.endTimeUnixNano);
                 const span = new SpanTable();
                 Object.assign(span, {
                     id: data.spanId, // Use spanId as the primary key
@@ -40,10 +37,10 @@ export class SpanDao {
                     links: data.links,
                     droppedLinksCount: data.droppedLinksCount,
                     status: data.status,
-                    // Embed resource and scope data
                     resource: data.resource,
                     scope: data.scope,
-                    // Extract key fields for indexing
+
+                    // Additional fields for our application
                     serviceName,
                     operationName,
                     instrumentationName,
@@ -51,8 +48,10 @@ export class SpanDao {
                     model,
                     inputTokens,
                     outputTokens,
-                    runId: runId,
-                    latencyNs: latencyNs,
+
+                    // Additional fields for our application
+                    runId: data.runId,
+                    latencyNs: data.latencyNs,
                 });
                 return span;
             });
@@ -92,8 +91,6 @@ export class SpanDao {
                 status: span.status as any, // SpanStatus from OpenTelemetry API
                 resource: span.resource as any,
                 scope: span.scope as any,
-                // 注意：SpanData 接口中没有 runId 和 latencyNs 字段
-                // 这些字段在 SpanTable 中存在，但不在 SpanData 接口中
                 runId: span.runId,
                 latencyNs: span.latencyNs,
             }) as SpanData);
@@ -162,7 +159,7 @@ export class SpanDao {
         operationName?: string;
         instrumentationName?: string;
         model?: string;
-        status?: string;
+        status?: number; // Status code: 0=UNSET, 1=OK, 2=ERROR
         startTime?: string;
         endTime?: string;
         limit?: number;
@@ -185,8 +182,8 @@ export class SpanDao {
             queryBuilder.andWhere('span.model = :model', { model: filters.model });
         }
 
-        if (filters.status) {
-            queryBuilder.andWhere('span.status = :status', { status: filters.status });
+        if (filters.status !== undefined) {
+            queryBuilder.andWhere("json_extract(span.status, '$.code') = :statusCode", { statusCode: filters.status });
         }
 
         if (filters.startTime) {
@@ -220,17 +217,17 @@ export class SpanDao {
         const basicStats = await SpanTable.createQueryBuilder('span')
             .select(
                 `COUNT(CASE
-                    WHEN (json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat'
-                         OR json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat_model')
+                    WHEN (span.operationName = 'chat'
+                         OR span.operationName = 'chat_model')
                     THEN 1
                 END)`,
                 'totalInvocations',
             )
             .addSelect(
                 `COUNT(CASE
-                    WHEN (json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat'
-                         OR json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat_model')
-                    AND json_extract(span.attributes, '$.gen_ai.usage') IS NOT NULL
+                    WHEN (span.operationName = 'chat'
+                         OR span.operationName = 'chat_model')
+                    AND (span.inputTokens IS NOT NULL OR span.outputTokens IS NOT NULL)
                     THEN 1
                 END)`,
                 'chatInvocations',
@@ -243,45 +240,45 @@ export class SpanDao {
             .select([
                 // 总计 - input tokens
                 `COALESCE(SUM(
-                    CASE WHEN (json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat'
-                             OR json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat_model')
-                         AND json_extract(span.attributes, '$.gen_ai.usage') IS NOT NULL
-                    THEN CAST(json_extract(span.attributes, '$.gen_ai.usage.input_tokens') AS INTEGER)
+                    CASE WHEN (span.operationName = 'chat'
+                             OR span.operationName = 'chat_model')
+                         AND (span.inputTokens IS NOT NULL OR span.outputTokens IS NOT NULL)
+                    THEN CAST(COALESCE(span.inputTokens, 0) AS INTEGER)
                     ELSE 0 END
                 ), 0) as totalPromptTokens`,
                 // 总计 - output tokens
                 `COALESCE(SUM(
-                    CASE WHEN (json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat'
-                             OR json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat_model')
-                         AND json_extract(span.attributes, '$.gen_ai.usage') IS NOT NULL
-                    THEN CAST(json_extract(span.attributes, '$.gen_ai.usage.output_tokens') AS INTEGER)
+                    CASE WHEN (span.operationName = 'chat'
+                             OR span.operationName = 'chat_model')
+                         AND (span.inputTokens IS NOT NULL OR span.outputTokens IS NOT NULL)
+                    THEN CAST(COALESCE(span.outputTokens, 0) AS INTEGER)
                     ELSE 0 END
                 ), 0) as totalCompletionTokens`,
                 // 平均 - input tokens
                 `COALESCE(
                     CAST(SUM(
-                        CASE WHEN (json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat'
-                                 OR json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat_model')
-                             AND json_extract(span.attributes, '$.gen_ai.usage') IS NOT NULL
-                        THEN CAST(json_extract(span.attributes, '$.gen_ai.usage.input_tokens') AS INTEGER)
+                        CASE WHEN (span.operationName = 'chat'
+                                 OR span.operationName = 'chat_model')
+                             AND (span.inputTokens IS NOT NULL OR span.outputTokens IS NOT NULL)
+                        THEN CAST(COALESCE(span.inputTokens, 0) AS INTEGER)
                         ELSE 0 END
                     ) AS FLOAT) /
-                    NULLIF(COUNT(CASE WHEN (json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat'
-                                         OR json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat_model')
-                                     AND json_extract(span.attributes, '$.gen_ai.usage') IS NOT NULL THEN 1 END), 0)
+                    NULLIF(COUNT(CASE WHEN (span.operationName = 'chat'
+                                         OR span.operationName = 'chat_model')
+                                     AND (span.inputTokens IS NOT NULL OR span.outputTokens IS NOT NULL) THEN 1 END), 0)
                 , 0) as avgPromptTokens`,
                 // 平均 - output tokens
                 `COALESCE(
                     CAST(SUM(
-                        CASE WHEN (json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat'
-                                 OR json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat_model')
-                             AND json_extract(span.attributes, '$.gen_ai.usage') IS NOT NULL
-                        THEN CAST(json_extract(span.attributes, '$.gen_ai.usage.output_tokens') AS INTEGER)
+                        CASE WHEN (span.operationName = 'chat'
+                                 OR span.operationName = 'chat_model')
+                             AND (span.inputTokens IS NOT NULL OR span.outputTokens IS NOT NULL)
+                        THEN CAST(COALESCE(span.outputTokens, 0) AS INTEGER)
                         ELSE 0 END
                     ) AS FLOAT) /
-                    NULLIF(COUNT(CASE WHEN (json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat'
-                                         OR json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat_model')
-                                     AND json_extract(span.attributes, '$.gen_ai.usage') IS NOT NULL THEN 1 END), 0)
+                    NULLIF(COUNT(CASE WHEN (span.operationName = 'chat'
+                                         OR span.operationName = 'chat_model')
+                                     AND (span.inputTokens IS NOT NULL OR span.outputTokens IS NOT NULL) THEN 1 END), 0)
                 , 0) as avgCompletionTokens`,
             ])
             .where('span.runId = :runId', { runId })
@@ -290,15 +287,15 @@ export class SpanDao {
         // 3. 按模型分组的调用次数
         const modelInvocations = await SpanTable.createQueryBuilder('span')
             .select([
-                "json_extract(span.attributes, '$.gen_ai.request.model') as modelName",
+                'span.model as modelName',
                 'COUNT(*) as invocations',
             ])
             .where('span.runId = :runId', { runId })
             .andWhere(
-                "(json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat' OR json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat_model')",
+                "(span.operationName = 'chat' OR span.operationName = 'chat_model')",
             )
             .andWhere(
-                "json_extract(span.attributes, '$.gen_ai.usage') IS NOT NULL",
+                '(span.inputTokens IS NOT NULL OR span.outputTokens IS NOT NULL)',
             )
             .groupBy('modelName')
             .getRawMany();
@@ -306,20 +303,20 @@ export class SpanDao {
         // 4. 按模型分组的token统计
         const modelTokenStats = await SpanTable.createQueryBuilder('span')
             .select([
-                "json_extract(span.attributes, '$.gen_ai.request.model') as modelName",
+                'span.model as modelName',
                 // 总计
-                `SUM(CAST(json_extract(span.attributes, '$.gen_ai.usage.input_tokens') AS INTEGER)) as totalPromptTokens`,
-                `SUM(CAST(json_extract(span.attributes, '$.gen_ai.usage.output_tokens') AS INTEGER)) as totalCompletionTokens`,
+                `SUM(CAST(COALESCE(span.inputTokens, 0) AS INTEGER)) as totalPromptTokens`,
+                `SUM(CAST(COALESCE(span.outputTokens, 0) AS INTEGER)) as totalCompletionTokens`,
                 // 平均值
-                `CAST(SUM(CAST(json_extract(span.attributes, '$.gen_ai.usage.input_tokens') AS INTEGER)) AS FLOAT) / COUNT(*) as avgPromptTokens`,
-                `CAST(SUM(CAST(json_extract(span.attributes, '$.gen_ai.usage.output_tokens') AS INTEGER)) AS FLOAT) / COUNT(*) as avgCompletionTokens`,
+                `CAST(SUM(CAST(COALESCE(span.inputTokens, 0) AS INTEGER)) AS FLOAT) / COUNT(*) as avgPromptTokens`,
+                `CAST(SUM(CAST(COALESCE(span.outputTokens, 0) AS INTEGER)) AS FLOAT) / COUNT(*) as avgCompletionTokens`,
             ])
             .where('span.runId = :runId', { runId })
             .andWhere(
-                "(json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat' OR json_extract(span.attributes, '$.gen_ai.operation.name') = 'chat_model')",
+                "(span.operationName = 'chat' OR span.operationName = 'chat_model')",
             )
             .andWhere(
-                "json_extract(span.attributes, '$.gen_ai.usage') IS NOT NULL",
+                '(span.inputTokens IS NOT NULL OR span.outputTokens IS NOT NULL)',
             )
             .groupBy('modelName')
             .getRawMany();

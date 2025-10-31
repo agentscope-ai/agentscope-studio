@@ -51,10 +51,8 @@ const SpanPanel = ({ span }: Props) => {
         return null;
     }
 
-    const gen_ai_attributes = span.attributes?.gen_ai as Record<string, unknown>;
-    const as_attributes = span.attributes?.agentscope?.function || span.attributes as Record<string, unknown>;
-
-    const span_kind = gen_ai_attributes?.operation?.name as string;
+    const attributes = span.attributes?.agentscope?.function as unknown as Record<string, unknown>;
+    const operation_name = span.attributes?.gen_ai?.operation?.name as unknown as string;
     const renderCol = (title: string, value: string | ReactNode) => {
         return (
             <div className="flex col-span-1 pt-4 pb-4 pl-4">
@@ -80,7 +78,7 @@ const SpanPanel = ({ span }: Props) => {
                     moment(parseInt(span.startTimeUnixNano) / 1000000).format('YYYY-MM-DD HH:mm:ss'),
                 )}
                 {renderCol('', '')}
-                {renderCol(t('common.span-kind'), span_kind)}
+                {renderCol(t('common.span-kind'), operation_name)}
                 {renderCol(
                     t('common.end-time'),
                     moment(parseInt(span.endTimeUnixNano) / 1000000).format('YYYY-MM-DD HH:mm:ss'),
@@ -89,17 +87,17 @@ const SpanPanel = ({ span }: Props) => {
             <SpanSection
                 title={t('common.metadata')}
                 description={t('description.trace.metadata')}
-                content={as_attributes?.metadata as unknown as Record<string, unknown>}
+                content={attributes?.metadata as unknown as Record<string, unknown>}
             />
             <SpanSection
                 title={t('common.input')}
                 description={t('description.trace.input')}
-                content={as_attributes?.input as unknown as Record<string, unknown>}
+                content={attributes?.input as unknown as Record<string, unknown>}
             />
             <SpanSection
                 title={t('common.output')}
                 description={t('description.trace.output')}
-                content={as_attributes?.output as unknown as Record<string, unknown>}
+                content={attributes?.output as unknown as Record<string, unknown>}
             />
         </div>
     );

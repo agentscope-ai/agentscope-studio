@@ -1,6 +1,31 @@
-export function decodeUnixNano(timeUnixNano: string | number): string {
-    // 保持纳秒精度，直接返回纳秒时间戳字符串
-    return timeUnixNano.toString();
+export function decodeUnixNano(timeUnixNano: string | number | any | null): string {
+    if (timeUnixNano === null || timeUnixNano === undefined) {
+        return '0';
+    }
+
+    if (typeof timeUnixNano === 'number') {
+        return timeUnixNano.toString();
+    }
+
+    if (typeof timeUnixNano === 'string') {
+        return timeUnixNano;
+    }
+
+    // Handle Long type from protobuf
+    if (timeUnixNano && typeof timeUnixNano === 'object') {
+        // Check if it's a Long object with toNumber method
+        if (typeof timeUnixNano.toNumber === 'function') {
+            return timeUnixNano.toNumber().toString();
+        }
+        // Check if it's a Long object with low/high properties
+        if (typeof timeUnixNano.low === 'number' && typeof timeUnixNano.high === 'number') {
+            // Convert Long to number (this might lose precision for very large numbers)
+            const value = timeUnixNano.low + (timeUnixNano.high * 0x100000000);
+            return value.toString();
+        }
+    }
+
+    return '0';
 }
 
 export function encodeUnixNano(isoTimeString: string): string {

@@ -25,7 +25,7 @@ export type SpanAttributes = Attributes;
 // Simplified event interface for SpanData
 export interface SpanEvent {
     name: string;
-    time: number; // Unix timestamp in nanoseconds
+    time: string;
     attributes?: Attributes;
     droppedAttributesCount?: number;
 }
@@ -53,6 +53,14 @@ export interface SpanScope {
 }
 // SpanData interface for SpanTable storage
 
+export enum OldSpanKind {
+    AGENT = 'AGENT',
+    TOOL = 'TOOL',
+    LLM = 'LLM',
+    EMBEDDING = 'EMBEDDING',
+    FORMATTER = 'FORMATTER',
+    COMMON = 'COMMON',
+}
 
 export interface SpanData {
     // Basic span identification (as strings for easier storage)

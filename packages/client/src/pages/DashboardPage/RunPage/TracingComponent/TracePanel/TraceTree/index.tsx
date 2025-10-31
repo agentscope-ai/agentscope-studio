@@ -30,7 +30,6 @@ const SpanNodeTitle = ({
         unknown
     >;
     const operationName = attributes.gen_ai?.operation?.name as string;
-    // Convert OpenTelemetry SpanKind enum to string
 
     let displayKind: string;
     if (operationName === 'invoke_agent' && metadata?.name) {
@@ -41,11 +40,11 @@ const SpanNodeTitle = ({
         displayKind = operationName + ': ' + String(metadata.model_name);
     } else if (operationName === 'embedding' && metadata?.model_name) {
         displayKind = operationName + ': ' + String(metadata.model_name);
-    }
-    else {
+    } else if (operationName) {
         displayKind = operationName;
+    } else {
+        displayKind = 'Unknown';
     }
-
     return (
         <div className="flex flex-col w-full py-1 rounded-md">
             <div className="flex justify-between">
@@ -142,7 +141,7 @@ export const TraceTree = ({ spans }: Props) => {
                 key: node.spanId,
                 title: (
                     <SpanNodeTitle
-                        name={node.attributes.agentscope?.function?.name || node.name as string}
+                        name={node.attributes.agentscope?.function?.name as unknown as string || node.name as string}
                         startTimeUnixNano={node.startTimeUnixNano}
                         latencyNs={node.latencyNs}
                         attributes={node.attributes}

@@ -1,14 +1,15 @@
 import { DataSource, DataSourceOptions } from 'typeorm';
+import { InputRequestDao } from './dao/InputRequest';
+import { RunDao } from './dao/Run';
+import { migrateSpanTable } from './database/migrateSpanTable';
+import { FridayAppMessageTable, FridayAppReplyTable } from './models/FridayApp';
+import { FridayAppReplyView } from './models/FridayAppView';
+import { InputRequestTable } from './models/InputRequest';
 import { MessageTable } from './models/Message';
+import { ModelInvocationView } from './models/ModelInvocationView';
 import { RunTable } from './models/Run';
 import { RunView } from './models/RunView';
 import { SpanTable } from './models/Trace';
-import { InputRequestTable } from './models/InputRequest';
-import { RunDao } from './dao/Run';
-import { InputRequestDao } from './dao/InputRequest';
-import { ModelInvocationView } from './models/ModelInvocationView';
-import { FridayAppMessageTable, FridayAppReplyTable } from './models/FridayApp';
-import { FridayAppReplyView } from './models/FridayAppView';
 
 export const initializeDatabase = async (databaseConfig: DataSourceOptions) => {
     try {
@@ -39,6 +40,16 @@ export const initializeDatabase = async (databaseConfig: DataSourceOptions) => {
         console.log(
             `Database initialized with options: ${JSON.stringify(printingOptions, null, 2)}`,
         );
+
+        // Migrate old SpanTable data to new format
+        console.log('Checking for SpanTable migration...');
+        try {
+            await migrateSpanTable(AppDataBase);
+        } catch (error) {
+            console.error('Error during SpanTable migration:', error);
+            // Continue execution even if migration fails
+        }
+
         console.log('Refresh the database ...');
         await RunDao.updateRunStatusAtBeginning();
         await InputRequestDao.updateInputRequests();
