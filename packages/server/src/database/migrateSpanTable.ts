@@ -1,13 +1,12 @@
 import { SpanKind as OTSpanKind } from '@opentelemetry/api';
 import { DataSource } from 'typeorm';
 import {
-    OldSpanKind,
     SpanAttributes,
     SpanData,
     SpanEvent,
     SpanLink,
     SpanResource,
-    SpanScope,
+    SpanScope
 } from '../../../shared/src/types/trace';
 import { getNestedValue } from '../../../shared/src/utils/objectUtils';
 import {
@@ -17,222 +16,96 @@ import {
 import { SpanTable } from '../models/Trace';
 import { SpanProcessor } from '../otel/processor';
 
-// OpenTelemetry SpanKind enum values
-enum SpanKind {
-    SPAN_KIND_UNSPECIFIED = 0,
-    SPAN_KIND_INTERNAL = 1,
-    SPAN_KIND_SERVER = 2,
-    SPAN_KIND_CLIENT = 3,
-    SPAN_KIND_PRODUCER = 4,
-    SPAN_KIND_CONSUMER = 5,
+// Helper functions for type conversion
+const asString = (value: unknown, fallback = ''): string =>
+    typeof value === 'string' ? value : fallback;
+
+const asNumber = (value: unknown, fallback = 0): number =>
+    typeof value === 'number' ? value : fallback;
+
+const asOptionalString = (value: unknown): string | undefined =>
+    typeof value === 'string' ? value : undefined;
+
+const asOptionalNumber = (value: unknown): number | undefined =>
+    typeof value === 'number' ? value : undefined;
+
+const toStringOrUndefined = (value: unknown): string | undefined =>
+    value !== undefined && value !== null ? String(value) : undefined;
+
+
+// Parse JSON string or return object/empty
+function parseJsonOrObject(value: unknown): Record<string, unknown> {
+    if (typeof value === 'string') {
+        try {
+            return JSON.parse(value) as Record<string, unknown>;
+        } catch {
+            return {};
+        }
+    }
+    if (value && typeof value === 'object') {
+        return value as Record<string, unknown>;
+    }
+    return {};
 }
 
-// Status code mapping
-function convertStatus(
-    status: string,
-    statusMessage?: string,
-): { code: number; message: string } {
+// Decode status from unknown format
+function decodeStatus(status: unknown): { code: number; message: string } {
+    if (!status || typeof status !== 'object') {
+        return { code: 0, message: '' }; // UNSET
+    }
+    const s = status as Record<string, unknown>;
+    if ('code' in s && typeof s.code === 'number') {
+        return {
+            code: s.code,
+            message: typeof s.message === 'string' ? s.message : '',
+        };
+    }
+    // Old format (string) - convert to JSON object
     const statusMap: Record<string, number> = {
         OK: 1,
         ERROR: 2,
         UNSET: 0,
     };
-
-    const upperStatus = (status || 'UNSET').toUpperCase();
+    const statusStr = typeof status === 'string' ? status : '';
+    const upperStatus = (statusStr || 'UNSET').toUpperCase();
     return {
         code: statusMap[upperStatus] ?? 0,
-        message: statusMessage || '',
+        message: '',
     };
 }
 
-// Convert old spanKind string to OpenTelemetry SpanKind number
-function convertSpanKind(spanKind: string): number {
-    // Map old AgentScope span kinds to OpenTelemetry internal kind
-    // Most custom span kinds should map to INTERNAL (1)
-    const kindMap: Record<string, number> = {
-        [OldSpanKind.AGENT]: SpanKind.SPAN_KIND_INTERNAL,
-        [OldSpanKind.TOOL]: SpanKind.SPAN_KIND_INTERNAL,
-        [OldSpanKind.LLM]: SpanKind.SPAN_KIND_INTERNAL,
-        [OldSpanKind.EMBEDDING]: SpanKind.SPAN_KIND_INTERNAL,
-        [OldSpanKind.FORMATTER]: SpanKind.SPAN_KIND_INTERNAL,
-        [OldSpanKind.COMMON]: SpanKind.SPAN_KIND_INTERNAL,
-    };
-
-    return kindMap[spanKind] ?? SpanKind.SPAN_KIND_INTERNAL;
-}
-
-// Convert ISO time string to unix nano timestamp string
-function convertTimeToUnixNano(timeStr: string): string {
-    if (!timeStr) {
-        return '0';
-    }
-    return encodeUnixNano(timeStr);
-}
-
-// Convert milliseconds to nanoseconds
-function convertLatencyMsToNs(latencyMs: number): number {
-    return latencyMs * 1_000_000;
-}
-
-// Convert old database record to SpanData format
-function convertOldRecordToSpanData(
-    oldRecord: Record<string, unknown>,
-): SpanData {
-    // Parse attributes
-    let attributes: Record<string, unknown> = {};
-    if (typeof oldRecord.attributes === 'string') {
+// Decode events array
+function decodeEvents(eventsValue: unknown): SpanEvent[] {
+    if (!eventsValue) return [];
+    let eventsArray: unknown[] = [];
+    if (typeof eventsValue === 'string') {
         try {
-            attributes = JSON.parse(oldRecord.attributes) as Record<
-                string,
-                unknown
-            >;
+            eventsArray = JSON.parse(eventsValue) as unknown[];
         } catch {
-            attributes = {};
+            eventsArray = [];
         }
-    } else if (
-        oldRecord.attributes &&
-        typeof oldRecord.attributes === 'object'
-    ) {
-        attributes = oldRecord.attributes as Record<string, unknown>;
+    } else if (Array.isArray(eventsValue)) {
+        eventsArray = eventsValue;
     }
 
-    // Convert old protocol attributes to new format using processor logic
-    const nameValue = oldRecord.name;
-    const mockSpan = { name: typeof nameValue === 'string' ? nameValue : '' };
-    const convertedResult = SpanProcessor.convertOldProtocolToNew(
-        attributes,
-        mockSpan,
-    );
-    const spanName =
-        convertedResult.span_name ||
-        (typeof nameValue === 'string' ? nameValue : '');
-    attributes = convertedResult.attributes || attributes;
+    return eventsArray.map((event: unknown) => {
+        const e = event as Record<string, unknown>;
+        const timeUnixNano = asString(e.timestamp)
+            ? encodeUnixNano(asString(e.timestamp))
+            : asString(e.timeUnixNano) || asString(e.time) || '0';
+        return {
+            name: asString(e.name),
+            time: timeUnixNano,
+            attributes: (e.attributes && typeof e.attributes === 'object' && e.attributes !== null
+                ? (e.attributes as Record<string, unknown>)
+                : {}) as SpanAttributes,
+            droppedAttributesCount: asNumber(e.droppedAttributesCount, 0),
+        };
+    });
+}
 
-    // Convert spanKind to OpenTelemetry SpanKind number
-    // Try old format first (spanKind as string), then new format (kind as number)
-    let kind: OTSpanKind;
-    if (oldRecord.spanKind && typeof oldRecord.spanKind === 'string') {
-        kind = convertSpanKind(oldRecord.spanKind) as OTSpanKind;
-    } else if (
-        oldRecord.kind !== undefined &&
-        oldRecord.kind !== null &&
-        typeof oldRecord.kind === 'number'
-    ) {
-        kind = oldRecord.kind as OTSpanKind;
-    } else {
-        kind = OTSpanKind.INTERNAL;
-    }
-
-    // Convert times - prioritize old format (startTime/endTime), then new format
-    let startTimeUnixNano: string;
-    if (oldRecord.startTime && typeof oldRecord.startTime === 'string') {
-        startTimeUnixNano = convertTimeToUnixNano(oldRecord.startTime);
-    } else if (
-        oldRecord.startTimeUnixNano &&
-        typeof oldRecord.startTimeUnixNano === 'string'
-    ) {
-        startTimeUnixNano = oldRecord.startTimeUnixNano;
-    } else {
-        startTimeUnixNano = '0';
-    }
-
-    let endTimeUnixNano: string;
-    if (oldRecord.endTime && typeof oldRecord.endTime === 'string') {
-        endTimeUnixNano = convertTimeToUnixNano(oldRecord.endTime);
-    } else if (
-        oldRecord.endTimeUnixNano &&
-        typeof oldRecord.endTimeUnixNano === 'string'
-    ) {
-        endTimeUnixNano = oldRecord.endTimeUnixNano;
-    } else {
-        endTimeUnixNano = '0';
-    }
-
-    // Convert latency - prioritize old format (latencyMs), then new format, else calculate
-    let latencyNs: number;
-    if (
-        oldRecord.latencyMs !== null &&
-        oldRecord.latencyMs !== undefined &&
-        typeof oldRecord.latencyMs === 'number'
-    ) {
-        latencyNs = convertLatencyMsToNs(oldRecord.latencyMs);
-    } else if (
-        oldRecord.latencyNs !== null &&
-        oldRecord.latencyNs !== undefined &&
-        typeof oldRecord.latencyNs === 'number'
-    ) {
-        latencyNs = oldRecord.latencyNs;
-    } else {
-        latencyNs = getTimeDifferenceNano(startTimeUnixNano, endTimeUnixNano);
-    }
-
-    // Convert status - check if it's already JSON object or string
-    let status: { code: number; message: string };
-    const statusObj = oldRecord.status;
-    if (
-        typeof statusObj === 'object' &&
-        statusObj !== null &&
-        'code' in statusObj &&
-        typeof (statusObj as { code?: unknown }).code === 'number'
-    ) {
-        // Already in new format (JSON object with code)
-        status = statusObj as { code: number; message: string };
-    } else {
-        // Old format (string) - convert to JSON object
-        const statusStr = typeof statusObj === 'string' ? statusObj : '';
-        const statusMessage = oldRecord.statusMessage;
-        status = convertStatus(
-            statusStr,
-            typeof statusMessage === 'string' ? statusMessage : undefined,
-        );
-    }
-
-    // Convert events
-    let events: SpanEvent[] = [];
-    if (oldRecord.events) {
-        let eventsArray: unknown[] = [];
-        if (typeof oldRecord.events === 'string') {
-            try {
-                eventsArray = JSON.parse(oldRecord.events) as unknown[];
-            } catch {
-                eventsArray = [];
-            }
-        } else if (Array.isArray(oldRecord.events)) {
-            eventsArray = oldRecord.events;
-        }
-
-        events = eventsArray.map((event: unknown) => {
-            const eventObj = event as Record<string, unknown>;
-            const timeUnixNano =
-                eventObj.timestamp && typeof eventObj.timestamp === 'string'
-                    ? encodeUnixNano(eventObj.timestamp)
-                    : eventObj.timeUnixNano &&
-                        typeof eventObj.timeUnixNano === 'string'
-                        ? eventObj.timeUnixNano
-                        : eventObj.time && typeof eventObj.time === 'string'
-                            ? eventObj.time
-                            : '0';
-            return {
-                name:
-                    eventObj.name && typeof eventObj.name === 'string'
-                        ? eventObj.name
-                        : '',
-                time: timeUnixNano,
-                attributes: (eventObj.attributes &&
-                    typeof eventObj.attributes === 'object' &&
-                    eventObj.attributes !== null
-                    ? (eventObj.attributes as Record<string, unknown>)
-                    : {}) as SpanAttributes,
-                droppedAttributesCount:
-                    eventObj.droppedAttributesCount &&
-                        typeof eventObj.droppedAttributesCount === 'number'
-                        ? eventObj.droppedAttributesCount
-                        : 0,
-            };
-        });
-    }
-
-    // Build resource from attributes
+// Decode resource from attributes
+function decodeResource(attributes: Record<string, unknown>): SpanResource {
     const serviceName =
         getNestedValue(attributes, 'service.name') ||
         getNestedValue(attributes, 'project.service_name');
@@ -240,7 +113,6 @@ function convertOldRecordToSpanData(
     if (serviceName) {
         resourceAttributes['service.name'] = serviceName;
     }
-    // Copy other resource-related attributes if any
     const resourceKeys = [
         'service.namespace',
         'service.version',
@@ -252,91 +124,104 @@ function convertOldRecordToSpanData(
             resourceAttributes[key] = value;
         }
     }
-    const resource: SpanResource = {
+    return {
         attributes: resourceAttributes as SpanAttributes,
     };
+}
 
-    // Build scope
-    const scope: SpanScope = {
+// Decode scope
+function decodeScope(): SpanScope {
+    return {
         name: 'agentscope',
         version: '1.0.0',
         attributes: {},
     };
+}
 
-    // Get runId from attributes or record
-    const runIdValue1 = getNestedValue(attributes, 'gen_ai.conversation.id');
-    const runIdValue2 = getNestedValue(attributes, 'project.run_id');
-    const runIdValue3 = oldRecord.runId;
-    const runIdValue4 = oldRecord.run_id;
-    const runId =
-        (runIdValue1 !== undefined && runIdValue1 !== null
-            ? String(runIdValue1)
-            : undefined) ||
-        (runIdValue2 !== undefined && runIdValue2 !== null
-            ? String(runIdValue2)
-            : undefined) ||
-        (runIdValue3 !== undefined && runIdValue3 !== null
-            ? String(runIdValue3)
-            : undefined) ||
-        (runIdValue4 !== undefined && runIdValue4 !== null
-            ? String(runIdValue4)
-            : undefined) ||
-        'unknown';
+// Get runId from attributes or record
+function getRunId(
+    attributes: Record<string, unknown>,
+    record: Record<string, unknown>,
+): string {
+    return (
+        toStringOrUndefined(getNestedValue(attributes, 'gen_ai.conversation.id')) ||
+        toStringOrUndefined(getNestedValue(attributes, 'project.run_id')) ||
+        toStringOrUndefined(record.runId) ||
+        toStringOrUndefined(record.run_id) ||
+        'unknown'
+    );
+}
 
-    // Get spanId - in old data, the 'id' field maps to the new 'spanId'
-    // Old table's primary key 'id' becomes new table's 'spanId'
-    const idValue = oldRecord.id;
-    const spanIdValue = oldRecord.spanId;
-    const spanIdAttr1 = getNestedValue(attributes, 'span.id');
-    const spanIdAttr2 = getNestedValue(attributes, 'spanId');
+// Get spanId from record or attributes
+function getSpanId(
+    record: Record<string, unknown>,
+    attributes: Record<string, unknown>,
+): string {
     const spanId =
-        (idValue !== undefined && idValue !== null
-            ? String(idValue)
-            : undefined) ||
-        (spanIdValue !== undefined && spanIdValue !== null
-            ? String(spanIdValue)
-            : undefined) ||
-        (spanIdAttr1 !== undefined && spanIdAttr1 !== null
-            ? String(spanIdAttr1)
-            : undefined) ||
-        (spanIdAttr2 !== undefined && spanIdAttr2 !== null
-            ? String(spanIdAttr2)
-            : undefined);
-
-    // Ensure spanId is not null/undefined (it's used as primary key)
+        toStringOrUndefined(record.id) ||
+        toStringOrUndefined(record.spanId) ||
+        toStringOrUndefined(getNestedValue(attributes, 'span.id')) ||
+        toStringOrUndefined(getNestedValue(attributes, 'spanId'));
     if (!spanId) {
         throw new Error(
-            `Cannot determine spanId for record. Record has no 'id' field: ${JSON.stringify(oldRecord)}`,
+            `Cannot determine spanId for record. Record has no 'id' field: ${JSON.stringify(record)}`,
         );
     }
+    return spanId;
+}
 
-    // Build SpanData
-    const traceIdValue = oldRecord.traceId;
-    const traceStateValue = oldRecord.traceState;
-    const parentSpanIdValue = oldRecord.parentSpanId;
-    const flagsValue = oldRecord.flags;
+// Convert old database record to SpanData format
+function convertOldRecordToSpanData(oldRecord: unknown): SpanData {
+    const r = oldRecord as Record<string, unknown>;
+
+    // Parse attributes
+    let attributes = parseJsonOrObject(r.attributes);
+
+    // Convert old protocol attributes to new format
+    const convertedResult = SpanProcessor.convertOldProtocolToNew(
+        attributes,
+        { name: asString(r.name) },
+    );
+    const spanName = convertedResult.span_name || asString(r.name);
+    attributes = convertedResult.attributes || attributes;
+
+    // Convert times - prioritize old format (startTime/endTime), then new format
+    const startTimeUnixNano = asString(r.startTime)
+        ? encodeUnixNano(asString(r.startTime))
+        : asString(r.startTimeUnixNano, '0');
+
+    const endTimeUnixNano = asString(r.endTime)
+        ? encodeUnixNano(asString(r.endTime))
+        : asString(r.endTimeUnixNano, '0');
+
+    // Convert latency - prioritize old format (latencyMs), then new format, else calculate
+    const latencyNs = asNumber(r.latencyMs, 0) > 0
+        ? asNumber(r.latencyMs) * 1_000_000
+        : asNumber(r.latencyNs, 0) > 0
+            ? asNumber(r.latencyNs)
+            : getTimeDifferenceNano(startTimeUnixNano, endTimeUnixNano);
+
+    // Decode status, events, resource, scope
+    const statusObj = decodeStatus(r.status);
+    // Preserve statusMessage if present
+    const statusMessage = asOptionalString(r.statusMessage);
+    const status = statusMessage
+        ? { ...statusObj, message: statusMessage }
+        : statusObj;
+    const events = decodeEvents(r.events);
+    const resource = decodeResource(attributes);
+    const scope = decodeScope();
+    const runId = getRunId(attributes, r);
+    const spanId = getSpanId(r, attributes);
+
     const spanData: SpanData = {
-        traceId:
-            traceIdValue !== undefined && traceIdValue !== null
-                ? String(traceIdValue)
-                : '',
+        traceId: toStringOrUndefined(r.traceId) || '',
         spanId: String(spanId),
-        traceState:
-            traceStateValue !== undefined && traceStateValue !== null
-                ? String(traceStateValue)
-                : undefined,
-        parentSpanId:
-            parentSpanIdValue !== undefined && parentSpanIdValue !== null
-                ? String(parentSpanIdValue)
-                : undefined,
-        flags:
-            flagsValue !== undefined &&
-                flagsValue !== null &&
-                typeof flagsValue === 'number'
-                ? flagsValue
-                : undefined,
+        traceState: toStringOrUndefined(r.traceState),
+        parentSpanId: toStringOrUndefined(r.parentSpanId),
+        flags: asOptionalNumber(r.flags),
         name: spanName,
-        kind: kind,
+        kind: asNumber(r.kind, 0) as OTSpanKind,
         startTimeUnixNano: startTimeUnixNano,
         endTimeUnixNano: endTimeUnixNano,
         attributes: attributes as SpanAttributes,
@@ -510,7 +395,6 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
                         }
 
                         // Convert old record to SpanData
-                        // Note: oldRecord.id will become spanData.spanId, and we'll use spanId as the new primary key 'id'
                         const spanData = convertOldRecordToSpanData(oldRecord);
 
                         // Create SpanTable instance manually (similar to SpanDao.saveSpans logic)

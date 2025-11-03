@@ -50,47 +50,17 @@ export class SpanProcessor {
         resource: SpanResource,
         scope: SpanScope,
     ): SpanData {
-        // Sdk-handled data attributes
         const spanObj = span as Record<string, unknown>;
-        const traceId = this.decodeIdentifier(
-            spanObj.trace_id as Uint8Array | string | undefined,
-        );
-        const spanId = this.decodeIdentifier(
-            spanObj.span_id as Uint8Array | string | undefined,
-        );
+        const traceId = this.decodeIdentifier(spanObj.trace_id);
+        const spanId = this.decodeIdentifier(spanObj.span_id);
         const parentId = spanObj.parent_span_id
-            ? this.decodeIdentifier(
-                spanObj.parent_span_id as Uint8Array | string | undefined,
-            )
+            ? this.decodeIdentifier(spanObj.parent_span_id)
             : undefined;
-        const startTimeUnixNano = decodeUnixNano(
-            spanObj.start_time_unix_nano as
-            | string
-            | number
-            | { toNumber?: () => number; low?: number; high?: number }
-            | null
-            | undefined,
-        );
-        const endTimeUnixNano = decodeUnixNano(
-            spanObj.end_time_unix_nano as
-            | string
-            | number
-            | { toNumber?: () => number; low?: number; high?: number }
-            | null
-            | undefined,
-        );
+        const startTimeUnixNano = decodeUnixNano(spanObj.start_time_unix_nano);
+        const endTimeUnixNano = decodeUnixNano(spanObj.end_time_unix_nano);
 
-        // The self-calculated attributes
-        const attributesArray = spanObj.attributes;
-        const decodedAttributes = this.unflattenAttributes(
-            this.loadJsonStrings(
-                this.decodeKeyValues(
-                    Array.isArray(attributesArray) ? attributesArray : [],
-                ),
-            ),
-        );
-        // Cast to Attributes - the unflattened object should match OpenTelemetry Attributes type
-        let attributes = decodedAttributes as unknown as Attributes;
+        // Decode attributes
+        let attributes = this.decodeAttributes(spanObj.attributes);
 
         // Detect and convert old protocol format to new format
         const spanName = typeof spanObj.name === 'string' ? spanObj.name : '';
@@ -102,18 +72,14 @@ export class SpanProcessor {
 
         console.debug('[SpanProcessor] new attributes', attributes);
 
-        const eventsArray = spanObj.events;
-        const events: SpanEvent[] = Array.isArray(eventsArray)
-            ? eventsArray.map((event) => this.decodeEvent(event))
-            : [];
-        const linksArray = spanObj.links;
-        const links: SpanLink[] = Array.isArray(linksArray)
-            ? linksArray.map((link) => this.decodeLink(link))
-            : [];
-
-        const status = this.decodeStatus(
-            spanObj.status as { code?: number; message?: string } | undefined,
+        const events = this.decodeArray(spanObj.events, (e) =>
+            this.decodeEvent(e),
         );
+        const links = this.decodeArray(spanObj.links, (l) =>
+            this.decodeLink(l),
+        );
+
+        const status = this.decodeStatus(spanObj.status);
 
         return {
             traceId: traceId,
@@ -155,26 +121,24 @@ export class SpanProcessor {
         } as SpanData;
     }
 
-    private static getAttributeValue(
-        attributes: Record<string, unknown> | undefined,
-        key: string | string[],
-        separator: string = '.',
-    ): unknown {
-        return getNestedValue(attributes, key, separator);
+    private static decodeAttributes(attributes: unknown): Attributes {
+        const attrs = Array.isArray(attributes) ? attributes : [];
+        return this.unflattenAttributes(
+            this.loadJsonStrings(this.decodeKeyValues(attrs)),
+        ) as unknown as Attributes;
+    }
+
+    private static decodeArray<T>(
+        value: unknown,
+        mapper: (item: unknown) => T,
+    ): T[] {
+        return Array.isArray(value) ? value.map(mapper) : [];
     }
 
     private static getRunId(attributes: Record<string, unknown>): string {
-        // Try new format first
-        const newRunId = this.getAttributeValue(
-            attributes,
-            'gen_ai.conversation.id',
-        );
-
-        if (newRunId) {
-            return String(newRunId);
-        }
-        // Fallback to old format
-        const oldRunId = this.getAttributeValue(attributes, 'project.run_id');
+        const newRunId = getNestedValue(attributes, 'gen_ai.conversation.id');
+        if (newRunId) return String(newRunId);
+        const oldRunId = getNestedValue(attributes, 'project.run_id');
         return oldRunId ? String(oldRunId) : 'unknown';
     }
 
@@ -200,9 +164,7 @@ export class SpanProcessor {
         }
 
         // Check if already in new format by looking for gen_ai attributes
-        if (this.getAttributeValue(attributes, 'gen_ai')) {
-            // Already in new format, but might have mixed old and new attributes
-            // Continue to convert any remaining old format attributes
+        if (getNestedValue(attributes, 'gen_ai')) {
             return { span_name: span.name || '', attributes };
         }
 
@@ -231,20 +193,17 @@ export class SpanProcessor {
         >;
 
         agentscopeFunction.name = span.name;
-        conversation.id = this.getAttributeValue(attributes, 'project.run_id');
-        const span_kind = this.getAttributeValue(attributes, 'span.kind');
+        conversation.id = getNestedValue(attributes, 'project.run_id');
+        const span_kind = getNestedValue(attributes, 'span.kind');
 
-        // Convert input -> agentscope.function.input
-        const inputValue = this.getAttributeValue(attributes, 'input');
-        if (inputValue) {
-            agentscopeFunction.input = inputValue;
-        }
+        // Copy input, metadata, output
+        const inputValue = getNestedValue(attributes, 'input');
+        if (inputValue) agentscopeFunction.input = inputValue;
 
-        const metadataValue = this.getAttributeValue(attributes, 'metadata');
-        if (metadataValue) {
-            agentscopeFunction.metadata = metadataValue;
-        }
-        const outputValue = this.getAttributeValue(attributes, 'output') as
+        const metadataValue = getNestedValue(attributes, 'metadata');
+        if (metadataValue) agentscopeFunction.metadata = metadataValue;
+
+        const outputValue = getNestedValue(attributes, 'output') as
             | Record<string, unknown>
             | undefined;
         if (outputValue) {
@@ -296,12 +255,13 @@ export class SpanProcessor {
         return { span_name, attributes: newAttributes };
     }
 
-    private static decodeIdentifier(
-        identifier: Uint8Array | string | undefined,
-    ): string {
+    private static decodeIdentifier(identifier: unknown): string {
         if (!identifier) return '';
         if (typeof identifier === 'string') return identifier;
-        return Buffer.from(identifier).toString('hex');
+        if (identifier instanceof Uint8Array) {
+            return Buffer.from(identifier).toString('hex');
+        }
+        return '';
     }
 
     private static decodeKeyValues(
@@ -358,73 +318,42 @@ export class SpanProcessor {
         return null;
     }
 
-    private static decodeStatus(status?: {
-        code?: number;
-        message?: string;
-    }): SpanStatus {
-        if (!status) {
+    private static decodeStatus(status: unknown): SpanStatus {
+        if (!status || typeof status !== 'object') {
             return { code: 0, message: '' }; // UNSET
         }
-
+        const s = status as Record<string, unknown>;
         return {
-            code: status.code || 0,
-            message: status.message || '',
+            code: typeof s.code === 'number' ? s.code : 0,
+            message: typeof s.message === 'string' ? s.message : '',
         };
     }
 
     private static decodeEvent(event: unknown): SpanEvent {
-        const eventObj = event as Record<string, unknown>;
-        const attributesArray = eventObj.attributes;
+        const e = event as Record<string, unknown>;
         return {
-            name: typeof eventObj.name === 'string' ? eventObj.name : '',
-            time: decodeUnixNano(
-                eventObj.time_unix_nano as
-                | string
-                | number
-                | { toNumber?: () => number; low?: number; high?: number }
-                | null
-                | undefined,
-            ),
-            attributes: this.unflattenAttributes(
-                this.loadJsonStrings(
-                    this.decodeKeyValues(
-                        Array.isArray(attributesArray) ? attributesArray : [],
-                    ),
-                ),
-            ) as Attributes,
+            name: typeof e.name === 'string' ? e.name : '',
+            time: decodeUnixNano(e.time_unix_nano),
+            attributes: this.decodeAttributes(e.attributes),
             droppedAttributesCount:
-                typeof eventObj.dropped_attributes_count === 'number'
-                    ? eventObj.dropped_attributes_count
+                typeof e.dropped_attributes_count === 'number'
+                    ? e.dropped_attributes_count
                     : 0,
         };
     }
 
     private static decodeLink(link: unknown): SpanLink {
-        const linkObj = link as Record<string, unknown>;
-        const attributesArray = linkObj.attributes;
+        const l = link as Record<string, unknown>;
         return {
-            traceId: this.decodeIdentifier(
-                linkObj.trace_id as Uint8Array | string | undefined,
-            ),
-            spanId: this.decodeIdentifier(
-                linkObj.span_id as Uint8Array | string | undefined,
-            ),
+            traceId: this.decodeIdentifier(l.trace_id),
+            spanId: this.decodeIdentifier(l.span_id),
             traceState:
-                typeof linkObj.trace_state === 'string'
-                    ? linkObj.trace_state
-                    : undefined,
-            flags:
-                typeof linkObj.flags === 'number' ? linkObj.flags : undefined,
-            attributes: this.unflattenAttributes(
-                this.loadJsonStrings(
-                    this.decodeKeyValues(
-                        Array.isArray(attributesArray) ? attributesArray : [],
-                    ),
-                ),
-            ) as Attributes,
+                typeof l.trace_state === 'string' ? l.trace_state : undefined,
+            flags: typeof l.flags === 'number' ? l.flags : undefined,
+            attributes: this.decodeAttributes(l.attributes),
             droppedAttributesCount:
-                typeof linkObj.dropped_attributes_count === 'number'
-                    ? linkObj.dropped_attributes_count
+                typeof l.dropped_attributes_count === 'number'
+                    ? l.dropped_attributes_count
                     : 0,
         };
     }
@@ -454,47 +383,22 @@ export class SpanProcessor {
     }
 
     private static decodeResource(resource: unknown): SpanResource {
-        const resourceObj = resource as Record<string, unknown>;
-        const attributesArray = resourceObj.attributes;
-        const attributes = this.unflattenAttributes(
-            this.loadJsonStrings(
-                this.decodeKeyValues(
-                    Array.isArray(attributesArray) ? attributesArray : [],
-                ),
-            ),
-        ) as Attributes;
-
+        const r = resource as Record<string, unknown>;
         return {
-            attributes: attributes,
+            attributes: this.decodeAttributes(r.attributes),
             schemaUrl:
-                typeof resourceObj.schema_url === 'string'
-                    ? resourceObj.schema_url
-                    : undefined,
+                typeof r.schema_url === 'string' ? r.schema_url : undefined,
         };
     }
 
     private static decodeScope(scope: unknown): SpanScope {
-        const scopeObj = scope as Record<string, unknown>;
-        const attributesArray = scopeObj.attributes;
-        const attributes = this.unflattenAttributes(
-            this.loadJsonStrings(
-                this.decodeKeyValues(
-                    Array.isArray(attributesArray) ? attributesArray : [],
-                ),
-            ),
-        ) as Attributes;
-
+        const s = scope as Record<string, unknown>;
         return {
-            name: typeof scopeObj.name === 'string' ? scopeObj.name : '',
-            version:
-                typeof scopeObj.version === 'string'
-                    ? scopeObj.version
-                    : undefined,
-            attributes: attributes,
+            name: typeof s.name === 'string' ? s.name : '',
+            version: typeof s.version === 'string' ? s.version : undefined,
+            attributes: this.decodeAttributes(s.attributes),
             schemaUrl:
-                typeof scopeObj.schema_url === 'string'
-                    ? scopeObj.schema_url
-                    : undefined,
+                typeof s.schema_url === 'string' ? s.schema_url : undefined,
         };
     }
 

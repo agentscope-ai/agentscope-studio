@@ -4,9 +4,7 @@ interface LongLike {
     high?: number;
 }
 
-export function decodeUnixNano(
-    timeUnixNano: string | number | LongLike | null | undefined,
-): string {
+export function decodeUnixNano(timeUnixNano: unknown): string {
     if (timeUnixNano === null || timeUnixNano === undefined) {
         return '0';
     }
@@ -22,16 +20,13 @@ export function decodeUnixNano(
     // Handle Long type from protobuf
     if (timeUnixNano && typeof timeUnixNano === 'object') {
         const longLike = timeUnixNano as LongLike;
-        // Check if it's a Long object with toNumber method
         if (typeof longLike.toNumber === 'function') {
             return longLike.toNumber().toString();
         }
-        // Check if it's a Long object with low/high properties
         if (
             typeof longLike.low === 'number' &&
             typeof longLike.high === 'number'
         ) {
-            // Convert Long to number (this might lose precision for very large numbers)
             const value = longLike.low + longLike.high * 0x100000000;
             return value.toString();
         }
