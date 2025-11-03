@@ -32,8 +32,6 @@ const asOptionalNumber = (value: unknown): number | undefined =>
 const toStringOrUndefined = (value: unknown): string | undefined =>
     value !== undefined && value !== null ? String(value) : undefined;
 
-
-// Parse JSON string or return object/empty
 function parseJsonOrObject(value: unknown): Record<string, unknown> {
     if (typeof value === 'string') {
         try {
@@ -48,10 +46,9 @@ function parseJsonOrObject(value: unknown): Record<string, unknown> {
     return {};
 }
 
-// Decode status from unknown format
 function decodeStatus(status: unknown): { code: number; message: string } {
     if (!status || typeof status !== 'object') {
-        return { code: 0, message: '' }; // UNSET
+        return { code: 0, message: '' };
     }
     const s = status as Record<string, unknown>;
     if ('code' in s && typeof s.code === 'number') {
@@ -60,7 +57,7 @@ function decodeStatus(status: unknown): { code: number; message: string } {
             message: typeof s.message === 'string' ? s.message : '',
         };
     }
-    // Old format (string) - convert to JSON object
+    // Convert old string format to status code
     const statusMap: Record<string, number> = {
         OK: 1,
         ERROR: 2,
@@ -74,7 +71,6 @@ function decodeStatus(status: unknown): { code: number; message: string } {
     };
 }
 
-// Decode events array
 function decodeEvents(eventsValue: unknown): SpanEvent[] {
     if (!eventsValue) return [];
     let eventsArray: unknown[] = [];
@@ -104,7 +100,6 @@ function decodeEvents(eventsValue: unknown): SpanEvent[] {
     });
 }
 
-// Decode resource from attributes
 function decodeResource(attributes: Record<string, unknown>): SpanResource {
     const serviceName =
         getNestedValue(attributes, 'service.name') ||
@@ -129,7 +124,6 @@ function decodeResource(attributes: Record<string, unknown>): SpanResource {
     };
 }
 
-// Decode scope
 function decodeScope(): SpanScope {
     return {
         name: 'agentscope',
@@ -138,7 +132,6 @@ function decodeScope(): SpanScope {
     };
 }
 
-// Get runId from attributes or record
 function getRunId(
     attributes: Record<string, unknown>,
     record: Record<string, unknown>,
@@ -152,7 +145,6 @@ function getRunId(
     );
 }
 
-// Get spanId from record or attributes
 function getSpanId(
     record: Record<string, unknown>,
     attributes: Record<string, unknown>,
@@ -170,14 +162,10 @@ function getSpanId(
     return spanId;
 }
 
-// Convert old database record to SpanData format
 function convertOldRecordToSpanData(oldRecord: unknown): SpanData {
     const r = oldRecord as Record<string, unknown>;
 
-    // Parse attributes
     let attributes = parseJsonOrObject(r.attributes);
-
-    // Convert old protocol attributes to new format
     const convertedResult = SpanProcessor.convertOldProtocolToNew(
         attributes,
         { name: asString(r.name) },
@@ -185,25 +173,20 @@ function convertOldRecordToSpanData(oldRecord: unknown): SpanData {
     const spanName = convertedResult.span_name || asString(r.name);
     attributes = convertedResult.attributes || attributes;
 
-    // Convert times - prioritize old format (startTime/endTime), then new format
     const startTimeUnixNano = asString(r.startTime)
         ? encodeUnixNano(asString(r.startTime))
         : asString(r.startTimeUnixNano, '0');
-
     const endTimeUnixNano = asString(r.endTime)
         ? encodeUnixNano(asString(r.endTime))
         : asString(r.endTimeUnixNano, '0');
 
-    // Convert latency - prioritize old format (latencyMs), then new format, else calculate
     const latencyNs = asNumber(r.latencyMs, 0) > 0
         ? asNumber(r.latencyMs) * 1_000_000
         : asNumber(r.latencyNs, 0) > 0
             ? asNumber(r.latencyNs)
             : getTimeDifferenceNano(startTimeUnixNano, endTimeUnixNano);
 
-    // Decode status, events, resource, scope
     const statusObj = decodeStatus(r.status);
-    // Preserve statusMessage if present
     const statusMessage = asOptionalString(r.statusMessage);
     const status = statusMessage
         ? { ...statusObj, message: statusMessage }
@@ -253,91 +236,63 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
         await queryRunner.startTransaction();
         transactionActive = true;
 
-        // Check if table exists
         const tableName = 'span_table';
-        const tableExists = await queryRunner.hasTable(tableName);
-
-        if (!tableExists) {
-            console.log(
-                '[Migration] span_table does not exist, skipping migration.',
-            );
+        if (!(await queryRunner.hasTable(tableName))) {
+            console.log('[Migration] span_table does not exist, skipping migration.');
             await queryRunner.commitTransaction();
             transactionActive = false;
             return;
         }
 
-        // Get table structure to check which columns exist
         const table = await queryRunner.getTable(tableName);
         if (!table) {
-            console.log(
-                '[Migration] Cannot get table structure, skipping migration.',
-            );
+            console.log('[Migration] Cannot get table structure, skipping migration.');
             await queryRunner.commitTransaction();
             transactionActive = false;
             return;
         }
 
-        // Check if table has the new structure (has spanId column)
         const hasSpanIdColumn = table.findColumnByName('spanId') !== undefined;
         const hasInstrumentationVersion =
             table.findColumnByName('instrumentationVersion') !== undefined;
 
-        // If table already has the new structure, skip migration
         if (hasSpanIdColumn && hasInstrumentationVersion) {
-            console.log(
-                '[Migration] Table already has new structure, skipping migration.',
-            );
+            console.log('[Migration] Table already has new structure, skipping migration.');
             await queryRunner.commitTransaction();
             transactionActive = false;
             return;
         }
 
-        // Step 1: Drop views that depend on span_table to avoid dependency issues
+        // Drop dependent view if exists
         const viewName = 'model_invocation_view';
-        const viewExists = await queryRunner.hasTable(viewName);
-        if (viewExists) {
-            console.log(
-                `[Migration] Dropping view ${viewName} before migration...`,
+        try {
+            const viewCheck = await queryRunner.query(
+                `SELECT name FROM sqlite_master WHERE type='view' AND name=?`,
+                [viewName],
             );
-            // Use raw SQL to drop view (TypeORM doesn't have a dropView method for all databases)
-            await queryRunner.query(`DROP VIEW IF EXISTS ${viewName}`);
-            console.log(`[Migration] View ${viewName} dropped.`);
+            if (viewCheck.length > 0) {
+                console.log(`[Migration] Dropping view ${viewName}...`);
+                await queryRunner.query(`DROP VIEW IF EXISTS ${viewName}`);
+            }
+        } catch (error) {
+            console.log(`[Migration] View ${viewName} does not exist, continuing...`);
         }
 
-        // Step 2: Commit the view drop before renaming table
-        // SQLite validates view dependencies when renaming tables, so we need to commit the view drop first
         await queryRunner.commitTransaction();
         transactionActive = false;
 
-        // Step 3: Verify view is actually dropped by checking schema
-        const viewStillExists = await queryRunner.query(
-            `SELECT name FROM sqlite_master WHERE type='view' AND name=?`,
-            [viewName],
-        );
-        if (viewStillExists.length > 0) {
-            console.log(
-                `[Migration] Warning: View ${viewName} still exists after drop, trying to drop again...`,
-            );
-            await queryRunner.query(`DROP VIEW IF EXISTS ${viewName}`);
-        }
-
-        // Step 4: Start new transaction for table rename
+        // Backup old table
         await queryRunner.startTransaction();
         transactionActive = true;
-
-        // Step 5: Backup old table by renaming it using raw SQL to avoid TypeORM's view checking
         oldTableName = 'span_table_old_backup';
         console.log(`[Migration] Renaming old table to ${oldTableName}...`);
-        // Use raw SQL ALTER TABLE RENAME instead of TypeORM's renameTable to avoid view dependency checks
         await queryRunner.query(
             `ALTER TABLE "${tableName}" RENAME TO "${oldTableName}"`,
         );
-
-        // Step 6: Commit the rename before creating new table
         await queryRunner.commitTransaction();
         transactionActive = false;
 
-        // Step 7: Use synchronize to create the new table structure
+        // Create new table structure
         console.log('[Migration] Creating new table structure...');
         const migrationDataSourceWithSync = new DataSource({
             ...dataSource.options,
@@ -348,33 +303,25 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
         await migrationDataSourceWithSync.initialize();
 
         try {
-            // Step 8: Start a new transaction to migrate data
             const newQueryRunner =
                 migrationDataSourceWithSync.createQueryRunner();
             await newQueryRunner.connect();
             await newQueryRunner.startTransaction();
 
             try {
-                // Step 9: Get all records from the old table (using original queryRunner)
                 const oldRecords = await queryRunner.query(
                     `SELECT * FROM ${oldTableName}`,
                 );
 
                 if (oldRecords.length === 0) {
-                    console.log(
-                        '[Migration] No records found, dropping old table.',
-                    );
+                    console.log('[Migration] No records found, dropping old table.');
                     await newQueryRunner.dropTable(oldTableName);
                     await newQueryRunner.commitTransaction();
                     await newQueryRunner.release();
                     return;
                 }
 
-                console.log(
-                    `[Migration] Found ${oldRecords.length} records to migrate.`,
-                );
-
-                // Step 10: Convert old records to SpanData and batch process
+                console.log(`[Migration] Found ${oldRecords.length} records to migrate.`);
                 let migratedCount = 0;
                 const skippedCount = 0;
                 let errorCount = 0;
@@ -384,7 +331,6 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
 
                 for (const oldRecord of oldRecords) {
                     try {
-                        // Validate that old record has an id (primary key from old table)
                         if (!oldRecord.id) {
                             console.error(
                                 `[Migration] Record missing 'id' field, skipping:`,
@@ -394,11 +340,7 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
                             continue;
                         }
 
-                        // Convert old record to SpanData
                         const spanData = convertOldRecordToSpanData(oldRecord);
-
-                        // Create SpanTable instance manually (similar to SpanDao.saveSpans logic)
-                        // Extract key fields for indexing
                         const serviceName = getNestedValue(
                             spanData.resource.attributes,
                             'service.name',
@@ -407,8 +349,6 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
                             spanData.attributes,
                             'gen_ai.operation.name',
                         );
-                        // Use scope.name and scope.version directly (per SpanTable comments),
-                        // but fallback to attributes for backward compatibility
                         const instrumentationName =
                             spanData.scope.name ||
                             getNestedValue(
@@ -469,14 +409,13 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
 
                         spanDataArray.push(span);
 
-                        // Batch save every 100 records
                         if (spanDataArray.length >= 100) {
                             await spanRepository.save(spanDataArray);
                             migratedCount += spanDataArray.length;
                             console.log(
                                 `[Migration] Progress: ${migratedCount}/${oldRecords.length} records migrated...`,
                             );
-                            spanDataArray.length = 0; // Clear array
+                            spanDataArray.length = 0;
                         }
                     } catch (error) {
                         console.error(
@@ -510,7 +449,6 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
                     `[Migration] Migration completed. Migrated: ${migratedCount}, Skipped: ${skippedCount}, Errors: ${errorCount}`,
                 );
 
-                // Step 11: Drop the old backup table
                 console.log('[Migration] Dropping old backup table...');
                 await newQueryRunner.dropTable(oldTableName);
 
