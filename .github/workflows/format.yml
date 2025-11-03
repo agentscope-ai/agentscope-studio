@@ -1,12 +1,11 @@
-name: Pre-commit
+name: Run formatter on PR
 
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-  workflow_dispatch: {}
 
 jobs:
-  run:
+  format:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -23,10 +22,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Check formatting with Prettier
-        run: npx prettier --check .
-
-      - name: Lint with ESLint (no warnings allowed)
-        run: npx eslint . --ext .js,.jsx,.ts,.tsx --max-warnings=0
+      - name: Run formatter
+        run: npm run format
 
 
