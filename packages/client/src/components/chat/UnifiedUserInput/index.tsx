@@ -1,5 +1,3 @@
-import { memo, ReactNode, RefObject, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import {
     Button,
     type GetProp,
@@ -8,11 +6,14 @@ import {
     UploadFile,
     type UploadProps,
 } from 'antd';
+import { memo, ReactNode, RefObject, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
-import { PrimaryButton, SecondaryButton } from '@/components/buttons/ASButton';
 import AttachSvg from '@/assets/svgs/attachment.svg?react';
-import InterruptSvg from '@/assets/svgs/interrupt.svg?react';
 import EnterSvg from '@/assets/svgs/enter.svg?react';
+import InterruptSvg from '@/assets/svgs/interrupt.svg?react';
+import { PrimaryButton, SecondaryButton } from '@/components/buttons/ASButton';
+import { useMessageApi } from '@/context/MessageApiContext';
 import {
     AudioBlock,
     BlockType,
@@ -20,7 +21,6 @@ import {
     ImageBlock,
     VideoBlock,
 } from '@shared/types';
-import { useMessageApi } from '@/context/MessageApiContext';
 
 /**
  * Props for the unified user input component that handles text and file attachments.
@@ -88,7 +88,7 @@ const UnifiedUserInput = ({
     const { t } = useTranslation();
     const [fileList, setFileList] = useState<UploadFile[]>([]);
     const [text, setText] = useState<string>('');
-    const uploadRef = useRef<any>(null);
+    const uploadRef = useRef<HTMLButtonElement>(null);
     const { messageApi } = useMessageApi();
 
     // Dynamic send button icon: interrupt when replying, enter otherwise

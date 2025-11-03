@@ -1,17 +1,17 @@
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { Button, Flex, Tooltip, Upload, UploadFile } from 'antd';
 import Lottie from 'lottie-react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 
+import loadingData from '@/assets/lottie/loading.json';
+import ArrowDownIcon from '@/assets/svgs/arrow-down.svg?react';
 import DeleteIcon from '@/assets/svgs/delete.svg?react';
 import ReplyBubble from '@/components/chat/bubbles/ReplyBubble';
 import UserInputComponent from '@/components/chat/UserInput';
-import ArrowDownIcon from '@/assets/svgs/arrow-down.svg?react';
-import loadingData from '@/assets/lottie/loading.json';
 
-import { RemoveScrollBarStyle } from '@/styles.ts';
-import { useTranslation } from 'react-i18next';
 import { useMessageApi } from '@/context/MessageApiContext.tsx';
+import { RemoveScrollBarStyle } from '@/styles.ts';
 import { BlockType, ContentBlocks, ReplyData } from '@shared/types';
+import { useTranslation } from 'react-i18next';
 
 import type { GetProp, UploadProps } from 'antd';
 type FileType = Parameters<GetProp<UploadProps, 'beforeUpload'>>[0];
@@ -123,7 +123,7 @@ const AppChatComponent = ({
     }) => {
         setFileList(newFileList);
     };
-    const uploadRef = useRef<any>(null);
+    const uploadRef = useRef<HTMLButtonElement>(null);
 
     return (
         <Flex
@@ -259,7 +259,7 @@ const AppChatComponent = ({
                         attachment.length === 0
                     }
                     onSendClick={sendUserInput}
-                    onAttachClick={() => uploadRef.current.click()}
+                    onAttachClick={() => uploadRef.current?.click()}
                 />
             </Flex>
         </Flex>

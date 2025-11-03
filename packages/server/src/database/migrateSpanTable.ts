@@ -6,7 +6,7 @@ import {
     SpanEvent,
     SpanLink,
     SpanResource,
-    SpanScope
+    SpanScope,
 } from '../../../shared/src/types/trace';
 import { getNestedValue } from '../../../shared/src/utils/objectUtils';
 import {
@@ -92,7 +92,9 @@ function decodeEvents(eventsValue: unknown): SpanEvent[] {
         return {
             name: asString(e.name),
             time: timeUnixNano,
-            attributes: (e.attributes && typeof e.attributes === 'object' && e.attributes !== null
+            attributes: (e.attributes &&
+            typeof e.attributes === 'object' &&
+            e.attributes !== null
                 ? (e.attributes as Record<string, unknown>)
                 : {}) as SpanAttributes,
             droppedAttributesCount: asNumber(e.droppedAttributesCount, 0),
@@ -137,7 +139,9 @@ function getRunId(
     record: Record<string, unknown>,
 ): string {
     return (
-        toStringOrUndefined(getNestedValue(attributes, 'gen_ai.conversation.id')) ||
+        toStringOrUndefined(
+            getNestedValue(attributes, 'gen_ai.conversation.id'),
+        ) ||
         toStringOrUndefined(getNestedValue(attributes, 'project.run_id')) ||
         toStringOrUndefined(record.runId) ||
         toStringOrUndefined(record.run_id) ||
@@ -166,10 +170,9 @@ function convertOldRecordToSpanData(oldRecord: unknown): SpanData {
     const r = oldRecord as Record<string, unknown>;
 
     let attributes = parseJsonOrObject(r.attributes);
-    const convertedResult = SpanProcessor.convertOldProtocolToNew(
-        attributes,
-        { name: asString(r.name) },
-    );
+    const convertedResult = SpanProcessor.convertOldProtocolToNew(attributes, {
+        name: asString(r.name),
+    });
     const spanName = convertedResult.span_name || asString(r.name);
     attributes = convertedResult.attributes || attributes;
 
@@ -180,11 +183,12 @@ function convertOldRecordToSpanData(oldRecord: unknown): SpanData {
         ? encodeUnixNano(asString(r.endTime))
         : asString(r.endTimeUnixNano, '0');
 
-    const latencyNs = asNumber(r.latencyMs, 0) > 0
-        ? asNumber(r.latencyMs) * 1_000_000
-        : asNumber(r.latencyNs, 0) > 0
-            ? asNumber(r.latencyNs)
-            : getTimeDifferenceNano(startTimeUnixNano, endTimeUnixNano);
+    const latencyNs =
+        asNumber(r.latencyMs, 0) > 0
+            ? asNumber(r.latencyMs) * 1_000_000
+            : asNumber(r.latencyNs, 0) > 0
+              ? asNumber(r.latencyNs)
+              : getTimeDifferenceNano(startTimeUnixNano, endTimeUnixNano);
 
     const statusObj = decodeStatus(r.status);
     const statusMessage = asOptionalString(r.statusMessage);
@@ -238,7 +242,9 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
 
         const tableName = 'span_table';
         if (!(await queryRunner.hasTable(tableName))) {
-            console.log('[Migration] span_table does not exist, skipping migration.');
+            console.log(
+                '[Migration] span_table does not exist, skipping migration.',
+            );
             await queryRunner.commitTransaction();
             transactionActive = false;
             return;
@@ -246,7 +252,9 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
 
         const table = await queryRunner.getTable(tableName);
         if (!table) {
-            console.log('[Migration] Cannot get table structure, skipping migration.');
+            console.log(
+                '[Migration] Cannot get table structure, skipping migration.',
+            );
             await queryRunner.commitTransaction();
             transactionActive = false;
             return;
@@ -257,7 +265,9 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
             table.findColumnByName('instrumentationVersion') !== undefined;
 
         if (hasSpanIdColumn && hasInstrumentationVersion) {
-            console.log('[Migration] Table already has new structure, skipping migration.');
+            console.log(
+                '[Migration] Table already has new structure, skipping migration.',
+            );
             await queryRunner.commitTransaction();
             transactionActive = false;
             return;
@@ -275,7 +285,10 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
                 await queryRunner.query(`DROP VIEW IF EXISTS ${viewName}`);
             }
         } catch (error) {
-            console.log(`[Migration] View ${viewName} does not exist, continuing...`);
+            console.log(
+                `[Migration] View ${viewName} does not exist, continuing...`,
+                error,
+            );
         }
 
         await queryRunner.commitTransaction();
@@ -314,14 +327,18 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
                 );
 
                 if (oldRecords.length === 0) {
-                    console.log('[Migration] No records found, dropping old table.');
+                    console.log(
+                        '[Migration] No records found, dropping old table.',
+                    );
                     await newQueryRunner.dropTable(oldTableName);
                     await newQueryRunner.commitTransaction();
                     await newQueryRunner.release();
                     return;
                 }
 
-                console.log(`[Migration] Found ${oldRecords.length} records to migrate.`);
+                console.log(
+                    `[Migration] Found ${oldRecords.length} records to migrate.`,
+                );
                 let migratedCount = 0;
                 const skippedCount = 0;
                 let errorCount = 0;

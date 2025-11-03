@@ -13,7 +13,6 @@ import { SpanTable } from './models/Trace';
 
 export const initializeDatabase = async (databaseConfig: DataSourceOptions) => {
     try {
-
         console.log(
             '[Migration] Starting data migration before synchronize...',
         );
@@ -27,14 +26,9 @@ export const initializeDatabase = async (databaseConfig: DataSourceOptions) => {
 
         try {
             await migrateSpanTable(migrationDataSource);
-            console.log(
-                '[Migration] Data migration completed successfully.',
-            );
+            console.log('[Migration] Data migration completed successfully.');
         } catch (error) {
-            console.error(
-                '[Migration] Error during data migration:',
-                error,
-            );
+            console.error('[Migration] Error during data migration:', error);
             await migrationDataSource.destroy();
             throw error; // Fail if migration fails
         } finally {

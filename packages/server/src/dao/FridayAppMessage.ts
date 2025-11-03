@@ -1,11 +1,11 @@
+import dayjs from 'dayjs';
+import { LessThan } from 'typeorm';
+import { ContentBlocks, ReplyData } from '../../../shared/src';
 import {
     FridayAppMessageTable,
     FridayAppReplyTable,
 } from '../models/FridayApp';
-import { ContentBlocks, ReplyData } from '../../../shared/src';
 import { FridayAppReplyView } from '../models/FridayAppView';
-import { LessThan } from 'typeorm';
-import dayjs from 'dayjs';
 
 export class FridayAppMessageDao {
     static async finishReply(replyId: string) {
@@ -61,9 +61,9 @@ export class FridayAppMessageDao {
                 replyId: replyId,
                 name: msg.name,
                 role: msg.role,
-                content: msg.content as any,
+                content: msg.content as unknown as Record<string, unknown>,
                 timestamp: msg.timestamp,
-            })
+            } as unknown as Record<string, unknown>)
             .orUpdate(['name', 'role', 'content', 'timestamp'], ['id'])
             .execute();
 
