@@ -71,7 +71,6 @@ const calculateTraceData = (spans: SpanData[]) => {
         latestEndNano,
     );
 
-    console.log('durationNano', durationNano);
     const data = {
         startTime: earliestStart,
         endTime: latestEnd,
