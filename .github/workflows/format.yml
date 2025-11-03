@@ -1,8 +1,6 @@
 name: Run formatter on PR
 
-on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+on: [push, pull_request]
 
 jobs:
   format:
