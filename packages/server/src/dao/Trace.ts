@@ -1,6 +1,9 @@
+import { SpanStatus } from '@opentelemetry/api';
 import {
     SpanAttributes,
     SpanData,
+    SpanEvent,
+    SpanLink,
     SpanResource,
     SpanScope,
 } from '../../../shared/src/types/trace';
@@ -96,13 +99,13 @@ export class SpanDao {
                         attributes: span.attributes as SpanAttributes,
                         droppedAttributesCount:
                             span.droppedAttributesCount || 0,
-                        events: (span.events || []) as any[],
+                        events: (span.events || []) as unknown as SpanEvent[],
                         droppedEventsCount: span.droppedEventsCount || 0,
-                        links: (span.links || []) as any[],
+                        links: (span.links || []) as unknown as SpanLink[],
                         droppedLinksCount: span.droppedLinksCount || 0,
-                        status: span.status as any, // SpanStatus from OpenTelemetry API
-                        resource: span.resource as any,
-                        scope: span.scope as any,
+                        status: span.status as unknown as SpanStatus,
+                        resource: span.resource as unknown as SpanResource,
+                        scope: span.scope as unknown as SpanScope,
                         runId: span.runId,
                         latencyNs: span.latencyNs,
                     }) as SpanData,
@@ -117,49 +120,57 @@ export class SpanDao {
     private static extractServiceName(
         resource: SpanResource,
     ): string | undefined {
-        return getNestedValue(resource.attributes, 'service.name');
+        const value = getNestedValue(resource.attributes, 'service.name');
+        return typeof value === 'string' ? value : undefined;
     }
 
     private static extractRunId(
         attributes: Record<string, unknown>,
     ): string | undefined {
-        return getNestedValue(attributes, 'gen_ai.conversation.id');
+        const value = getNestedValue(attributes, 'gen_ai.conversation.id');
+        return typeof value === 'string' ? value : undefined;
     }
 
     private static extractOperationName(
         attributes: Record<string, unknown>,
     ): string | undefined {
-        return getNestedValue(attributes, 'gen_ai.operation.name');
+        const value = getNestedValue(attributes, 'gen_ai.operation.name');
+        return typeof value === 'string' ? value : undefined;
     }
 
     private static extractInstrumentationName(
         scope: SpanScope,
     ): string | undefined {
-        return getNestedValue(scope.attributes, 'server.name');
+        const value = getNestedValue(scope.attributes, 'server.name');
+        return typeof value === 'string' ? value : undefined;
     }
 
     private static extractInstrumentationVersion(
         scope: SpanScope,
     ): string | undefined {
-        return getNestedValue(scope.attributes, 'server.version');
+        const value = getNestedValue(scope.attributes, 'server.version');
+        return typeof value === 'string' ? value : undefined;
     }
 
     private static extractModel(
         attributes: Record<string, unknown>,
     ): string | undefined {
-        return getNestedValue(attributes, 'gen_ai.request.model');
+        const value = getNestedValue(attributes, 'gen_ai.request.model');
+        return typeof value === 'string' ? value : undefined;
     }
 
     private static extractInputTokens(
         attributes: Record<string, unknown>,
     ): number | undefined {
-        return getNestedValue(attributes, 'gen_ai.usage.input_tokens');
+        const value = getNestedValue(attributes, 'gen_ai.usage.input_tokens');
+        return typeof value === 'number' ? value : undefined;
     }
 
     private static extractOutputTokens(
         attributes: Record<string, unknown>,
     ): number | undefined {
-        return getNestedValue(attributes, 'gen_ai.usage.output_tokens');
+        const value = getNestedValue(attributes, 'gen_ai.usage.output_tokens');
+        return typeof value === 'number' ? value : undefined;
     }
 
     // Trace listing and filtering methods

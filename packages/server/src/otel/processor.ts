@@ -17,21 +17,22 @@ import {
 } from '../../../shared/src/utils/timeUtils';
 
 export class SpanProcessor {
-    public static validateOTLPSpan(span: any): boolean {
+    public static validateOTLPSpan(span: unknown): boolean {
         try {
-            if (!span.trace_id || !span.span_id || !span.name) {
+            const spanObj = span as Record<string, unknown>;
+            if (!spanObj.trace_id || !spanObj.span_id || !spanObj.name) {
                 console.error('[SpanProcessor] Missing required span fields');
                 return false;
             }
 
-            if (!span.start_time_unix_nano || !span.end_time_unix_nano) {
+            if (!spanObj.start_time_unix_nano || !spanObj.end_time_unix_nano) {
                 console.error('[SpanProcessor] Missing span time fields');
                 return false;
             }
 
             if (
-                isNaN(Number(span.start_time_unix_nano)) ||
-                isNaN(Number(span.end_time_unix_nano))
+                isNaN(Number(spanObj.start_time_unix_nano)) ||
+                isNaN(Number(spanObj.end_time_unix_nano))
             ) {
                 console.error('[SpanProcessor] Invalid timestamp format');
                 return false;
@@ -45,57 +46,104 @@ export class SpanProcessor {
     }
 
     public static decodeOTLPSpan(
-        span: any,
+        span: unknown,
         resource: SpanResource,
         scope: SpanScope,
     ): SpanData {
         // Sdk-handled data attributes
-        // console.debug('[SpanProcessor] span', span);
-        const traceId = this.decodeIdentifier(span.trace_id);
-        const spanId = this.decodeIdentifier(span.span_id);
-        const parentId = span.parent_span_id
-            ? this.decodeIdentifier(span.parent_span_id)
+        const spanObj = span as Record<string, unknown>;
+        const traceId = this.decodeIdentifier(
+            spanObj.trace_id as Uint8Array | string | undefined,
+        );
+        const spanId = this.decodeIdentifier(
+            spanObj.span_id as Uint8Array | string | undefined,
+        );
+        const parentId = spanObj.parent_span_id
+            ? this.decodeIdentifier(
+                spanObj.parent_span_id as Uint8Array | string | undefined,
+            )
             : undefined;
-        const startTimeUnixNano = decodeUnixNano(span.start_time_unix_nano);
-        const endTimeUnixNano = decodeUnixNano(span.end_time_unix_nano);
+        const startTimeUnixNano = decodeUnixNano(
+            spanObj.start_time_unix_nano as
+            | string
+            | number
+            | { toNumber?: () => number; low?: number; high?: number }
+            | null
+            | undefined,
+        );
+        const endTimeUnixNano = decodeUnixNano(
+            spanObj.end_time_unix_nano as
+            | string
+            | number
+            | { toNumber?: () => number; low?: number; high?: number }
+            | null
+            | undefined,
+        );
 
         // The self-calculated attributes
-        let attributes = this.unflattenAttributes(
-            this.loadJsonStrings(this.decodeKeyValues(span.attributes)),
-        ) as Attributes;
+        const attributesArray = spanObj.attributes;
+        const decodedAttributes = this.unflattenAttributes(
+            this.loadJsonStrings(
+                this.decodeKeyValues(
+                    Array.isArray(attributesArray) ? attributesArray : [],
+                ),
+            ),
+        );
+        // Cast to Attributes - the unflattened object should match OpenTelemetry Attributes type
+        let attributes = decodedAttributes as unknown as Attributes;
 
         // Detect and convert old protocol format to new format
-        const newValues = this.convertOldProtocolToNew(attributes, span);
+        const spanName = typeof spanObj.name === 'string' ? spanObj.name : '';
+        const newValues = this.convertOldProtocolToNew(attributes, {
+            name: spanName,
+        });
         const span_name = newValues.span_name;
-        attributes = newValues.attributes;
+        attributes = newValues.attributes as unknown as Attributes;
 
-        console.log('[SpanProcessor] new attributes', attributes);
+        console.debug('[SpanProcessor] new attributes', attributes);
 
-        const events: SpanEvent[] = Array.isArray(span.events)
-            ? span.events.map((event: any) => this.decodeEvent(event))
+        const eventsArray = spanObj.events;
+        const events: SpanEvent[] = Array.isArray(eventsArray)
+            ? eventsArray.map((event) => this.decodeEvent(event))
             : [];
-        const links: SpanLink[] = Array.isArray(span.links)
-            ? span.links.map((link: any) => this.decodeLink(link))
+        const linksArray = spanObj.links;
+        const links: SpanLink[] = Array.isArray(linksArray)
+            ? linksArray.map((link) => this.decodeLink(link))
             : [];
 
-        const status = this.decodeStatus(span.status);
+        const status = this.decodeStatus(
+            spanObj.status as { code?: number; message?: string } | undefined,
+        );
 
         return {
             traceId: traceId,
             spanId: spanId,
-            traceState: span.trace_state,
+            traceState:
+                typeof spanObj.trace_state === 'string'
+                    ? spanObj.trace_state
+                    : undefined,
             parentSpanId: parentId,
-            flags: span.flags,
+            flags:
+                typeof spanObj.flags === 'number' ? spanObj.flags : undefined,
             name: span_name,
-            kind: span.kind,
+            kind: typeof spanObj.kind === 'number' ? spanObj.kind : 0,
             startTimeUnixNano: startTimeUnixNano,
             endTimeUnixNano: endTimeUnixNano,
             attributes: attributes,
-            droppedAttributesCount: span.dropped_attributes_count || 0,
+            droppedAttributesCount:
+                typeof spanObj.dropped_attributes_count === 'number'
+                    ? spanObj.dropped_attributes_count
+                    : 0,
             events: events,
-            droppedEventsCount: span.dropped_events_count || 0,
+            droppedEventsCount:
+                typeof spanObj.dropped_events_count === 'number'
+                    ? spanObj.dropped_events_count
+                    : 0,
             links: links,
-            droppedLinksCount: span.dropped_links_count || 0,
+            droppedLinksCount:
+                typeof spanObj.dropped_links_count === 'number'
+                    ? spanObj.dropped_links_count
+                    : 0,
             status: status,
             resource: resource,
             scope: scope,
@@ -111,7 +159,7 @@ export class SpanProcessor {
         attributes: Record<string, unknown> | undefined,
         key: string | string[],
         separator: string = '.',
-    ): any {
+    ): unknown {
         return getNestedValue(attributes, key, separator);
     }
 
@@ -145,8 +193,8 @@ export class SpanProcessor {
      */
     public static convertOldProtocolToNew(
         attributes: Record<string, unknown>,
-        span: any,
-    ): Record<string, any> {
+        span: { name?: string },
+    ): { span_name: string; attributes: Record<string, unknown> } {
         if (!attributes || typeof attributes !== 'object') {
             return attributes || {};
         }
@@ -155,7 +203,7 @@ export class SpanProcessor {
         if (this.getAttributeValue(attributes, 'gen_ai')) {
             // Already in new format, but might have mixed old and new attributes
             // Continue to convert any remaining old format attributes
-            return attributes;
+            return { span_name: span.name || '', attributes };
         }
 
         const newAttributes: Record<string, unknown> = {
@@ -175,7 +223,6 @@ export class SpanProcessor {
 
         const genAi = newAttributes.gen_ai as Record<string, unknown>;
         const conversation = genAi.conversation as Record<string, unknown>;
-        const request = genAi.request as Record<string, unknown>;
         const operation = genAi.operation as Record<string, unknown>;
         const agentscope = newAttributes.agentscope as Record<string, unknown>;
         const agentscopeFunction = agentscope.function as Record<
@@ -216,28 +263,37 @@ export class SpanProcessor {
             }
         }
 
-        let span_name = span.name;
+        let span_name = span.name || '';
+        const metadataObj = metadataValue as
+            | Record<string, unknown>
+            | undefined;
         if (span_kind === OldSpanKind.AGENT) {
             operation.name = 'invoke_agent';
-            span_name = operation.name + ' ' + (metadataValue?.name || '');
+            span_name =
+                operation.name + ' ' + ((metadataObj?.name as string) || '');
         } else if (span_kind === OldSpanKind.TOOL) {
             operation.name = 'execute_tool';
-            span_name = operation.name + ' ' + (metadataValue?.name || '');
+            span_name =
+                operation.name + ' ' + ((metadataObj?.name as string) || '');
         } else if (span_kind === OldSpanKind.LLM) {
             operation.name = 'chat';
             span_name =
-                operation.name + ' ' + (metadataValue?.model_name || '');
+                operation.name +
+                ' ' +
+                ((metadataObj?.model_name as string) || '');
         } else if (span_kind === OldSpanKind.EMBEDDING) {
             operation.name = 'embedding';
             span_name =
-                operation.name + ' ' + (metadataValue?.model_name || '');
+                operation.name +
+                ' ' +
+                ((metadataObj?.model_name as string) || '');
         } else if (span_kind === OldSpanKind.FORMATTER) {
             operation.name = 'format';
         } else {
             operation.name = 'unknown';
         }
 
-        return { span_name: span_name, attributes: newAttributes };
+        return { span_name, attributes: newAttributes };
     }
 
     private static decodeIdentifier(
@@ -248,41 +304,64 @@ export class SpanProcessor {
         return Buffer.from(identifier).toString('hex');
     }
 
-    private static decodeKeyValues(keyValues: any[]): Record<string, unknown> {
+    private static decodeKeyValues(
+        keyValues: unknown[],
+    ): Record<string, unknown> {
         const result: Record<string, unknown> = {};
         for (const kv of keyValues) {
-            result[kv.key] = this.decodeAnyValue(kv.value!);
+            const kvObj = kv as Record<string, unknown>;
+            if (kvObj.key && kvObj.value) {
+                result[String(kvObj.key)] = this.decodeAnyValue(kvObj.value);
+            }
         }
         return result;
     }
 
-    private static decodeAnyValue(value: any): unknown {
-        if (value.bool_value !== false) return value.bool_value;
-        if (value.int_value !== 0) return value.int_value;
-        if (value.double_value !== 0) return value.double_value;
-        if (value.string_value !== '') return value.string_value;
-        if (value.array_value?.values) {
-            return value.array_value.values.map((v: any) =>
+    private static decodeAnyValue(value: unknown): unknown {
+        const valueObj = value as Record<string, unknown>;
+        if (valueObj.bool_value !== false && valueObj.bool_value !== undefined)
+            return valueObj.bool_value;
+        if (valueObj.int_value !== 0 && valueObj.int_value !== undefined)
+            return valueObj.int_value;
+        if (valueObj.double_value !== 0 && valueObj.double_value !== undefined)
+            return valueObj.double_value;
+        if (valueObj.string_value !== '' && valueObj.string_value !== undefined)
+            return valueObj.string_value;
+        const arrayValue = valueObj.array_value as
+            | { values?: unknown[] }
+            | undefined;
+        if (arrayValue?.values) {
+            return arrayValue.values.map((v: unknown) =>
                 this.decodeAnyValue(v),
             );
         }
 
-        if (value.kvlist_value?.values) {
-            return this.decodeKeyValues(value.kvlist_value.values);
+        const kvlistValue = valueObj.kvlist_value as
+            | { values?: unknown[] }
+            | undefined;
+        if (kvlistValue?.values) {
+            return this.decodeKeyValues(kvlistValue.values);
         }
 
-        if (value.bytes_value && Object.keys(value.bytes_value).length > 0) {
-            return value.bytes_value;
+        if (
+            valueObj.bytes_value &&
+            typeof valueObj.bytes_value === 'object' &&
+            Object.keys(valueObj.bytes_value).length > 0
+        ) {
+            return valueObj.bytes_value;
         }
 
-        if (value.int_value !== undefined) return value.int_value;
-        if (value.double_value !== undefined) return value.double_value;
-        if (value.string_value !== undefined) return value.string_value;
-        if (value.bool_value !== undefined) return value.bool_value;
+        if (valueObj.int_value !== undefined) return valueObj.int_value;
+        if (valueObj.double_value !== undefined) return valueObj.double_value;
+        if (valueObj.string_value !== undefined) return valueObj.string_value;
+        if (valueObj.bool_value !== undefined) return valueObj.bool_value;
         return null;
     }
 
-    private static decodeStatus(status?: any): SpanStatus {
+    private static decodeStatus(status?: {
+        code?: number;
+        message?: string;
+    }): SpanStatus {
         if (!status) {
             return { code: 0, message: '' }; // UNSET
         }
@@ -293,31 +372,60 @@ export class SpanProcessor {
         };
     }
 
-    private static decodeEvent(event: any): SpanEvent {
+    private static decodeEvent(event: unknown): SpanEvent {
+        const eventObj = event as Record<string, unknown>;
+        const attributesArray = eventObj.attributes;
         return {
-            name: event.name || '',
-            time: decodeUnixNano(event.time_unix_nano),
+            name: typeof eventObj.name === 'string' ? eventObj.name : '',
+            time: decodeUnixNano(
+                eventObj.time_unix_nano as
+                | string
+                | number
+                | { toNumber?: () => number; low?: number; high?: number }
+                | null
+                | undefined,
+            ),
             attributes: this.unflattenAttributes(
                 this.loadJsonStrings(
-                    this.decodeKeyValues(event.attributes || []),
+                    this.decodeKeyValues(
+                        Array.isArray(attributesArray) ? attributesArray : [],
+                    ),
                 ),
             ) as Attributes,
-            droppedAttributesCount: event.dropped_attributes_count,
+            droppedAttributesCount:
+                typeof eventObj.dropped_attributes_count === 'number'
+                    ? eventObj.dropped_attributes_count
+                    : 0,
         };
     }
 
-    private static decodeLink(link: any): SpanLink {
+    private static decodeLink(link: unknown): SpanLink {
+        const linkObj = link as Record<string, unknown>;
+        const attributesArray = linkObj.attributes;
         return {
-            traceId: this.decodeIdentifier(link.trace_id),
-            spanId: this.decodeIdentifier(link.span_id),
-            traceState: link.trace_state,
-            flags: link.flags,
+            traceId: this.decodeIdentifier(
+                linkObj.trace_id as Uint8Array | string | undefined,
+            ),
+            spanId: this.decodeIdentifier(
+                linkObj.span_id as Uint8Array | string | undefined,
+            ),
+            traceState:
+                typeof linkObj.trace_state === 'string'
+                    ? linkObj.trace_state
+                    : undefined,
+            flags:
+                typeof linkObj.flags === 'number' ? linkObj.flags : undefined,
             attributes: this.unflattenAttributes(
                 this.loadJsonStrings(
-                    this.decodeKeyValues(link.attributes || []),
+                    this.decodeKeyValues(
+                        Array.isArray(attributesArray) ? attributesArray : [],
+                    ),
                 ),
             ) as Attributes,
-            droppedAttributesCount: link.dropped_attributes_count,
+            droppedAttributesCount:
+                typeof linkObj.dropped_attributes_count === 'number'
+                    ? linkObj.dropped_attributes_count
+                    : 0,
         };
     }
 
@@ -345,34 +453,53 @@ export class SpanProcessor {
         return result;
     }
 
-    private static decodeResource(resource: any): SpanResource {
+    private static decodeResource(resource: unknown): SpanResource {
+        const resourceObj = resource as Record<string, unknown>;
+        const attributesArray = resourceObj.attributes;
         const attributes = this.unflattenAttributes(
             this.loadJsonStrings(
-                this.decodeKeyValues(resource.attributes || []),
+                this.decodeKeyValues(
+                    Array.isArray(attributesArray) ? attributesArray : [],
+                ),
             ),
         ) as Attributes;
 
         return {
             attributes: attributes,
-            schemaUrl: resource.schema_url || undefined,
+            schemaUrl:
+                typeof resourceObj.schema_url === 'string'
+                    ? resourceObj.schema_url
+                    : undefined,
         };
     }
 
-    private static decodeScope(scope: any): SpanScope {
+    private static decodeScope(scope: unknown): SpanScope {
+        const scopeObj = scope as Record<string, unknown>;
+        const attributesArray = scopeObj.attributes;
         const attributes = this.unflattenAttributes(
-            this.loadJsonStrings(this.decodeKeyValues(scope.attributes || [])),
+            this.loadJsonStrings(
+                this.decodeKeyValues(
+                    Array.isArray(attributesArray) ? attributesArray : [],
+                ),
+            ),
         ) as Attributes;
 
         return {
-            name: scope.name,
-            version: scope.version,
+            name: typeof scopeObj.name === 'string' ? scopeObj.name : '',
+            version:
+                typeof scopeObj.version === 'string'
+                    ? scopeObj.version
+                    : undefined,
             attributes: attributes,
-            schemaUrl: scope.schema_url,
+            schemaUrl:
+                typeof scopeObj.schema_url === 'string'
+                    ? scopeObj.schema_url
+                    : undefined,
         };
     }
 
     public static safeDecodeOTLPSpan(
-        span: any,
+        span: unknown,
         resource: SpanResource,
         scope: SpanScope,
     ): SpanData | null {
@@ -387,26 +514,36 @@ export class SpanProcessor {
         }
     }
 
-    public static batchProcessOTLPTraces(resourceSpans: any[]): SpanData[] {
+    public static batchProcessOTLPTraces(resourceSpans: unknown[]): SpanData[] {
         const spans: SpanData[] = [];
         try {
             for (const resourceSpan of resourceSpans) {
+                const resourceSpanObj = resourceSpan as Record<string, unknown>;
                 // Decode resource
-                const resource = this.decodeResource(resourceSpan.resource);
-
-                // console.debug('[SpanProcessor] resource', resource);
-                if (!resourceSpan.scope_spans) {
+                if (!resourceSpanObj.resource) {
                     continue;
                 }
-                for (const scopeSpan of resourceSpan.scope_spans) {
+                const resource = this.decodeResource(resourceSpanObj.resource);
+
+                // console.debug('[SpanProcessor] resource', resource);
+                const scopeSpansArray = resourceSpanObj.scope_spans;
+                if (!Array.isArray(scopeSpansArray)) {
+                    continue;
+                }
+                for (const scopeSpan of scopeSpansArray) {
+                    const scopeSpanObj = scopeSpan as Record<string, unknown>;
                     // Decode instrumentation scope
-                    const scope = this.decodeScope(scopeSpan.scope);
+                    if (!scopeSpanObj.scope) {
+                        continue;
+                    }
+                    const scope = this.decodeScope(scopeSpanObj.scope);
                     // console.debug('[SpanProcessor] scope', scope);
-                    if (!scopeSpan.spans) {
+                    const spansArray = scopeSpanObj.spans;
+                    if (!Array.isArray(spansArray)) {
                         continue;
                     }
 
-                    for (const span of scopeSpan.spans) {
+                    for (const span of spansArray) {
                         const processedSpan = SpanProcessor.safeDecodeOTLPSpan(
                             span,
                             resource,
