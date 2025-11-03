@@ -70,7 +70,7 @@ export class SpanProcessor {
         const span_name = newValues.span_name;
         attributes = newValues.attributes as unknown as Attributes;
 
-        console.debug('[SpanProcessor] new attributes', attributes);
+        // console.debug('[SpanProcessor] new attributes', attributes);
 
         const events = this.decodeArray(spanObj.events, (e) =>
             this.decodeEvent(e),
@@ -241,7 +241,7 @@ export class SpanProcessor {
                 ' ' +
                 ((metadataObj?.model_name as string) || '');
         } else if (span_kind === OldSpanKind.EMBEDDING) {
-            operation.name = 'embedding';
+            operation.name = 'embeddings';
             span_name =
                 operation.name +
                 ' ' +

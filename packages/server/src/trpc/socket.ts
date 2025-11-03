@@ -203,21 +203,6 @@ export class SocketManager {
                             message: `Input request ${requestId} not found`,
                         });
                     } else {
-                        const runId = inputRequest.runId;
-                        await InputRequestDao.deleteInputRequest(requestId);
-
-                        // If input requests are empty, change the run status to finished
-                        const res = await RunDao.getRunData(runId);
-                        if (res.inputRequests.length === 0) {
-                            this.changeRunStatusAndTriggerEvents(
-                                runId,
-                                Status.RUNNING,
-                            ).catch((error) => {
-                                console.error(error);
-                                throw error;
-                            });
-                        }
-
                         // Emit the input to the python client
                         this.io
                             .of('/python')
