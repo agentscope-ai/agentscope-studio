@@ -13,6 +13,6 @@ interface BaseUsage<T extends UsageType, U> {
     usage: U;
 }
 
-interface ChatUsage extends BaseUsage<UsageType.CHAT, ChatTokens> {}
+type ChatUsage = BaseUsage<UsageType.CHAT, ChatTokens>;
 
 export type Usage = ChatUsage;

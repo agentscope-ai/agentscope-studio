@@ -1,8 +1,8 @@
 export function getNestedValue(
-    obj: Record<string, any> | undefined,
+    obj: Record<string, unknown> | undefined,
     path: string | string[],
     separator: string = '.',
-): any {
+): unknown {
     if (!obj || typeof obj !== 'object') {
         return undefined;
     }
@@ -15,15 +15,18 @@ export function getNestedValue(
 }
 
 export function unflattenObject(
-    flat: Record<string, any>,
-): Record<string, any> {
-    const result: Record<string, any> = {};
+    flat: Record<string, unknown>,
+): Record<string, unknown> {
+    const result: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(flat)) {
         const parts = key.split('.');
-        let current = result;
+        let current: Record<string, unknown> = result;
         for (let i = 0; i < parts.length - 1; i++) {
-            current[parts[i]] = current[parts[i]] || {};
-            current = current[parts[i]];
+            const part = parts[i];
+            if (!current[part] || typeof current[part] !== 'object') {
+                current[part] = {};
+            }
+            current = current[part] as Record<string, unknown>;
         }
         current[parts[parts.length - 1]] = value;
     }
@@ -31,14 +34,22 @@ export function unflattenObject(
 }
 
 export function flattenObject(
-    obj: Record<string, any>,
+    obj: Record<string, unknown>,
     prefix = '',
-): Record<string, any> {
-    const result: Record<string, any> = {};
+): Record<string, unknown> {
+    const result: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(obj)) {
         const newKey = prefix ? `${prefix}.${key}` : key;
-        if (value && typeof value === 'object' && !Array.isArray(value)) {
-            Object.assign(result, flattenObject(value, newKey));
+        if (
+            value &&
+            typeof value === 'object' &&
+            !Array.isArray(value) &&
+            value !== null
+        ) {
+            Object.assign(
+                result,
+                flattenObject(value as Record<string, unknown>, newKey),
+            );
         } else {
             result[newKey] = value;
         }
@@ -46,16 +57,20 @@ export function flattenObject(
     return result;
 }
 
-export function parseByMimeType(value: string, mime_type: string | undefined) {
+export function parseByMimeType(
+    value: string,
+    mime_type: string | undefined,
+): unknown {
     try {
         switch (mime_type) {
-            case 'application/json':
+            case 'application/json': {
                 const jsonData = JSON.parse(value);
                 return jsonData;
+            }
             default:
                 return value;
         }
-    } catch (error) {
+    } catch {
         return value;
     }
 }

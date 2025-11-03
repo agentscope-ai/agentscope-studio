@@ -58,7 +58,7 @@ export class FridayAppMessageDao {
                 replyId: replyId,
                 name: msg.name,
                 role: msg.role,
-                content: msg.content as any,
+                content: msg.content,
                 timestamp: msg.timestamp,
             })
             .orUpdate(['name', 'role', 'content', 'timestamp'], ['id'])

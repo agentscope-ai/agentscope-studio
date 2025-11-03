@@ -100,7 +100,7 @@ export class SpanProcessor {
         attributes: Record<string, unknown> | undefined,
         key: string | string[],
         separator: string = '.',
-    ): any {
+    ): unknown {
         return getNestedValue(attributes, key, separator);
     }
 
