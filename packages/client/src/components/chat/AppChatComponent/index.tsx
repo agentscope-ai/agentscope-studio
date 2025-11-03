@@ -122,7 +122,7 @@ const AppChatComponent = ({
     }) => {
         setFileList(newFileList);
     };
-    const uploadRef = useRef<unknown>(null);
+    const uploadRef = useRef<{ click: () => void } | null>(null);
 
     return (
         <Flex

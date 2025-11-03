@@ -61,8 +61,7 @@ export class FridayAppMessageDao {
                 replyId: replyId,
                 name: msg.name,
                 role: msg.role,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                content: msg.content as any,
+                content: msg.content,
                 timestamp: msg.timestamp,
             })
             .orUpdate(['name', 'role', 'content', 'timestamp'], ['id'])

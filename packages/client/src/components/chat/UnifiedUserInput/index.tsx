@@ -88,7 +88,7 @@ const UnifiedUserInput = ({
     const { t } = useTranslation();
     const [fileList, setFileList] = useState<UploadFile[]>([]);
     const [text, setText] = useState<string>('');
-    const uploadRef = useRef<unknown>(null);
+    const uploadRef = useRef<{ click: () => void } | null>(null);
     const { messageApi } = useMessageApi();
 
     // Dynamic send button icon: interrupt when replying, enter otherwise
