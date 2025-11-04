@@ -118,10 +118,14 @@ otelRouter.post('/traces', async (req: Request, res: Response) => {
         return res.status(200).json({
             message: `Processed traces successfully`,
         });
-    } catch (error) {
+    } catch (error: unknown) {
         console.error('Error processing OpenTelemetry traces:', error);
-        res.status(500).json({
-            error: 'Internal Server Error',
+        res.status(500);
+        const errorMessage =
+            error instanceof Error ? error.message : 'Unknown error occurred';
+        res.statusMessage = errorMessage;
+        res.json({
+            error: 'Internal Server Error : ',
             message: 'Failed to process traces',
         });
     }

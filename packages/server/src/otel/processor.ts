@@ -17,6 +17,26 @@ import {
 } from '../../../shared/src/utils/timeUtils';
 
 export class SpanProcessor {
+    /**
+     * Compare two version strings
+     * @param version1 First version string (e.g., "1.0.7")
+     * @param version2 Second version string (e.g., "1.0.6")
+     * @returns Negative if version1 < version2, positive if version1 > version2, 0 if equal
+     */
+    private static compareVersion(version1: string, version2: string): number {
+        const v1Parts = version1.split('.').map(Number);
+        const v2Parts = version2.split('.').map(Number);
+        const maxLength = Math.max(v1Parts.length, v2Parts.length);
+
+        for (let i = 0; i < maxLength; i++) {
+            const v1Part = v1Parts[i] || 0;
+            const v2Part = v2Parts[i] || 0;
+            if (v1Part < v2Part) return -1;
+            if (v1Part > v2Part) return 1;
+        }
+        return 0;
+    }
+
     public static validateOTLPSpan(span: unknown): boolean {
         try {
             const spanObj = span as Record<string, unknown>;
@@ -62,13 +82,26 @@ export class SpanProcessor {
         // Decode attributes
         let attributes = this.decodeAttributes(spanObj.attributes);
 
-        // Detect and convert old protocol format to new format
-        const spanName = typeof spanObj.name === 'string' ? spanObj.name : '';
-        const newValues = this.convertOldProtocolToNew(attributes, {
-            name: spanName,
-        });
-        const span_name = newValues.span_name;
-        attributes = newValues.attributes as unknown as Attributes;
+        let spanName = typeof spanObj.name === 'string' ? spanObj.name : '';
+        if (scope.name.toLowerCase().includes('agentscope')) {
+            // Check version and throw error if version is less than 1.0.7
+            const version = scope.version || '';
+            if (version && this.compareVersion(version, '1.0.7') < 0) {
+                throw new Error(
+                    `Invalid version: agentscope SDK version ${version} is less than 1.0.7. Please update agentscope SDK to version 1.0.7 or higher.`,
+                );
+            }
+
+            throw new Error(
+                'Invalid attributes: No gen_ai in attributes, Please update agentscope sdk',
+            );
+
+            const newValues = this.convertOldProtocolToNew(attributes, {
+                name: spanName,
+            });
+            spanName = newValues.span_name;
+            attributes = newValues.attributes as unknown as Attributes;
+        }
 
         // console.debug('[SpanProcessor] new attributes', attributes);
 
@@ -91,7 +124,7 @@ export class SpanProcessor {
             parentSpanId: parentId,
             flags:
                 typeof spanObj.flags === 'number' ? spanObj.flags : undefined,
-            name: span_name,
+            name: spanName,
             kind: typeof spanObj.kind === 'number' ? spanObj.kind : 0,
             startTimeUnixNano: startTimeUnixNano,
             endTimeUnixNano: endTimeUnixNano,
@@ -414,7 +447,7 @@ export class SpanProcessor {
             return this.decodeOTLPSpan(span, resource, scope);
         } catch (error) {
             console.error('[SpanProcessor] Failed to decode span:', error);
-            return null;
+            throw error;
         }
     }
 
@@ -464,6 +497,7 @@ export class SpanProcessor {
                 '[SpanProcessor] Failed to batch process spans:',
                 error,
             );
+            throw error;
         }
         return spans;
     }
