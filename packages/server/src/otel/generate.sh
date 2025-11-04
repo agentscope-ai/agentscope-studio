@@ -23,4 +23,4 @@ protoc \
 
 # 3. Clean up OpenTelemetry proto files:
 
-# rm -rf opentelemetry-proto
+rm -rf opentelemetry-protogit
