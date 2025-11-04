@@ -14,7 +14,7 @@ function nanoToSeconds(nanoTimestamp: string | number): number {
     return Number(nanoTimestamp) / 1_000_000_000;
 }
 
-const NANOSECONDS_THRESHOLD = 1_000_000;
+const NANOSECONDS_THRESHOLD = 1_000_000_000;
 
 const formatLatencyValue = (latencyNs: number) => {
     if (latencyNs > NANOSECONDS_THRESHOLD) {

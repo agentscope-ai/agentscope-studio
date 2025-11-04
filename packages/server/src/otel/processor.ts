@@ -92,10 +92,6 @@ export class SpanProcessor {
                 );
             }
 
-            throw new Error(
-                'Invalid attributes: No gen_ai in attributes, Please update agentscope sdk',
-            );
-
             const newValues = this.convertOldProtocolToNew(attributes, {
                 name: spanName,
             });

@@ -18,8 +18,9 @@ protoc \
     --proto_path=./opentelemetry-proto/ \
     opentelemetry-proto/opentelemetry/proto/common/v1/*.proto \
     opentelemetry-proto/opentelemetry/proto/resource/v1/*.proto \
-    opentelemetry-proto/opentelemetry/proto/trace/v1/*.proto
+    opentelemetry-proto/opentelemetry/proto/trace/v1/*.proto    \
+    opentelemetry-proto/opentelemetry/proto/collector/trace/v1/*.proto    \
 
 # 3. Clean up OpenTelemetry proto files:
 
-rm -rf opentelemetry-proto
+# rm -rf opentelemetry-proto
