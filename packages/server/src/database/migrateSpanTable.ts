@@ -13,6 +13,7 @@ import {
     encodeUnixNano,
     getTimeDifferenceNano,
 } from '../../../shared/src/utils/timeUtils';
+import { SpanDao } from '../dao/Trace';
 import { SpanTable } from '../models/Trace';
 import { SpanProcessor } from '../otel/processor';
 
@@ -335,142 +336,25 @@ export async function migrateSpanTable(
                     `[Migration] Found ${oldRecords.length} records to migrate.`,
                 );
                 let migratedCount = 0;
-                const skippedCount = 0;
                 let errorCount = 0;
-                const spanDataArray: SpanTable[] = [];
-                const spanRepository =
-                    migrationDataSourceWithSync.getRepository(SpanTable);
-
                 for (const oldRecord of oldRecords) {
                     try {
-                        if (!oldRecord.id) {
-                            console.error(
-                                `[Migration] Record missing 'id' field, skipping:`,
-                                Object.keys(oldRecord),
-                            );
-                            errorCount++;
-                            continue;
-                        }
-
                         const spanData = convertOldRecordToSpanData(oldRecord);
-                        const serviceName = getNestedValue(
-                            spanData.resource.attributes,
-                            'service.name',
-                        );
-                        const operationName = getNestedValue(
-                            spanData.attributes,
-                            'gen_ai.operation.name',
-                        );
-                        const instrumentationName =
-                            spanData.scope.name ||
-                            getNestedValue(
-                                spanData.scope.attributes || {},
-                                'server.name',
-                            );
-                        const instrumentationVersion =
-                            spanData.scope.version ||
-                            getNestedValue(
-                                spanData.scope.attributes || {},
-                                'server.version',
-                            );
-                        const model = getNestedValue(
-                            spanData.attributes,
-                            'gen_ai.request.model',
-                        );
-                        const inputTokens = getNestedValue(
-                            spanData.attributes,
-                            'gen_ai.usage.input_tokens',
-                        );
-                        const outputTokens = getNestedValue(
-                            spanData.attributes,
-                            'gen_ai.usage.output_tokens',
-                        );
-
-                        const totalTokens =
-                            typeof inputTokens === 'number' &&
-                            typeof outputTokens === 'number'
-                                ? inputTokens + outputTokens
-                                : undefined;
-
-                        const statusCode = spanData.status.code || 0;
-
-                        const span = new SpanTable();
-                        Object.assign(span, {
-                            id: spanData.spanId,
-                            traceId: spanData.traceId,
-                            spanId: spanData.spanId,
-                            traceState: spanData.traceState,
-                            parentSpanId: spanData.parentSpanId,
-                            flags: spanData.flags,
-                            name: spanData.name,
-                            kind: spanData.kind,
-                            startTimeUnixNano: spanData.startTimeUnixNano,
-                            endTimeUnixNano: spanData.endTimeUnixNano,
-                            attributes: spanData.attributes,
-                            droppedAttributesCount:
-                                spanData.droppedAttributesCount,
-                            events: spanData.events,
-                            droppedEventsCount: spanData.droppedEventsCount,
-                            links: spanData.links,
-                            droppedLinksCount: spanData.droppedLinksCount,
-                            status: spanData.status,
-                            resource: spanData.resource,
-                            scope: spanData.scope,
-                            statusCode: statusCode,
-                            serviceName: serviceName,
-                            operationName: operationName,
-                            instrumentationName: instrumentationName,
-                            instrumentationVersion: instrumentationVersion,
-                            model: model,
-                            inputTokens: inputTokens,
-                            outputTokens: outputTokens,
-                            totalTokens: totalTokens,
-                            runId: spanData.runId,
-                            latencyNs: spanData.latencyNs,
-                        });
-
-                        spanDataArray.push(span);
-
-                        if (spanDataArray.length >= 100) {
-                            await spanRepository.save(spanDataArray);
-                            migratedCount += spanDataArray.length;
-                            console.log(
-                                `[Migration] Progress: ${migratedCount}/${oldRecords.length} records migrated...`,
-                            );
-                            spanDataArray.length = 0;
-                        }
+                        await SpanDao.saveSpans([spanData]);
+                        migratedCount++;
                     } catch (error) {
                         console.error(
-                            `[Migration] Error converting record with id: ${oldRecord.id || 'unknown'}`,
+                            `[Migration] Error converting record with id: ${oldRecord?.id || 'unknown'}`,
                             error,
                         );
-                        if (error instanceof Error) {
-                            console.error(
-                                `[Migration] Error message: ${error.message}`,
-                            );
-                        }
                         errorCount++;
                     }
                 }
 
-                if (spanDataArray.length > 0) {
-                    try {
-                        await spanRepository.save(spanDataArray);
-                        migratedCount += spanDataArray.length;
-                    } catch (error) {
-                        console.error(
-                            '[Migration] Error saving final batch:',
-                            error,
-                        );
-                        errorCount += spanDataArray.length;
-                    }
-                }
-
                 console.log(
-                    `[Migration] Migration completed. Migrated: ${migratedCount}, Skipped: ${skippedCount}, Errors: ${errorCount}`,
+                    `[Migration] Migration completed. Migrated: ${migratedCount}, Errors: ${errorCount}`,
                 );
 
-                console.log('[Migration] Dropping old backup table...');
                 await newQueryRunner.dropTable(oldTableName);
 
                 await newQueryRunner.commitTransaction();
