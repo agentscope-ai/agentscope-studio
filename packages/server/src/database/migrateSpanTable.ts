@@ -391,6 +391,14 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
                             'gen_ai.usage.output_tokens',
                         );
 
+                        const totalTokens =
+                            typeof inputTokens === 'number' &&
+                            typeof outputTokens === 'number'
+                                ? inputTokens + outputTokens
+                                : undefined;
+
+                        const statusCode = spanData.status.code || 0;
+
                         const span = new SpanTable();
                         Object.assign(span, {
                             id: spanData.spanId,
@@ -413,13 +421,17 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
                             status: spanData.status,
                             resource: spanData.resource,
                             scope: spanData.scope,
-                            serviceName,
-                            operationName,
-                            instrumentationName,
-                            instrumentationVersion,
-                            model,
-                            inputTokens,
-                            outputTokens,
+
+                            // Additional fields for our application
+                            statusCode: statusCode,
+                            serviceName: serviceName,
+                            operationName: operationName,
+                            instrumentationName: instrumentationName,
+                            instrumentationVersion: instrumentationVersion,
+                            model: model,
+                            inputTokens: inputTokens,
+                            outputTokens: outputTokens,
+                            totalTokens: totalTokens,
                             runId: spanData.runId,
                             latencyNs: spanData.latencyNs,
                         });

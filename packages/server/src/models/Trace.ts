@@ -6,7 +6,7 @@ import { BaseEntity, Column, Entity, Index, PrimaryColumn } from 'typeorm';
 @Index(['spanId']) // 用于按spanId查询
 @Index(['parentSpanId']) // 用于构建span树结构
 @Index(['startTimeUnixNano']) // 用于时间范围查询
-@Index(['status']) // 用于状态过滤
+@Index(['statusCode']) // 用于状态过滤
 @Index(['latencyNs']) // 用于性能分析
 @Index(['serviceName']) // 用于按服务名过滤
 @Index(['operationName']) // 用于按操作名过滤
@@ -14,6 +14,7 @@ import { BaseEntity, Column, Entity, Index, PrimaryColumn } from 'typeorm';
 @Index(['model']) // 用于按模型过滤
 @Index(['inputTokens']) // 用于token统计
 @Index(['outputTokens']) // 用于token统计
+@Index(['totalTokens']) // 用于token统计
 @Index(['runId']) // 用于按runId过滤
 export class SpanTable extends BaseEntity {
     @PrimaryColumn({ nullable: false })
@@ -75,6 +76,10 @@ export class SpanTable extends BaseEntity {
     @Column('json')
     scope: Record<string, unknown>;
 
+    // Status code - 直接嵌入
+    @Column({ nullable: true })
+    statusCode?: number;
+
     // 提取的关键字段用于索引和快速查询
     @Column({ nullable: true })
     serviceName?: string; // resource.service.name
@@ -96,6 +101,9 @@ export class SpanTable extends BaseEntity {
 
     @Column({ nullable: true })
     outputTokens?: number; // attributes.gen_ai.usage.output_token
+
+    @Column({ nullable: true })
+    totalTokens?: number;
 
     // Additional fields for our application
     @Column({ nullable: true })

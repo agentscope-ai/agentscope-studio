@@ -16,20 +16,17 @@ import { SpanTable } from './Trace';
             )
             .addSelect(
                 `COALESCE(SUM(CASE
-            WHEN (span.inputTokens IS NOT NULL OR span.outputTokens IS NOT NULL)
+            WHEN span.totalTokens IS NOT NULL
             AND (span.operationName = 'chat'
                  OR span.operationName = 'chat_model')
-            THEN (
-                CAST(COALESCE(span.inputTokens, 0) AS INTEGER) +
-                CAST(COALESCE(span.outputTokens, 0) AS INTEGER)
-            )
+            THEN CAST(span.totalTokens AS INTEGER)
             ELSE 0
         END), 0)`,
                 'totalTokens',
             )
             .addSelect(
                 `COUNT(CASE
-            WHEN (span.inputTokens IS NOT NULL OR span.outputTokens IS NOT NULL)
+            WHEN span.totalTokens IS NOT NULL
             AND (span.operationName = 'chat'
                  OR span.operationName = 'chat_model')
             THEN 1
@@ -39,14 +36,11 @@ import { SpanTable } from './Trace';
             // 一个月前的统计
             .addSelect(
                 `COALESCE(SUM(CASE
-            WHEN (span.inputTokens IS NOT NULL OR span.outputTokens IS NOT NULL)
+            WHEN span.totalTokens IS NOT NULL
             AND (span.operationName = 'chat'
                  OR span.operationName = 'chat_model')
             AND span.startTimeUnixNano > (strftime('%s', 'now', '-1 month') * 1000000000)
-            THEN (
-                CAST(COALESCE(span.inputTokens, 0) AS INTEGER) +
-                CAST(COALESCE(span.outputTokens, 0) AS INTEGER)
-            )
+            THEN CAST(span.totalTokens AS INTEGER)
             ELSE 0
         END), 0)`,
                 'tokensMonthAgo',
@@ -54,14 +48,11 @@ import { SpanTable } from './Trace';
             // 一周前的统计
             .addSelect(
                 `COALESCE(SUM(CASE
-            WHEN (span.inputTokens IS NOT NULL OR span.outputTokens IS NOT NULL)
+            WHEN span.totalTokens IS NOT NULL
             AND (span.operationName = 'chat'
                  OR span.operationName = 'chat_model')
             AND span.startTimeUnixNano > (strftime('%s', 'now', '-7 days') * 1000000000)
-            THEN (
-                CAST(COALESCE(span.inputTokens, 0) AS INTEGER) +
-                CAST(COALESCE(span.outputTokens, 0) AS INTEGER)
-            )
+            THEN CAST(span.totalTokens AS INTEGER)
             ELSE 0
         END), 0)`,
                 'tokensWeekAgo',
@@ -69,14 +60,11 @@ import { SpanTable } from './Trace';
             // 一年前的统计
             .addSelect(
                 `COALESCE(SUM(CASE
-            WHEN (span.inputTokens IS NOT NULL OR span.outputTokens IS NOT NULL)
+            WHEN span.totalTokens IS NOT NULL
             AND (span.operationName = 'chat'
                  OR span.operationName = 'chat_model')
             AND span.startTimeUnixNano > (strftime('%s', 'now', '-1 year') * 1000000000)
-            THEN (
-                CAST(COALESCE(span.inputTokens, 0) AS INTEGER) +
-                CAST(COALESCE(span.outputTokens, 0) AS INTEGER)
-            )
+            THEN CAST(span.totalTokens AS INTEGER)
             ELSE 0
         END), 0)`,
                 'tokensYearAgo',

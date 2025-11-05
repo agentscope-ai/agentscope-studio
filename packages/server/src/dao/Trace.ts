@@ -30,6 +30,12 @@ export class SpanDao {
                 const model = this.extractModel(data.attributes);
                 const inputTokens = this.extractInputTokens(data.attributes);
                 const outputTokens = this.extractOutputTokens(data.attributes);
+                const totalTokens =
+                    typeof inputTokens === 'number' &&
+                        typeof outputTokens === 'number'
+                        ? inputTokens + outputTokens
+                        : undefined;
+                const statusCode = data.status.code || 0;
 
                 const span = new SpanTable();
                 Object.assign(span, {
@@ -54,15 +60,15 @@ export class SpanDao {
                     scope: data.scope,
 
                     // Additional fields for our application
-                    serviceName,
-                    operationName,
-                    instrumentationName,
-                    instrumentationVersion,
-                    model,
-                    inputTokens,
-                    outputTokens,
-
-                    // Additional fields for our application
+                    statusCode: statusCode,
+                    serviceName: serviceName,
+                    operationName: operationName,
+                    instrumentationName: instrumentationName,
+                    instrumentationVersion: instrumentationVersion,
+                    model: model,
+                    inputTokens: inputTokens,
+                    outputTokens: outputTokens,
+                    totalTokens: totalTokens,
                     runId: data.runId,
                     latencyNs: data.latencyNs,
                 });
@@ -232,10 +238,9 @@ export class SpanDao {
         }
 
         if (filters.status !== undefined) {
-            queryBuilder.andWhere(
-                "json_extract(span.status, '$.code') = :statusCode",
-                { statusCode: filters.status },
-            );
+            queryBuilder.andWhere('span.statusCode = :statusCode', {
+                statusCode: filters.status,
+            });
         }
 
         if (filters.startTime) {
@@ -283,7 +288,7 @@ export class SpanDao {
                 `COUNT(CASE
                     WHEN (span.operationName = 'chat'
                          OR span.operationName = 'chat_model')
-                    AND (span.inputTokens IS NOT NULL OR span.outputTokens IS NOT NULL)
+                    AND span.totalTokens IS NOT NULL
                     THEN 1
                 END)`,
                 'chatInvocations',
@@ -298,7 +303,7 @@ export class SpanDao {
                 `COALESCE(SUM(
                     CASE WHEN (span.operationName = 'chat'
                              OR span.operationName = 'chat_model')
-                         AND (span.inputTokens IS NOT NULL OR span.outputTokens IS NOT NULL)
+                         AND span.totalTokens IS NOT NULL
                     THEN CAST(COALESCE(span.inputTokens, 0) AS INTEGER)
                     ELSE 0 END
                 ), 0) as totalPromptTokens`,
@@ -306,36 +311,57 @@ export class SpanDao {
                 `COALESCE(SUM(
                     CASE WHEN (span.operationName = 'chat'
                              OR span.operationName = 'chat_model')
-                         AND (span.inputTokens IS NOT NULL OR span.outputTokens IS NOT NULL)
+                         AND span.totalTokens IS NOT NULL
                     THEN CAST(COALESCE(span.outputTokens, 0) AS INTEGER)
                     ELSE 0 END
                 ), 0) as totalCompletionTokens`,
+                // 总计 - total tokens
+                `COALESCE(SUM(
+                    CASE WHEN (span.operationName = 'chat'
+                             OR span.operationName = 'chat_model')
+                         AND span.totalTokens IS NOT NULL
+                    THEN CAST(COALESCE(span.totalTokens, 0) AS INTEGER)
+                    ELSE 0 END
+                ), 0) as totalTokens`,
                 // 平均 - input tokens
                 `COALESCE(
                     CAST(SUM(
                         CASE WHEN (span.operationName = 'chat'
                                  OR span.operationName = 'chat_model')
-                             AND (span.inputTokens IS NOT NULL OR span.outputTokens IS NOT NULL)
+                             AND span.totalTokens IS NOT NULL
                         THEN CAST(COALESCE(span.inputTokens, 0) AS INTEGER)
                         ELSE 0 END
                     ) AS FLOAT) /
                     NULLIF(COUNT(CASE WHEN (span.operationName = 'chat'
                                          OR span.operationName = 'chat_model')
-                                     AND (span.inputTokens IS NOT NULL OR span.outputTokens IS NOT NULL) THEN 1 END), 0)
+                                     AND span.totalTokens IS NOT NULL THEN 1 END), 0)
                 , 0) as avgPromptTokens`,
                 // 平均 - output tokens
                 `COALESCE(
                     CAST(SUM(
                         CASE WHEN (span.operationName = 'chat'
                                  OR span.operationName = 'chat_model')
-                             AND (span.inputTokens IS NOT NULL OR span.outputTokens IS NOT NULL)
+                             AND span.totalTokens IS NOT NULL
                         THEN CAST(COALESCE(span.outputTokens, 0) AS INTEGER)
                         ELSE 0 END
                     ) AS FLOAT) /
                     NULLIF(COUNT(CASE WHEN (span.operationName = 'chat'
                                          OR span.operationName = 'chat_model')
-                                     AND (span.inputTokens IS NOT NULL OR span.outputTokens IS NOT NULL) THEN 1 END), 0)
+                                     AND span.totalTokens IS NOT NULL THEN 1 END), 0)
                 , 0) as avgCompletionTokens`,
+                // 平均 - total tokens
+                `COALESCE(
+                    CAST(SUM(
+                        CASE WHEN (span.operationName = 'chat'
+                                 OR span.operationName = 'chat_model')
+                             AND span.totalTokens IS NOT NULL
+                        THEN CAST(COALESCE(span.totalTokens, 0) AS INTEGER)
+                        ELSE 0 END
+                    ) AS FLOAT) /
+                    NULLIF(COUNT(CASE WHEN (span.operationName = 'chat'
+                                         OR span.operationName = 'chat_model')
+                                     AND span.totalTokens IS NOT NULL THEN 1 END), 0)
+                , 0) as avgTotalTokens`,
             ])
             .where('span.runId = :runId', { runId })
             .getRawOne();
@@ -347,9 +373,7 @@ export class SpanDao {
             .andWhere(
                 "(span.operationName = 'chat' OR span.operationName = 'chat_model')",
             )
-            .andWhere(
-                '(span.inputTokens IS NOT NULL OR span.outputTokens IS NOT NULL)',
-            )
+            .andWhere('span.totalTokens IS NOT NULL')
             .groupBy('modelName')
             .getRawMany();
 
@@ -360,17 +384,17 @@ export class SpanDao {
                 // 总计
                 `SUM(CAST(COALESCE(span.inputTokens, 0) AS INTEGER)) as totalPromptTokens`,
                 `SUM(CAST(COALESCE(span.outputTokens, 0) AS INTEGER)) as totalCompletionTokens`,
+                `SUM(CAST(COALESCE(span.totalTokens, 0) AS INTEGER)) as totalTokens`,
                 // 平均值
                 `CAST(SUM(CAST(COALESCE(span.inputTokens, 0) AS INTEGER)) AS FLOAT) / COUNT(*) as avgPromptTokens`,
                 `CAST(SUM(CAST(COALESCE(span.outputTokens, 0) AS INTEGER)) AS FLOAT) / COUNT(*) as avgCompletionTokens`,
+                `CAST(SUM(CAST(COALESCE(span.totalTokens, 0) AS INTEGER)) AS FLOAT) / COUNT(*) as avgTotalTokens`,
             ])
             .where('span.runId = :runId', { runId })
             .andWhere(
                 "(span.operationName = 'chat' OR span.operationName = 'chat_model')",
             )
-            .andWhere(
-                '(span.inputTokens IS NOT NULL OR span.outputTokens IS NOT NULL)',
-            )
+            .andWhere('span.totalTokens IS NOT NULL')
             .groupBy('modelName')
             .getRawMany();
 
@@ -385,9 +409,7 @@ export class SpanDao {
                     completionTokens: Number(
                         chatTokenStats.totalCompletionTokens,
                     ),
-                    totalTokens:
-                        Number(chatTokenStats.totalPromptTokens) +
-                        Number(chatTokenStats.totalCompletionTokens),
+                    totalTokens: Number(chatTokenStats.totalTokens),
                 },
 
                 avgTokens: {
@@ -395,9 +417,7 @@ export class SpanDao {
                     completionTokens: Number(
                         chatTokenStats.avgCompletionTokens,
                     ),
-                    totalTokens:
-                        Number(chatTokenStats.avgPromptTokens) +
-                        Number(chatTokenStats.avgCompletionTokens),
+                    totalTokens: Number(chatTokenStats.avgTotalTokens),
                 },
 
                 modelInvocationsByModel: modelInvocations.map((stat) => ({
@@ -409,18 +429,14 @@ export class SpanDao {
                     modelName: stat.modelName || 'unknown',
                     promptTokens: Number(stat.totalPromptTokens),
                     completionTokens: Number(stat.totalCompletionTokens),
-                    totalTokens:
-                        Number(stat.totalPromptTokens) +
-                        Number(stat.totalCompletionTokens),
+                    totalTokens: Number(stat.totalTokens),
                 })),
 
                 avgTokensByModel: modelTokenStats.map((stat) => ({
                     modelName: stat.modelName || 'unknown',
                     promptTokens: Number(stat.avgPromptTokens),
                     completionTokens: Number(stat.avgCompletionTokens),
-                    totalTokens:
-                        Number(stat.avgPromptTokens) +
-                        Number(stat.avgCompletionTokens),
+                    totalTokens: Number(stat.avgTotalTokens),
                 })),
             },
         } as ModelInvocationData;
