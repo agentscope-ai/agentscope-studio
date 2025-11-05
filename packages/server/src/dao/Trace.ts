@@ -32,7 +32,7 @@ export class SpanDao {
                 const outputTokens = this.extractOutputTokens(data.attributes);
                 const totalTokens =
                     typeof inputTokens === 'number' &&
-                        typeof outputTokens === 'number'
+                    typeof outputTokens === 'number'
                         ? inputTokens + outputTokens
                         : undefined;
                 const statusCode = data.status.code || 0;

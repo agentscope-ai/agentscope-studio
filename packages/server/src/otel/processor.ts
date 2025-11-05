@@ -277,6 +277,8 @@ export class SpanProcessor {
                 ((metadataObj?.model_name as string) || '');
         } else if (span_kind === OldSpanKind.FORMATTER) {
             operation.name = 'format';
+            span_name =
+                operation.name + ' ' + ((metadataObj?.name as string) || '');
         } else {
             operation.name = 'unknown';
         }

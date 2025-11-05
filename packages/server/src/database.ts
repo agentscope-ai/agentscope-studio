@@ -16,26 +16,14 @@ export const initializeDatabase = async (databaseConfig: DataSourceOptions) => {
         console.log(
             '[Migration] Starting data migration before synchronize...',
         );
-        const migrationDataSource = new DataSource({
-            ...databaseConfig,
-            entities: [SpanTable],
-            synchronize: false,
-            logging: false,
-        });
-        await migrationDataSource.initialize();
+        await migrateSpanTable(databaseConfig);
+        console.log('[Migration] Data migration completed successfully.');
+    } catch (error) {
+        console.error('[Migration] Error during data migration:', error);
+        throw error;
+    }
 
-        try {
-            await migrateSpanTable(migrationDataSource);
-            console.log('[Migration] Data migration completed successfully.');
-        } catch (error) {
-            console.error('[Migration] Error during data migration:', error);
-            await migrationDataSource.destroy();
-            throw error; // Fail if migration fails
-        } finally {
-            await migrationDataSource.destroy();
-        }
-
-        // Step 4: Now initialize with synchronize (will only adjust schema, data is already migrated)
+    try {
         const options = {
             ...databaseConfig,
             entities: [

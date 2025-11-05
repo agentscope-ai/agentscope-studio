@@ -1,5 +1,5 @@
 import { SpanKind as OTSpanKind } from '@opentelemetry/api';
-import { DataSource } from 'typeorm';
+import { DataSource, DataSourceOptions } from 'typeorm';
 import {
     SpanAttributes,
     SpanData,
@@ -16,7 +16,6 @@ import {
 import { SpanTable } from '../models/Trace';
 import { SpanProcessor } from '../otel/processor';
 
-// Helper functions for type conversion
 const asString = (value: unknown, fallback = ''): string =>
     typeof value === 'string' ? value : fallback;
 
@@ -57,7 +56,6 @@ function decodeStatus(status: unknown): { code: number; message: string } {
             message: typeof s.message === 'string' ? s.message : '',
         };
     }
-    // Convert old string format to status code
     const statusMap: Record<string, number> = {
         OK: 1,
         ERROR: 2,
@@ -227,10 +225,21 @@ function convertOldRecordToSpanData(oldRecord: unknown): SpanData {
     return spanData;
 }
 
-export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
+export async function migrateSpanTable(
+    databaseConfig: DataSourceOptions,
+): Promise<void> {
     console.log('[Migration] Starting SpanTable migration...');
 
-    const queryRunner = dataSource.createQueryRunner();
+    const migrationDataSource = new DataSource({
+        ...databaseConfig,
+        entities: [SpanTable],
+        synchronize: false,
+        logging: false,
+    });
+    await migrationDataSource.initialize();
+
+    const viewName = 'model_invocation_view';
+    const queryRunner = migrationDataSource.createQueryRunner();
     await queryRunner.connect();
 
     let transactionActive = false;
@@ -273,28 +282,15 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
             return;
         }
 
-        // Drop dependent view if exists
-        const viewName = 'model_invocation_view';
         try {
-            const viewCheck = await queryRunner.query(
-                `SELECT name FROM sqlite_master WHERE type='view' AND name=?`,
-                [viewName],
-            );
-            if (viewCheck.length > 0) {
-                console.log(`[Migration] Dropping view ${viewName}...`);
-                await queryRunner.query(`DROP VIEW IF EXISTS ${viewName}`);
-            }
-        } catch (error) {
-            console.log(
-                `[Migration] View ${viewName} does not exist, continuing...`,
-                error,
-            );
+            await queryRunner.query(`DROP VIEW IF EXISTS ${viewName}`);
+        } catch {
+            // Ignore if view doesn't exist
         }
 
         await queryRunner.commitTransaction();
         transactionActive = false;
 
-        // Backup old table
         await queryRunner.startTransaction();
         transactionActive = true;
         oldTableName = 'span_table_old_backup';
@@ -305,10 +301,9 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
         await queryRunner.commitTransaction();
         transactionActive = false;
 
-        // Create new table structure
         console.log('[Migration] Creating new table structure...');
         const migrationDataSourceWithSync = new DataSource({
-            ...dataSource.options,
+            ...databaseConfig,
             entities: [SpanTable],
             synchronize: true,
             logging: false,
@@ -421,8 +416,6 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
                             status: spanData.status,
                             resource: spanData.resource,
                             scope: spanData.scope,
-
-                            // Additional fields for our application
                             statusCode: statusCode,
                             serviceName: serviceName,
                             operationName: operationName,
@@ -460,7 +453,6 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
                     }
                 }
 
-                // Save remaining records
                 if (spanDataArray.length > 0) {
                     try {
                         await spanRepository.save(spanDataArray);
@@ -491,8 +483,27 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
         } finally {
             await migrationDataSourceWithSync.destroy();
         }
+
+        // Clean up view and typeorm_metadata for main DataSource to recreate
+        try {
+            try {
+                await queryRunner.query(
+                    `DELETE FROM typeorm_metadata WHERE type = 'VIEW' AND name = ?`,
+                    [viewName],
+                );
+            } catch {
+                // Ignore if table doesn't exist
+            }
+            await queryRunner.query(`DROP VIEW IF EXISTS ${viewName}`);
+        } catch (error) {
+            console.error(
+                `[Migration] Error cleaning up view ${viewName}:`,
+                error,
+            );
+        }
     } catch (error) {
         console.error('[Migration] Migration failed:', error);
+
         if (transactionActive) {
             try {
                 await queryRunner.rollbackTransaction();
@@ -506,5 +517,6 @@ export async function migrateSpanTable(dataSource: DataSource): Promise<void> {
         throw error;
     } finally {
         await queryRunner.release();
+        await migrationDataSource.destroy();
     }
 }
