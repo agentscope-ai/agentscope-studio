@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 export function getNestedValue(
     obj: Record<string, unknown> | undefined,
     path: string | string[],

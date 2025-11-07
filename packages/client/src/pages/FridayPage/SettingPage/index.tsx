@@ -53,7 +53,7 @@ const SettingPage = () => {
     } = useFridaySettingRoom();
     const [loading, setLoading] = useState<boolean>(false);
     const [form] = Form.useForm();
-    const [btnText, setBtnText] = useState<string>('Let\'s Go!');
+    const [btnText, setBtnText] = useState<string>("Let's Go!");
     const [btnIcon, setBtnIcon] = useState<ReactNode>(null);
 
     // Load the existing Friday config if it exists

@@ -12,10 +12,7 @@ import EyeInvisibleIcon from '@/assets/svgs/eye-invisible.svg?react';
 import { useTour } from '@/context/TourContext.tsx';
 import { RemoveScrollBarStyle } from '@/styles.ts';
 import { StatusCell, TextCell } from '@/components/tables/utils.tsx';
-import {
-    SecondaryButton,
-    SwitchButton,
-} from '@/components/buttons/ASButton';
+import { SecondaryButton, SwitchButton } from '@/components/buttons/ASButton';
 import { useProjectRoom } from '@/context/ProjectRoomContext.tsx';
 
 import './index.css';

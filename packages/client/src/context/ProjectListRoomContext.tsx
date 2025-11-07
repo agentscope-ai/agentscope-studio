@@ -10,11 +10,7 @@ import {
 } from 'react';
 import { debounce } from 'lodash';
 
-import {
-    ProjectData,
-    SocketEvents,
-    TableRequestParams,
-} from '@shared/types';
+import { ProjectData, SocketEvents, TableRequestParams } from '@shared/types';
 import { trpcClient } from '@/api/trpc';
 import { useSocket } from './SocketContext';
 import { useMessageApi } from './MessageApiContext.tsx';
@@ -209,8 +205,7 @@ export function ProjectListRoomContextProvider({ children }: Props) {
     /** When the component initializes, load data */
     useEffect(() => {
         const now = Date.now();
-        const shouldFetch =
-            now - initialFetchTimestampRef.current >= 1000;
+        const shouldFetch = now - initialFetchTimestampRef.current >= 1000;
         if (shouldFetch) {
             fetchTableDataRef.current?.({
                 pagination: { page: 1, pageSize: 10 },
@@ -223,9 +218,12 @@ export function ProjectListRoomContextProvider({ children }: Props) {
             initialFetchTimestampRef.current = now;
         }
 
-        const timer = window.setTimeout(() => {
-            startPollingRef.current?.();
-        }, shouldFetch ? 1000 : 0);
+        const timer = window.setTimeout(
+            () => {
+                startPollingRef.current?.();
+            },
+            shouldFetch ? 1000 : 0,
+        );
 
         return () => {
             clearTimeout(timer);

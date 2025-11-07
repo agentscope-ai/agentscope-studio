@@ -12,19 +12,19 @@ If you need server-side pagination/sort/search, wire them up in your page or con
 ## Key Differences vs antd Table
 
 - Columns are passed in as usual, but AsTable will:
-  - Auto-generate a translated `title` using the column's `key` (you can still override it)
-  - Add `ellipsis: true` by default
-  - Render a unified sort icon via `renderSortIcon`
-  - Fix the first column to the left by default
+    - Auto-generate a translated `title` using the column's `key` (you can still override it)
+    - Add `ellipsis: true` by default
+    - Render a unified sort icon via `renderSortIcon`
+    - Fix the first column to the left by default
 - Everything else is forwarded to antd `Table` through `...rest`.
 - There is no `apiFunction`, `searchText`, or internal state. AsTable is UI-only.
 
 ## When to Use
 
 - You want an antd `Table` with:
-  - Unified styling and sort icons
-  - Sticky header and small size by default
-  - i18n-friendly column titles
+    - Unified styling and sort icons
+    - Sticky header and small size by default
+    - i18n-friendly column titles
 - You already manage data in a Context, store, or container component.
 
 ## Props
@@ -33,7 +33,7 @@ AsTable accepts all antd `TableProps<T>` except it requires `columns: TableColum
 
 ```ts
 interface AsTableProps<T> extends Omit<TableProps<T>, 'columns'> {
-  columns: TableColumnsType<T>;
+    columns: TableColumnsType<T>;
 }
 ```
 
@@ -51,51 +51,56 @@ Commonly passed props (from your data layer):
 ```tsx
 import AsTable from '@/components/tables/AsTable';
 import type { TableColumnsType } from 'antd';
-import type { SorterResult, TablePaginationConfig } from 'antd/es/table/interface';
+import type {
+    SorterResult,
+    TablePaginationConfig,
+} from 'antd/es/table/interface';
 import type { ProjectData } from '@shared/types';
 import { useProjectListRoom } from '@/context/ProjectListRoomContext';
 
 export default function ProjectList() {
-  const {
-    tableDataSource,
-    tableLoading,
-    pagination,
-    onTableChange,
-  } = useProjectListRoom();
+    const { tableDataSource, tableLoading, pagination, onTableChange } =
+        useProjectListRoom();
 
-  const columns: TableColumnsType<ProjectData> = [
-    {
-      key: 'project',
-      dataIndex: 'project',
-      sorter: true, // server-side: UI only; handle in onTableChange
-    },
-    { key: 'createdAt', dataIndex: 'createdAt', sorter: true },
-    { key: 'running', dataIndex: 'running', sorter: true, align: 'right' },
-    { key: 'finished', dataIndex: 'finished', sorter: true, align: 'right' },
-    { key: 'pending', dataIndex: 'pending', sorter: true, align: 'right' },
-    { key: 'total', dataIndex: 'total', sorter: true, align: 'right' },
-  ];
+    const columns: TableColumnsType<ProjectData> = [
+        {
+            key: 'project',
+            dataIndex: 'project',
+            sorter: true, // server-side: UI only; handle in onTableChange
+        },
+        { key: 'createdAt', dataIndex: 'createdAt', sorter: true },
+        { key: 'running', dataIndex: 'running', sorter: true, align: 'right' },
+        {
+            key: 'finished',
+            dataIndex: 'finished',
+            sorter: true,
+            align: 'right',
+        },
+        { key: 'pending', dataIndex: 'pending', sorter: true, align: 'right' },
+        { key: 'total', dataIndex: 'total', sorter: true, align: 'right' },
+    ];
 
-  return (
-    <AsTable<ProjectData>
-      columns={columns}
-      dataSource={tableDataSource}
-      loading={tableLoading}
-      pagination={pagination}
-      onChange={onTableChange}
-      rowKey="project"
-    />
-  );
+    return (
+        <AsTable<ProjectData>
+            columns={columns}
+            dataSource={tableDataSource}
+            loading={tableLoading}
+            pagination={pagination}
+            onChange={onTableChange}
+            rowKey="project"
+        />
+    );
 }
 ```
 
 ## i18n Title Resolution
 
 For each column:
+
 - If you do not provide `title`, AsTable will set
-  ```ts
-  title = t(`table.column.${key.replace('_', '-')}`)
-  ```
+    ```ts
+    title = t(`table.column.${key.replace('_', '-')}`);
+    ```
 - Provide your own `title` to override.
 
 ## Styling Defaults
@@ -118,12 +123,12 @@ Example handler sketch (in your Context):
 
 ```ts
 const onTableChange = (
-  pageInfo: TablePaginationConfig,
-  _ignored: unknown,
-  sorter: SorterResult<ProjectData> | SorterResult<ProjectData>[]
+    pageInfo: TablePaginationConfig,
+    _ignored: unknown,
+    sorter: SorterResult<ProjectData> | SorterResult<ProjectData>[],
 ) => {
-  // derive next page, pageSize, sort field/order
-  // call your fetch function with these params
+    // derive next page, pageSize, sort field/order
+    // call your fetch function with these params
 };
 ```
 
