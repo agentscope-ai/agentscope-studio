@@ -441,4 +441,20 @@ export class SpanDao {
             },
         } as ModelInvocationData;
     }
+
+    static async deleteSpansByRunIds(runIds: string[]): Promise<number> {
+        try {
+            if (runIds.length === 0) {
+                return 0;
+            }
+            const result = await SpanTable.createQueryBuilder()
+                .delete()
+                .where('runId IN (:...runIds)', { runIds })
+                .execute();
+            return result.affected || 0;
+        } catch (error) {
+            console.error('Error deleting spans by runIds:', error);
+            throw error;
+        }
+    }
 }

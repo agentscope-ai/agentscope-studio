@@ -6,6 +6,7 @@ import { SpanTable } from './Trace';
         dataSource
             .createQueryBuilder()
             .from(SpanTable, 'span')
+            .innerJoin('run_table', 'run', 'run.id = span.runId')
             .select(
                 `COUNT(CASE
                     WHEN (span.operationName = 'chat'

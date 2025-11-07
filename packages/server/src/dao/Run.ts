@@ -249,18 +249,41 @@ export class RunDao {
     }
 
     static async deleteRuns(runIds: string[]) {
-        const conditions: FindOptionsWhere<RunTable> = {
-            id: In(runIds),
-        };
-        const result = await RunTable.delete(conditions);
-        return result.affected;
+        try {
+            if (runIds.length > 0) {
+                await SpanDao.deleteSpansByRunIds(runIds);
+            }
+            const conditions: FindOptionsWhere<RunTable> = {
+                id: In(runIds),
+            };
+            const result = await RunTable.delete(conditions);
+            return result.affected;
+        } catch (error) {
+            console.error('Error deleting runs:', error);
+            throw error;
+        }
     }
 
     static async deleteProjects(projects: string[]) {
-        const conditions: FindOptionsWhere<RunTable> = {
-            project: In(projects),
-        };
-        const result = await RunTable.delete(conditions);
-        return result.affected;
+        try {
+            const runsToDelete = await RunTable.find({
+                where: { project: In(projects) },
+                select: ['id'],
+            });
+            const runIds = runsToDelete.map((run) => run.id);
+
+            if (runIds.length > 0) {
+                await SpanDao.deleteSpansByRunIds(runIds);
+            }
+
+            const conditions: FindOptionsWhere<RunTable> = {
+                project: In(projects),
+            };
+            const result = await RunTable.delete(conditions);
+            return result.affected;
+        } catch (error) {
+            console.error('Error deleting projects:', error);
+            throw error;
+        }
     }
 }
