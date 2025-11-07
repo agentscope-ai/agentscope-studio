@@ -61,9 +61,10 @@ export class FridayAppMessageDao {
                 replyId: replyId,
                 name: msg.name,
                 role: msg.role,
-                content: msg.content as any,
+                content: () => ':content',
                 timestamp: msg.timestamp,
             })
+            .setParameter('content', JSON.stringify(msg.content))
             .orUpdate(['name', 'role', 'content', 'timestamp'], ['id'])
             .execute();
 

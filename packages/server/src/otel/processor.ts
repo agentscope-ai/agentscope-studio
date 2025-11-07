@@ -100,7 +100,7 @@ export class SpanProcessor {
         attributes: Record<string, unknown> | undefined,
         key: string | string[],
         separator: string = '.',
-    ): any {
+    ): unknown {
         return getNestedValue(attributes, key, separator);
     }
 
@@ -110,7 +110,7 @@ export class SpanProcessor {
             SpanAttributes.SPAN_KIND,
         );
         if (
-            kindValue &&
+            typeof kindValue === 'string' &&
             Object.values(SpanKind).includes(kindValue as SpanKind)
         ) {
             return kindValue as SpanKind;
@@ -119,10 +119,12 @@ export class SpanProcessor {
     }
 
     private static getRunId(attributes: Record<string, unknown>): string {
-        return this.getAttributeValue(
+        const runId = this.getAttributeValue(
             attributes,
             SpanAttributes.PROJECT_RUN_ID,
         );
+
+        return typeof runId === 'string' ? runId : '';
     }
 
     private static decodeIdentifier(
