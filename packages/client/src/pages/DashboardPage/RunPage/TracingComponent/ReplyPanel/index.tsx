@@ -12,6 +12,8 @@ import { AlertCircleIcon } from 'lucide-react';
 import styles from '@/components/chat/bubbles/MarkdownRender/styles.ts';
 import { AccordionContent, AccordionTrigger, Accordion, AccordionItem } from '@/components/ui/accordion.tsx';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert.tsx';
+
+
 interface Props {
     reply: Reply | null;
 }
@@ -31,7 +33,7 @@ const ReplyPanel = ({ reply }: Props) => {
         }
 
         return (
-            <div className="flex flex-col w-full border border-primary-200">
+            <div className="flex flex-col w-full">
                 <Accordion
                     className="w-full"
                     type="single"
@@ -44,41 +46,23 @@ const ReplyPanel = ({ reply }: Props) => {
                             {title}
                         </AccordionTrigger>
                         <AccordionContent>
-                            {JSON.stringify(reply, null, 2)}
+                            <SyntaxHighlighter
+                                language="JSON"
+                                style={styles}
+                                showLineNumbers={true}
+                                wrapLines={true}
+                                customStyle={{
+                                    background: 'var(--white)',
+                                    borderRadius: '0 0 0.5rem 0.5rem',
+                                    fontSize: 12,
+                                    minHeight: 200,
+                                }}
+                            >
+                                {codeString}
+                            </SyntaxHighlighter>
                         </AccordionContent>
                     </AccordionItem>
                 </Accordion>
-                <Flex
-                    style={
-                        {
-                            background: 'var(--primary-100)',
-                            borderRadius: '0.5rem 0.5rem 0 0',
-                            padding: '4px 8px',
-                            color: 'var(--muted-foreground)',
-                            fontSize: 12,
-                            fontWeight: 500,
-                            boxSizing: 'border-box',
-                            borderBottom: '1px solid var(--border)',
-                        }
-                    }
-                    justify="space-between"
-                >
-                    <span>{title}</span>
-                </Flex>
-                <SyntaxHighlighter
-                    language="JSON"
-                    style={styles}
-                    showLineNumbers={true}
-                    wrapLines={true}
-                    customStyle={{
-                        background: 'var(--white)',
-                        borderRadius: '0 0 0.5rem 0.5rem',
-                        fontSize: 12,
-                        minHeight: 200,
-                    }}
-                >
-                    {codeString}
-                </SyntaxHighlighter>
             </div>
         );
     };
@@ -102,7 +86,7 @@ const ReplyPanel = ({ reply }: Props) => {
             <Alert>
                 <AlertCircleIcon/>
                 <AlertTitle>Hint</AlertTitle>
-                <AlertDescription>
+                <AlertDescription >
                     {t('hint.messages')}
                 </AlertDescription>
             </Alert>

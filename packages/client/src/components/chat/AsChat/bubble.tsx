@@ -35,6 +35,7 @@ const AsBubble = ({ reply, markdown, onClick }: Props) => {
             />
         );
     };
+    console.log('Reply Messages', reply);
 
     return (
         <div

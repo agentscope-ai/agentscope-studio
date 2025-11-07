@@ -1,26 +1,11 @@
-import { ContentBlocks, Message, MessageData, Reply } from '@shared/types';
+import { ContentBlocks, Reply } from '@shared/types';
 import { memo, ReactNode, useMemo, useState } from 'react';
 import {
-    InputGroup,
-    InputGroupAddon,
-    InputGroupButton,
-    InputGroupText,
-    InputGroupTextarea,
-} from '@/components/ui/input-group';
-import { Separator } from '@/components/ui/separator';
-import {
-    PlayIcon,
     SettingsIcon,
     MonitorIcon,
-    PaperclipIcon,
     MessageSquareIcon,
     DicesIcon,
 } from 'lucide-react';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-} from '@/components/ui/tooltip.tsx';
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
@@ -31,6 +16,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button.tsx';
 import AsBubble from '@/components/chat/AsChat/bubble.tsx';
+import AsTextarea from '@/components/chat/AsChat/textarea.tsx';
 
 interface Props {
     /** List of chat replies to display */
@@ -59,6 +45,7 @@ interface Props {
         sendButton: string;
         interruptButton?: string;
         attachButton: string;
+        expandTextarea: string;
     };
 }
 
@@ -91,11 +78,11 @@ const AsChat = ({
 }: Props) => {
     const [renderMarkdown, setRenderMarkdown] = useState<boolean>(true);
     const [byReplyId, setByReplyId] = useState<boolean>(true);
-    const [inputText, setInputText] = useState<string>('');
     const [randomAvatar, setRandomAvatar] = useState<boolean>(true);
 
     const organizedReplies = useMemo(
         () => {
+            console.log('Original Replies', JSON.stringify(replies, null, 2));
             if (replies.length === 0) return [];
 
             if (byReplyId) {
@@ -124,7 +111,7 @@ const AsChat = ({
     );
 
     return (
-        <div className="flex flex-col w-full h-full p-4">
+        <div className="flex flex-col w-full max-w-[800px] h-full p-4">
             {/*The bubble list*/}
             <div className="flex flex-1 flex-col gap-y-5 w-full overflow-auto">
                 {
@@ -141,6 +128,7 @@ const AsChat = ({
             <div className="flex flex-col w-full space-y-2">
                 {/*The component list above the textarea component*/}
                 <div className="flex flex-row w-full space-x-4">
+                    {actions}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button size="sm" variant="outline">
@@ -180,50 +168,15 @@ const AsChat = ({
                     </DropdownMenu>
                 </div>
 
-                <InputGroup>
-                    <InputGroupTextarea
-                        rows={2}
-                        value={inputText}
-                        placeholder={placeholder}
-                        onChange={(e) => setInputText(e.target.value)}
-                    />
-                    <InputGroupAddon align="block-end">
-                        <Tooltip>
-                            <TooltipTrigger>
-                                <InputGroupButton
-                                    variant="outline"
-                                    className="rounded-full"
-                                    size="icon-sm"
-                                >
-                                    <PaperclipIcon />
-                                </InputGroupButton>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                {tooltips.attachButton}
-                            </TooltipContent>
-                        </Tooltip>
-                        <InputGroupText className="ml-auto">
-                            5 characters
-                        </InputGroupText>
-                        <Separator orientation="vertical" className="!h-4" />
-                        <Tooltip>
-                            <TooltipTrigger>
-                                <InputGroupButton
-                                    variant="default"
-                                    className="rounded-full"
-                                    size="icon-sm"
-                                    disabled={disableSendBtn}
-                                >
-                                    <PlayIcon />
-                                    <span className="sr-only">Send</span>
-                                </InputGroupButton>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                {tooltips.sendButton}
-                            </TooltipContent>
-                        </Tooltip>
-                    </InputGroupAddon>
-                </InputGroup>
+                <AsTextarea
+                    placeholder={placeholder}
+                    onSendClick={onSendClick}
+                    interruptable={isReplying && allowInterrupt}
+                    onInterruptClick={onInterruptClick}
+                    disableSendBtn={disableSendBtn}
+                    tooltips={tooltips}
+                    expandable
+                />
             </div>
         </div>
     );

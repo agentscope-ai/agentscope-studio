@@ -186,6 +186,7 @@
             "compare-evaluation": "Compare two evaluation results of the same benchmark dataset",
             "delete-selected-projects": "Delete {{number}} selected project(s)",
             "delete-selected-projects-disable": "Select projects from the table to delete",
+            "expand-textarea": "Expand",
             "focus-on-latest-run": "Focus on the latest run automatically",
             "interrupt-reply": "Interrupt the reply",
             "send-message": "Press {{shortcutKeys}} to send message",
@@ -221,6 +222,8 @@
         }
     },
     "unit": {
+        "character": "character",
+        "characters": "characters",
         "run": "Run",
         "runs": "Runs",
         "time": "Time",

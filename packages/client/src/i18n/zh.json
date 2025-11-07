@@ -178,6 +178,7 @@
             "compare-evaluation": "比较同一基准数据集的两次评测结果",
             "delete-selected-projects": "删除当前选中的 {{number}} 个项目",
             "delete-selected-projects-disable": "从表格中选择项目以删除",
+            "expand-textarea": "放大",
             "focus-on-latest-run": "自动切换到最新运行实例",
             "interrupt-reply": "中断回复",
             "send-message": "按 {{shortcutKeys}} 键发送消息",
@@ -213,6 +214,8 @@
         }
     },
     "unit": {
+        "character": "字符",
+        "characters": "字符",
         "run": "运行",
         "runs": "运行",
         "time": "次",

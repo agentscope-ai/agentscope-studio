@@ -8,6 +8,7 @@ import StatisticsPanel from './StatisticsPanel';
 import { useTranslation } from 'react-i18next';
 import { useTour } from '@/context/TourContext.tsx';
 import { Reply } from '@shared/types';
+import PlanPanel from '@/pages/DashboardPage/RunPage/TracingComponent/PlanPanel';
 
 interface Props {
     activateTab: string;

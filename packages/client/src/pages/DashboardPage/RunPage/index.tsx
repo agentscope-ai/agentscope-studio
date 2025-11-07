@@ -1,12 +1,11 @@
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import { Flex, Layout, Splitter } from 'antd';
 import { Route, Routes, useNavigate, useParams } from 'react-router-dom';
 
 import TracingComponent from './TracingComponent';
 import ProjectRunSider from './ProjectRunSider';
-import ChatComponent from '@/components/chat/ChatComponent';
 
-import { InputRequestData, MessageData, Reply } from '@shared/types/trpc';
+import { InputRequestData, Reply } from '@shared/types/trpc';
 import { ProjectRoomContextProvider } from '@/context/ProjectRoomContext';
 import { EmptyRunPage, ProjectNotFoundPage } from '../../DefaultPage';
 import { RunRoomContextProvider, useRunRoom } from '@/context/RunRoomContext';
@@ -115,6 +114,7 @@ const RunContentPage = () => {
                         tooltips={{
                             sendButton: currentInputRequest ? t('tooltip.button.send-message', {shortcutKeys}) : t('tooltip.button.send-message-disable'),
                             attachButton: t('tooltip.button.attachment-add'),
+                            expandTextarea: t('tooltip.button.expand-textarea'),
                         }}
                     />
                 </Splitter.Panel>

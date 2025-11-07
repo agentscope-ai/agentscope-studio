@@ -1,9 +1,9 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import {
-    InputRequestData,
+    InputRequestData, RegisterReplyParams,
     RegisterReplyParamsSchema,
-    RunData,
+    RunData
 } from '../../../shared/src';
 import {
     BlockType,
@@ -196,6 +196,8 @@ export const appRouter = t.router({
             z.object({
                 runId: z.string(),
                 replyId: z.string().optional().nullable(),
+                name: z.string(),
+                role: z.string(),
                 msg: z.object({
                     id: z.string(),
                     name: z.string(),
@@ -219,10 +221,16 @@ export const appRouter = t.router({
             // Check if the replyId exists if provided
             if (input.replyId) {
                 if (!(await ReplyDao.doesReplyExist(input.replyId))) {
-                    throw new TRPCError({
-                        code: 'NOT_FOUND',
-                        message: `Reply with id ${input.replyId} does not exist`,
-                    });
+                    // Create a reply record if it does not exist
+                    await ReplyDao.saveReply(
+                        {
+                            runId:  input.runId,
+                            replyId: input.replyId,
+                            replyRole: input.role,
+                            replyName: input.name,
+                            createdAt: input.msg.timestamp,
+                        } as RegisterReplyParams
+                    );
                 }
             }
 
