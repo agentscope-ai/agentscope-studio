@@ -13,7 +13,6 @@ import { debounce } from 'lodash';
 import {
     ProjectData,
     SocketEvents,
-    SocketRoomName,
     TableRequestParams,
 } from '@shared/types';
 import { trpcClient } from '@/api/trpc';
@@ -26,7 +25,6 @@ import type {
 
 // Define Context type
 interface ProjectListRoomContextType {
-    projects: ProjectData[];
     // API
     getProjects: (params: TableRequestParams) => Promise<unknown>;
     deleteProjects: (projects: string[]) => void;
@@ -60,7 +58,6 @@ interface Props {
 
 export function ProjectListRoomContextProvider({ children }: Props) {
     const socket = useSocket();
-    const [projects, setProjects] = useState<ProjectData[]>([]);
     const [searchText, setSearchText] = useState<string>('');
     const { messageApi } = useMessageApi();
 
@@ -79,6 +76,7 @@ export function ProjectListRoomContextProvider({ children }: Props) {
 
     // Polling state
     const [isPolling, setIsPolling] = useState<boolean>(false);
+    const isPollingRef = useRef<boolean>(false);
     const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const pollingCountRef = useRef<number>(0);
     const maxPollingCount = 1000; // Maximum number of polls
@@ -102,32 +100,6 @@ export function ProjectListRoomContextProvider({ children }: Props) {
         };
     }, [pagination, searchText, sortField, sortOrder]);
 
-    useEffect(() => {
-        if (!socket) {
-            return;
-        }
-
-        // 进入 projectList room
-        socket.emit(SocketEvents.client.joinProjectListRoom);
-
-        // Handle data updates
-        socket.on(
-            SocketEvents.server.pushProjects,
-            (projects: ProjectData[]) => {
-                setProjects(projects);
-            },
-        );
-
-        // When leaving, clean up
-        return () => {
-            socket.off(SocketEvents.server.pushProjects);
-            socket.emit(
-                SocketEvents.client.leaveRoom,
-                SocketRoomName.ProjectListRoom,
-            );
-        };
-    }, [socket]);
-
     /**
      * tRPC: Get project list
      */
@@ -148,8 +120,25 @@ export function ProjectListRoomContextProvider({ children }: Props) {
     /**
      * Fetch and write table data
      */
+    type FetchTableDataFn = (
+        params: TableRequestParams,
+        options?: { force?: boolean },
+    ) => Promise<void> | void;
+
+    const lastRequestRef = useRef<string | null>(null);
+    const fetchTableDataRef = useRef<FetchTableDataFn | null>(null);
+    const startPollingRef = useRef<(() => void) | null>(null);
+    const stopPollingRef = useRef<(() => void) | null>(null);
+    const initialFetchTimestampRef = useRef<number>(0);
+
     const fetchTableData = useCallback(
-        async (params: TableRequestParams) => {
+        async (params: TableRequestParams, options?: { force?: boolean }) => {
+            const requestKey = JSON.stringify(params);
+            if (!options?.force && lastRequestRef.current === requestKey) {
+                return;
+            }
+            lastRequestRef.current = requestKey;
+
             setTableLoading(true);
             try {
                 const res = await getProjects(params);
@@ -165,13 +154,23 @@ export function ProjectListRoomContextProvider({ children }: Props) {
                     messageApi.error(res.message || 'Failed to load projects');
                 }
             } catch (error) {
+                lastRequestRef.current = null;
                 console.error('Failed to load data', error);
             } finally {
                 setTableLoading(false);
+
+                if (options?.force) {
+                    stopPollingRef.current?.();
+                    startPollingRef.current?.();
+                }
             }
         },
         [getProjects, messageApi],
     );
+
+    useEffect(() => {
+        fetchTableDataRef.current = fetchTableData;
+    }, [fetchTableData]);
 
     /** Silent refresh for polling - only updates data without affecting UI state */
     const silentRefresh = useCallback(async () => {
@@ -209,30 +208,66 @@ export function ProjectListRoomContextProvider({ children }: Props) {
 
     /** When the component initializes, load data */
     useEffect(() => {
-        fetchTableData({
-            pagination: { page: 1, pageSize: 10 },
-            filters: undefined,
-            sort: undefined,
-        });
-    }, [fetchTableData]);
+        const now = Date.now();
+        const shouldFetch =
+            now - initialFetchTimestampRef.current >= 1000;
+        if (shouldFetch) {
+            fetchTableDataRef.current?.({
+                pagination: { page: 1, pageSize: 10 },
+                filters: undefined,
+                sort: undefined,
+            });
+        }
+
+        if (shouldFetch) {
+            initialFetchTimestampRef.current = now;
+        }
+
+        const timer = window.setTimeout(() => {
+            startPollingRef.current?.();
+        }, shouldFetch ? 1000 : 0);
+
+        return () => {
+            clearTimeout(timer);
+        };
+    }, []);
 
     /** Create debounced search function */
     const debouncedSearch = useMemo(
         () =>
             debounce((searchValue: string) => {
-                fetchTableData({
-                    pagination: { page: 1, pageSize: pagination.pageSize },
-                    filters: searchValue ? { project: searchValue } : undefined,
-                    sort: sortField
-                        ? { field: sortField, order: sortOrder || 'asc' }
-                        : undefined,
-                });
+                const current = currentStateRef.current;
+                fetchTableDataRef.current?.(
+                    {
+                        pagination: {
+                            page: 1,
+                            pageSize: current.pagination.pageSize,
+                        },
+                        filters: searchValue
+                            ? { project: searchValue }
+                            : undefined,
+                        sort: current.sortField
+                            ? {
+                                  field: current.sortField,
+                                  order: current.sortOrder || 'asc',
+                              }
+                            : undefined,
+                    },
+                    { force: true },
+                );
             }, 500),
-        [fetchTableData, pagination.pageSize, sortField, sortOrder],
+        [],
     );
+
+    const isFirstSearch = useRef(true);
 
     /** When the search changes (with debounce) */
     useEffect(() => {
+        if (isFirstSearch.current) {
+            isFirstSearch.current = false;
+            return;
+        }
+
         debouncedSearch(searchText);
 
         // Cleanup function to cancel pending debounced calls
@@ -274,22 +309,25 @@ export function ProjectListRoomContextProvider({ children }: Props) {
                     : undefined,
             };
 
-            fetchTableData(requestParams);
+            fetchTableData(requestParams, { force: true });
         },
         [fetchTableData, pagination.pageSize, searchText],
     );
 
     const refresh = useCallback(() => {
-        fetchTableData({
-            pagination: {
-                page: pagination.current,
-                pageSize: pagination.pageSize,
+        fetchTableData(
+            {
+                pagination: {
+                    page: pagination.current,
+                    pageSize: pagination.pageSize,
+                },
+                filters: searchText ? { project: searchText } : undefined,
+                sort: sortField
+                    ? { field: sortField, order: sortOrder || 'asc' }
+                    : undefined,
             },
-            filters: searchText ? { project: searchText } : undefined,
-            sort: sortField
-                ? { field: sortField, order: sortOrder || 'asc' }
-                : undefined,
-        });
+            { force: true },
+        );
     }, [fetchTableData, pagination, searchText, sortField, sortOrder]);
 
     /** Stop polling */
@@ -299,16 +337,18 @@ export function ProjectListRoomContextProvider({ children }: Props) {
             pollingIntervalRef.current = null;
         }
         setIsPolling(false);
+        isPollingRef.current = false;
         pollingCountRef.current = 0;
     }, []);
 
     /** Start polling */
     const startPolling = useCallback(() => {
-        if (isPolling || pollingIntervalRef.current) {
+        if (isPollingRef.current || pollingIntervalRef.current) {
             return;
         }
 
         setIsPolling(true);
+        isPollingRef.current = true;
         pollingCountRef.current = 0;
 
         const poll = async () => {
@@ -330,7 +370,12 @@ export function ProjectListRoomContextProvider({ children }: Props) {
 
         // Start first poll after interval
         pollingIntervalRef.current = setTimeout(poll, pollingInterval);
-    }, [isPolling, silentRefresh, stopPolling]);
+    }, [silentRefresh, stopPolling]);
+
+    useEffect(() => {
+        startPollingRef.current = startPolling;
+        stopPollingRef.current = stopPolling;
+    }, [startPolling, stopPolling]);
 
     // After deleting a project, refresh the project list
     const deleteProjects = (projects: string[]) => {
@@ -358,18 +403,6 @@ export function ProjectListRoomContextProvider({ children }: Props) {
 
     /** Auto-start polling when component mounts */
     useEffect(() => {
-        // Start polling after initial data load
-        const timer = setTimeout(() => {
-            startPolling();
-        }, 1000); // Wait 1 second after mount to start polling
-
-        return () => {
-            clearTimeout(timer);
-        };
-    }, [startPolling]);
-
-    /** Cleanup polling on unmount */
-    useEffect(() => {
         return () => {
             stopPolling();
         };
@@ -378,7 +411,6 @@ export function ProjectListRoomContextProvider({ children }: Props) {
     return (
         <ProjectListRoomContext.Provider
             value={{
-                projects,
                 getProjects,
                 deleteProjects,
                 searchText,
