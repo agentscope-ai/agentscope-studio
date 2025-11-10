@@ -66,7 +66,8 @@ const UserInputComponent = ({
                     onChange={(e) => onChange(e.target.value)}
                     onKeyDown={(e) => {
                         // Send on Cmd+Enter (Mac) or Ctrl+Enter
-                        if (e.key === 'Enter' && e.metaKey) {
+                        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                            e.preventDefault();
                             onSendClick();
                         }
                     }}
