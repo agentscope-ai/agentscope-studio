@@ -158,8 +158,9 @@ const UnifiedUserInput = ({
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={async (e) => {
                     // Send on Cmd+Enter (Mac) or Ctrl+Enter
-                    if (e.key === 'Enter' && e.metaKey) {
-                        await onSendClick();
+                    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                        e.preventDefault();
+                        onSendClick();
                     }
                 }}
             />
