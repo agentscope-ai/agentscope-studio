@@ -1,4 +1,7 @@
-import { FridayAppMessageTable, FridayAppReplyTable } from '../models/FridayApp';
+import {
+    FridayAppMessageTable,
+    FridayAppReplyTable,
+} from '../models/FridayApp';
 import { ContentBlocks, ReplyData } from '../../../shared/src';
 import { FridayAppReplyView } from '../models/FridayAppView';
 import { LessThan } from 'typeorm';
@@ -58,9 +61,10 @@ export class FridayAppMessageDao {
                 replyId: replyId,
                 name: msg.name,
                 role: msg.role,
-                content: msg.content as any,
+                content: () => ':content',
                 timestamp: msg.timestamp,
             })
+            .setParameter('content', JSON.stringify(msg.content))
             .orUpdate(['name', 'role', 'content', 'timestamp'], ['id'])
             .execute();
 
