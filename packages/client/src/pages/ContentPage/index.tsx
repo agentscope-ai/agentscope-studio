@@ -69,9 +69,15 @@ const Block = ({ title, number, footer, icon }: BlockProps) => {
 
             <div className="flex flex-col gap-0">
                 {number !== undefined ? (
-                    <NumberCounter number={number} style={{ fontSize: 24, fontWeight: 700 }} />
+                    <NumberCounter
+                        number={number}
+                        style={{ fontSize: 24, fontWeight: 700 }}
+                    />
                 ) : (
-                    <Skeleton.Node active style={{ height: 30, width: '100%' }} />
+                    <Skeleton.Node
+                        active
+                        style={{ height: 30, width: '100%' }}
+                    />
                 )}
 
                 {footer ? (
@@ -112,7 +118,9 @@ const ProjectRow = ({ project, runCount, lastUpdateTime }: ProjectRowProps) => {
             </div>
             <div className="flex items-end font-medium">
                 <NumberCounter number={runCount} style={{ fontSize: 14 }} />
-                <div className="text-[12px] text-muted-foreground">&nbsp;{unit}</div>
+                <div className="text-[12px] text-muted-foreground">
+                    &nbsp;{unit}
+                </div>
             </div>
         </div>
     );
@@ -139,7 +147,8 @@ const ContentPage = () => {
     const yAxisMin = Math.min(...monthlyRuns.map((item) => item.count));
     const ticks = extended(yAxisMin, yAxisMax, 4);
     const maxTick = ticks[ticks.length - 1];
-    const yAxisWidth = maxTick < 10 ? 20 : maxTick < 100 ? 25 : maxTick < 1000 ? 30 : 42;
+    const yAxisWidth =
+        maxTick < 10 ? 20 : maxTick < 100 ? 25 : maxTick < 1000 ? 30 : 42;
 
     const obtainRatioOrNumber = (
         nPast: number,
@@ -345,11 +354,24 @@ const ContentPage = () => {
                         {/* Chart + Recent projects */}
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 w-full">
                             <div className="lg:col-span-7 border border-border rounded-lg p-6 h-[325px] flex flex-col gap-6 shadow-sm">
-                                <BlockTitle title={t('common.overview')} description={t('home.overview-description')} />
+                                <BlockTitle
+                                    title={t('common.overview')}
+                                    description={t('home.overview-description')}
+                                />
                                 <div className="flex flex-1">
-                                    <ResponsiveContainer width="100%" minWidth="100%">
-                                        <BarChart layout="horizontal" data={monthlyRuns.reverse()} margin={{ bottom: -5, top: 0 }}>
-                                            <CartesianGrid strokeDasharray="1 10" vertical={false} />
+                                    <ResponsiveContainer
+                                        width="100%"
+                                        minWidth="100%"
+                                    >
+                                        <BarChart
+                                            layout="horizontal"
+                                            data={monthlyRuns.reverse()}
+                                            margin={{ bottom: -5, top: 0 }}
+                                        >
+                                            <CartesianGrid
+                                                strokeDasharray="1 10"
+                                                vertical={false}
+                                            />
                                             <YAxis
                                                 type="number"
                                                 fontSize={10}
@@ -359,9 +381,13 @@ const ContentPage = () => {
                                                 tickLine={false}
                                                 domain={[ticks[0], ticks[-1]]}
                                                 ticks={ticks}
-                                                tickFormatter={(count: number) => {
+                                                tickFormatter={(
+                                                    count: number,
+                                                ) => {
                                                     if (count >= 10000) {
-                                                        return count.toExponential(1);
+                                                        return count.toExponential(
+                                                            1,
+                                                        );
                                                     } else if (count >= 1000) {
                                                         return count.toLocaleString();
                                                     } else {
@@ -375,23 +401,68 @@ const ContentPage = () => {
                                                 fontSize={10}
                                                 axisLine={false}
                                                 tickLine={false}
-                                                tickFormatter={(month: string) => {
-                                                    const numericMonth = parseInt(month.split('-')[1]);
-                                                    return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][numericMonth - 1];
+                                                tickFormatter={(
+                                                    month: string,
+                                                ) => {
+                                                    const numericMonth =
+                                                        parseInt(
+                                                            month.split('-')[1],
+                                                        );
+                                                    return [
+                                                        'Jan',
+                                                        'Feb',
+                                                        'Mar',
+                                                        'Apr',
+                                                        'May',
+                                                        'Jun',
+                                                        'Jul',
+                                                        'Aug',
+                                                        'Sep',
+                                                        'Oct',
+                                                        'Nov',
+                                                        'Dec',
+                                                    ][numericMonth - 1];
                                                 }}
                                             />
                                             <Tooltip
-                                                contentStyle={{ borderRadius: 6, border: '1px solid var(--border)' }}
+                                                contentStyle={{
+                                                    borderRadius: 6,
+                                                    border: '1px solid var(--border)',
+                                                }}
                                                 labelStyle={{ fontWeight: 500 }}
                                                 labelFormatter={(label) => {
-                                                    const numericMonth = parseInt(label.split('-')[1]);
-                                                    const year = parseInt(label.split('-')[0]);
-                                                    const strMonth = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][numericMonth - 1];
+                                                    const numericMonth =
+                                                        parseInt(
+                                                            label.split('-')[1],
+                                                        );
+                                                    const year = parseInt(
+                                                        label.split('-')[0],
+                                                    );
+                                                    const strMonth = [
+                                                        'Jan',
+                                                        'Feb',
+                                                        'Mar',
+                                                        'Apr',
+                                                        'May',
+                                                        'Jun',
+                                                        'Jul',
+                                                        'Aug',
+                                                        'Sep',
+                                                        'Oct',
+                                                        'Nov',
+                                                        'Dec',
+                                                    ][numericMonth - 1];
                                                     return `${strMonth}, ${year}`;
                                                 }}
-                                                formatter={(value) => [value, t('home.run-number')]}
+                                                formatter={(value) => [
+                                                    value,
+                                                    t('home.run-number'),
+                                                ]}
                                             />
-                                            <Bar dataKey="count" radius={[6, 6, 0, 0]} />
+                                            <Bar
+                                                dataKey="count"
+                                                radius={[6, 6, 0, 0]}
+                                            />
                                         </BarChart>
                                     </ResponsiveContainer>
                                 </div>
@@ -399,13 +470,32 @@ const ContentPage = () => {
                             <div className="lg:col-span-5 border border-border rounded-lg p-6 h-[325px] flex flex-col gap-2 shadow-sm">
                                 <BlockTitle
                                     title={t('home.recent-projects')}
-                                    description={overviewData && overviewData.recentProjects.length > 0 ? t('home.recent-projects-description') : t('home.recent-projects-empty')}
+                                    description={
+                                        overviewData &&
+                                        overviewData.recentProjects.length > 0
+                                            ? t(
+                                                  'home.recent-projects-description',
+                                              )
+                                            : t('home.recent-projects-empty')
+                                    }
                                 />
-                                <div className="flex flex-col flex-1" style={RemoveScrollBarStyle}>
+                                <div
+                                    className="flex flex-col flex-1"
+                                    style={RemoveScrollBarStyle}
+                                >
                                     {overviewData
-                                        ? overviewData.recentProjects.map((proj) => (
-                                              <ProjectRow key={proj.name} project={proj.name} runCount={proj.runCount} lastUpdateTime={proj.lastUpdateTime} />
-                                          ))
+                                        ? overviewData.recentProjects.map(
+                                              (proj) => (
+                                                  <ProjectRow
+                                                      key={proj.name}
+                                                      project={proj.name}
+                                                      runCount={proj.runCount}
+                                                      lastUpdateTime={
+                                                          proj.lastUpdateTime
+                                                      }
+                                                  />
+                                              ),
+                                          )
                                         : null}
                                 </div>
                             </div>
@@ -418,15 +508,25 @@ const ContentPage = () => {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
                             <div
                                 className="border border-border rounded-lg p-6 cursor-pointer flex flex-col shadow-sm"
-                                onClick={() => navigate(RouterPath.FRIDAY_SETTING)}
+                                onClick={() =>
+                                    navigate(RouterPath.FRIDAY_SETTING)
+                                }
                             >
-                                <BlockTitle title="AgentScope Friday" description={t('home.as-friday-description')} />
+                                <BlockTitle
+                                    title="AgentScope Friday"
+                                    description={t(
+                                        'home.as-friday-description',
+                                    )}
+                                />
                             </div>
                             <div
                                 className="border border-border rounded-lg p-6 cursor-pointer flex flex-col shadow-sm"
                                 onClick={() => navigate(RouterPath.EVAL)}
                             >
-                                <BlockTitle title="AgentScope X" description={t('home.as-x-description')} />
+                                <BlockTitle
+                                    title="AgentScope X"
+                                    description={t('home.as-x-description')}
+                                />
                             </div>
                         </div>
                     </div>

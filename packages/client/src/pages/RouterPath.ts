@@ -1,6 +1,7 @@
 export enum RouterPath {
     HOME = '/home',
     DASHBOARD = '/dashboard',
+    TRACE = '/trace',
 
     FRIDAY = '/as-friday',
     FRIDAY_CHAT = 'chat',

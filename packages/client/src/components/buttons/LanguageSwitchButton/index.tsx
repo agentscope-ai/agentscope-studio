@@ -14,7 +14,7 @@ import { useI18n } from '@/context/I18Context.tsx';
 const LanguageSwitchButton = () => {
     const { changeLanguage, currentLanguage } = useI18n();
     const { t } = useTranslation();
-    
+
     // Circular button styling for the language switcher
     const buttonStyle: React.CSSProperties = {
         border: 'none',

@@ -1,5 +1,6 @@
 import { Layout, Menu } from 'antd';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     Navigate,
     Route,
@@ -7,27 +8,29 @@ import {
     useLocation,
     useNavigate,
 } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 
-import EvalPage from '../EvalPage';
-import FridayPage from '../FridayPage';
+import ApiIcon from '@/assets/svgs/api.svg?react';
+import CopilotIcon from '@/assets/svgs/copilot.svg?react';
+import DashboardIcon from '@/assets/svgs/dashboard.svg?react';
+import DingTalkIcon from '@/assets/svgs/dingtalk.svg?react';
+import DiscordIcon from '@/assets/svgs/discord.svg?react';
+import GitHubIcon from '@/assets/svgs/github.svg?react';
+import HomeIcon from '@/assets/svgs/home.svg?react';
+import LogoIcon from '@/assets/svgs/logo-font.svg?react';
+import TutorialIcon from '@/assets/svgs/tutorial.svg?react';
 import ContentPage from '../ContentPage';
 import DashboardPage from '../DashboardPage';
-import ApiIcon from '@/assets/svgs/api.svg?react';
-import HomeIcon from '@/assets/svgs/home.svg?react';
-import GitHubIcon from '@/assets/svgs/github.svg?react';
-import DiscordIcon from '@/assets/svgs/discord.svg?react';
-import DingTalkIcon from '@/assets/svgs/dingtalk.svg?react';
-import DashboardIcon from '@/assets/svgs/dashboard.svg?react';
-import TutorialIcon from '@/assets/svgs/tutorial.svg?react';
-import CopilotIcon from '@/assets/svgs/copilot.svg?react';
-import LogoIcon from '@/assets/svgs/logo-font.svg?react';
+import EvalPage from '../EvalPage';
+import FridayPage from '../FridayPage';
+import TracePage from '../TracePage';
 // import EvaluationIcon from '@/assets/svgs/evaluation.svg?react';
+// Use dashboard icon as trace icon for now
+const TraceIcon = DashboardIcon;
 
-import { RouterPath } from '../RouterPath.ts';
-import { checkForUpdates } from '@/utils/versionCheck.ts';
 import { useNotification } from '@/context/NotificationContext.tsx';
 import { OverviewRoomContextProvider } from '@/context/OverviewRoomContext.tsx';
+import { checkForUpdates } from '@/utils/versionCheck.ts';
+import { RouterPath } from '../RouterPath.ts';
 
 enum SiderWidth {
     COLLAPSE = 72,
@@ -128,6 +131,9 @@ const HomePage = () => {
                             case RouterPath.DASHBOARD:
                                 navigate(RouterPath.DASHBOARD);
                                 break;
+                            case RouterPath.TRACE:
+                                navigate(RouterPath.TRACE);
+                                break;
                             case RouterPath.EVAL:
                                 navigate(RouterPath.EVAL);
                                 break;
@@ -173,6 +179,11 @@ const HomePage = () => {
                             key: RouterPath.DASHBOARD,
                             label: collapse ? undefined : t('common.dashboard'),
                             icon: <DashboardIcon width={15} height={15} />,
+                        },
+                        {
+                            key: RouterPath.TRACE,
+                            label: collapse ? undefined : t('common.trace'),
+                            icon: <TraceIcon width={15} height={15} />,
                         },
                         // TODO: build evaluation pages
                         // {
@@ -260,6 +271,7 @@ const HomePage = () => {
                     path={`${RouterPath.DASHBOARD}/*`}
                     element={<DashboardPage />}
                 />
+                <Route path={`${RouterPath.TRACE}/*`} element={<TracePage />} />
                 <Route path={`${RouterPath.EVAL}/*`} element={<EvalPage />} />
                 <Route
                     path={`${RouterPath.FRIDAY}/*`}

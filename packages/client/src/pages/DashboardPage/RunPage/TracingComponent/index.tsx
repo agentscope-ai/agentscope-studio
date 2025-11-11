@@ -1,13 +1,13 @@
-import { useEffect, useRef } from 'react';
 import { Tabs } from 'antd';
+import { useEffect, useRef } from 'react';
 
 import MsgPanel from './MsgPanel';
-import TracePanel from './TracePanel';
 import StatisticsPanel from './StatisticsPanel';
+import TracePanel from './TracePanel';
 
+import { useTour } from '@/context/TourContext.tsx';
 import { MessageData } from '@shared/types';
 import { useTranslation } from 'react-i18next';
-import { useTour } from '@/context/TourContext.tsx';
 
 interface Props {
     activateTab: string;
