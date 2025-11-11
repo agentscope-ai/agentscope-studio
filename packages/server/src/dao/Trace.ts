@@ -457,4 +457,440 @@ export class SpanDao {
             throw error;
         }
     }
+
+    // Get unique trace IDs with aggregated information
+    static async getTraceList(filters: {
+        serviceName?: string;
+        operationName?: string;
+        status?: number;
+        startTime?: string;
+        endTime?: string;
+        limit?: number;
+        offset?: number;
+    }): Promise<{
+        traces: Array<{
+            traceId: string;
+            name: string;
+            startTime: string;
+            endTime: string;
+            duration: number; // in seconds
+            status: number;
+            spanCount: number;
+            totalTokens?: number;
+            input?: unknown;
+            output?: unknown;
+            nodeType?: string;
+        }>;
+        total: number;
+    }> {
+        try {
+            const queryBuilder = SpanTable.createQueryBuilder('span')
+                .select('span.traceId', 'traceId')
+                .addSelect('MIN(span.startTimeUnixNano)', 'startTime')
+                .addSelect('MAX(span.endTimeUnixNano)', 'endTime')
+                .addSelect('MIN(span.name)', 'name')
+                .addSelect('MAX(span.statusCode)', 'status')
+                .addSelect('COUNT(span.id)', 'spanCount')
+                .addSelect('SUM(COALESCE(span.totalTokens, 0))', 'totalTokens')
+                .groupBy('span.traceId');
+
+            if (filters.serviceName) {
+                queryBuilder.andWhere('span.serviceName = :serviceName', {
+                    serviceName: filters.serviceName,
+                });
+            }
+
+            if (filters.operationName) {
+                queryBuilder.andWhere('span.operationName = :operationName', {
+                    operationName: filters.operationName,
+                });
+            }
+
+            if (filters.status !== undefined) {
+                queryBuilder.andWhere('span.statusCode = :statusCode', {
+                    statusCode: filters.status,
+                });
+            }
+
+            if (filters.startTime) {
+                queryBuilder.andWhere('span.startTimeUnixNano >= :startTime', {
+                    startTime: filters.startTime,
+                });
+            }
+
+            if (filters.endTime) {
+                queryBuilder.andWhere('span.startTimeUnixNano <= :endTime', {
+                    endTime: filters.endTime,
+                });
+            }
+
+            // Get total count (before pagination)
+            const countQuery = queryBuilder.clone();
+            const totalResult = await countQuery.getRawMany();
+            const total = totalResult.length;
+
+            // Apply ordering and pagination
+            // Use the aggregate expression directly for ordering
+            queryBuilder.orderBy('MIN(span.startTimeUnixNano)', 'DESC');
+
+            if (filters.limit) {
+                queryBuilder.limit(filters.limit);
+            }
+
+            if (filters.offset) {
+                queryBuilder.offset(filters.offset);
+            }
+
+            const results = await queryBuilder.getRawMany();
+
+            console.log(
+                `[TraceDao] getTraceList: found ${total} traces, returning ${results.length} with limit=${filters.limit}, offset=${filters.offset}`,
+            );
+
+            // Get root spans for each trace to extract input/output
+            interface TraceListRow {
+                traceId: string;
+                startTime: string;
+                endTime: string;
+                name: string;
+                status: number | string;
+                spanCount: number | string;
+                totalTokens: number | string | null;
+            }
+            const traceIds = results.map((row: TraceListRow) => row.traceId);
+            const rootSpans =
+                traceIds.length > 0
+                    ? await SpanTable.createQueryBuilder('span')
+                          .where('span.traceId IN (:...traceIds)', { traceIds })
+                          .andWhere('span.parentSpanId IS NULL')
+                          .select([
+                              'span.traceId',
+                              'span.attributes',
+                              'span.name',
+                              'span.operationName',
+                          ])
+                          .getMany()
+                    : [];
+
+            const rootSpanMap = new Map(
+                rootSpans.map((span) => [span.traceId, span]),
+            );
+
+            const traces = results.map((row: TraceListRow) => {
+                try {
+                    const startTimeNs = BigInt(row.startTime || '0');
+                    const endTimeNs = BigInt(row.endTime || '0');
+                    const duration = Number(endTimeNs - startTimeNs) / 1e9; // Convert nanoseconds to seconds
+
+                    const rootSpan = rootSpanMap.get(row.traceId);
+                    const attrs = rootSpan?.attributes || {};
+
+                    // Extract input
+                    let input: unknown = undefined;
+                    if (attrs['gen_ai']) {
+                        const genAi = attrs['gen_ai'] as Record<
+                            string,
+                            unknown
+                        >;
+                        if (genAi['input']) {
+                            const inputObj = genAi['input'] as Record<
+                                string,
+                                unknown
+                            >;
+                            if (inputObj['messages']) {
+                                input = inputObj['messages'];
+                            }
+                        }
+                    }
+                    if (!input && attrs['agentscope']) {
+                        const agentscope = attrs['agentscope'] as Record<
+                            string,
+                            unknown
+                        >;
+                        if (agentscope['function']) {
+                            const functionObj = agentscope[
+                                'function'
+                            ] as Record<string, unknown>;
+                            if (functionObj['input']) {
+                                input = functionObj['input'];
+                            }
+                        }
+                    }
+                    if (!input && attrs['input']) {
+                        input = attrs['input'];
+                    }
+
+                    // Extract output
+                    let output: unknown = undefined;
+                    if (attrs['gen_ai']) {
+                        const genAi = attrs['gen_ai'] as Record<
+                            string,
+                            unknown
+                        >;
+                        if (genAi['output']) {
+                            const outputObj = genAi['output'] as Record<
+                                string,
+                                unknown
+                            >;
+                            if (outputObj['messages']) {
+                                output = outputObj['messages'];
+                            }
+                        }
+                    }
+                    if (!output && attrs['agentscope']) {
+                        const agentscope = attrs['agentscope'] as Record<
+                            string,
+                            unknown
+                        >;
+                        if (agentscope['function']) {
+                            const functionObj = agentscope[
+                                'function'
+                            ] as Record<string, unknown>;
+                            if (functionObj['output']) {
+                                output = functionObj['output'];
+                            }
+                        }
+                    }
+                    if (!output && attrs['output']) {
+                        output = attrs['output'];
+                    }
+
+                    // Determine node type
+                    let nodeType = 'App';
+                    if (rootSpan?.operationName) {
+                        const opName = rootSpan.operationName.toUpperCase();
+                        if (opName.includes('LLM') || opName.includes('CHAT')) {
+                            nodeType = 'LLM';
+                        } else if (opName.includes('TOOL')) {
+                            nodeType = 'TOOL';
+                        } else if (opName.includes('AGENT')) {
+                            nodeType = 'AGENT';
+                        }
+                    }
+
+                    return {
+                        traceId: row.traceId || '',
+                        name: row.name || 'Unknown',
+                        startTime: row.startTime || '0',
+                        endTime: row.endTime || '0',
+                        duration,
+                        status: Number(row.status) || 0,
+                        spanCount: Number(row.spanCount) || 0,
+                        totalTokens:
+                            row.totalTokens !== null &&
+                            row.totalTokens !== undefined
+                                ? Number(row.totalTokens)
+                                : undefined,
+                        input,
+                        output,
+                        nodeType,
+                    };
+                } catch (err) {
+                    console.error('Error processing trace row:', row, err);
+                    throw err;
+                }
+            });
+
+            console.log(
+                `[TraceDao] getTraceList: returning ${traces.length} traces`,
+            );
+            return { traces, total };
+        } catch (error) {
+            console.error('Error getting trace list:', error);
+            throw error;
+        }
+    }
+
+    // Get a single trace with all spans
+    static async getTrace(traceId: string): Promise<{
+        traceId: string;
+        spans: SpanData[];
+        startTime: string;
+        endTime: string;
+        duration: number;
+        status: number;
+        totalTokens?: number;
+    }> {
+        try {
+            const spans = await this.getTracesByTraceId(traceId);
+
+            if (spans.length === 0) {
+                throw new Error(`Trace with id ${traceId} not found`);
+            }
+
+            // Calculate trace-level statistics
+            const startTimes = spans.map((s) => BigInt(s.startTimeUnixNano));
+            const endTimes = spans.map((s) => BigInt(s.endTimeUnixNano));
+            const minStartTime = startTimes.reduce((a, b) => (a < b ? a : b));
+            const maxEndTime = endTimes.reduce((a, b) => (a > b ? a : b));
+            const duration = Number(maxEndTime - minStartTime) / 1e9;
+
+            // Get status (ERROR if any span has error status)
+            const status = spans.some((s) => s.statusCode === 2) ? 2 : 1;
+
+            // Calculate total tokens
+            const totalTokens = spans.reduce(
+                (sum, s) => sum + (s.totalTokens || 0),
+                0,
+            );
+
+            const spanDataArray = spans.map(
+                (span) =>
+                    ({
+                        traceId: span.traceId,
+                        spanId: span.spanId,
+                        traceState: span.traceState,
+                        parentSpanId: span.parentSpanId,
+                        flags: span.flags,
+                        name: span.name,
+                        kind: span.kind,
+                        startTimeUnixNano: span.startTimeUnixNano,
+                        endTimeUnixNano: span.endTimeUnixNano,
+                        attributes: span.attributes as SpanAttributes,
+                        droppedAttributesCount:
+                            span.droppedAttributesCount || 0,
+                        events: (span.events || []) as unknown as SpanEvent[],
+                        droppedEventsCount: span.droppedEventsCount || 0,
+                        links: (span.links || []) as unknown as SpanLink[],
+                        droppedLinksCount: span.droppedLinksCount || 0,
+                        status: span.status as unknown as SpanStatus,
+                        resource: span.resource as unknown as SpanResource,
+                        scope: span.scope as unknown as SpanScope,
+                        runId: span.runId,
+                        latencyNs: span.latencyNs,
+                    }) as SpanData,
+            );
+
+            return {
+                traceId,
+                spans: spanDataArray,
+                startTime: minStartTime.toString(),
+                endTime: maxEndTime.toString(),
+                duration,
+                status,
+                totalTokens: totalTokens > 0 ? totalTokens : undefined,
+            };
+        } catch (error) {
+            console.error(`Error getting trace ${traceId}:`, error);
+            throw error;
+        }
+    }
+
+    // Get trace statistics
+    static async getTraceStatistic(filters?: {
+        startTime?: string;
+        endTime?: string;
+        serviceName?: string;
+        operationName?: string;
+    }): Promise<{
+        totalTraces: number;
+        totalSpans: number;
+        errorTraces: number;
+        avgDuration: number;
+        totalTokens: number;
+        tracesByStatus: Array<{ status: number; count: number }>;
+    }> {
+        try {
+            const queryBuilder = SpanTable.createQueryBuilder('span');
+
+            if (filters?.serviceName) {
+                queryBuilder.andWhere('span.serviceName = :serviceName', {
+                    serviceName: filters.serviceName,
+                });
+            }
+
+            if (filters?.operationName) {
+                queryBuilder.andWhere('span.operationName = :operationName', {
+                    operationName: filters.operationName,
+                });
+            }
+
+            if (filters?.startTime) {
+                queryBuilder.andWhere('span.startTimeUnixNano >= :startTime', {
+                    startTime: filters.startTime,
+                });
+            }
+
+            if (filters?.endTime) {
+                queryBuilder.andWhere('span.startTimeUnixNano <= :endTime', {
+                    endTime: filters.endTime,
+                });
+            }
+
+            // Get total spans
+            const totalSpans = await queryBuilder.getCount();
+
+            // Get unique trace count
+            const uniqueTracesQuery = queryBuilder
+                .clone()
+                .select('COUNT(DISTINCT span.traceId)', 'count')
+                .getRawOne();
+            const totalTraces = Number((await uniqueTracesQuery).count || 0);
+
+            // Get error traces count
+            const errorTracesQuery = queryBuilder
+                .clone()
+                .select('COUNT(DISTINCT span.traceId)', 'count')
+                .andWhere('span.statusCode = :statusCode', { statusCode: 2 })
+                .getRawOne();
+            const errorTraces = Number((await errorTracesQuery).count || 0);
+
+            // Get average duration
+            const durationQuery = await queryBuilder
+                .clone()
+                .select('span.traceId', 'traceId')
+                .addSelect('MIN(span.startTimeUnixNano)', 'startTime')
+                .addSelect('MAX(span.endTimeUnixNano)', 'endTime')
+                .groupBy('span.traceId')
+                .getRawMany();
+
+            const durations = durationQuery.map(
+                (row: { startTime: string; endTime: string }) => {
+                    const startTimeNs = BigInt(row.startTime);
+                    const endTimeNs = BigInt(row.endTime);
+                    return Number(endTimeNs - startTimeNs) / 1e9;
+                },
+            );
+
+            const avgDuration =
+                durations.length > 0
+                    ? durations.reduce((a: number, b: number) => a + b, 0) /
+                      durations.length
+                    : 0;
+
+            // Get total tokens
+            const tokensQuery = queryBuilder
+                .clone()
+                .select('SUM(COALESCE(span.totalTokens, 0))', 'total')
+                .getRawOne();
+            const totalTokens = Number((await tokensQuery).total || 0);
+
+            // Get traces by status
+            const statusQuery = await queryBuilder
+                .clone()
+                .select('span.statusCode', 'status')
+                .addSelect('COUNT(DISTINCT span.traceId)', 'count')
+                .groupBy('span.statusCode')
+                .getRawMany();
+
+            const tracesByStatus = statusQuery.map(
+                (row: { status: number | string; count: number | string }) => ({
+                    status: Number(row.status) || 0,
+                    count: Number(row.count) || 0,
+                }),
+            );
+
+            return {
+                totalTraces,
+                totalSpans,
+                errorTraces,
+                avgDuration,
+                totalTokens,
+                tracesByStatus,
+            };
+        } catch (error) {
+            console.error('Error getting trace statistics:', error);
+            throw error;
+        }
+    }
 }

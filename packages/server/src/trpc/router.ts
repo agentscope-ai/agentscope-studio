@@ -13,6 +13,7 @@ import { FridayAppMessageDao } from '../dao/FridayAppMessage';
 import { InputRequestDao } from '../dao/InputRequest';
 import { MessageDao } from '../dao/Message';
 import { RunDao } from '../dao/Run';
+import { SpanDao } from '../dao/Trace';
 import { SocketManager } from './socket';
 
 const textBlock = z.object({
@@ -287,6 +288,84 @@ export const appRouter = t.router({
     clientGetFridayConfig: t.procedure.query(async () => {
         return FridayConfigManager.getInstance().getConfig();
     }),
+
+    getTraceList: t.procedure
+        .input(
+            z.object({
+                serviceName: z.string().optional(),
+                operationName: z.string().optional(),
+                status: z.number().optional(),
+                startTime: z.string().optional(),
+                endTime: z.string().optional(),
+                limit: z.number().optional(),
+                offset: z.number().optional(),
+            }),
+        )
+        .query(async ({ input }) => {
+            try {
+                console.log('[TRPC] getTraceList called with input:', input);
+                const result = await SpanDao.getTraceList(input);
+                console.log('[TRPC] getTraceList result:', {
+                    total: result.total,
+                    tracesCount: result.traces.length,
+                });
+                return result;
+            } catch (error) {
+                console.error('Error in getTraceList:', error);
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : 'Failed to get trace list',
+                });
+            }
+        }),
+
+    getTrace: t.procedure
+        .input(
+            z.object({
+                traceId: z.string(),
+            }),
+        )
+        .query(async ({ input }) => {
+            try {
+                return await SpanDao.getTrace(input.traceId);
+            } catch (error) {
+                console.error('Error in getTrace:', error);
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : 'Failed to get trace',
+                });
+            }
+        }),
+
+    getTraceStatistic: t.procedure
+        .input(
+            z.object({
+                startTime: z.string().optional(),
+                endTime: z.string().optional(),
+                serviceName: z.string().optional(),
+                operationName: z.string().optional(),
+            }),
+        )
+        .query(async ({ input }) => {
+            try {
+                return await SpanDao.getTraceStatistic(input);
+            } catch (error) {
+                console.error('Error in getTraceStatistic:', error);
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : 'Failed to get trace statistics',
+                });
+            }
+        }),
 });
 
 export type AppRouter = typeof appRouter;
