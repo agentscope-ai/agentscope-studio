@@ -55,7 +55,7 @@ export function parseByMimeType(value: string, mime_type: string | undefined) {
             default:
                 return value;
         }
-    } catch (error) {
+    } catch {
         return value;
     }
 }

@@ -8,14 +8,13 @@ interface MetaDataSectionProps {
     data: Record<string, string | number | undefined | ReactNode>;
 }
 
-export const PanelTitle = memo(({title}: {title: string}) => {
-    return <span
-        className="font-medium text-[12px] text-muted-foreground"
-    >
-        {title.toUpperCase()}
-    </span>
+export const PanelTitle = memo(({ title }: { title: string }) => {
+    return (
+        <span className="font-medium text-[12px] text-muted-foreground">
+            {title.toUpperCase()}
+        </span>
+    );
 });
-
 
 export const MetaDataSection = memo(({ title, data }: MetaDataSectionProps) => {
     const renderRow = (

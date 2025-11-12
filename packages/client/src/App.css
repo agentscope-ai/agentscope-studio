@@ -10,6 +10,10 @@
     --color-primary-300: var(--color-zinc-300);
     --color-primary-400: var(--color-zinc-400);
     --color-primary-500: var(--color-zinc-500);
+    --color-primary-600: var(--color-zinc-600);
+    --color-primary-700: var(--color-zinc-700);
+    --color-primary-800: var(--color-zinc-800);
+    --color-primary-900: var(--color-zinc-900);
     --color-primary-foreground: var(--color-zinc-50);
     --color-hover-bg: var(--color-zinc-200);
     --color-muted-foreground: var(--color-zinc-500);
@@ -17,6 +21,7 @@
     --shadow:
         rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px,
         rgba(0, 0, 0, 0.1) 0px 1px 3px 0px;
+    --color-code-bg: #f5f2f0;
 }
 
 :root {
@@ -384,5 +389,22 @@ body,
     }
     body {
         @apply bg-background text-foreground;
+    }
+
+    ul,
+    ol {
+        @apply mb-4 ml-6;
+    }
+
+    ul {
+        @apply list-disc;
+    }
+
+    ol {
+        @apply list-decimal;
+    }
+
+    li {
+        @apply mb-1;
     }
 }

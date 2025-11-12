@@ -1,13 +1,19 @@
 import { memo, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { materialDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { CheckIcon, CopyIcon } from 'lucide-react';
 import { copyToClipboard } from '@/utils/common.ts';
 
 import './index.css';
 import remarkGfm from 'remark-gfm';
 import { Button } from '@/components/ui/button.tsx';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip.tsx';
+import { useTranslation } from 'react-i18next';
+
 interface Props {
     text: string;
 }
@@ -31,37 +37,37 @@ const MarkdownRender = ({ text }: Props) => {
                 ),
                 h1: ({ ...props }) => (
                     <h1
-                        className="scroll-m-20 text-4xl font-extrabold tracking-tight text-balance"
+                        className="scroll-m-20 text-[18px] leading-8 font-extrabold tracking-tight text-balance my-3 first:mt-0"
                         {...props}
                     />
                 ),
                 h2: ({ ...props }) => (
                     <h2
-                        className="croll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0"
+                        className="scroll-m-20 text-[16px] leading-7 font-semibold tracking-tight my-2 first:mt-0"
                         {...props}
                     />
                 ),
                 h3: ({ ...props }) => (
                     <h3
-                        className="scroll-m-20 text-2xl font-semibold tracking-tight"
+                        className="scroll-m-20 text-sm leading-6 font-semibold tracking-tight my-2 first:mt-0"
                         {...props}
                     />
                 ),
                 h4: ({ ...props }) => (
                     <h4
-                        className="scroll-m-20 text-xl font-semibold tracking-tight"
+                        className="scroll-m-20 text-sm leading-6 font-semibold tracking-tight my-2 first:mt-0"
                         {...props}
                     />
                 ),
                 h5: ({ ...props }) => (
                     <h5
-                        className="scroll-m-20 text-sm font-semibold tracking-tight"
+                        className="scroll-m-20 text-sm leading-6 font-semibold tracking-tight my-2 first:mt-0"
                         {...props}
                     />
                 ),
                 h6: ({ ...props }) => (
                     <h6
-                        className="scroll-m-20 text-sm font-semibold tracking-tight"
+                        className="scroll-m-20 text-sm leading-6 font-semibold tracking-tight my-2 first:mt-0"
                         {...props}
                     />
                 ),
@@ -143,10 +149,11 @@ const MarkdownRender = ({ text }: Props) => {
 
                                 <SyntaxHighlighter
                                     language={language}
-                                    style={materialDark}
-                                    showLineNumbers={true}
                                     customStyle={{
+                                        cursor: 'default',
+                                        padding: '16px',
                                         margin: 0,
+                                        background: 'var(--color-code-bg)',
                                         borderRadius: '0 0 8px 8px',
                                     }}
                                 >
@@ -187,41 +194,49 @@ const CodeHeader = ({ language, onCopyBtnClick }: CodeHeaderProps) => {
     const [copyState, setCopyState] = useState<'wait' | 'success' | 'error'>(
         'wait',
     );
+    const { t } = useTranslation();
 
     return (
-        <div className="flex flex-row justify-between items-center px-4 bg-primary-400 rounded-t-lg h-8 text-white">
-            <span className="truncate">{language.toUpperCase()}</span>
-            <Button
-                className="text-white hover:bg-primary-300 h-7 w-7"
-                variant="ghost"
-                onClick={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    if (copyState === 'wait') {
-                        onCopyBtnClick()
-                            .then((success) => {
-                                if (success) {
-                                    setCopyState('success');
-                                    setTimeout(() => {
-                                        setCopyState('wait');
-                                    }, 2000);
-                                }
-                            })
-                            .catch(() => {
-                                setCopyState('error');
-                                setTimeout(() => {
-                                    setCopyState('wait');
-                                }, 2000);
-                            });
-                    }
-                }}
-            >
-                {copyState === 'success' ? (
-                    <CheckIcon className="text-white" />
-                ) : copyState === 'wait' ? (
-                    <CopyIcon className="text-white" />
-                ) : null}
-            </Button>
+        <div className="flex flex-row justify-between items-center pl-4 pr-2 bg-primary-700 rounded-t-lg h-8 text-white cursor-default">
+            <span className="truncate text-sm">{language.toUpperCase()}</span>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                        className="text-white hover:bg-primary-700 h-7 w-7 cursor-pointer"
+                        variant="ghost"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            if (copyState === 'wait') {
+                                onCopyBtnClick()
+                                    .then((success) => {
+                                        if (success) {
+                                            setCopyState('success');
+                                            setTimeout(() => {
+                                                setCopyState('wait');
+                                            }, 2000);
+                                        }
+                                    })
+                                    .catch(() => {
+                                        setCopyState('error');
+                                        setTimeout(() => {
+                                            setCopyState('wait');
+                                        }, 2000);
+                                    });
+                            }
+                        }}
+                    >
+                        {copyState === 'success' ? (
+                            <CheckIcon className="text-white" />
+                        ) : copyState === 'wait' ? (
+                            <CopyIcon className="text-white" />
+                        ) : null}
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    {t('tooltip.button.copy-to-clipboard')}
+                </TooltipContent>
+            </Tooltip>
         </div>
     );
 };

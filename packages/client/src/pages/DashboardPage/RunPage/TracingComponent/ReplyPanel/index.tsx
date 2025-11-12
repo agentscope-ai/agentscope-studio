@@ -1,4 +1,3 @@
-import { Flex } from 'antd';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -10,9 +9,13 @@ import { EmptyMessagePage } from '@/pages/DefaultPage';
 import { AlertCircleIcon } from 'lucide-react';
 
 import styles from '@/components/chat/bubbles/MarkdownRender/styles.ts';
-import { AccordionContent, AccordionTrigger, Accordion, AccordionItem } from '@/components/ui/accordion.tsx';
+import {
+    AccordionContent,
+    AccordionTrigger,
+    Accordion,
+    AccordionItem,
+} from '@/components/ui/accordion.tsx';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert.tsx';
-
 
 interface Props {
     reply: Reply | null;
@@ -34,15 +37,9 @@ const ReplyPanel = ({ reply }: Props) => {
 
         return (
             <div className="flex flex-col w-full">
-                <Accordion
-                    className="w-full"
-                    type="single"
-                    collapsible
-                >
+                <Accordion className="w-full" type="single" collapsible>
                     <AccordionItem value={title}>
-                        <AccordionTrigger
-                            className="px-2 h-[36px] items-center"
-                        >
+                        <AccordionTrigger className="px-2 h-[36px] items-center">
                             {title}
                         </AccordionTrigger>
                         <AccordionContent>
@@ -67,37 +64,30 @@ const ReplyPanel = ({ reply }: Props) => {
         );
     };
 
-    return <div
-        className="flex flex-col w-full h-full p-4 overflow-auto gap-y-8"
-    >
-        <MetaDataSection
-            title={t('common.metadata')}
-            data={{
-                ReplyId: reply.replyId,
-                Name: reply.replyName,
-                Role: reply.replyRole,
-                CreatedAt: reply.createdAt,
-                '% Messages': reply.messages.length,
-            }}
-        />
+    return (
+        <div className="flex flex-col w-full h-full p-4 overflow-auto gap-y-8">
+            <MetaDataSection
+                title={t('common.metadata')}
+                data={{
+                    ReplyId: reply.replyId,
+                    Name: reply.replyName,
+                    Role: reply.replyRole,
+                    CreatedAt: reply.createdAt,
+                    '% Messages': reply.messages.length,
+                }}
+            />
 
-        <div className="flex flex-col w-full gap-y-2">
-            <PanelTitle title={t('common.messages')} />
-            <Alert>
-                <AlertCircleIcon/>
-                <AlertTitle>Hint</AlertTitle>
-                <AlertDescription >
-                    {t('hint.messages')}
-                </AlertDescription>
-            </Alert>
+            <div className="flex flex-col w-full gap-y-2">
+                <PanelTitle title={t('common.messages')} />
+                <Alert>
+                    <AlertCircleIcon />
+                    <AlertTitle>Hint</AlertTitle>
+                    <AlertDescription>{t('hint.messages')}</AlertDescription>
+                </Alert>
 
-            <Accordion
-                type="multiple"
-                className="w-full"
-            >
-                {
-                    reply.messages.map(
-                        msg => <AccordionItem value={msg.id}>
+                <Accordion type="multiple" className="w-full">
+                    {reply.messages.map((msg) => (
+                        <AccordionItem value={msg.id}>
                             <AccordionTrigger>
                                 {msg.name} (role: {msg.role})
                             </AccordionTrigger>
@@ -106,11 +96,11 @@ const ReplyPanel = ({ reply }: Props) => {
                                 {renderCodeBlock(msg.metadata, 'Metadata')}
                             </AccordionContent>
                         </AccordionItem>
-                    )
-                }
-            </Accordion>
+                    ))}
+                </Accordion>
+            </div>
         </div>
-    </div>
+    );
 };
 
 export default memo(ReplyPanel);

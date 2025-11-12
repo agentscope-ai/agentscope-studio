@@ -13,28 +13,33 @@ import AsChat from '@/components/chat/AsChat';
 import { ContentBlocks } from '@shared/types';
 import { useTranslation } from 'react-i18next';
 import { isMacOs } from 'react-device-detect';
+import { useMessageApi } from '@/context/MessageApiContext.tsx';
 
 const RunContentPage = () => {
     const [displayedReply, setDisplayedReply] = useState<Reply | null>(null);
     const [activateTab, setActiveTab] = useState<string>('statistics');
     const { replies, sendUserInputToServer, inputRequests } = useRunRoom();
-    const [currentInputRequest, setCurrentInputRequest] = useState<InputRequestData | null>(null);
+    const [currentInputRequest, setCurrentInputRequest] =
+        useState<InputRequestData | null>(null);
     const { t } = useTranslation();
+    const { messageApi } = useMessageApi();
 
     // Handle the case when the displayed reply is changed
     useEffect(() => {
-        setDisplayedReply(
-            prevReply => {
-                if (!prevReply) {
-                    return prevReply;
-                }
-                if (!replies.map((reply) => reply.replyId).includes(prevReply.replyId)) {
-                    return null;
-                } else {
-                    return prevReply;
-                }
+        setDisplayedReply((prevReply) => {
+            if (!prevReply) {
+                return prevReply;
             }
-        )
+            if (
+                !replies
+                    .map((reply) => reply.replyId)
+                    .includes(prevReply.replyId)
+            ) {
+                return null;
+            } else {
+                return prevReply;
+            }
+        });
     }, [replies]);
 
     // Pop the first input request to receive user input
@@ -54,15 +59,13 @@ const RunContentPage = () => {
      * @return void
      */
     const onBubbleClick = (reply: Reply) => {
-        setDisplayedReply(
-            prevReply => {
-                setActiveTab('message');
-                if (prevReply?.replyId === reply.replyId) {
-                    return prevReply;
-                }
-                return reply;
+        setDisplayedReply((prevReply) => {
+            setActiveTab('message');
+            if (prevReply?.replyId === reply.replyId) {
+                return prevReply;
             }
-        )
+            return reply;
+        });
     };
 
     /*
@@ -74,7 +77,10 @@ const RunContentPage = () => {
      * @return void
      */
     const onSendClick = useCallback(
-        (blocksInput: ContentBlocks, structuredInput: Record<string, unknown> | null) => {
+        (
+            blocksInput: ContentBlocks,
+            structuredInput: Record<string, unknown> | null,
+        ) => {
             if (currentInputRequest) {
                 sendUserInputToServer(
                     currentInputRequest.requestId,
@@ -82,12 +88,15 @@ const RunContentPage = () => {
                     structuredInput,
                 );
             }
-        }, [currentInputRequest]
+        },
+        [currentInputRequest],
     );
 
-    const placeholder = currentInputRequest ?
-        t('placeholder.input-as-user', {name: currentInputRequest.agentName}) :
-        t('placeholder.input-disable');
+    const placeholder = currentInputRequest
+        ? t('placeholder.input-as-user', {
+              name: currentInputRequest.agentName,
+          })
+        : t('placeholder.input-disable');
 
     const shortcutKeys = isMacOs ? 'Command + Enter' : 'fCtrl + Enter';
 
@@ -102,19 +111,28 @@ const RunContentPage = () => {
             gap="middle"
         >
             <Splitter style={{ width: '100%' }}>
-                <Splitter.Panel className="flex w-full justify-center">
+                <Splitter.Panel className="flex w-full justify-center bg-[rgb(246,247,248)]">
                     <AsChat
                         replies={replies}
                         isReplying={true}
                         onSendClick={onSendClick}
                         onBubbleClick={onBubbleClick}
-                        disableSendBtn={true}
+                        disableSendBtn={inputRequests.length === 0}
                         allowInterrupt={false}
                         placeholder={placeholder}
                         tooltips={{
-                            sendButton: currentInputRequest ? t('tooltip.button.send-message', {shortcutKeys}) : t('tooltip.button.send-message-disable'),
+                            sendButton: currentInputRequest
+                                ? t('tooltip.button.send-message', {
+                                      shortcutKeys,
+                                  })
+                                : t('tooltip.button.send-message-disable'),
                             attachButton: t('tooltip.button.attachment-add'),
                             expandTextarea: t('tooltip.button.expand-textarea'),
+                        }}
+                        attachMaxFileSize={20 * 1024 * 1024} // 20 MB
+                        attachAccept={['image/*', 'video/*', 'audio/*']}
+                        onAttachError={async (error) => {
+                            messageApi.error(error);
                         }}
                     />
                 </Splitter.Panel>

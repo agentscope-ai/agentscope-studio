@@ -123,7 +123,7 @@ const AppChatComponent = ({
     }) => {
         setFileList(newFileList);
     };
-    const uploadRef = useRef<any>(null);
+    const uploadRef = useRef<HTMLButtonElement>(null);
 
     return (
         <Flex

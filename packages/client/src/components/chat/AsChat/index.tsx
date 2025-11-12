@@ -1,10 +1,11 @@
 import { ContentBlocks, Reply } from '@shared/types';
-import { memo, ReactNode, useMemo, useState } from 'react';
+import { memo, ReactNode, useEffect, useMemo, useState, useRef } from 'react';
 import {
     SettingsIcon,
     MonitorIcon,
     MessageSquareIcon,
     DicesIcon,
+    ArrowDownToLineIcon,
 } from 'lucide-react';
 import {
     DropdownMenu,
@@ -29,7 +30,7 @@ interface Props {
         structuredInput: Record<string, unknown> | null,
     ) => void;
     /** Whether the send button is disabled */
-    disableSendBtn: boolean
+    disableSendBtn: boolean;
     /** Whether interrupting the reply is allowed */
     allowInterrupt: boolean;
     /** Callback function to interrupt the ongoing reply */
@@ -47,6 +48,12 @@ interface Props {
         attachButton: string;
         expandTextarea: string;
     };
+    /** Maximum file size for attachments in bytes */
+    attachMaxFileSize: number;
+    /** Callback function when there is an attachment error */
+    onAttachError: (error: string) => void;
+    /** Accepted file types for attachments */
+    attachAccept: string[];
 }
 
 /**
@@ -62,6 +69,9 @@ interface Props {
  * @param actions
  * @param placeholder
  * @param tooltips
+ * @param attachAccept
+ * @param attachMaxFileSize
+ * @param onAttachError
  * @constructor
  */
 const AsChat = ({
@@ -75,63 +85,103 @@ const AsChat = ({
     actions,
     placeholder,
     tooltips,
+    attachAccept,
+    attachMaxFileSize,
+    onAttachError,
 }: Props) => {
     const [renderMarkdown, setRenderMarkdown] = useState<boolean>(true);
     const [byReplyId, setByReplyId] = useState<boolean>(true);
     const [randomAvatar, setRandomAvatar] = useState<boolean>(true);
+    const [isAtBottom, setIsAtBottom] = useState<boolean>(true);
 
-    const organizedReplies = useMemo(
-        () => {
-            console.log('Original Replies', JSON.stringify(replies, null, 2));
-            if (replies.length === 0) return [];
+    const bubbleListRef = useRef<HTMLDivElement>(null);
 
-            if (byReplyId) {
-                return replies;
-            }
+    // Organize replies based on user preference (by reply ID or flattened messages)
+    const organizedReplies = useMemo(() => {
+        if (replies.length === 0) return [];
 
-            const flattedReplies: Reply[] = [];
-            replies.forEach(reply => {
-                reply.messages.forEach(
-                    msg=> {
-                        flattedReplies.push(
-                            {
-                                replyId: msg.id,
-                                replyName: msg.name,
-                                replyRole: msg.role,
-                                createdAt: msg.timestamp,
-                                finishedAt: msg.timestamp,
-                                messages: [msg],
-                            } as Reply,
-                        )
-                    }
-                );
+        if (byReplyId) {
+            return replies;
+        }
+
+        const flattedReplies: Reply[] = [];
+        replies.forEach((reply) => {
+            reply.messages.forEach((msg) => {
+                flattedReplies.push({
+                    replyId: msg.id,
+                    replyName: msg.name,
+                    replyRole: msg.role,
+                    createdAt: msg.timestamp,
+                    finishedAt: msg.timestamp,
+                    messages: [msg],
+                } as Reply);
             });
-            return flattedReplies;
-        }, [replies, byReplyId]
-    );
+        });
+        return flattedReplies;
+    }, [replies, byReplyId]);
+
+    // When new replies arrive, auto-scroll to bottom if user is at bottom
+    useEffect(() => {
+        if (bubbleListRef.current && isAtBottom) {
+            bubbleListRef.current.scrollTop =
+                bubbleListRef.current.scrollHeight;
+        }
+    }, [organizedReplies, isAtBottom]);
+
+    /*
+     * Listen to scroll events to determine if user is at bottom
+     */
+    const handleScroll = () => {
+        if (bubbleListRef.current) {
+            const { scrollTop, scrollHeight, clientHeight } =
+                bubbleListRef.current;
+            // if the distance to bottom is less than 50px, consider it at bottom
+            const atBottom = scrollHeight - scrollTop - clientHeight < 50;
+            setIsAtBottom(atBottom);
+        }
+    };
 
     return (
         <div className="flex flex-col w-full max-w-[800px] h-full p-4">
             {/*The bubble list*/}
-            <div className="flex flex-1 flex-col gap-y-5 w-full overflow-auto">
-                {
-                    organizedReplies.map(
-                        reply => <AsBubble
+            <div className="relative flex-1 w-full overflow-hidden">
+                <div
+                    ref={bubbleListRef}
+                    onScroll={handleScroll}
+                    className="flex flex-col gap-y-5 w-full h-full overflow-auto"
+                >
+                    {organizedReplies.map((reply) => (
+                        <AsBubble
+                            key={reply.replyId}
                             reply={reply}
+                            randomAvatar={randomAvatar}
                             markdown={renderMarkdown}
                             onClick={onBubbleClick}
                         />
-                    )
-                }
+                    ))}
+                </div>
+                <Button
+                    size="icon-sm"
+                    variant="outline"
+                    className={`rounded-full absolute bottom-0 left-1/2 transform -translate-x-1/2 ${isAtBottom ? 'hidden' : ''}`}
+                    onClick={() => {
+                        if (bubbleListRef.current) {
+                            bubbleListRef.current.scrollTop =
+                                bubbleListRef.current.scrollHeight;
+                        }
+                    }}
+                >
+                    <ArrowDownToLineIcon />
+                </Button>
             </div>
 
             <div className="flex flex-col w-full space-y-2">
                 {/*The component list above the textarea component*/}
-                <div className="flex flex-row w-full space-x-4">
+                <div className="flex flex-row justify-end w-full space-x-4">
                     {actions}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button size="sm" variant="outline">
+                            <Button size="icon-sm" variant="outline">
                                 <SettingsIcon />
                             </Button>
                         </DropdownMenuTrigger>
@@ -176,6 +226,9 @@ const AsChat = ({
                     disableSendBtn={disableSendBtn}
                     tooltips={tooltips}
                     expandable
+                    attachAccept={attachAccept}
+                    attachMaxFileSize={attachMaxFileSize}
+                    onAttachError={onAttachError}
                 />
             </div>
         </div>

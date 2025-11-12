@@ -121,7 +121,6 @@ export interface Message {
     metadata: object;
 }
 
-
 export interface ReplyData {
     id: string;
     name: string;
@@ -265,7 +264,7 @@ export interface Task {
     status: Status;
 
     answers: string | null;
-    result: Record<string, any>;
+    result: Record<string, unknown>;
 }
 
 export interface EvaluationData {

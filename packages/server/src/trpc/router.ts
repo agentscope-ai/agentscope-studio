@@ -1,9 +1,10 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import {
-    InputRequestData, RegisterReplyParams,
+    InputRequestData,
+    RegisterReplyParams,
     RegisterReplyParamsSchema,
-    RunData
+    RunData,
 } from '../../../shared/src';
 import {
     BlockType,
@@ -218,27 +219,26 @@ export const appRouter = t.router({
                 });
             }
 
-            // Check if the replyId exists if provided
-            if (input.replyId) {
-                if (!(await ReplyDao.doesReplyExist(input.replyId))) {
-                    // Create a reply record if it does not exist
-                    await ReplyDao.saveReply(
-                        {
-                            runId:  input.runId,
-                            replyId: input.replyId,
-                            replyRole: input.role,
-                            replyName: input.name,
-                            createdAt: input.msg.timestamp,
-                        } as RegisterReplyParams
-                    );
-                }
+            // Let's determine the replyId to use for this message
+            const replyId = input.replyId ?? input.msg.id;
+
+            // Check if the replyId exists
+            if (!(await ReplyDao.doesReplyExist(replyId))) {
+                // Create a reply record if it does not exist
+                await ReplyDao.saveReply({
+                    runId: input.runId,
+                    replyId: input.replyId,
+                    replyRole: input.role,
+                    replyName: input.name,
+                    createdAt: input.msg.timestamp,
+                } as RegisterReplyParams);
             }
 
             // Save the message to the database
             const msgFormData = {
                 id: input.msg.id,
                 runId: input.runId,
-                replyId: input.replyId,
+                replyId: replyId,
                 msg: {
                     name: input.msg.name,
                     role: input.msg.role,
@@ -248,17 +248,27 @@ export const appRouter = t.router({
                 },
             } as MessageForm;
 
-            MessageDao.saveMessage(msgFormData)
-                .then(() => {
-                    console.debug(`RUN-${input.runId}: message saved`);
+            // Save the message
+            await MessageDao.saveMessage(msgFormData);
+            console.debug(`RUN-${input.runId}: message saved`);
+
+            // Obtain the reply and broadcast to the frontend
+            ReplyDao.getReply(replyId)
+                .then((reply) => {
                     // Broadcast the message to the run room
                     console.debug(
                         `Broadcasting message to room run-${input.runId}`,
                     );
-                    SocketManager.broadcastMessageToRunRoom(
-                        input.runId,
-                        msgFormData,
-                    );
+                    if (reply) {
+                        SocketManager.broadcastMessageToRunRoom(
+                            input.runId,
+                            reply,
+                        );
+                    } else {
+                        console.error(
+                            `Reply with id ${replyId} not found for broadcasting`,
+                        );
+                    }
                 })
                 .catch((error) => {
                     console.error(error);

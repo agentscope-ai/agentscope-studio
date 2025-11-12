@@ -9,9 +9,10 @@ import { useSocket } from './SocketContext';
 import {
     BackendResponse,
     InputRequestData,
-    ModelInvocationData, Reply,
+    ModelInvocationData,
+    Reply,
     RunData,
-    SocketEvents
+    SocketEvents,
 } from '../../../shared/src/types/trpc';
 
 import {
@@ -124,12 +125,25 @@ export function RunRoomContextProvider({ children }: Props) {
         );
 
         // New messages
-        socket.on(
-            SocketEvents.server.pushMessages,
-            (newReplies: Reply[]) => {
-                setReplies(newReplies);
-            },
-        );
+        socket.on(SocketEvents.server.pushMessages, (newReplies: Reply[]) => {
+            setReplies((prev) => {
+                const updatedReplies: Reply[] = [...prev];
+                newReplies.forEach((newReply) => {
+                    const index = updatedReplies.findIndex(
+                        (reply) => reply.replyId === newReply.replyId,
+                    );
+
+                    if (index === -1) {
+                        // New reply, add it
+                        updatedReplies.push(newReply);
+                    } else {
+                        // Existing reply, update messages
+                        updatedReplies[index] = newReply;
+                    }
+                });
+                return updatedReplies;
+            });
+        });
 
         socket.on(SocketEvents.server.pushSpans, (newSpans: SpanData[]) => {
             setSpans((prevSpans) => {
@@ -196,6 +210,13 @@ export function RunRoomContextProvider({ children }: Props) {
         return <ProjectNotFoundPage />;
     }
 
+    /**
+     * Send the user input to the server
+     *
+     * @param requestId
+     * @param blocksInput
+     * @param structuredInput
+     */
     const sendUserInputToServer = (
         requestId: string,
         blocksInput: ContentBlocks,

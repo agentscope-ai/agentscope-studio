@@ -4,19 +4,15 @@ import { RunDao } from '../dao/Run';
 import {
     BackendResponse,
     InputRequestData,
-    MessageData,
     OverviewData,
+    Reply,
     ReplyData,
     RunData,
     SocketEvents,
     SocketRoomName,
 } from '../../../shared/src/types/trpc';
 import { spawn } from 'child_process';
-import {
-    ContentBlocks,
-    MessageForm,
-    Status,
-} from '../../../shared/src/types/messageForm';
+import { ContentBlocks, Status } from '../../../shared/src/types/messageForm';
 
 import { SpanData } from '../../../shared/src/types/trace';
 import { InputRequestDao } from '../dao/InputRequest';
@@ -160,17 +156,13 @@ export class SocketManager {
                                     data.inputRequests,
                                 );
                                 // 对data.replies.messages按时间排序
-                                data.replies.forEach(
-                                    reply => {
-                                        reply.messages.sort(
-                                            (a, b) => {
-                                                return a.timestamp.localeCompare(
-                                                    b.timestamp,
-                                                );
-                                            }
-                                        )
-                                    }
-                                );
+                                data.replies.forEach((reply) => {
+                                    reply.messages.sort((a, b) => {
+                                        return a.timestamp.localeCompare(
+                                            b.timestamp,
+                                        );
+                                    });
+                                });
 
                                 socket.emit(
                                     SocketEvents.server.pushMessages,
@@ -577,18 +569,11 @@ export class SocketManager {
     /*
      * Emit events to the run room.
      */
-    static broadcastMessageToRunRoom(runId: string, msgForm: MessageForm) {
+    static broadcastMessageToRunRoom(runId: string, reply: Reply) {
         this.io
             .of('/client')
             .to(`run-${runId}`)
-            .emit(SocketEvents.server.pushMessages, [
-                {
-                    id: msgForm.id,
-                    runId: msgForm.runId,
-                    replyId: msgForm.replyId,
-                    ...msgForm.msg,
-                },
-            ] as MessageData[]);
+            .emit(SocketEvents.server.pushMessages, [reply] as Reply[]);
     }
 
     static broadcastSpanDataToRunRoom(spanDataArray: SpanData[]) {
