@@ -51,15 +51,7 @@ const TextBlockDiv = ({
         return <MarkdownRender text={text} />;
     }
     return (
-        <div
-            style={{
-                maxWidth: '100%',
-                overflowWrap: 'break-word',
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-all',
-                margin: 0,
-            }}
-        >
+        <div className="flex max-w-full break-words whitespace-pre-wrap break-all m-0 w-fit">
             {text}
         </div>
     );
@@ -177,12 +169,14 @@ const ToolResultBlockDiv = ({ block }: { block: ToolResultBlock }) => {
             <AccordionItem value="header">
                 <AccordionTrigger className="flex flex-row text-sm px-4 py-1.5 w-full rounded-t-[8px] rounded-b-[0px] bg-[#343541] text-white [&>svg]:stroke-white hover:no-underline cursor-pointer data-[state=closed]:rounded-b-[8px]">
                     <div className="flex flex-row justify-between w-full">
-                        <div>
+                        <div className="truncate">
                             {t('chat.title-tool-result')}&nbsp;
                             {block.name}
                         </div>
                         <div className="flex items-center space-x-2">
-                            <Label htmlFor="display-mode">Display Raw</Label>
+                            <Label className="truncate" htmlFor="display-mode">
+                                Display Raw
+                            </Label>
                             <Switch
                                 id="display-mode"
                                 checked={displayRaw}

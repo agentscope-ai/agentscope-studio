@@ -131,7 +131,7 @@ const RunContentPage = () => {
                         }}
                         attachMaxFileSize={20 * 1024 * 1024} // 20 MB
                         attachAccept={['image/*', 'video/*', 'audio/*']}
-                        onAttachError={async (error) => {
+                        onError={async (error) => {
                             messageApi.error(error);
                         }}
                     />
@@ -167,12 +167,9 @@ const RunPage = () => {
             <Layout>
                 <ProjectRunSider
                     onRunClick={(runId) =>
-                        navigate(
-                            `/dashboard/projects/${projectName}/runs/${runId}`,
-                            {
-                                replace: true,
-                            },
-                        )
+                        navigate(`/projects/${projectName}/runs/${runId}`, {
+                            replace: true,
+                        })
                     }
                 />
                 <Content>

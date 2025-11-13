@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, ReactNode } from 'react';
 import { ContentType, Reply, TextBlock } from '@shared/types';
 import BubbleBlock, {
     CollapsibleBlockDiv,
@@ -12,10 +12,22 @@ interface Props {
     markdown: boolean;
     randomAvatar: boolean;
     onClick: (reply: Reply) => void;
+    renderAvatar?: (name: string, role: string) => ReactNode;
+    userAvatarRight: boolean;
 }
 
-const AsBubble = ({ reply, markdown, randomAvatar, onClick }: Props) => {
+const AsBubble = ({
+    reply,
+    markdown,
+    randomAvatar,
+    onClick,
+    renderAvatar,
+    userAvatarRight = false,
+}: Props) => {
     const { t } = useTranslation();
+
+    const avatarRight =
+        userAvatarRight && reply.replyRole.toLowerCase() === 'user';
 
     const renderBlock = (content: ContentType, markdown: boolean) => {
         if (typeof content === 'string') {
@@ -39,7 +51,7 @@ const AsBubble = ({ reply, markdown, randomAvatar, onClick }: Props) => {
     return (
         <div
             key={reply.replyId}
-            className="flex flex-row space-x-2 p-2 rounded-md w-full max-w-full border-border bg-white hover:bg-[#FAFAFA] cursor-pointer"
+            className={`flex flex-row${avatarRight ? '-reverse space-x-reverse' : ''} space-x-2 p-2 rounded-md w-full max-w-full bg-white active:bg-[#FAFAFA] cursor-pointer`}
             onClick={() => onClick(reply)}
         >
             <AsAvatar
@@ -47,10 +59,16 @@ const AsBubble = ({ reply, markdown, randomAvatar, onClick }: Props) => {
                 role={reply.replyRole}
                 randomAvatar={randomAvatar}
                 seed={14}
+                renderAvatar={renderAvatar}
             />
 
-            <div className="flex flex-col flex-1 w-0 space-y-2">
-                <div className="flex font-bold mt-1">{reply.replyName}</div>
+            <div className="flex flex-col flex-1 w-full space-y-2">
+                <div
+                    className={`flex font-bold mt-1 w-full ${avatarRight ? 'justify-end' : ''}`}
+                >
+                    {reply.replyName}
+                </div>
+                {/*Suppose the user input doesn't contain specially input */}
                 <div className="flex flex-col w-full max-w-full gap-y-2">
                     {reply.messages.map((msg) => {
                         if (

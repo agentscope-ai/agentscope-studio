@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { Avatar } from '@/components/ui/avatar.tsx';
 import SystemAvatar from '@/assets/svgs/avatar-system.svg?react';
 import { FC, SVGProps } from 'react';
@@ -84,6 +84,7 @@ const loadAvatarComponent = async (
  * @param role - The role of the user (e.g., 'system', 'user').
  * @param randomAvatar - Whether to use a random avatar or not.
  * @param seed - The seed value for random avatar selection.
+ * @param renderAvatar - A render function for custom avatar rendering.
  *
  * @return The avatar JSX element.
  */
@@ -92,11 +93,13 @@ export const AsAvatar = ({
     role,
     randomAvatar,
     seed,
+    renderAvatar,
 }: {
     name: string;
     role: string;
     randomAvatar: boolean;
     seed: number;
+    renderAvatar?: (name: string, role: string) => ReactNode | null;
 }) => {
     const [AvatarComponent, setAvatarComponent] = useState<FC<
         SVGProps<SVGSVGElement>
@@ -118,16 +121,25 @@ export const AsAvatar = ({
     }, [name, role, randomAvatar, seed]);
 
     let avatarComponent;
-    if (role.toLowerCase() === 'system') {
-        avatarComponent = <SystemAvatar />;
-    } else if (randomAvatar && AvatarComponent) {
-        avatarComponent = <AvatarComponent className="" />;
-    } else {
-        avatarComponent = (
-            <div className="flex items-center justify-center font-medium bg-primary text-white w-full h-full">
-                {name.slice(0, 2).toUpperCase()}
-            </div>
-        );
+    if (renderAvatar) {
+        const customAvatar = renderAvatar(name, role);
+        if (customAvatar) {
+            avatarComponent = customAvatar;
+        }
+    }
+
+    if (!avatarComponent) {
+        if (role.toLowerCase() === 'system') {
+            avatarComponent = <SystemAvatar />;
+        } else if (randomAvatar && AvatarComponent) {
+            avatarComponent = <AvatarComponent />;
+        } else {
+            avatarComponent = (
+                <div className="flex items-center justify-center font-medium bg-primary text-white w-full h-full">
+                    {name.slice(0, 2).toUpperCase()}
+                </div>
+            );
+        }
     }
 
     const className =

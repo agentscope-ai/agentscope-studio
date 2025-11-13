@@ -60,7 +60,7 @@ const ProjectRunSider = ({ onRunClick }: Props) => {
     }, []);
 
     // Extract current run and project from URL
-    const match = useMatch('/dashboard/projects/:projectName/runs/:runId');
+    const match = useMatch('/projects/:projectName/runs/:runId');
     const runId = match?.params?.runId;
     const project = match?.params?.projectName;
 
@@ -128,7 +128,7 @@ const ProjectRunSider = ({ onRunClick }: Props) => {
                         }
                         color="default"
                         onClick={() => {
-                            navigate('/dashboard/');
+                            navigate(RouterPath.PROJECTS);
                         }}
                     />
 

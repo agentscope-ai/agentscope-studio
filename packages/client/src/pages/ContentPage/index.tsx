@@ -1,9 +1,8 @@
 import { memo, ReactNode } from 'react';
-import { Avatar, Col, Flex, Layout, Row, Skeleton } from 'antd';
+import { Avatar, Col, Flex, Row, Skeleton } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
-import TitleBar from '@/components/titlebar/TitleBar.tsx';
 import ProjectIcon from '@/assets/svgs/project.svg?react';
 import RunIcon from '@/assets/svgs/run.svg?react';
 import TokenIcon from '@/assets/svgs/token.svg?react';
@@ -160,7 +159,7 @@ const ProjectRow = ({ project, runCount, lastUpdateTime }: ProjectRowProps) => {
             vertical={false}
             align="center"
             justify="space-between"
-            onClick={() => navigate('/dashboard/projects/' + project)}
+            onClick={() => navigate('/projects/' + project)}
         >
             <Flex
                 gap="small"
@@ -220,7 +219,6 @@ interface MonthlyRunItem {
 }
 
 const ContentPage = () => {
-    const { Content } = Layout;
     const { overviewData } = useOverviewRoom();
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -403,349 +401,297 @@ const ContentPage = () => {
     };
 
     return (
-        <Layout>
-            <TitleBar title={t('common.home')} />
-
-            <Content style={{ height: '100%' }}>
+        <div className="flex flex-1 flex-col gap-4 py-8 px-12">
+            <Flex
+                style={{
+                    width: '100%',
+                    borderRadius: 8,
+                }}
+                vertical={true}
+                gap="middle"
+            >
+                <PageTitleSpan title={t('common.projects')} />
                 <Flex
                     vertical={true}
+                    justify="space-between"
                     style={{
-                        padding: '32px 48px',
                         width: '100%',
+                        height: '100%',
                     }}
-                    gap={32}
+                    gap="middle"
                 >
-                    <Flex
-                        style={{
-                            width: '100%',
-                            borderRadius: 8,
-                        }}
-                        vertical={true}
-                        gap="middle"
-                    >
-                        <PageTitleSpan title={t('common.dashboard')} />
-                        <Flex
-                            vertical={true}
-                            justify="space-between"
-                            style={{
-                                width: '100%',
-                                height: '100%',
-                            }}
-                            gap="middle"
-                        >
-                            <Row
-                                gutter={16}
-                                style={{ width: '100%' }}
-                                wrap={false}
+                    <Row gutter={16} style={{ width: '100%' }} wrap={false}>
+                        <Block
+                            title={t('common.projects')}
+                            number={overviewData?.totalProjects}
+                            footer={renderProjectHint(overviewData)}
+                            icon={<ProjectIcon width={16} height={16} />}
+                        />
+                        <Block
+                            title={t('common.runs')}
+                            number={overviewData?.totalRuns}
+                            footer={renderRunHint(overviewData)}
+                            icon={<RunIcon width={16} height={16} />}
+                        />
+                        <Block
+                            title={t('common.total-tokens')}
+                            number={overviewData?.totalTokens}
+                            footer={renderTokenHint(overviewData)}
+                            icon={<TokenIcon width={16} height={16} />}
+                        />
+                        <Block
+                            title={t('common.llm-invocations')}
+                            number={overviewData?.totalModelInvocations}
+                            footer={renderModelInvocation(overviewData)}
+                            icon={<ApiIcon width={16} height={16} />}
+                        />
+                    </Row>
+
+                    <Row gutter={16} style={{ width: '100%' }} wrap={false}>
+                        <Col span={14}>
+                            <Flex
+                                style={{
+                                    border: '1px solid var(--border)',
+                                    boxShadow: 'var(--box-shadow)',
+                                    padding: 24,
+                                    borderRadius: 8,
+                                    height: 325,
+                                }}
+                                vertical={true}
+                                gap="large"
                             >
-                                <Block
-                                    title={t('common.projects')}
-                                    number={overviewData?.totalProjects}
-                                    footer={renderProjectHint(overviewData)}
-                                    icon={
-                                        <ProjectIcon width={16} height={16} />
+                                <BlockTitle
+                                    title={t('common.overview')}
+                                    description={t('home.overview-description')}
+                                />
+
+                                <Flex flex={1}>
+                                    <ResponsiveContainer
+                                        width={'100%'}
+                                        minWidth={'100%'}
+                                    >
+                                        <BarChart
+                                            layout="horizontal"
+                                            data={monthlyRuns.reverse()}
+                                            margin={{
+                                                bottom: -5,
+                                                top: 0,
+                                            }}
+                                        >
+                                            <CartesianGrid
+                                                strokeDasharray="1 10"
+                                                vertical={false}
+                                            />
+                                            <YAxis
+                                                type="number"
+                                                fontSize={10}
+                                                allowDecimals={false}
+                                                width={yAxisWidth}
+                                                axisLine={false}
+                                                tickLine={false}
+                                                domain={[ticks[0], ticks[-1]]}
+                                                ticks={ticks}
+                                                tickFormatter={(
+                                                    count: number,
+                                                ) => {
+                                                    if (count >= 10000) {
+                                                        return count.toExponential(
+                                                            1,
+                                                        );
+                                                    } else if (count >= 1000) {
+                                                        return count.toLocaleString();
+                                                    } else {
+                                                        return count.toLocaleString();
+                                                    }
+                                                }}
+                                            />
+                                            <XAxis
+                                                dataKey="month"
+                                                type="category"
+                                                fontSize={10}
+                                                axisLine={false}
+                                                tickLine={false}
+                                                tickFormatter={(
+                                                    month: string,
+                                                ) => {
+                                                    const numericMonth =
+                                                        parseInt(
+                                                            month.split('-')[1],
+                                                        );
+                                                    return [
+                                                        'Jan',
+                                                        'Feb',
+                                                        'Mar',
+                                                        'Apr',
+                                                        'May',
+                                                        'Jun',
+                                                        'Jul',
+                                                        'Aug',
+                                                        'Sep',
+                                                        'Oct',
+                                                        'Nov',
+                                                        'Dec',
+                                                    ][numericMonth - 1];
+                                                }}
+                                            />
+                                            <Tooltip
+                                                contentStyle={{
+                                                    borderRadius: 6,
+                                                    border: '1px solid var(--border)',
+                                                }}
+                                                labelStyle={{
+                                                    fontWeight: 500,
+                                                }}
+                                                labelFormatter={(label) => {
+                                                    const numericMonth =
+                                                        parseInt(
+                                                            label.split('-')[1],
+                                                        );
+                                                    const year = parseInt(
+                                                        label.split('-')[0],
+                                                    );
+                                                    const strMonth = [
+                                                        'Jan',
+                                                        'Feb',
+                                                        'Mar',
+                                                        'Apr',
+                                                        'May',
+                                                        'Jun',
+                                                        'Jul',
+                                                        'Aug',
+                                                        'Sep',
+                                                        'Oct',
+                                                        'Nov',
+                                                        'Dec',
+                                                    ][numericMonth - 1];
+                                                    return `${strMonth}, ${year}`;
+                                                }}
+                                                formatter={(value) => [
+                                                    value,
+                                                    t('home.run-number'),
+                                                ]}
+                                            />
+
+                                            <Bar
+                                                dataKey="count"
+                                                radius={[6, 6, 0, 0]}
+                                            />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </Flex>
+                            </Flex>
+                        </Col>
+                        <Col span={10}>
+                            <Flex
+                                style={{
+                                    border: '1px solid var(--border)',
+                                    boxShadow: 'var(--box-shadow)',
+                                    padding: 24,
+                                    borderRadius: 8,
+                                    height: 325,
+                                }}
+                                vertical={true}
+                                gap="small"
+                            >
+                                <BlockTitle
+                                    title={t('home.recent-projects')}
+                                    description={
+                                        overviewData &&
+                                        overviewData.recentProjects.length > 0
+                                            ? t(
+                                                  'home.recent-projects-description',
+                                              )
+                                            : t('home.recent-projects-empty')
                                     }
                                 />
-                                <Block
-                                    title={t('common.runs')}
-                                    number={overviewData?.totalRuns}
-                                    footer={renderRunHint(overviewData)}
-                                    icon={<RunIcon width={16} height={16} />}
-                                />
-                                <Block
-                                    title={t('common.total-tokens')}
-                                    number={overviewData?.totalTokens}
-                                    footer={renderTokenHint(overviewData)}
-                                    icon={<TokenIcon width={16} height={16} />}
-                                />
-                                <Block
-                                    title={t('common.llm-invocations')}
-                                    number={overviewData?.totalModelInvocations}
-                                    footer={renderModelInvocation(overviewData)}
-                                    icon={<ApiIcon width={16} height={16} />}
-                                />
-                            </Row>
 
-                            <Row
-                                gutter={16}
-                                style={{ width: '100%' }}
-                                wrap={false}
-                            >
-                                <Col span={14}>
-                                    <Flex
-                                        style={{
-                                            border: '1px solid var(--border)',
-                                            boxShadow: 'var(--box-shadow)',
-                                            padding: 24,
-                                            borderRadius: 8,
-                                            height: 325,
-                                        }}
-                                        vertical={true}
-                                        gap="large"
-                                    >
-                                        <BlockTitle
-                                            title={t('common.overview')}
-                                            description={t(
-                                                'home.overview-description',
-                                            )}
-                                        />
-
-                                        <Flex flex={1}>
-                                            <ResponsiveContainer
-                                                width={'100%'}
-                                                minWidth={'100%'}
-                                            >
-                                                <BarChart
-                                                    layout="horizontal"
-                                                    data={monthlyRuns.reverse()}
-                                                    margin={{
-                                                        bottom: -5,
-                                                        top: 0,
-                                                    }}
-                                                >
-                                                    <CartesianGrid
-                                                        strokeDasharray="1 10"
-                                                        vertical={false}
-                                                    />
-                                                    <YAxis
-                                                        type="number"
-                                                        fontSize={10}
-                                                        allowDecimals={false}
-                                                        width={yAxisWidth}
-                                                        axisLine={false}
-                                                        tickLine={false}
-                                                        domain={[
-                                                            ticks[0],
-                                                            ticks[-1],
-                                                        ]}
-                                                        ticks={ticks}
-                                                        tickFormatter={(
-                                                            count: number,
-                                                        ) => {
-                                                            if (
-                                                                count >= 10000
-                                                            ) {
-                                                                return count.toExponential(
-                                                                    1,
-                                                                );
-                                                            } else if (
-                                                                count >= 1000
-                                                            ) {
-                                                                return count.toLocaleString();
-                                                            } else {
-                                                                return count.toLocaleString();
-                                                            }
-                                                        }}
-                                                    />
-                                                    <XAxis
-                                                        dataKey="month"
-                                                        type="category"
-                                                        fontSize={10}
-                                                        axisLine={false}
-                                                        tickLine={false}
-                                                        tickFormatter={(
-                                                            month: string,
-                                                        ) => {
-                                                            const numericMonth =
-                                                                parseInt(
-                                                                    month.split(
-                                                                        '-',
-                                                                    )[1],
-                                                                );
-                                                            return [
-                                                                'Jan',
-                                                                'Feb',
-                                                                'Mar',
-                                                                'Apr',
-                                                                'May',
-                                                                'Jun',
-                                                                'Jul',
-                                                                'Aug',
-                                                                'Sep',
-                                                                'Oct',
-                                                                'Nov',
-                                                                'Dec',
-                                                            ][numericMonth - 1];
-                                                        }}
-                                                    />
-                                                    <Tooltip
-                                                        contentStyle={{
-                                                            borderRadius: 6,
-                                                            border: '1px solid var(--border)',
-                                                        }}
-                                                        labelStyle={{
-                                                            fontWeight: 500,
-                                                        }}
-                                                        labelFormatter={(
-                                                            label,
-                                                        ) => {
-                                                            const numericMonth =
-                                                                parseInt(
-                                                                    label.split(
-                                                                        '-',
-                                                                    )[1],
-                                                                );
-                                                            const year =
-                                                                parseInt(
-                                                                    label.split(
-                                                                        '-',
-                                                                    )[0],
-                                                                );
-                                                            const strMonth = [
-                                                                'Jan',
-                                                                'Feb',
-                                                                'Mar',
-                                                                'Apr',
-                                                                'May',
-                                                                'Jun',
-                                                                'Jul',
-                                                                'Aug',
-                                                                'Sep',
-                                                                'Oct',
-                                                                'Nov',
-                                                                'Dec',
-                                                            ][numericMonth - 1];
-                                                            return `${strMonth}, ${year}`;
-                                                        }}
-                                                        formatter={(value) => [
-                                                            value,
-                                                            t(
-                                                                'home.run-number',
-                                                            ),
-                                                        ]}
-                                                    />
-
-                                                    <Bar
-                                                        dataKey="count"
-                                                        radius={[6, 6, 0, 0]}
-                                                    />
-                                                </BarChart>
-                                            </ResponsiveContainer>
-                                        </Flex>
-                                    </Flex>
-                                </Col>
-                                <Col span={10}>
-                                    <Flex
-                                        style={{
-                                            border: '1px solid var(--border)',
-                                            boxShadow: 'var(--box-shadow)',
-                                            padding: 24,
-                                            borderRadius: 8,
-                                            height: 325,
-                                        }}
-                                        vertical={true}
-                                        gap="small"
-                                    >
-                                        <BlockTitle
-                                            title={t('home.recent-projects')}
-                                            description={
-                                                overviewData &&
-                                                overviewData.recentProjects
-                                                    .length > 0
-                                                    ? t(
-                                                          'home.recent-projects-description',
-                                                      )
-                                                    : t(
-                                                          'home.recent-projects-empty',
-                                                      )
-                                            }
-                                        />
-
-                                        <Flex
-                                            flex={1}
-                                            vertical={true}
-                                            style={{
-                                                overflowY: 'auto',
-                                                ...RemoveScrollBarStyle,
-                                            }}
-                                            justify="start"
-                                        >
-                                            {overviewData
-                                                ? overviewData.recentProjects.map(
-                                                      (proj) => (
-                                                          <ProjectRow
-                                                              key={proj.name}
-                                                              project={
-                                                                  proj.name
-                                                              }
-                                                              runCount={
-                                                                  proj.runCount
-                                                              }
-                                                              lastUpdateTime={
-                                                                  proj.lastUpdateTime
-                                                              }
-                                                          />
-                                                      ),
-                                                  )
-                                                : null}
-                                        </Flex>
-                                    </Flex>
-                                </Col>
-                            </Row>
-                        </Flex>
-                    </Flex>
-
-                    <Flex
-                        style={{
-                            width: '100%',
-                            borderRadius: 8,
-                        }}
-                        vertical={true}
-                        gap="middle"
-                    >
-                        <PageTitleSpan title={t('common.application')} />
-                        <Flex vertical={true}>
-                            <Row gutter={16} wrap={false}>
-                                <Col span={12}>
-                                    <Flex
-                                        vertical={true}
-                                        style={{
-                                            border: '1px solid var(--border)',
-                                            boxShadow: 'var(--box-shadow)',
-                                            padding: 24,
-                                            borderRadius: 8,
-                                            cursor: 'pointer',
-                                        }}
-                                        onClick={() => {
-                                            navigate(RouterPath.FRIDAY_SETTING);
-                                        }}
-                                    >
-                                        <BlockTitle
-                                            title="AgentScope Friday"
-                                            description={t(
-                                                'home.as-friday-description',
-                                            )}
-                                        />
-                                    </Flex>
-                                </Col>
-                                <Col span={12}>
-                                    <Flex
-                                        vertical={true}
-                                        style={{
-                                            border: '1px solid var(--border)',
-                                            boxShadow: 'var(--box-shadow)',
-                                            padding: 24,
-                                            borderRadius: 8,
-                                            cursor: 'pointer',
-                                        }}
-                                        onClick={() => {
-                                            navigate(RouterPath.EVAL);
-                                        }}
-                                    >
-                                        <BlockTitle
-                                            title="AgentScope X"
-                                            description={t(
-                                                'home.as-x-description',
-                                            )}
-                                        />
-                                    </Flex>
-                                </Col>
-                            </Row>
-                        </Flex>
-                    </Flex>
+                                <Flex
+                                    flex={1}
+                                    vertical={true}
+                                    style={{
+                                        overflowY: 'auto',
+                                        ...RemoveScrollBarStyle,
+                                    }}
+                                    justify="start"
+                                >
+                                    {overviewData
+                                        ? overviewData.recentProjects.map(
+                                              (proj) => (
+                                                  <ProjectRow
+                                                      key={proj.name}
+                                                      project={proj.name}
+                                                      runCount={proj.runCount}
+                                                      lastUpdateTime={
+                                                          proj.lastUpdateTime
+                                                      }
+                                                  />
+                                              ),
+                                          )
+                                        : null}
+                                </Flex>
+                            </Flex>
+                        </Col>
+                    </Row>
                 </Flex>
-            </Content>
-        </Layout>
+            </Flex>
+
+            <Flex
+                style={{
+                    width: '100%',
+                    borderRadius: 8,
+                }}
+                vertical={true}
+                gap="middle"
+            >
+                <PageTitleSpan title={t('common.agent')} />
+                <Flex vertical={true}>
+                    <Row gutter={16} wrap={false}>
+                        <Col span={12}>
+                            <Flex
+                                vertical={true}
+                                style={{
+                                    border: '1px solid var(--border)',
+                                    boxShadow: 'var(--box-shadow)',
+                                    padding: 24,
+                                    borderRadius: 8,
+                                    cursor: 'pointer',
+                                }}
+                                onClick={() => {
+                                    navigate(RouterPath.FRIDAY_SETTING);
+                                }}
+                            >
+                                <BlockTitle
+                                    title="AgentScope Friday"
+                                    description={t(
+                                        'home.as-friday-description',
+                                    )}
+                                />
+                            </Flex>
+                        </Col>
+                        <Col span={12}>
+                            <Flex
+                                vertical={true}
+                                style={{
+                                    border: '1px solid var(--border)',
+                                    boxShadow: 'var(--box-shadow)',
+                                    padding: 24,
+                                    borderRadius: 8,
+                                    cursor: 'pointer',
+                                }}
+                                onClick={() => {
+                                    navigate(RouterPath.EVAL);
+                                }}
+                            >
+                                <BlockTitle
+                                    title="AgentScope X"
+                                    description={t('home.as-x-description')}
+                                />
+                            </Flex>
+                        </Col>
+                    </Row>
+                </Flex>
+            </Flex>
+        </div>
     );
 };
 

@@ -6,7 +6,7 @@ import {
     InputRequestData,
     OverviewData,
     Reply,
-    ReplyData,
+    FridayReply,
     RunData,
     SocketEvents,
     SocketRoomName,
@@ -682,7 +682,7 @@ export class SocketManager {
     }
 
     static broadcastReplyToFridayAppRoom(
-        reply?: ReplyData,
+        reply?: FridayReply,
         override: boolean = false,
     ) {
         this.io

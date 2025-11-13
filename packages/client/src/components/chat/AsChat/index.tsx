@@ -50,10 +50,14 @@ interface Props {
     };
     /** Maximum file size for attachments in bytes */
     attachMaxFileSize: number;
-    /** Callback function when there is an attachment error */
-    onAttachError: (error: string) => void;
+    /** Callback function when there is an error */
+    onError: (error: string) => void;
     /** Accepted file types for attachments */
     attachAccept: string[];
+    /** A render function for custom avatar rendering */
+    renderAvatar?: (name: string, role: string) => ReactNode;
+    /** Whether to display user avatar on the right side */
+    userAvatarRight?: boolean;
 }
 
 /**
@@ -71,7 +75,9 @@ interface Props {
  * @param tooltips
  * @param attachAccept
  * @param attachMaxFileSize
- * @param onAttachError
+ * @param onError
+ * @param renderAvatar
+ * @param userAvatarRight
  * @constructor
  */
 const AsChat = ({
@@ -87,7 +93,9 @@ const AsChat = ({
     tooltips,
     attachAccept,
     attachMaxFileSize,
-    onAttachError,
+    onError,
+    renderAvatar,
+    userAvatarRight = false,
 }: Props) => {
     const [renderMarkdown, setRenderMarkdown] = useState<boolean>(true);
     const [byReplyId, setByReplyId] = useState<boolean>(true);
@@ -142,7 +150,7 @@ const AsChat = ({
     };
 
     return (
-        <div className="flex flex-col w-full max-w-[800px] h-full p-4">
+        <div className="flex flex-col w-full max-w-[800px] h-full p-4 pt-2">
             {/*The bubble list*/}
             <div className="relative flex-1 w-full overflow-hidden">
                 <div
@@ -157,6 +165,8 @@ const AsChat = ({
                             randomAvatar={randomAvatar}
                             markdown={renderMarkdown}
                             onClick={onBubbleClick}
+                            renderAvatar={renderAvatar}
+                            userAvatarRight={userAvatarRight}
                         />
                     ))}
                 </div>
@@ -220,15 +230,22 @@ const AsChat = ({
 
                 <AsTextarea
                     placeholder={placeholder}
-                    onSendClick={onSendClick}
-                    interruptable={isReplying && allowInterrupt}
-                    onInterruptClick={onInterruptClick}
+                    actionType={
+                        isReplying && allowInterrupt ? 'interrupt' : 'send'
+                    }
+                    onActionClick={(blocksInput, structuredInput) => {
+                        if (isReplying && allowInterrupt && onInterruptClick) {
+                            onInterruptClick();
+                        } else {
+                            onSendClick(blocksInput, structuredInput);
+                        }
+                    }}
                     disableSendBtn={disableSendBtn}
                     tooltips={tooltips}
                     expandable
                     attachAccept={attachAccept}
                     attachMaxFileSize={attachMaxFileSize}
-                    onAttachError={onAttachError}
+                    onError={onError}
                 />
             </div>
         </div>

@@ -8,7 +8,6 @@ import { MetaDataSection, PanelTitle } from '../ShareComponents.tsx';
 import { EmptyMessagePage } from '@/pages/DefaultPage';
 import { AlertCircleIcon } from 'lucide-react';
 
-import styles from '@/components/chat/bubbles/MarkdownRender/styles.ts';
 import {
     AccordionContent,
     AccordionTrigger,
@@ -45,7 +44,6 @@ const ReplyPanel = ({ reply }: Props) => {
                         <AccordionContent>
                             <SyntaxHighlighter
                                 language="JSON"
-                                style={styles}
                                 showLineNumbers={true}
                                 wrapLines={true}
                                 customStyle={{

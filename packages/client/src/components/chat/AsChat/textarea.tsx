@@ -13,7 +13,7 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from '@/components/ui/tooltip.tsx';
-import { ExpandIcon, PaperclipIcon, PlayIcon } from 'lucide-react';
+import { ExpandIcon, PaperclipIcon, PlayIcon, SquareIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import AsTextareaDialog from '@/components/chat/AsChat/textarea_dialog.tsx';
 import { BlockType, ContentBlocks, TextBlock } from '@shared/types';
@@ -24,19 +24,19 @@ import {
 } from '@/components/chat/AsChat/attach.tsx';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area.tsx';
 
-interface Props {
+export interface AsTextareaProps {
     inputText?: string;
     onChange?: (text: string) => void;
     attachment?: AttachData[];
-    onAttach?: (newAttachData: AttachData[]) => void;
-    onDeleteAttach?: (index: number) => void;
+    onAttachChange?: (
+        updateFn: (prevAttachData: AttachData[]) => AttachData[],
+    ) => void;
     placeholder: string;
-    onSendClick: (
+    actionType: 'send' | 'interrupt';
+    onActionClick: (
         blocksInput: ContentBlocks,
         structuredInput: Record<string, unknown> | null,
     ) => void;
-    interruptable?: boolean;
-    onInterruptClick?: () => void;
     disableSendBtn: boolean;
     tooltips: {
         expandTextarea?: string;
@@ -46,7 +46,7 @@ interface Props {
     expandable?: boolean;
     attachAccept: string[];
     attachMaxFileSize: number;
-    onAttachError: (error: string) => void;
+    onError: (error: string) => void;
     [key: string]: unknown;
 }
 
@@ -54,20 +54,18 @@ const AsTextarea = ({
     inputText: externalInputText,
     onChange,
     attachment: externalAttachment,
-    onAttach,
-    onDeleteAttach,
+    onAttachChange,
     placeholder,
-    onSendClick,
-    interruptable,
-    onInterruptClick,
+    actionType,
+    onActionClick,
     disableSendBtn,
     tooltips,
     expandable,
     attachAccept,
     attachMaxFileSize,
-    onAttachError,
+    onError,
     ...props
-}: Props) => {
+}: AsTextareaProps) => {
     const { t } = useTranslation();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [internalInputText, setInternalInputText] = useState<string>('');
@@ -84,50 +82,48 @@ const AsTextarea = ({
     };
 
     const attachment = externalAttachment ?? internalAttachment;
-    const handleAttach = (newAttachData: AttachData[]) => {
+    const handleAttachChange = (
+        updateFn: (prevAttachData: AttachData[]) => AttachData[],
+    ) => {
+        // If external attachment is not provided, update internal state
         if (externalAttachment === undefined) {
-            setInternalAttachment((prev) => [...prev, ...newAttachData]);
+            setInternalAttachment(updateFn);
         }
-        onAttach?.(newAttachData);
-    };
-    const handleDeleteAttach = (index: number) => {
-        if (externalAttachment === undefined) {
-            setInternalAttachment((prev) => {
-                const newAttach = [...prev];
-                newAttach.splice(index, 1);
-                return newAttach;
-            });
-        }
-        onDeleteAttach?.(index);
+        // Call the external handler
+        onAttachChange?.(updateFn);
     };
 
-    const handleSendClick = (inputText: string, attachment: AttachData[]) => {
+    const handleActionClick = () => {
         if (disableSendBtn) {
-            onAttachError('No input is required');
+            onError('No input is required');
             return;
         }
 
-        if (inputText.length === 0) {
-            onAttachError('No input to send');
-            return;
-        }
-
-        // If interruptable, trigger interrupt instead of send
-        if (interruptable && onInterruptClick) {
-            onInterruptClick();
-        } else {
+        if (actionType === 'send') {
+            if (inputText.length === 0) {
+                onError('No input to send');
+                return;
+            }
             // Prepare the input blocks
             const blocksInput: ContentBlocks = [];
-            if (inputText.length > 0) {
-                blocksInput.push({
-                    type: BlockType.TEXT,
-                    text: inputText,
-                } as TextBlock);
-            }
+            blocksInput.push({
+                type: BlockType.TEXT,
+                text: inputText,
+            } as TextBlock);
             blocksInput.push(...attachment.map((data) => data.block));
 
-            // Send the input
-            onSendClick(blocksInput, null);
+            // TODO: Trigger the structured input generation here
+
+            // send the input
+            onActionClick(blocksInput, null);
+
+            // Clear the input
+            handleChange('');
+
+            // Clear the attachment
+            handleAttachChange(() => []);
+        } else {
+            onActionClick([], null);
         }
     };
 
@@ -146,7 +142,12 @@ const AsTextarea = ({
                             <AttachItem
                                 {...data}
                                 onDelete={() => {
-                                    handleDeleteAttach(index);
+                                    handleAttachChange(
+                                        (prevAttachData: AttachData[]) =>
+                                            prevAttachData.filter(
+                                                (_, i) => i !== index,
+                                            ),
+                                    );
                                 }}
                             />
                         ))}
@@ -158,6 +159,11 @@ const AsTextarea = ({
                 placeholder={placeholder}
                 onChange={(e) => handleChange(e.target.value)}
                 onKeyDown={(e) => {
+                    // When typing Chinese using IME, do not trigger enter key actions
+                    if (e.nativeEvent.isComposing) {
+                        return;
+                    }
+
                     // shift + enter for newline
                     if (e.key === 'Enter' && e.shiftKey) {
                         // Add a newline to the current cursor position
@@ -173,7 +179,9 @@ const AsTextarea = ({
                         !e.altKey &&
                         !e.metaKey
                     ) {
-                        handleSendClick(inputText, attachment);
+                        if (actionType === 'send') {
+                            handleActionClick();
+                        }
                         e.preventDefault();
                         return;
                     }
@@ -201,15 +209,15 @@ const AsTextarea = ({
                                 inputText={inputText}
                                 placeholder={placeholder}
                                 attachment={attachment}
-                                onAttach={handleAttach}
-                                onDeleteAttach={handleDeleteAttach}
-                                onSendClick={onSendClick}
+                                actionType={actionType}
+                                onActionClick={onActionClick}
+                                onAttachChange={handleAttachChange}
                                 onChange={handleChange}
                                 disableSendBtn={disableSendBtn}
                                 tooltips={tooltips}
                                 attachAccept={attachAccept}
                                 attachMaxFileSize={attachMaxFileSize}
-                                onAttachError={onAttachError}
+                                onError={onError}
                             >
                                 <InputGroupButton
                                     variant="ghost"
@@ -238,10 +246,15 @@ const AsTextarea = ({
                         >
                             <AttachInput
                                 fileInputRef={fileInputRef}
-                                onAttach={handleAttach}
+                                onAttach={(newAttachData) => {
+                                    handleAttachChange((prevAttachData) => [
+                                        ...prevAttachData,
+                                        ...newAttachData,
+                                    ]);
+                                }}
                                 accept={attachAccept}
                                 maxFileSize={attachMaxFileSize}
-                                onError={onAttachError}
+                                onError={onError}
                             />
                             <PaperclipIcon />
                         </InputGroupButton>
@@ -254,12 +267,17 @@ const AsTextarea = ({
                             variant="default"
                             className="rounded-full"
                             size="icon-sm"
-                            disabled={disableSendBtn || inputText.length === 0}
-                            onClick={() =>
-                                handleSendClick(inputText, attachment)
-                            }
+                            disabled={disableSendBtn}
+                            onClick={() => {
+                                handleActionClick();
+                            }}
                         >
-                            <PlayIcon />
+                            {actionType === 'send' ? (
+                                <PlayIcon />
+                            ) : (
+                                <SquareIcon />
+                            )}
+
                             <span className="sr-only">Send</span>
                         </InputGroupButton>
                     </TooltipTrigger>

@@ -4,7 +4,6 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { CheckIcon, CopyIcon } from 'lucide-react';
 import { copyToClipboard } from '@/utils/common.ts';
 
-import './index.css';
 import remarkGfm from 'remark-gfm';
 import { Button } from '@/components/ui/button.tsx';
 import {
@@ -164,7 +163,7 @@ const MarkdownRender = ({ text }: Props) => {
                     } else {
                         return (
                             <code
-                                className="inline whitespace-pre-wrap break-all bg-primary-300 px-[0.3rem] py-[0.2rem] font-mono rounded"
+                                className="inline whitespace-pre-wrap break-all font-semibold px-[0.3rem] py-[0.2rem] font-mono rounded"
                                 {...props}
                             >
                                 {children}

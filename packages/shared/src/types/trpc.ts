@@ -121,7 +121,7 @@ export interface Message {
     metadata: object;
 }
 
-export interface ReplyData {
+export interface FridayReply {
     id: string;
     name: string;
     role: string;
