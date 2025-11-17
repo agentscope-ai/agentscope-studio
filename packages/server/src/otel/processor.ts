@@ -123,7 +123,6 @@ export class SpanProcessor {
             attributes,
             SpanAttributes.PROJECT_RUN_ID,
         );
-
         return typeof runId === 'string' ? runId : '';
     }
 

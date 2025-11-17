@@ -101,6 +101,7 @@ npm --version   # Should show 10.x.x or higher
 
 ```bash
 git clone https://github.com/agentscope-ai/agentscope-studio
+cd agentscope-studio
 npm install
 npm run dev
 ```

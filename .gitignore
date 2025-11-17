@@ -44,3 +44,4 @@ Desktop.ini
 logs/
 *.log
 
+dist/

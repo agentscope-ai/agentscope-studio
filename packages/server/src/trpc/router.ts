@@ -2,11 +2,14 @@ import { initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import {
     InputRequestData,
-    RunData,
+    // RunData,
     TableData,
     ProjectData,
     TableRequestParamsSchema,
     ResponseBody,
+    RegisterReplyParams,
+    RegisterReplyParamsSchema,
+    RunData,
 } from '../../../shared/src';
 import {
     BlockType,
@@ -20,6 +23,7 @@ import { MessageDao } from '../dao/Message';
 import { SocketManager } from './socket';
 import { FridayConfigManager } from '../../../shared/src/config/friday';
 import { FridayAppMessageDao } from '../dao/FridayAppMessage';
+import { ReplyDao } from '@/dao/Reply';
 
 const textBlock = z.object({
     text: z.string(),
@@ -179,11 +183,27 @@ export const appRouter = t.router({
             }
         }),
 
+    registerReply: t.procedure
+        .input(RegisterReplyParamsSchema)
+        .mutation(async ({ input }) => {
+            try {
+                await ReplyDao.saveReply(input);
+            } catch (error) {
+                console.error(error);
+                throw new TRPCError({
+                    code: 'BAD_REQUEST',
+                    message: `Failed to register reply for error: ${error}`,
+                });
+            }
+        }),
+
     pushMessage: t.procedure
         .input(
             z.object({
                 runId: z.string(),
-                replyId: z.string().nullable(),
+                replyId: z.string().optional().nullable(),
+                name: z.string(),
+                role: z.string(),
                 msg: z.object({
                     id: z.string(),
                     name: z.string(),
@@ -204,11 +224,26 @@ export const appRouter = t.router({
                 });
             }
 
+            // Let's determine the replyId to use for this message
+            const replyId = input.replyId ?? input.msg.id;
+
+            // Check if the replyId exists
+            if (!(await ReplyDao.doesReplyExist(replyId))) {
+                // Create a reply record if it does not exist
+                await ReplyDao.saveReply({
+                    runId: input.runId,
+                    replyId: input.replyId,
+                    replyRole: input.role,
+                    replyName: input.name,
+                    createdAt: input.msg.timestamp,
+                } as RegisterReplyParams);
+            }
+
             // Save the message to the database
             const msgFormData = {
                 id: input.msg.id,
                 runId: input.runId,
-                replyId: input.replyId,
+                replyId: replyId,
                 msg: {
                     name: input.msg.name,
                     role: input.msg.role,
@@ -217,17 +252,28 @@ export const appRouter = t.router({
                     timestamp: input.msg.timestamp,
                 },
             } as MessageForm;
-            MessageDao.saveMessage(msgFormData)
-                .then(() => {
-                    console.debug(`RUN-${input.runId}: message saved`);
+
+            // Save the message
+            await MessageDao.saveMessage(msgFormData);
+            console.debug(`RUN-${input.runId}: message saved`);
+
+            // Obtain the reply and broadcast to the frontend
+            ReplyDao.getReply(replyId)
+                .then((reply) => {
                     // Broadcast the message to the run room
                     console.debug(
                         `Broadcasting message to room run-${input.runId}`,
                     );
-                    SocketManager.broadcastMessageToRunRoom(
-                        input.runId,
-                        msgFormData,
-                    );
+                    if (reply) {
+                        SocketManager.broadcastMessageToRunRoom(
+                            input.runId,
+                            reply,
+                        );
+                    } else {
+                        console.error(
+                            `Reply with id ${replyId} not found for broadcasting`,
+                        );
+                    }
                 })
                 .catch((error) => {
                     console.error(error);

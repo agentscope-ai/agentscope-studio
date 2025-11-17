@@ -1,10 +1,4 @@
-import {
-    InputRequestData,
-    MessageData,
-    ProjectData,
-    RunData,
-    TableData,
-} from '../../../shared/src';
+import { InputRequestData, ProjectData, RunData, TableData } from '../../../shared/src';
 import { RunTable } from '../models/Run';
 import { checkProcessByPid } from '../utils';
 import { RunView } from '../models/RunView';
@@ -281,7 +275,12 @@ export class RunDao {
         try {
             const result = await RunTable.findOne({
                 where: { id: runId },
-                relations: ['messages', 'inputRequests', 'spans'],
+                relations: [
+                    'replies',
+                    'replies.messages',
+                    'inputRequests',
+                    'spans',
+                ],
             });
 
             if (result) {
@@ -304,15 +303,21 @@ export class RunDao {
                                 structuredInput: row.structuredInput,
                             }) as InputRequestData,
                     ),
-                    messages: result.messages.map(
-                        (row) =>
-                            ({
-                                id: row.id,
-                                runId: row.runId,
-                                replyId: row.replyId,
-                                ...row.msg,
-                            }) as MessageData,
-                    ),
+                    replies: result.replies.map((row) => ({
+                        replyId: row.replyId,
+                        replyRole: row.replyRole,
+                        replyName: row.replyName,
+                        createdAt: row.createdAt,
+                        finishedAt: row.finishedAt,
+                        messages: row.messages.map((msg) => ({
+                            id: msg.id,
+                            name: msg.msg.name,
+                            role: msg.msg.role,
+                            content: msg.msg.content,
+                            timestamp: msg.msg.timestamp,
+                            metadata: msg.msg.metadata,
+                        })),
+                    })),
                     spans: result.spans,
                 };
             } else {

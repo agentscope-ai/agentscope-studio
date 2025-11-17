@@ -10,11 +10,13 @@
     "chat": {
         "title-attachment": "Total {{length}} URL is attached",
         "title-attachments": "Total {{length}} URLs are attached",
+        "title-hint-message": "Hint message",
         "title-using-tool": "Using tool ",
         "title-time-total": "Total time: {{totalTime}}s",
         "title-tool-result": "Tool result of"
     },
     "common": {
+        "agent": "Agent",
         "attributes": "All Attributes",
         "api": "API",
         "application": "Application",
@@ -24,22 +26,30 @@
         "changeLanguage": "Change Language",
         "completion": "Completion",
         "completion-average": "Completion(Avg)",
-        "cont": "Cont",
+        "contact": "Contact",
         "dashboard": "Dashboard",
         "data-view": "Data View",
         "data-view-description": "The statistics of the current run instance",
+        "develop": "Develop",
+        "discord": "Discord",
         "distribution": "Distribution",
-        "docs": "Docs",
+        "dingtalk": "DingTalk",
+        "document": "Document",
         "evaluation": "Evaluation",
         "evaluation-history": "Evaluation History",
+        "friday": "Friday",
+        "github": "GitHub",
+        "hint": "Hint",
         "home": "Home",
         "id": "ID",
         "input": "Input",
         "input-tokens": "Input Tokens",
+        "language": "Language",
         "latency": "Latency",
         "llm-invocation": "Invocation",
         "llm-invocations": "Invocations",
         "message": "Message",
+        "messages": "Messages",
         "metadata": "Metadata",
         "model-category": "Model Category",
         "name": "Name",
@@ -47,6 +57,7 @@
         "output-tokens": "Output Tokens",
         "overview": "Overview",
         "pid": "Pid",
+        "preview": "Preview",
         "project": "Project",
         "projects": "Projects",
         "prompt": "Prompt",
@@ -59,6 +70,7 @@
         "timestamp": "Timestamp",
         "trace": "TRACE",
         "trace-details": "Trace Details",
+        "tracing": "Tracing",
         "total": "Total",
         "total-times": "Total Times",
         "total-tokens": "Tokens",
@@ -103,6 +115,7 @@
     },
     "hint": {
         "empty-trace": "No data available",
+        "messages": "In AgentScope, a reply consists of multiple messages with different roles and names",
         "select-run": "Click on a run to view details",
         "select-message": "Click on a message to view details",
         "select-trace": "Click on a run to view trace data"
@@ -131,7 +144,9 @@
     "placeholder": {
         "input-as-user": "Type your message in voice of {{name}} ({{shortcutKeys}} to send message)",
         "input-disable": "Currently no user input is needed",
-        "input-friday-app": "{{shortcutKeys}} to send message",
+        "input-friday-afternoon": "Good afternoon, how can I help you today?",
+        "input-friday-evening": "Good evening, how can I help you today?",
+        "input-friday-morning": "Good morning, how can I help you today?",
         "input-url": "A local or web URL to the image/video/audio file (press enter to confirm)",
         "search-benchmark": "Search benchmarks",
         "search-evaluation": "Search evaluation history",
@@ -180,16 +195,21 @@
             "attachment-delete": "Delete the attached file",
             "clean-history": "Clean the current conversation history",
             "compare-evaluation": "Compare two evaluation results of the same benchmark dataset",
+            "copy-to-clipboard": "Copy to clipboard",
             "delete-selected-projects": "Delete {{number}} selected project(s)",
             "delete-selected-projects-disable": "Select projects from the table to delete",
+            "expand-textarea": "Expand",
             "focus-on-latest-run": "Focus on the latest run automatically",
             "interrupt-reply": "Interrupt the reply",
-            "send-message": "Press {{shortcutKeys}} to send message",
+            "send-message": "Send your message",
             "send-message-disable": "No user input is requested",
             "scroll-to-bottom": "Scroll to the bottom"
         },
         "chart": {
             "invocation": "# of invocation"
+        },
+        "header": {
+            "hint-message": "A message that speaks in the user's voice to guide how the agent should behave"
         },
         "switch": {
             "display-raw-data": "Display raw data"
@@ -214,6 +234,8 @@
         }
     },
     "unit": {
+        "character": "character",
+        "characters": "characters",
         "run": "Run",
         "runs": "Runs",
         "time": "Time",
