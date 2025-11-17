@@ -9,8 +9,12 @@ import { InputRequestDao } from './dao/InputRequest';
 import { ModelInvocationView } from './models/ModelInvocationView';
 import { FridayAppMessageTable, FridayAppReplyTable } from './models/FridayApp';
 import { FridayAppReplyView } from './models/FridayAppView';
+import { ReplyTable } from './models/Reply';
+import { migrations } from './migrations';
 
-export const initializeDatabase = async (databaseConfig: DataSourceOptions) => {
+export const initializeDatabase = async (
+    databaseConfig: DataSourceOptions,
+): Promise<void> => {
     try {
         const options = {
             ...databaseConfig,
@@ -18,6 +22,7 @@ export const initializeDatabase = async (databaseConfig: DataSourceOptions) => {
                 RunTable,
                 RunView,
                 MessageTable,
+                ReplyTable,
                 InputRequestTable,
                 SpanTable,
                 ModelInvocationView,
@@ -25,16 +30,19 @@ export const initializeDatabase = async (databaseConfig: DataSourceOptions) => {
                 FridayAppReplyTable,
                 FridayAppReplyView,
             ],
-            synchronize: true,
+            synchronize: true, // 可以改回 true 了，因为表由 Migration 创建
+            migrations: migrations,
+            migrationsRun: true, // 自动运行迁移
             logging: false,
         };
-        const AppDataBase = new DataSource(options);
 
-        await AppDataBase.initialize();
+        const dataSource = new DataSource(options);
+        await dataSource.initialize();
 
         const printingOptions = {
             ...options,
             entities: undefined,
+            migrations: undefined,
         };
         console.log(
             `Database initialized with options: ${JSON.stringify(printingOptions, null, 2)}`,

@@ -68,9 +68,7 @@ const StatusSection = ({ status, invocations, tokens }: Props) => {
     };
 
     return (
-        <div
-            className="w-full rounded-md p-4 space-y-2 border-2 border-[var(--primary)] shadow-[var(--box-shadow)]"
-        >
+        <div className="w-full rounded-md p-4 space-y-2 border-2 border-[var(--primary)] shadow-[var(--box-shadow)]">
             {renderStatusTitleRow(
                 t('common.status'),
                 t('common.llm-invocations'),

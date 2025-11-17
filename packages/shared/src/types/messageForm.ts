@@ -86,7 +86,7 @@ export enum Status {
 export interface MessageForm {
     id: string;
     runId: string;
-    replyId: string | null;
+    replyId: string;
     // In case the msg data change in the future, we use a generic type here
     msg: {
         name: string;

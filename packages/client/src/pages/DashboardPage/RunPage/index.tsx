@@ -1,43 +1,104 @@
-import { memo, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import { Flex, Layout, Splitter } from 'antd';
 import { Route, Routes, useNavigate, useParams } from 'react-router-dom';
 
 import TracingComponent from './TracingComponent';
 import ProjectRunSider from './ProjectRunSider';
-import ChatComponent from '@/components/chat/ChatComponent';
 
-import { MessageData } from '@shared/types/trpc';
+import { InputRequestData, Reply } from '@shared/types/trpc';
 import { ProjectRoomContextProvider } from '@/context/ProjectRoomContext';
 import { EmptyRunPage, ProjectNotFoundPage } from '../../DefaultPage';
 import { RunRoomContextProvider, useRunRoom } from '@/context/RunRoomContext';
+import AsChat from '@/components/chat/AsChat';
+import { ContentBlocks } from '@shared/types';
+import { useTranslation } from 'react-i18next';
+import { isMacOs } from 'react-device-detect';
+import { useMessageApi } from '@/context/MessageApiContext.tsx';
 
 const RunContentPage = () => {
-    const [displayedMsg, setDisplayedMsg] = useState<MessageData | null>(null);
+    const [displayedReply, setDisplayedReply] = useState<Reply | null>(null);
     const [activateTab, setActiveTab] = useState<string>('statistics');
-    const { messages, inputRequests, sendUserInputToServer } = useRunRoom();
+    const { replies, sendUserInputToServer, inputRequests } = useRunRoom();
+    const [currentInputRequest, setCurrentInputRequest] =
+        useState<InputRequestData | null>(null);
+    const { t } = useTranslation();
+    const { messageApi } = useMessageApi();
 
+    // Handle the case when the displayed reply is changed
     useEffect(() => {
-        setDisplayedMsg((prevDisplayedMsg) => {
-            if (!prevDisplayedMsg) {
-                return prevDisplayedMsg;
+        setDisplayedReply((prevReply) => {
+            if (!prevReply) {
+                return prevReply;
             }
-            if (!messages.map((msg) => msg.id).includes(prevDisplayedMsg.id)) {
+            if (
+                !replies
+                    .map((reply) => reply.replyId)
+                    .includes(prevReply.replyId)
+            ) {
                 return null;
             } else {
-                return prevDisplayedMsg;
+                return prevReply;
             }
         });
-    }, [messages]);
+    }, [replies]);
 
-    const onMsgBubbleClick = (msg: MessageData) => {
-        setDisplayedMsg((prevMsg) => {
+    // Pop the first input request to receive user input
+    useEffect(() => {
+        if (inputRequests.length > 0) {
+            setCurrentInputRequest(inputRequests[0]);
+        } else {
+            setCurrentInputRequest(null);
+        }
+    }, [inputRequests]);
+
+    /*
+     * Callback when user clicks on a chat bubble
+     *
+     * @param reply - The reply associated with the clicked bubble
+     *
+     * @return void
+     */
+    const onBubbleClick = (reply: Reply) => {
+        setDisplayedReply((prevReply) => {
             setActiveTab('message');
-            if (prevMsg?.id === msg.id) {
-                return prevMsg;
+            if (prevReply?.replyId === reply.replyId) {
+                return prevReply;
             }
-            return msg;
+            return reply;
         });
     };
+
+    /*
+     * Callback when user sends input in the chat component
+     *
+     * @param blocksInput - The content blocks input by the user
+     * @param structuredInput - The structured input by the user, if any
+     *
+     * @return void
+     */
+    const onSendClick = useCallback(
+        (
+            blocksInput: ContentBlocks,
+            structuredInput: Record<string, unknown> | null,
+        ) => {
+            if (currentInputRequest) {
+                sendUserInputToServer(
+                    currentInputRequest.requestId,
+                    blocksInput,
+                    structuredInput,
+                );
+            }
+        },
+        [currentInputRequest],
+    );
+
+    const placeholder = currentInputRequest
+        ? t('placeholder.input-as-user', {
+              name: currentInputRequest.agentName,
+          })
+        : t('placeholder.input-disable');
+
+    const shortcutKeys = isMacOs ? 'Command + Enter' : 'fCtrl + Enter';
 
     return (
         <Flex
@@ -50,12 +111,29 @@ const RunContentPage = () => {
             gap="middle"
         >
             <Splitter style={{ width: '100%' }}>
-                <Splitter.Panel className="flex w-full justify-center">
-                    <ChatComponent
-                        messages={messages}
-                        onMsgBubbleClick={onMsgBubbleClick}
-                        inputRequests={inputRequests}
-                        onUserInput={sendUserInputToServer}
+                <Splitter.Panel className="flex w-full justify-center bg-[rgb(246,247,248)]">
+                    <AsChat
+                        replies={replies}
+                        isReplying={true}
+                        onSendClick={onSendClick}
+                        onBubbleClick={onBubbleClick}
+                        disableSendBtn={inputRequests.length === 0}
+                        allowInterrupt={false}
+                        placeholder={placeholder}
+                        tooltips={{
+                            sendButton: currentInputRequest
+                                ? t('tooltip.button.send-message', {
+                                      shortcutKeys,
+                                  })
+                                : t('tooltip.button.send-message-disable'),
+                            attachButton: t('tooltip.button.attachment-add'),
+                            expandTextarea: t('tooltip.button.expand-textarea'),
+                        }}
+                        attachMaxFileSize={20 * 1024 * 1024} // 20 MB
+                        attachAccept={['image/*', 'video/*', 'audio/*']}
+                        onError={async (error) => {
+                            messageApi.error(error);
+                        }}
                     />
                 </Splitter.Panel>
                 <Splitter.Panel
@@ -67,7 +145,7 @@ const RunContentPage = () => {
                     <TracingComponent
                         activateTab={activateTab}
                         onTabChange={(key) => setActiveTab(key)}
-                        msg={displayedMsg}
+                        reply={displayedReply}
                     />
                 </Splitter.Panel>
             </Splitter>
@@ -89,12 +167,9 @@ const RunPage = () => {
             <Layout>
                 <ProjectRunSider
                     onRunClick={(runId) =>
-                        navigate(
-                            `/dashboard/projects/${projectName}/runs/${runId}`,
-                            {
-                                replace: true,
-                            },
-                        )
+                        navigate(`/projects/${projectName}/runs/${runId}`, {
+                            replace: true,
+                        })
                     }
                 />
                 <Content>

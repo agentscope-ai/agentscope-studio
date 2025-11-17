@@ -44,5 +44,6 @@ Desktop.ini
 logs/
 *.log
 
+dist/
 
 package-lock.json

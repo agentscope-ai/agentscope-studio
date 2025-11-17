@@ -9,8 +9,8 @@ import { useSocket } from './SocketContext';
 import {
     BackendResponse,
     InputRequestData,
-    MessageData,
     ModelInvocationData,
+    Reply,
     RunData,
     SocketEvents,
 } from '../../../shared/src/types/trpc';
@@ -27,7 +27,7 @@ import { useMessageApi } from './MessageApiContext.tsx';
 import { getTimeDifference } from '../../../shared/src/utils/timeUtils';
 
 interface RunRoomContextType {
-    messages: MessageData[];
+    replies: Reply[];
     trace: TraceData | null;
     spans: SpanData[];
     inputRequests: InputRequestData[];
@@ -75,7 +75,7 @@ export function RunRoomContextProvider({ children }: Props) {
 
     const socket = useSocket();
     const roomName = `run-${runId}`;
-    const [messages, setMessages] = useState<MessageData[]>([]);
+    const [replies, setReplies] = useState<Reply[]>([]);
 
     const [spans, setSpans] = useState<SpanData[]>([]);
     const [trace, setTrace] = useState<TraceData | null>(null);
@@ -100,6 +100,7 @@ export function RunRoomContextProvider({ children }: Props) {
             }
         }
     }, [spans]);
+
     useEffect(() => {
         if (!socket) {
             // TODO: 通过message提示用户
@@ -108,7 +109,7 @@ export function RunRoomContextProvider({ children }: Props) {
 
         // Clear the data first
         setInputRequests([]);
-        setMessages([]);
+        setReplies([]);
         setSpans([]);
         setRunData(null);
         setModelInvocationData(null);
@@ -124,25 +125,25 @@ export function RunRoomContextProvider({ children }: Props) {
         );
 
         // New messages
-        socket.on(
-            SocketEvents.server.pushMessages,
-            (newMessages: MessageData[]) => {
-                setMessages((prevMessages) => {
-                    const updatedMessages = [...prevMessages];
-                    newMessages.forEach((newMessage) => {
-                        const index = updatedMessages.findIndex(
-                            (message) => message.id === newMessage.id,
-                        );
-                        if (index === -1) {
-                            updatedMessages.push(newMessage);
-                        } else {
-                            updatedMessages[index] = newMessage;
-                        }
-                    });
-                    return updatedMessages;
+        socket.on(SocketEvents.server.pushMessages, (newReplies: Reply[]) => {
+            setReplies((prev) => {
+                const updatedReplies: Reply[] = [...prev];
+                newReplies.forEach((newReply) => {
+                    const index = updatedReplies.findIndex(
+                        (reply) => reply.replyId === newReply.replyId,
+                    );
+
+                    if (index === -1) {
+                        // New reply, add it
+                        updatedReplies.push(newReply);
+                    } else {
+                        // Existing reply, update messages
+                        updatedReplies[index] = newReply;
+                    }
                 });
-            },
-        );
+                return updatedReplies;
+            });
+        });
 
         socket.on(SocketEvents.server.pushSpans, (newSpans: SpanData[]) => {
             setSpans((prevSpans) => {
@@ -209,6 +210,13 @@ export function RunRoomContextProvider({ children }: Props) {
         return <ProjectNotFoundPage />;
     }
 
+    /**
+     * Send the user input to the server
+     *
+     * @param requestId
+     * @param blocksInput
+     * @param structuredInput
+     */
     const sendUserInputToServer = (
         requestId: string,
         blocksInput: ContentBlocks,
@@ -238,7 +246,7 @@ export function RunRoomContextProvider({ children }: Props) {
         <RunRoomContext.Provider
             value={{
                 runId,
-                messages,
+                replies,
                 trace,
                 spans,
                 inputRequests,
