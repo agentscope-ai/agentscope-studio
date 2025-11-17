@@ -83,6 +83,20 @@ rapid secondary development, and 3) integration of advanced features in
 
 ## 💻 Installation
 
+### Prerequisites
+
+- **Node.js >= 20.0.0**
+- **npm >= 10.0.0**
+
+> **💡 Tip**: If you're using [nvm](https://github.com/nvm-sh/nvm), you can run `nvm use` to automatically switch to the required Node.js version.
+
+### How to check your Node.js version:
+
+```bash
+node --version  # Should show v20.x.x or higher
+npm --version   # Should show 10.x.x or higher
+```
+
 - From source code:
 
 ```bash
