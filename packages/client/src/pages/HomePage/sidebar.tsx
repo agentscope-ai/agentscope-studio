@@ -20,8 +20,8 @@ import {
     Command,
     EarthIcon,
     FolderGit2Icon,
-    ListChecksIcon,
-    RouteIcon,
+    // ListChecksIcon,
+    // RouteIcon,
     UnplugIcon,
 } from 'lucide-react';
 import GitHubIcon from '@/assets/svgs/github.svg?react';
