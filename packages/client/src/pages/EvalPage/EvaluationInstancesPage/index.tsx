@@ -408,7 +408,6 @@ const EvaluationDetailPage = () => {
                     <div className="rounded-xl border shadow">
                         <div className="flex flex-ro items-center justify-between space-y-1.5 p-6 pb-2 text-sm font-medium">
                             Instances
-                            <a href={`/eval/${evaluationData.id}/instances/3`}>查看</a>
                         </div>
                         <div className="p-6">
                             <AsTable
