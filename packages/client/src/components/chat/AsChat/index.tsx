@@ -6,6 +6,7 @@ import {
     MessageSquareIcon,
     DicesIcon,
     ArrowDownToLineIcon,
+    MoreHorizontalIcon,
 } from 'lucide-react';
 import {
     DropdownMenu,
@@ -18,6 +19,7 @@ import {
 import { Button } from '@/components/ui/button.tsx';
 import AsBubble from '@/components/chat/AsChat/bubble.tsx';
 import AsTextarea from '@/components/chat/AsChat/textarea.tsx';
+import { ButtonGroup } from '@/components/ui/button-group.tsx';
 
 interface Props {
     /** List of chat replies to display */
@@ -185,47 +187,57 @@ const AsChat = ({
                 </Button>
             </div>
 
-            <div className="flex flex-col w-full space-y-2">
+            <div className="flex flex-col w-full space-y-2 mt-2">
                 {/*The component list above the textarea component*/}
                 <div className="flex flex-row justify-end w-full space-x-4">
-                    {actions}
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button size="icon-sm" variant="outline">
-                                <SettingsIcon />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                            className="w-56"
-                            align="start"
-                            side="top"
-                        >
-                            <DropdownMenuLabel>Display</DropdownMenuLabel>
-                            <DropdownMenuGroup>
-                                <DropdownMenuCheckboxItem
-                                    checked={renderMarkdown}
-                                    onCheckedChange={setRenderMarkdown}
+                    <ButtonGroup>
+                        {actions}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    size="icon-sm"
+                                    variant="outline"
+                                    aria-label="More options"
                                 >
-                                    <MonitorIcon />
-                                    Render Markdown
-                                </DropdownMenuCheckboxItem>
-                                <DropdownMenuCheckboxItem
-                                    checked={byReplyId}
-                                    onCheckedChange={setByReplyId}
-                                >
-                                    <MessageSquareIcon />
-                                    By reply Id
-                                </DropdownMenuCheckboxItem>
-                                <DropdownMenuCheckboxItem
-                                    checked={randomAvatar}
-                                    onCheckedChange={setRandomAvatar}
-                                >
-                                    <DicesIcon />
-                                    Use random avatar
-                                </DropdownMenuCheckboxItem>
-                            </DropdownMenuGroup>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                                    {actions ? (
+                                        <MoreHorizontalIcon />
+                                    ) : (
+                                        <SettingsIcon />
+                                    )}
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                                className="w-56"
+                                align="start"
+                                side="top"
+                            >
+                                <DropdownMenuLabel>Display</DropdownMenuLabel>
+                                <DropdownMenuGroup>
+                                    <DropdownMenuCheckboxItem
+                                        checked={renderMarkdown}
+                                        onCheckedChange={setRenderMarkdown}
+                                    >
+                                        <MonitorIcon />
+                                        Render Markdown
+                                    </DropdownMenuCheckboxItem>
+                                    <DropdownMenuCheckboxItem
+                                        checked={byReplyId}
+                                        onCheckedChange={setByReplyId}
+                                    >
+                                        <MessageSquareIcon />
+                                        By reply Id
+                                    </DropdownMenuCheckboxItem>
+                                    <DropdownMenuCheckboxItem
+                                        checked={randomAvatar}
+                                        onCheckedChange={setRandomAvatar}
+                                    >
+                                        <DicesIcon />
+                                        Use random avatar
+                                    </DropdownMenuCheckboxItem>
+                                </DropdownMenuGroup>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </ButtonGroup>
                 </div>
 
                 <AsTextarea

@@ -135,7 +135,7 @@ const ToolUseBlockDiv = ({ block }: { block: ToolUseBlock }) => {
             <AccordionItem value="header">
                 <AccordionTrigger className="flex flex-row text-sm px-4 py-1.5 w-full rounded-t-[8px] rounded-b-[0px] bg-[#343541] text-white [&>svg]:stroke-white hover:no-underline cursor-pointer data-[state=closed]:rounded-b-[8px]">
                     {t('chat.title-using-tool')}
-                    {block.name}
+                    {block.name + ' ...'}
                 </AccordionTrigger>
                 <AccordionContent className="w-full">
                     <SyntaxHighlighter
@@ -165,7 +165,7 @@ const ToolResultBlockDiv = ({ block }: { block: ToolResultBlock }) => {
     const [displayRaw, setDisplayRaw] = useState<boolean>(false);
 
     return (
-        <Accordion className="w-full" type="single" collapsible>
+        <Accordion className="w-full max-w-full" type="single" collapsible>
             <AccordionItem value="header">
                 <AccordionTrigger className="flex flex-row text-sm px-4 py-1.5 w-full rounded-t-[8px] rounded-b-[0px] bg-[#343541] text-white [&>svg]:stroke-white hover:no-underline cursor-pointer data-[state=closed]:rounded-b-[8px]">
                     <div className="flex flex-row justify-between w-full">
@@ -226,7 +226,11 @@ const ToolResultRender = ({
     output: ToolResultBlock['output'];
 }) => {
     if (typeof output === 'string') {
-        return <MarkdownRender text={output} />;
+        return (
+            <div className="w-full bg-[var(--color-code-bg)] p-4 rounded-b-[8px] [&>p]:mt-0!">
+                <MarkdownRender text={'- ' + output} />
+            </div>
+        );
     }
 
     return (

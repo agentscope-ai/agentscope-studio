@@ -151,6 +151,7 @@ const StudioSidebar = () => {
                                 <SidebarMenu>
                                     <SidebarMenuItem>
                                         <SidebarMenuButton
+                                            className="cursor-pointer"
                                             tooltip={subItem.title}
                                             onClick={() => {
                                                 navigate(subItem.url);

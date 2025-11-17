@@ -5,10 +5,10 @@ import { useTranslation } from 'react-i18next';
 
 import AsTable from '@/components/tables/AsTable';
 import EyeIcon from '@/assets/svgs/eye.svg?react';
-import ExitIcon from '@/assets/svgs/exit.svg?react';
 import DeleteIcon from '@/assets/svgs/delete.svg?react';
 import EyeInvisibleIcon from '@/assets/svgs/eye-invisible.svg?react';
 
+import { LogOutIcon } from 'lucide-react';
 import { useTour } from '@/context/TourContext.tsx';
 import { RemoveScrollBarStyle } from '@/styles.ts';
 import { StatusCell, TextCell } from '@/components/tables/utils.tsx';
@@ -16,6 +16,7 @@ import { SecondaryButton, SwitchButton } from '@/components/buttons/ASButton';
 import { useProjectRoom } from '@/context/ProjectRoomContext.tsx';
 
 import './index.css';
+import { RouterPath } from '@/pages/RouterPath.ts';
 
 const { Sider } = Layout;
 
@@ -119,13 +120,7 @@ const ProjectRunSider = ({ onRunClick }: Props) => {
                 >
                     <Button
                         variant="filled"
-                        icon={
-                            <ExitIcon
-                                width={14}
-                                height={14}
-                                style={{ transform: 'rotate(180deg)' }}
-                            />
-                        }
+                        icon={<LogOutIcon className="rotate-180 size-4" />}
                         color="default"
                         onClick={() => {
                             navigate(RouterPath.PROJECTS);
