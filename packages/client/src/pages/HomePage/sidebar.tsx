@@ -55,16 +55,16 @@ const StudioSidebar = () => {
                     url: RouterPath.PROJECTS,
                 },
                 // TODO: activate tracing and evaluation when they are ready
-                {
-                    title: t('common.tracing'),
-                    icon: RouteIcon,
-                    url: RouterPath.TRACING,
-                },
-                {
-                    title: t('common.evaluation'),
-                    icon: ListChecksIcon,
-                    url: RouterPath.EVAL,
-                },
+                // {
+                //     title: t('common.tracing'),
+                //     icon: RouteIcon,
+                //     url: RouterPath.TRACING,
+                // },
+                // {
+                //     title: t('common.evaluation'),
+                //     icon: ListChecksIcon,
+                //     url: RouterPath.EVAL,
+                // },
             ],
         },
         {
