@@ -10,11 +10,13 @@
     "chat": {
         "title-attachment": "总计 {{length}} 个 URL 附件",
         "title-attachments": "总计 {{length}} 个 URL 附件",
+        "title-hint-message": "提示消息",
         "title-using-tool": "调用工具 ",
         "title-time-total": "总耗时: {{totalTime}}s",
         "title-tool-result": "运行结果"
     },
     "common": {
+        "agent": "智能体",
         "attributes": "所有属性",
         "api": "API 文档",
         "application": "应用",
@@ -24,22 +26,30 @@
         "changeLanguage": "切换语言",
         "completion": "生成内容",
         "completion-average": "生成内容(Avg)",
-        "cont": "联系",
+        "contact": "联系",
         "dashboard": "运行监控",
         "data-view": "数据视图",
         "data-view-description": "当前运行实例的统计信息",
+        "develop": "开发",
+        "discord": "Discord",
         "distribution": "分布",
-        "docs": "文档",
-        "evaluation": "评测分析",
+        "dingtalk": "钉钉",
+        "document": "文档",
+        "evaluation": "评测",
         "evaluation-history": "评测历史",
+        "friday": "Friday",
+        "github": "GitHub",
+        "hint": "提示",
         "home": "主页",
         "input": "输入",
         "input-tokens": "输入 Token 数",
         "id": "ID",
+        "language": "语言",
         "latency": "耗时",
         "llm-invocation": "模型调用",
         "llm-invocations": "模型调用",
         "message": "消息",
+        "messages": "消息",
         "metadata": "元数据",
         "model-category": "模型种类",
         "name": "名称",
@@ -47,6 +57,7 @@
         "output": "输出",
         "output-tokens": "输出 Token 数",
         "pid": "进程 ID",
+        "preview": "预览",
         "project": "项目",
         "projects": "项目",
         "prompt": "提示词",
@@ -59,6 +70,7 @@
         "timestamp": "时间戳",
         "trace": "跟踪",
         "trace-details": "跟踪详情",
+        "tracing": "追溯",
         "total": "总计",
         "total-times": "总次数",
         "total-tokens": "总 Token 数",
@@ -103,6 +115,7 @@
     },
     "hint": {
         "empty-trace": "数据为空",
+        "messages": "AgentScope 一次回复（reply）可能包含多个消息，每条消息有对应的 role 和 name 字段",
         "select-run": "点击运行实例以查看详细数据",
         "select-message": "点击消息以查看详细数据",
         "select-trace": "点击运行实例以查看跟踪数据"
@@ -131,7 +144,9 @@
     "placeholder": {
         "input-as-user": "以 {{name}} 的身份进行输入（按{{shortcutKeys}}发送消息）",
         "input-disable": "当前不需要用户进行输入",
-        "input-friday-app": "{{shortcutKeys}} 发送消息",
+        "input-friday-afternoon": "下午好，我能为你做些什么？",
+        "input-friday-evening": "晚上好，我能为你做些什么？",
+        "input-friday-morning": "早上好，我能为你做些什么？",
         "input-url": "指向图片/视频/音频的本地或网络 URL（回车键确认）",
         "search-benchmark": "搜索基准数据集",
         "search-evaluation": "搜索评测历史",
@@ -172,16 +187,21 @@
             "attachment-delete": "删除该附件",
             "clean-history": "清除当前对话历史",
             "compare-evaluation": "比较同一基准数据集的两次评测结果",
+            "copy-to-clipboard": "复制到剪贴板",
             "delete-selected-projects": "删除当前选中的 {{number}} 个项目",
             "delete-selected-projects-disable": "从表格中选择项目以删除",
+            "expand-textarea": "放大",
             "focus-on-latest-run": "自动切换到最新运行实例",
             "interrupt-reply": "中断回复",
-            "send-message": "按 {{shortcutKeys}} 键发送消息",
+            "send-message": "发送消息",
             "send-message-disable": "当前输入请求为空",
             "scroll-to-bottom": "滚动到最底部"
         },
         "chart": {
             "invocation": "调用次数"
+        },
+        "header": {
+            "hint-message": "以用户口吻表达的消息，用于引导智能体的行为"
         },
         "switch": {
             "display-raw-data": "显式原始数据"
@@ -206,6 +226,8 @@
         }
     },
     "unit": {
+        "character": "字符",
+        "characters": "字符",
         "run": "运行",
         "runs": "运行",
         "time": "次",

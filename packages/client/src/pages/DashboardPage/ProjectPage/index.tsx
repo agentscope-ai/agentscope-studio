@@ -162,7 +162,7 @@ const ProjectPage = () => {
                     return {
                         onClick: (event: MouseEvent) => {
                             if (event.type === 'click') {
-                                navigate(`projects/${record.project}`);
+                                navigate(`${record.project}`);
                             }
                         },
                         style: {
