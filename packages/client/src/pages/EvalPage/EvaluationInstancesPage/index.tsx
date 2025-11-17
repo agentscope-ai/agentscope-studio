@@ -1,12 +1,13 @@
 import { memo, MouseEvent } from 'react';
-import { Select } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import {
-    Area,
-    AreaChart,
     Bar,
     BarChart,
     CartesianGrid,
+    Cell,
+    Legend,
+    Pie,
+    PieChart,
     ResponsiveContainer,
     Tooltip,
     XAxis,
@@ -23,7 +24,7 @@ import {
 } from '@/components/tables/utils.tsx';
 import { EvaluationMetaData } from '@shared/types';
 
-const EvaluationDetailPage = () => {
+const EvaluationInstancesPage = () => {
     const { evaluationData } = useEvaluationRoom();
     const navigate = useNavigate();
 
@@ -43,10 +44,10 @@ const EvaluationDetailPage = () => {
             <div className="max-w-5xl mx-auto px-6 py-6 space-y-6 h-full">
                 <div className="flex flex-col gap-1.5">
                     <div className="font-bold text-xl">
-                        {evaluationData.name}
+                        claude-3-5-sonnet-20241022
                     </div>
                     <div className="text-sm text-muted-foreground mb-3">
-                        Evaluation on Benchmark {evaluationData.benchmark}
+                        20250113_claude_3_5_sonnet_20241022_temp_0_0_iter_20_fmt_tool_call_hist_messages_lite
                     </div>
                 </div>
 
@@ -55,7 +56,7 @@ const EvaluationDetailPage = () => {
                         <div className="rounded-xl border shadow">
                             <div className="p-6 flex flex-row items-center justify-between space-y-0 pb-1">
                                 <h3 className="tracking-tight text-sm font-medium">
-                                    Benchmark
+                                    Setup
                                 </h3>
                                 <div className="text-muted-foreground h-4 w-4">
                                     <svg
@@ -82,26 +83,26 @@ const EvaluationDetailPage = () => {
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div className="flex items-center justify-between col-span-2">
                                             <span className="text-sm text-muted-foreground">
-                                                Name
+                                                Model
                                             </span>
                                             <span className="text-sm font-medium">
-                                                {evaluationData.benchmark}
+                                                claude-3-5-sonnet-20241022
                                             </span>
                                         </div>
                                         <div className="flex items-center justify-between">
                                             <span className="text-sm text-muted-foreground">
-                                                %Task
+                                                Temperature
                                             </span>
                                             <span className="text-sm font-medium">
-                                                200
+                                                N/A
                                             </span>
                                         </div>
                                         <div className="flex items-center justify-between">
                                             <span className="text-sm text-muted-foreground">
-                                                Progress
+                                                Max Iterations
                                             </span>
                                             <span className="text-sm font-medium">
-                                                30%
+                                                20
                                             </span>
                                         </div>
                                         <div className="flex items-center justify-between">
@@ -109,7 +110,7 @@ const EvaluationDetailPage = () => {
                                                 Format
                                             </span>
                                             <span className="text-sm font-medium">
-                                                react
+                                                tool_call
                                             </span>
                                         </div>
                                         <div className="flex items-center justify-between">
@@ -128,7 +129,7 @@ const EvaluationDetailPage = () => {
                     <div className="rounded-xl border shadow">
                         <div className="p-6 flex flex-row items-center justify-between space-y-0 pb-1">
                             <h3 className="tracking-tight text-sm font-medium">
-                                % Repeat
+                                % Resolved
                             </h3>
                             <div className="text-muted-foreground h-4 w-4">
                                 <svg
@@ -150,23 +151,23 @@ const EvaluationDetailPage = () => {
 
                         <div className="p-6 min-h-[5.5rem] pt-2">
                             <div className="text-2xl font-bold flex items-center gap-2">
-                                {evaluationData.repeat}
+                            39.0%
                             </div>
                             <div className="flex items-center justify-between mt-2">
                                 <div className="flex flex-col">
                                     <span className="text-muted-foreground text-xs">
-                                        Finished
+                                    Resolved
                                     </span>
                                     <span className="text-sm font-medium">
-                                        5
+                                        512
                                     </span>
                                 </div>
                                 <div className="flex flex-col items-end">
                                     <span className="text-muted-foreground text-xs">
-                                        Target
+                                        Total
                                     </span>
                                     <span className="text-sm font-medium">
-                                        5
+                                        100
                                     </span>
                                 </div>
                             </div>
@@ -176,7 +177,7 @@ const EvaluationDetailPage = () => {
                     <div className="rounded-xl border shadow">
                         <div className="p-6 flex flex-row items-center justify-between space-y-0 pb-1">
                             <h3 className="tracking-tight text-sm font-medium">
-                                Metric
+                            Cost
                             </h3>
                             <div className="text-muted-foreground h-4 w-4">
                                 <svg
@@ -199,14 +200,14 @@ const EvaluationDetailPage = () => {
                         </div>
 
                         <div className="p-6 min-h-[5.5rem] pt-2">
-                            <div className="text-2xl font-bold">3</div>
+                            <div className="text-2xl font-bold">$42.60</div>
                             <div className="flex items-center justify-between mt-2">
                                 <div className="flex flex-col">
                                     <span className="text-muted-foreground text-xs">
                                         $/Instance
                                     </span>
                                     <span className="text-sm font-medium">
-                                        7.64¢
+                                    $0.14
                                     </span>
                                 </div>
                                 <div className="flex flex-col items-end">
@@ -246,7 +247,6 @@ const EvaluationDetailPage = () => {
                                         y="4"
                                         rx="2"
                                     ></rect>
-
                                     <rect
                                         width="6"
                                         height="6"
@@ -254,28 +254,20 @@ const EvaluationDetailPage = () => {
                                         y="9"
                                         rx="1"
                                     ></rect>
-
                                     <path d="M15 2v2"></path>
-
                                     <path d="M15 20v2"></path>
-
                                     <path d="M2 15h2"></path>
-
                                     <path d="M2 9h2"></path>
-
                                     <path d="M20 15h2"></path>
-
                                     <path d="M20 9h2"></path>
-
                                     <path d="M9 2v2"></path>
-
                                     <path d="M9 20v2"></path>
                                 </svg>
                             </div>
                         </div>
 
                         <div className="p-6 min-h-[5.5rem] pt-2">
-                            <div className="text-2xl font-bold">7.0M</div>
+                            <div className="text-2xl font-bold">11.4M</div>
                             <div className="flex items-center justify-between mt-2">
                                 <div className="flex flex-col">
                                     <span className="text-muted-foreground text-xs">
@@ -303,110 +295,209 @@ const EvaluationDetailPage = () => {
                     </div>
                 </div>
 
-                <div className="hidden sm:block">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Status Pie Chart */}
                     <div className="rounded-xl border shadow">
-                        <div className="flex flex-ro items-center justify-between space-y-1.5 p-6 pb-2 text-sm font-medium">
-                            Result
-                            <Select
-                                variant="filled"
-                                defaultValue="accuracy"
-                                options={[
-                                    {
-                                        label: 'Accuracy',
-                                        value: 'accuracy',
-                                    },
-                                    {
-                                        label: 'Tool Usage',
-                                        value: 'tool-usage',
-                                    },
-                                ]}
-                            />
+                        <div className="p-6 flex flex-col space-y-3">
+                            <div className="flex flex-row items-center justify-between">
+                                <h3 className="text-lg font-semibold leading-none tracking-tight">
+                                    Status
+                                </h3>
+                                <div className="text-muted-foreground h-4 w-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12c.552 0 1.005-.449.95-.998a10 10 0 0 0-8.953-8.951c-.55-.055-.998.398-.998.95v8a1 1 0 0 0 1 1z"></path><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path></svg>
+                                </div>
+                            </div>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                Final status of instances evaluated with the
+                                Moatless EvalTools SWE-Bench Harness. Indicates
+                                if the instance was resolved successfully, failed
+                                to complete, encountered an error, or didn't
+                                generate any patches.
+                            </p>
+                            <div className="h-[320px] w-full flex items-center justify-center">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={[
+                                                {
+                                                    name: 'no_patch',
+                                                    value: 4,
+                                                    color: '#f97316',
+                                                },
+                                                {
+                                                    name: 'resolved',
+                                                    value: 100,
+                                                    color: '#22c55e',
+                                                },
+                                                {
+                                                    name: 'failed',
+                                                    value: 195,
+                                                    color: '#ef4444',
+                                                },
+                                                {
+                                                    name: 'error',
+                                                    value: 1,
+                                                    color: '#a855f7',
+                                                },
+                                            ]}
+                                            cx="50%"
+                                            cy="45%"
+                                            labelLine={false}
+                                            label={false}
+                                            outerRadius={120}
+                                            innerRadius={0}
+                                            fill="#8884d8"
+                                            dataKey="value"
+                                            startAngle={90}
+                                            endAngle={-270}
+                                        >
+                                            {[
+                                                { name: 'no_patch', color: '#f97316' },
+                                                { name: 'resolved', color: '#22c55e' },
+                                                { name: 'failed', color: '#ef4444' },
+                                                { name: 'error', color: '#a855f7' },
+                                            ].map((entry, index) => (
+                                                <Cell
+                                                    key={`cell-${index}`}
+                                                    fill={entry.color}
+                                                />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip
+                                            formatter={(value: number, name: string) => [
+                                                `${value} (${((value / 300) * 100).toFixed(1)}%)`,
+                                                name,
+                                            ]}
+                                        />
+                                        <Legend
+                                            verticalAlign="bottom"
+                                            height={36}
+                                            iconType="circle"
+                                            wrapperStyle={{
+                                                paddingTop: '20px',
+                                            }}
+                                            formatter={(value) => value}
+                                            iconSize={8}
+                                        />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 p-6 pt-3 w-full h-[150px]">
-                            <ResponsiveContainer height="100%" width="100%">
-                                <BarChart
-                                    data={[
-                                        {
-                                            name: 'repeat-1',
-                                            accuracy: 0.72,
-                                        },
-                                        {
-                                            name: 'repeat-2',
-                                            accuracy: 0.85,
-                                        },
-                                        {
-                                            name: 'repeat-3',
-                                            accuracy: 0.6,
-                                        },
-                                        {
-                                            name: 'repeat-4',
-                                            accuracy: 0.8,
-                                        },
-                                        {
-                                            name: 'repeat-5',
-                                            accuracy: 0.9,
-                                        },
-                                    ]}
-                                    margin={{
-                                        top: 0,
-                                        right: 0,
-                                        left: 0,
-                                        bottom: 0,
-                                    }}
-                                >
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <Bar
-                                        dataKey="accuracy"
-                                        fill="var(--muted-foreground)"
-                                        maxBarSize={20}
-                                        stackId="modelName"
-                                    />
-                                    <YAxis type="number" />
-                                    <XAxis dataKey="name" type="category" />
-                                </BarChart>
-                            </ResponsiveContainer>
+                    </div>
 
-                            <ResponsiveContainer height="100%" width="100%">
-                                <AreaChart
-                                    data={[
-                                        {
-                                            name: 0,
-                                            uv: 0,
-                                        },
-                                        {
-                                            name: 50,
-                                            uv: 0.7,
-                                        },
-                                        {
-                                            name: 100,
-                                            uv: 0,
-                                        },
-                                    ]}
-                                    margin={{
-                                        top: 10,
-                                        right: 30,
-                                        left: 0,
-                                        bottom: 0,
-                                    }}
-                                >
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="name" type="number" />
-                                    <YAxis />
-                                    <Tooltip />
-                                    <Area
-                                        type="monotone"
-                                        dataKey="uv"
-                                        stroke="var(--primary-color)"
-                                        fill="var(--primary-color)"
-                                    />
-                                </AreaChart>
-                            </ResponsiveContainer>
+                    {/* Flags Bar Chart */}
+                    <div className="rounded-xl border shadow">
+                        <div className="p-6 flex flex-col space-y-3">
+                            <div className="flex flex-row items-center justify-between">
+                                <h3 className="text-lg font-semibold leading-none tracking-tight">
+                                    Flags
+                                </h3>
+                                <div className="text-muted-foreground h-4 w-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="20" y2="10"></line><line x1="18" x2="18" y1="20" y2="4"></line><line x1="6" x2="6" y1="20" y2="16"></line></svg>
+                                </div>
+                            </div>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                Flags indicate potential issues in how the LLM
+                                follows the agentic workflow. They help identify
+                                common failure modes like hallucinations, "stuck
+                                in a loop", or missing test verifications.
+                            </p>
+                            <div className="h-[320px] w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart
+                                        data={[
+                                            {
+                                                name: 'duplicated_actions',
+                                                value: 22,
+                                            },
+                                            {
+                                                name: 'failed_actions',
+                                                value: 42,
+                                            },
+                                            {
+                                                name: 'failed_tests',
+                                                value: 32,
+                                            },
+                                            {
+                                                name: 'no_test_patch',
+                                                value: 137,
+                                            },
+                                        ]}
+                                        layout="vertical"
+                                        margin={{
+                                            top: 10,
+                                            right: 30,
+                                            left: 20,
+                                            bottom: 10,
+                                        }}
+                                    >
+                                        <CartesianGrid
+                                            strokeDasharray="3 3"
+                                            stroke="var(--border)"
+                                            horizontal={true}
+                                            vertical={false}
+                                        />
+                                        <XAxis
+                                            type="number"
+                                            domain={[0, 'dataMax']}
+                                            ticks={[0, 11, 22, 33, 44, 55, 66, 77, 88, 99, 110, 121, 132]}
+                                            tick={{ fontSize: 11 }}
+                                            stroke="var(--muted-foreground)"
+                                        />
+                                        <YAxis
+                                            dataKey="name"
+                                            type="category"
+                                            width={150}
+                                            tick={{ fontSize: 11 }}
+                                            stroke="var(--muted-foreground)"
+                                        />
+                                        <Tooltip
+                                            formatter={(value: number) => [
+                                                value,
+                                                'Count',
+                                            ]}
+                                            content={({ active, payload }) => {
+                                                if (active && payload && payload.length) {
+                                                    const data = payload[0].payload;
+                                                    let description = '';
+                                                    if (data.name === 'no_test_patch') {
+                                                        description =
+                                                            'No test changes were made, suggesting lack of verification';
+                                                    }
+                                                    return (
+                                                        <div className="rounded-lg border bg-popover p-3 shadow-md">
+                                                            <p className="font-medium text-sm">
+                                                                {data.name}
+                                                            </p>
+                                                            {description && (
+                                                                <p className="text-xs text-muted-foreground mt-1">
+                                                                    {description}
+                                                                </p>
+                                                            )}
+                                                            <p className="text-sm font-semibold mt-1">
+                                                                Count: {data.value}
+                                                            </p>
+                                                        </div>
+                                                    );
+                                                }
+                                                return null;
+                                            }}
+                                        />
+                                        <Bar
+                                            dataKey="value"
+                                            fill="#000000"
+                                            radius={[0, 4, 4, 0]}
+                                        />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
                         </div>
                     </div>
                 </div>
+
                 <div className="block">
                     <div className="rounded-xl border shadow">
-                        <div className="flex flex-ro items-center justify-between space-y-1.5 p-6 pb-2 text-sm font-medium">
+                        <div className="flex flex-ro items-center justify-between space-y-1.5 p-6 pb-2 font-medium text-lg font-semibold leading-none tracking-tight">
                             Instances
                         </div>
                         <div className="p-6">
@@ -475,4 +566,4 @@ const EvaluationDetailPage = () => {
     );
 };
 
-export default memo(EvaluationDetailPage);
+export default memo(EvaluationInstancesPage);

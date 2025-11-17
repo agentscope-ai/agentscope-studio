@@ -36,7 +36,11 @@ const EvalPage = () => {
                 />
                 <Route
                     path={RouterPath.EVAL_TASK_INSTANCES}
-                    element={<EvaluationInstancesPage />}
+                    element={
+                        <EvaluationRoomContextProvider>
+                            <EvaluationInstancesPage />
+                        </EvaluationRoomContextProvider>
+                    }
                 />
             </Routes>
         </Layout>
