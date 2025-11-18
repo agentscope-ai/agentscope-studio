@@ -102,7 +102,7 @@ const ProjectRow = ({ project, runCount, lastUpdateTime }: ProjectRowProps) => {
     return (
         <div
             className="as-project-row flex items-center justify-between h-[50px] min-h-[50px] w-full min-w-0 cursor-pointer rounded-md px-2"
-            onClick={() => navigate('/dashboard/projects/' + project)}
+            onClick={() => navigate(RouterPath.PROJECTS + '/' + project)}
         >
             <div className="flex items-center w-full min-w-0 gap-2">
                 <Avatar style={{ flexShrink: 0 }}>{project.slice(0, 1)}</Avatar>
