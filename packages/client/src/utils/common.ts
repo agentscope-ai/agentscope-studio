@@ -1,5 +1,4 @@
 import { BlockType } from '@shared/types';
-import { clsx, type ClassValue } from 'clsx';
 
 /**
  * Copy a string to the system clipboard.
@@ -53,15 +52,4 @@ export const getBlockTypeFromExtension = (extension: string | undefined) => {
     }
 
     return null;
-};
-
-/**
- * Utility function for combining class names.
- * This is a common pattern in shadcn/ui components.
- *
- * @param inputs Class values to combine
- * @returns Combined class string
- */
-export const cn = (...inputs: ClassValue[]) => {
-    return clsx(inputs);
 };

@@ -1,5 +1,5 @@
 import { Key, memo, MouseEvent, useEffect, useState } from 'react';
-import { Flex, Input, TableColumnsType, Table } from 'antd';
+import { Input, TableColumnsType, Table } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
@@ -134,26 +134,21 @@ const ProjectPage = () => {
     ];
 
     return (
-        <Flex
-            style={{ width: '100%', height: '100%', padding: '32px 48px' }}
-            vertical={true}
-            gap="middle"
-        >
+        <div className="w-full h-full py-8 px-12 flex flex-col gap-4">
             <PageTitleSpan title={t('common.projects')} />
-            <Flex vertical={false} gap="middle" align="center">
-                <Input
-                    value={searchText}
-                    onChange={(event) => {
-                        setSearchText(event.target.value);
-                    }}
-                    style={{
-                        width: 300,
-                        borderRadius: 'calc(var(--radius) - 2px)',
-                    }}
-                    variant="outlined"
-                    placeholder={t('placeholder.search-project')}
-                    allowClear
-                />
+            <div className="flex gap-4 items-center">
+                <div className="w-1/4">
+                    <Input
+                        value={searchText}
+                        onChange={(event) => {
+                            setSearchText(event.target.value);
+                        }}
+                        className="rounded-[calc(var(--radius)-2px)]"
+                        variant="outlined"
+                        placeholder={t('placeholder.search-project')}
+                        allowClear
+                    />
+                </div>
 
                 <SecondaryButton
                     tooltip={
@@ -174,19 +169,9 @@ const ProjectPage = () => {
                 >
                     {t('action.delete')}
                 </SecondaryButton>
-            </Flex>
+            </div>
 
-            <div
-                style={{
-                    height: 'calc(100vh - 200px)',
-                    maxHeight: '600px',
-                    border: '1px solid var(--border)',
-                    borderRadius: 'calc(var(--radius) - 2px)',
-                    overflow: 'hidden',
-                    display: 'flex',
-                    flexDirection: 'column',
-                }}
-            >
+            <div className="h-[calc(100vh-200px)] max-h-[600px] border border-border rounded-[calc(var(--radius)-2px)] overflow-hidden flex flex-col">
                 <Table<ProjectData>
                     size="small"
                     columns={columns}
@@ -205,7 +190,7 @@ const ProjectPage = () => {
                         showTotal: (total) => `${total} items in total`,
                         pageSizeOptions: ['10', '20', '50', '100'],
                         hideOnSinglePage: false,
-                        style: { marginRight: '16px' },
+                        className: 'mr-4',
                     }}
                     onChange={onTableChange}
                     onRow={(record: ProjectData) => {
@@ -215,14 +200,14 @@ const ProjectPage = () => {
                                     navigate(`projects/${record.project}`);
                                 }
                             },
-                            style: { cursor: 'pointer' },
+                            className: 'cursor-pointer',
                         };
                     }}
                     rowKey="project"
                     rowSelection={rowSelection}
                 />
             </div>
-        </Flex>
+        </div>
     );
 };
 
