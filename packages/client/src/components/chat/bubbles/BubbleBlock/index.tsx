@@ -99,11 +99,7 @@ const VideoBlockDiv = ({ source }: { source: Base64Source | URLSource }) => {
     } else {
         url = source.url;
     }
-    return (
-        <audio key={url} controls>
-            <source src={url} type="audio/mpeg" />
-        </audio>
-    );
+    return <video key={url} controls src={url} />;
 };
 
 /**
@@ -117,11 +113,7 @@ const AudioBlockDiv = ({ source }: { source: Base64Source | URLSource }) => {
     } else {
         url = source.url;
     }
-    return (
-        <video key={url} controls>
-            <source src={url} type="video/mp4" />
-        </video>
-    );
+    return <audio key={url} controls src={url} />;
 };
 
 /**
