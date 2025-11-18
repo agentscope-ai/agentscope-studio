@@ -8,6 +8,15 @@
         "ok": "OK"
     },
     "chat": {
+        "avatar-set": {
+            "character": "Character",
+            "fairytale": "Fairytale",
+            "family-members": "Family Members",
+            "letter": "Letter",
+            "pokemon": "Pokemon",
+            "random": "Random",
+            "superhero": "Superhero"
+        },
         "title-attachment": "Total {{length}} URL is attached",
         "title-attachments": "Total {{length}} URLs are attached",
         "title-hint-message": "Hint message",
@@ -142,7 +151,7 @@
         "update-version-title": "Update Available"
     },
     "placeholder": {
-        "input-as-user": "Type your message in voice of {{name}} ({{shortcutKeys}} to send message)",
+        "input-as-user": "Type your message in voice of {{name}}",
         "input-disable": "Currently no user input is needed",
         "input-friday-afternoon": "Good afternoon, how can I help you today?",
         "input-friday-evening": "Good evening, how can I help you today?",
@@ -200,7 +209,10 @@
             "delete-selected-projects-disable": "Select projects from the table to delete",
             "expand-textarea": "Expand",
             "focus-on-latest-run": "Focus on the latest run automatically",
+            "group-by-reply": "Group messages by reply",
             "interrupt-reply": "Interrupt the reply",
+            "randomize-avatar": "Randomize avatar",
+            "render-markdown": "Render markdown",
             "send-message": "Send your message",
             "send-message-disable": "No user input is requested",
             "scroll-to-bottom": "Scroll to the bottom"

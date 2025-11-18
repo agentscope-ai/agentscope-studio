@@ -1,4 +1,4 @@
-import { memo, ReactNode, RefObject } from 'react';
+import { ReactNode, RefObject } from 'react';
 import { Button, ButtonProps, Tooltip } from 'antd';
 import { TooltipPlacement } from 'antd/lib/tooltip';
 
@@ -10,28 +10,6 @@ interface Props extends ButtonProps {
     tooltip: string;
     placement?: TooltipPlacement;
 }
-
-/**
- * Primary button with rounded corners and tooltip support.
- * Uses Ant Design's primary type with custom styling.
- */
-const PrimaryButton = memo(
-    ({ ref = undefined, tooltip, ...restProps }: Props) => {
-        return (
-            <Tooltip title={tooltip}>
-                <Button
-                    ref={ref}
-                    color="default"
-                    type="primary"
-                    style={{
-                        borderRadius: '1rem',
-                    }}
-                    {...restProps}
-                />
-            </Tooltip>
-        );
-    },
-);
 
 /**
  * Secondary button with tooltip support and configurable placement.
@@ -90,4 +68,4 @@ const SwitchButton = ({
     );
 };
 
-export { PrimaryButton, SecondaryButton, SwitchButton };
+export { SecondaryButton, SwitchButton };

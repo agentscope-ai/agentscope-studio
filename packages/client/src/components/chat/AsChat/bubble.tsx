@@ -5,23 +5,20 @@ import BubbleBlock, {
 } from '@/components/chat/bubbles/BubbleBlock';
 import { CircleAlertIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { AsAvatar } from '@/components/chat/AsChat/avatar.tsx';
 
 interface Props {
     reply: Reply;
+    avatar: ReactNode;
     markdown: boolean;
-    randomAvatar: boolean;
     onClick: (reply: Reply) => void;
-    renderAvatar?: (name: string, role: string) => ReactNode;
     userAvatarRight: boolean;
 }
 
 const AsBubble = ({
     reply,
+    avatar,
     markdown,
-    randomAvatar,
     onClick,
-    renderAvatar,
     userAvatarRight = false,
 }: Props) => {
     const { t } = useTranslation();
@@ -55,13 +52,7 @@ const AsBubble = ({
                 className={`flex flex-row${avatarRight ? '-reverse space-x-reverse' : ''} space-x-2 p-2 rounded-md w-full max-w-full bg-white active:bg-[#FAFAFA] cursor-pointer`}
                 onClick={() => onClick(reply)}
             >
-                <AsAvatar
-                    name={reply.replyName}
-                    role={reply.replyRole}
-                    randomAvatar={randomAvatar}
-                    seed={14}
-                    renderAvatar={renderAvatar}
-                />
+                {avatar}
 
                 <div className="flex flex-col flex-1 w-0 space-y-2">
                     <div
