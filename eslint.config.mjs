@@ -30,6 +30,7 @@ export default tseslint.config(
             '.git/**',
             '.vscode/**',
             '.idea/**',
+            '**/cache/**',
         ],
     },
     eslint.configs.recommended,
