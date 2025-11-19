@@ -1,5 +1,5 @@
 import {
-    BackendResponse,
+    ResponseBody,
     ContentBlocks,
     FridayReply,
     SocketEvents,
@@ -58,7 +58,7 @@ export function FridayAppRoomContextProvider({ children }: Props) {
 
         socket.emit(
             SocketEvents.client.joinFridayAppRoom,
-            (response: BackendResponse) => {
+            (response: ResponseBody) => {
                 if (!response.success) {
                     messageApi.error(response.message);
                 }
@@ -126,7 +126,7 @@ export function FridayAppRoomContextProvider({ children }: Props) {
                 name,
                 role,
                 content,
-                (response: BackendResponse) => {
+                (response: ResponseBody) => {
                     if (!response.success) {
                         notificationApi.error({
                             message: t('notification.friday-error-title'),

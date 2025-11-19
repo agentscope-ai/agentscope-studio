@@ -6,11 +6,7 @@ import {
     useState,
 } from 'react';
 import { useSocket } from './SocketContext';
-import {
-    SocketEvents,
-    RunData,
-    BackendResponse,
-} from '../../../shared/src/types/trpc';
+import { SocketEvents, RunData, ResponseBody } from '@shared/types';
 import { useMessageApi } from './MessageApiContext.tsx';
 
 // 定义 Context 类型
@@ -45,7 +41,7 @@ export function ProjectRoomContextProvider({ project, children }: Props) {
         socket.emit(
             SocketEvents.client.joinProjectRoom,
             project,
-            (response: BackendResponse) => {
+            (response: ResponseBody) => {
                 if (!response.success) {
                     messageApi.error(response.message);
                 }

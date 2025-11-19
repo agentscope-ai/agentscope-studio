@@ -17,7 +17,7 @@ interface Props {
  */
 const NumberCounter = ({ number, style = {} }: Props) => {
     return (
-        <Flex style={{ ...style }} align={'center'}>
+        <Flex style={{ ...style }} align="center">
             <SlotCounter
                 startValue={0}
                 startValueOnce
