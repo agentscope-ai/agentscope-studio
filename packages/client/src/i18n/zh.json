@@ -8,6 +8,15 @@
         "ok": "确认"
     },
     "chat": {
+        "avatar-set": {
+            "character": "人物",
+            "fairytale": "童话",
+            "family-members": "家庭成员",
+            "letter": "首字母",
+            "pokemon": "宝可梦",
+            "random": "随机",
+            "superhero": "超级英雄"
+        },
         "title-attachment": "总计 {{length}} 个 URL 附件",
         "title-attachments": "总计 {{length}} 个 URL 附件",
         "title-hint-message": "提示消息",
@@ -142,7 +151,7 @@
         "update-version-title": "更新可用"
     },
     "placeholder": {
-        "input-as-user": "以 {{name}} 的身份进行输入（按{{shortcutKeys}}发送消息）",
+        "input-as-user": "以 {{name}} 的身份进行输入",
         "input-disable": "当前不需要用户进行输入",
         "input-friday-afternoon": "下午好，我能为你做些什么？",
         "input-friday-evening": "晚上好，我能为你做些什么？",
@@ -192,7 +201,10 @@
             "delete-selected-projects-disable": "从表格中选择项目以删除",
             "expand-textarea": "放大",
             "focus-on-latest-run": "自动切换到最新运行实例",
+            "group-by-reply": "按照回复聚合显示消息",
             "interrupt-reply": "中断回复",
+            "randomize-avatar": "随机新的头像",
+            "render-markdown": "渲染为 Markdown 格式",
             "send-message": "发送消息",
             "send-message-disable": "当前输入请求为空",
             "scroll-to-bottom": "滚动到最底部"

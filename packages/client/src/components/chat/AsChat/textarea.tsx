@@ -188,7 +188,7 @@ const AsTextarea = ({
                 }}
             />
             <InputGroupAddon align="block-end">
-                <InputGroupText className="text-muted-foreground hidden group-focus-within:inline-flex">
+                <InputGroupText className="text-muted-foreground hidden group-focus-within:inline-flex truncate">
                     <Kbd>⏎</Kbd> to send,{' '}
                     <KbdGroup>
                         <Kbd>Shift + ⏎</Kbd>
