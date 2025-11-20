@@ -10,11 +10,10 @@ import {
     useRef,
 } from 'react';
 import type { MouseEvent as ReactMouseEvent } from 'react';
-import { Avatar, Layout, Skeleton } from 'antd';
+import { Avatar, Skeleton } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
-import TitleBar from '@/components/titlebar/TitleBar.tsx';
 import ProjectIcon from '@/assets/svgs/project.svg?react';
 import RunIcon from '@/assets/svgs/run.svg?react';
 import TokenIcon from '@/assets/svgs/token.svg?react';
@@ -273,9 +272,15 @@ const Block = ({ title, number, footer, icon }: BlockProps) => {
 
             <div className="flex flex-col gap-0">
                 {number !== undefined ? (
-                    <NumberCounter number={number} style={{ fontSize: 24, fontWeight: 700 }} />
+                    <NumberCounter
+                        number={number}
+                        style={{ fontSize: 24, fontWeight: 700 }}
+                    />
                 ) : (
-                    <Skeleton.Node active style={{ height: 30, width: '100%' }} />
+                    <Skeleton.Node
+                        active
+                        style={{ height: 30, width: '100%' }}
+                    />
                 )}
 
                 {footer ? (
@@ -301,7 +306,7 @@ const ProjectRow = ({ project, runCount, lastUpdateTime }: ProjectRowProps) => {
     return (
         <div
             className="as-project-row flex items-center justify-between h-[50px] min-h-[50px] w-full min-w-0 cursor-pointer rounded-md px-2"
-            onClick={() => navigate('/dashboard/projects/' + project)}
+            onClick={() => navigate(RouterPath.PROJECTS + '/' + project)}
         >
             <div className="flex items-center w-full min-w-0 gap-2">
                 <Avatar style={{ flexShrink: 0 }}>{project.slice(0, 1)}</Avatar>
@@ -316,7 +321,9 @@ const ProjectRow = ({ project, runCount, lastUpdateTime }: ProjectRowProps) => {
             </div>
             <div className="flex items-end font-medium">
                 <NumberCounter number={runCount} style={{ fontSize: 14 }} />
-                <div className="text-[12px] text-muted-foreground">&nbsp;{unit}</div>
+                <div className="text-[12px] text-muted-foreground">
+                    &nbsp;{unit}
+                </div>
             </div>
         </div>
     );
@@ -328,7 +335,6 @@ interface MonthlyRunItem {
 }
 
 const ContentPage = () => {
-    const { Content } = Layout;
     const { overviewData } = useOverviewRoom();
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -343,7 +349,8 @@ const ContentPage = () => {
     const yAxisMin = Math.min(...monthlyRuns.map((item) => item.count));
     const ticks = extended(yAxisMin, yAxisMax, 4);
     const maxTick = ticks[ticks.length - 1];
-    const yAxisWidth = maxTick < 10 ? 20 : maxTick < 100 ? 25 : maxTick < 1000 ? 30 : 42;
+    const yAxisWidth =
+        maxTick < 10 ? 20 : maxTick < 100 ? 25 : maxTick < 1000 ? 30 : 42;
 
     const obtainRatioOrNumber = (
         nPast: number,
@@ -510,14 +517,9 @@ const ContentPage = () => {
     };
 
     return (
-        <Layout>
-            <TitleBar title={t('common.home')} />
-
-            <Content className="h-full overflow-y-auto">
-                <div className="flex flex-col w-full px-12 py-8 gap-8">
-                    <div className="flex flex-col w-full rounded-lg gap-4">
-                        <PageTitleSpan title={t('common.dashboard')} />
-
+        <div className="flex flex-1 flex-col gap-4 py-8 px-12 h-full w-full overflow-y-auto">
+            <div className="flex flex-col w-full rounded-lg gap-4">
+                <PageTitleSpan title={t('common.projects')} />
                         <HighlightGroup className="flex flex-col gap-4 w-full" radius={180}>
                             {/* Stats cards */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-6 w-full">
@@ -637,8 +639,6 @@ const ContentPage = () => {
                         </HighlightGroup>
                     </div>
                 </div>
-            </Content>
-        </Layout>
     );
 };
 

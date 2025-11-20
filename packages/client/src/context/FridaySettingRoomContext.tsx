@@ -36,7 +36,9 @@ export function FridaySettingRoomContextProvider({ children }: Props) {
     const navigate = useNavigate();
 
     const location = useLocation();
-    const { autoNavigateToChat } = location.state;
+    const { autoNavigateToChat } = location.state || {
+        autoNavigateToChat: false,
+    };
 
     useEffect(() => {
         if (!socket) {

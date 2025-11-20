@@ -2,7 +2,7 @@ import {
     FridayAppMessageTable,
     FridayAppReplyTable,
 } from '../models/FridayApp';
-import { ContentBlocks, ReplyData } from '../../../shared/src';
+import { ContentBlocks, FridayReply } from '../../../shared/src';
 import { FridayAppReplyView } from '../models/FridayAppView';
 import { LessThan } from 'typeorm';
 import dayjs from 'dayjs';
@@ -23,7 +23,7 @@ export class FridayAppMessageDao {
             // Return the updated reply data
             return (await FridayAppReplyView.findOne({
                 where: { id: replyId },
-            })) as ReplyData;
+            })) as FridayReply;
         } catch (error) {
             console.error(error);
             throw error;
@@ -61,16 +61,15 @@ export class FridayAppMessageDao {
                 replyId: replyId,
                 name: msg.name,
                 role: msg.role,
-                content: () => ':content',
+                content: msg.content as never,
                 timestamp: msg.timestamp,
             })
-            .setParameter('content', JSON.stringify(msg.content))
             .orUpdate(['name', 'role', 'content', 'timestamp'], ['id'])
             .execute();
 
         return (await FridayAppReplyView.findOne({
             where: { id: replyId },
-        })) as ReplyData;
+        })) as FridayReply;
     }
 
     static async getRepliesBefore(timestamp?: string, limit: number = 100) {

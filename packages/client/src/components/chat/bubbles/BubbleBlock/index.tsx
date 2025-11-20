@@ -1,13 +1,10 @@
-import { memo, useState } from 'react';
+import { memo, ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Collapse, Flex, Image, Switch, Tooltip } from 'antd';
+import { Image } from 'antd';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { materialDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-
+import { SparklesIcon } from 'lucide-react';
 import MarkdownRender from '@/components/chat/bubbles/MarkdownRender';
-import FoldDownIcon from '@/assets/svgs/fold-down.svg?react';
 
-import { SingleLineEllipsisStyle } from '@/styles.ts';
 import {
     Base64Source,
     BlockType,
@@ -17,6 +14,19 @@ import {
     ToolUseBlock,
     URLSource,
 } from '@shared/types';
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from '@/components/ui/accordion.tsx';
+import { Switch } from '@/components/ui/switch.tsx';
+import { Label } from '@/components/ui/label';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip.tsx';
 
 /**
  * Props for the BubbleBlock component that renders different types of content blocks.
@@ -41,15 +51,7 @@ const TextBlockDiv = ({
         return <MarkdownRender text={text} />;
     }
     return (
-        <div
-            style={{
-                maxWidth: '100%',
-                overflowWrap: 'break-word',
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-all',
-                margin: 0,
-            }}
-        >
+        <div className="flex max-w-full break-words whitespace-pre-wrap break-all m-0 w-fit">
             {text}
         </div>
     );
@@ -59,27 +61,14 @@ const TextBlockDiv = ({
  * Render thinking content with special styling and optional markdown support.
  * Displays with a left border and muted colors to distinguish from regular text.
  */
-const ThinkingBlockDiv = ({
-    thinking,
-    markdown,
-}: {
-    thinking: string;
-    markdown: boolean;
-}) => {
+const ThinkingBlockDiv = ({ thinking }: { thinking: string }) => {
     const { t } = useTranslation();
     return (
-        <div className="pl-3 w-full h-fit border-l-2 border-l-muted-foreground/30 mt-2 mb-2 text-muted-foreground">
-            <div className="font-bold">
-                {t('common.thinking').toUpperCase()}
-            </div>
-            {markdown ? (
-                <MarkdownRender text={thinking} />
-            ) : (
-                <div className="w-full whitespace-pre-wrap break-all pre-wrap wrap-break-word">
-                    {thinking}
-                </div>
-            )}
-        </div>
+        <CollapsibleBlockDiv
+            title={t('common.thinking')}
+            icon={<SparklesIcon size={13} stroke="var(--primary-500)" />}
+            content={thinking}
+        />
     );
 };
 
@@ -110,11 +99,7 @@ const VideoBlockDiv = ({ source }: { source: Base64Source | URLSource }) => {
     } else {
         url = source.url;
     }
-    return (
-        <audio key={url} controls>
-            <source src={url} type={'audio/mpeg'} />
-        </audio>
-    );
+    return <video key={url} controls src={url} />;
 };
 
 /**
@@ -128,11 +113,7 @@ const AudioBlockDiv = ({ source }: { source: Base64Source | URLSource }) => {
     } else {
         url = source.url;
     }
-    return (
-        <video key={url} controls>
-            <source src={url} type={'video/mp4'} />
-        </video>
-    );
+    return <audio key={url} controls src={url} />;
 };
 
 /**
@@ -142,52 +123,28 @@ const AudioBlockDiv = ({ source }: { source: Base64Source | URLSource }) => {
 const ToolUseBlockDiv = ({ block }: { block: ToolUseBlock }) => {
     const { t } = useTranslation();
     return (
-        <Collapse
-            style={{ border: 'none', width: '100%' }}
-            expandIcon={(panelProps) =>
-                panelProps.isActive ? (
-                    <FoldDownIcon width={15} height={15} />
-                ) : (
-                    <FoldDownIcon
-                        width={15}
-                        height={15}
-                        style={{ transform: 'rotate(-90deg)' }}
-                    />
-                )
-            }
-            size={'small'}
-            items={[
-                {
-                    key: BlockType.TOOL_USE + block.id,
-                    label: (
-                        <Flex
-                            style={{
-                                fontSize: 14,
-                                ...SingleLineEllipsisStyle,
-                            }}
-                        >
-                            {t('chat.title-using-tool')}&nbsp;
-                            <div style={{ fontWeight: 550 }}>{block.name}</div>
-                            &nbsp;{' ...'}
-                        </Flex>
-                    ),
-                    children: (
-                        <SyntaxHighlighter
-                            language={'json'}
-                            style={materialDark}
-                            showLineNumbers={true}
-                            customStyle={{
-                                margin: 0,
-                                borderRadius: '0 0 8px 8px',
-                                padding: '12px 4px',
-                            }}
-                        >
-                            {JSON.stringify(block, null, 4)}
-                        </SyntaxHighlighter>
-                    ),
-                },
-            ]}
-        />
+        <Accordion className="w-full" type="single" collapsible>
+            <AccordionItem value="header">
+                <AccordionTrigger className="flex flex-row text-sm px-4 py-1.5 w-full rounded-t-[8px] rounded-b-[0px] bg-[#343541] text-white [&>svg]:stroke-white hover:no-underline cursor-pointer data-[state=closed]:rounded-b-[8px]">
+                    {t('chat.title-using-tool')}
+                    {block.name + ' ...'}
+                </AccordionTrigger>
+                <AccordionContent className="w-full">
+                    <SyntaxHighlighter
+                        language="js"
+                        customStyle={{
+                            cursor: 'default',
+                            padding: '16px',
+                            margin: 0,
+                            background: 'var(--color-code-bg)',
+                            borderRadius: '0 0 8px 8px',
+                        }}
+                    >
+                        {JSON.stringify(block, null, 2)}
+                    </SyntaxHighlighter>
+                </AccordionContent>
+            </AccordionItem>
+        </Accordion>
     );
 };
 
@@ -199,95 +156,154 @@ const ToolResultBlockDiv = ({ block }: { block: ToolResultBlock }) => {
     const { t } = useTranslation();
     const [displayRaw, setDisplayRaw] = useState<boolean>(false);
 
-    // Extract display content from tool output (string or text blocks)
-    let displayContent: string = '';
-    if (typeof block.output === 'string') {
-        displayContent = block.output;
-    } else {
-        for (const item of block.output) {
-            if (item.type === BlockType.TEXT) {
-                displayContent = item.text;
-            }
-        }
+    return (
+        <Accordion className="w-full max-w-full" type="single" collapsible>
+            <AccordionItem value="header">
+                <AccordionTrigger className="flex flex-row text-sm px-4 py-1.5 w-full rounded-t-[8px] rounded-b-[0px] bg-[#343541] text-white [&>svg]:stroke-white hover:no-underline cursor-pointer data-[state=closed]:rounded-b-[8px]">
+                    <div className="flex flex-row justify-between w-full">
+                        <div className="truncate">
+                            {t('chat.title-tool-result')}&nbsp;
+                            {block.name}
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <Label className="truncate" htmlFor="display-mode">
+                                Display Raw
+                            </Label>
+                            <Switch
+                                id="display-mode"
+                                checked={displayRaw}
+                                onCheckedChange={(checked) => {
+                                    setDisplayRaw(checked);
+                                }}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                }}
+                            />
+                        </div>
+                    </div>
+                </AccordionTrigger>
+                <AccordionContent className="w-full">
+                    {displayRaw ? (
+                        <SyntaxHighlighter
+                            language="js"
+                            customStyle={{
+                                cursor: 'default',
+                                padding: '16px',
+                                margin: 0,
+                                background: 'var(--color-code-bg)',
+                                borderRadius: '0 0 8px 8px',
+                            }}
+                        >
+                            {JSON.stringify(block, null, 2)}
+                        </SyntaxHighlighter>
+                    ) : (
+                        <ToolResultRender output={block.output} />
+                    )}
+                </AccordionContent>
+            </AccordionItem>
+        </Accordion>
+    );
+};
+
+/*
+ * Render the output of a tool result block.
+ *
+ * @param output - The output content of the tool result block.
+ *
+ * @return JSX.Element representing the rendered output.
+ */
+const ToolResultRender = ({
+    output,
+}: {
+    output: ToolResultBlock['output'];
+}) => {
+    if (typeof output === 'string') {
+        return (
+            <div className="w-full bg-[var(--color-code-bg)] p-4 rounded-b-[8px] [&>p]:mt-0!">
+                <MarkdownRender text={'- ' + output} />
+            </div>
+        );
     }
 
     return (
-        <Collapse
-            style={{ border: 'none' }}
-            expandIcon={(panelProps) =>
-                panelProps.isActive ? (
-                    <FoldDownIcon width={15} height={15} />
-                ) : (
-                    <FoldDownIcon
-                        width={15}
-                        height={15}
-                        style={{ transform: 'rotate(-90deg)' }}
-                    />
-                )
-            }
-            size={'small'}
-            items={[
-                {
-                    key: BlockType.TOOL_RESULT + block.id,
-                    label: (
-                        <Flex
-                            style={{
-                                fontSize: 14,
-                                ...SingleLineEllipsisStyle,
-                            }}
-                        >
-                            {t('chat.title-tool-result')}&nbsp;
-                            <div style={{ fontWeight: 550 }}>{block.name}</div>
-                        </Flex>
-                    ),
-                    children: (
-                        <SyntaxHighlighter
-                            language={'json'}
-                            style={materialDark}
-                            showLineNumbers={true}
-                            customStyle={{
-                                margin: 0,
-                                borderRadius: '0 0 8px 8px',
-                                padding: '12px 4px',
-                            }}
-                        >
-                            {displayRaw
-                                ? JSON.stringify(block, null, 4)
-                                : displayContent}
-                        </SyntaxHighlighter>
-                    ),
-                    extra: (
-                        <Tooltip title={t('tooltip.switch.display-raw-data')}>
-                            <Flex
-                                style={{ height: 22 }}
-                                align={'center'}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    e.preventDefault();
-                                }}
-                            >
-                                <Switch
-                                    value={displayRaw}
-                                    size={'small'}
-                                    style={{
-                                        background: 'var(--muted-foreground)',
-                                    }}
-                                    onChange={(checked, e) => {
-                                        setDisplayRaw(checked);
-                                        e.stopPropagation();
-                                        e.preventDefault();
-                                    }}
-                                    onClick={(_, e) => {
-                                        e.stopPropagation();
-                                        e.preventDefault();
-                                    }}
+        <div className="w-full bg-[var(--color-code-bg)] p-4 rounded-b-[8px] [&>p]:mt-0!">
+            {output.map((block) => {
+                switch (block.type) {
+                    case BlockType.TEXT:
+                        return <MarkdownRender text={'- ' + block.text} />;
+                    case BlockType.IMAGE:
+                        if (block.source.type === SourceType.BASE64) {
+                            return (
+                                <Image
+                                    src={block.source.data}
+                                    className="max-w-full max-h-[200px]"
                                 />
-                            </Flex>
+                            );
+                        } else if (block.source.type === SourceType.URL) {
+                            return (
+                                <Image
+                                    src={block.source.url}
+                                    className="max-w-full max-h-[200px]"
+                                />
+                            );
+                        }
+                        return null;
+                    case BlockType.AUDIO:
+                        if (block.source.type === SourceType.BASE64) {
+                            return <audio src={block.source.data} controls />;
+                        } else if (block.source.type === SourceType.URL) {
+                            return <audio src={block.source.url} controls />;
+                        }
+                }
+            })}
+        </div>
+    );
+};
+
+interface CollapsibleBlockDivProps {
+    title: string;
+    icon: ReactNode;
+    tooltip?: string;
+    content: ReactNode;
+}
+
+export const CollapsibleBlockDiv = ({
+    title,
+    content,
+    icon,
+    tooltip,
+}: CollapsibleBlockDivProps) => {
+    return (
+        <Accordion
+            className="w-full"
+            type="single"
+            collapsible
+            defaultValue="thinking"
+        >
+            <AccordionItem value="thinking">
+                <AccordionTrigger className="flex items-center [&>svg]:mb-1 border border-border h-8 max-w-fit px-3 py-1.5 text-muted-foreground text-[12px] hover:no-underline cursor-pointer">
+                    {tooltip ? (
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <div className="flex flex-row items-center gap-x-1 truncate text-[12px]">
+                                    {icon}
+                                    {title}
+                                </div>
+                            </TooltipTrigger>
+                            <TooltipContent>{tooltip}</TooltipContent>
                         </Tooltip>
-                    ),
-                },
-            ]}
-        />
+                    ) : (
+                        <div className="flex h-full gap-x-1 items-center">
+                            {icon}
+                            {title}
+                        </div>
+                    )}
+                </AccordionTrigger>
+                <AccordionContent className="border-l border-border p-3 mt-2">
+                    {content}
+                </AccordionContent>
+            </AccordionItem>
+        </Accordion>
     );
 };
 
@@ -304,12 +320,7 @@ const BubbleBlock = ({ block, markdown = true }: Props) => {
         case BlockType.TEXT:
             return <TextBlockDiv text={block.text} markdown={markdown} />;
         case BlockType.THINKING:
-            return (
-                <ThinkingBlockDiv
-                    thinking={block.thinking}
-                    markdown={markdown}
-                />
-            );
+            return <ThinkingBlockDiv thinking={block.thinking} />;
         case BlockType.IMAGE:
             return <ImageBlockDiv source={block.source} />;
         case BlockType.VIDEO:

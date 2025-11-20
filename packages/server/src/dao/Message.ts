@@ -11,11 +11,11 @@ export class MessageDao {
                 },
             });
             if (message) {
-                // 覆盖旧的
+                // Cover the old one
                 message.msg = data.msg;
                 await message.save();
             } else {
-                // 创建新的
+                // Create a new one
                 const newMessage = MessageTable.create({ ...data });
                 await newMessage.save();
             }
