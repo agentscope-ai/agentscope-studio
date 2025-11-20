@@ -4,12 +4,13 @@ import * as trpcExpress from '@trpc/server/adapters/express';
 import { initializeDatabase } from './database';
 import { appRouter } from './trpc/router';
 import { SocketManager } from './trpc/socket';
-import { ConfigManager } from '../../shared/src/config';
+import { ConfigManager, APP_INFO } from '../../shared/src/config';
 import path from 'path';
 import opener from 'opener';
 import { promptUser } from '../../shared/src/utils/terminal';
 import portfinder from 'portfinder';
 import otelRouter from './otel/router';
+import { displayBanner } from '../../shared/src/utils/banner';
 
 async function initializeServer() {
     try {
@@ -43,6 +44,7 @@ async function initializeServer() {
 
         // Initialize the database
         await initializeDatabase(config.database);
+        console.log('✔ Database initialized successfully');
 
         // Set TRPC router
         app.use(
@@ -82,9 +84,19 @@ async function initializeServer() {
 
         httpServer.listen(configManager.getConfig().port, () => {
             const actualPort = configManager.getConfig().port;
-            console.log(
-                `Server running on port ${actualPort} in ${process.env.NODE_ENV} mode ...`,
-            );
+            const config = configManager.getConfig();
+            const mode = (process.env.NODE_ENV || 'production') as
+                | 'development'
+                | 'production';
+
+            // Display startup banner
+            displayBanner({
+                appName: APP_INFO.name,
+                version: APP_INFO.version,
+                port: actualPort,
+                databasePath: config.database.database,
+                mode: mode,
+            });
 
             if (process.env.NODE_ENV === 'production') {
                 opener(`http://localhost:${actualPort}/home`);
