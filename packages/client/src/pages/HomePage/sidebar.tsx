@@ -20,18 +20,18 @@ import {
     Command,
     EarthIcon,
     FolderGit2Icon,
-    ListChecksIcon,
-    RouteIcon,
+    // ListChecksIcon,
+    // RouteIcon,
     UnplugIcon,
 } from 'lucide-react';
 import GitHubIcon from '@/assets/svgs/github.svg?react';
 import DiscordIcon from '@/assets/svgs/discord.svg?react';
 import DingTalkIcon from '@/assets/svgs/dingtalk.svg?react';
 import { Button } from '@/components/ui/button.tsx';
-import { memo } from 'react';
+import { memo, useEffect, useRef } from 'react';
 import { RouterPath } from '@/pages/RouterPath.ts';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useI18n } from '@/context/I18Context.tsx';
 
 const StudioSidebar = () => {
@@ -39,6 +39,34 @@ const StudioSidebar = () => {
     const navigate = useNavigate();
     const { t } = useTranslation();
     const { changeLanguage } = useI18n();
+    const location = useLocation();
+    const isInitialMount = useRef(true);
+
+    // TODO: use a context to manage web storage state globally
+
+    // Load sidebar state from localStorage on mount
+    useEffect(() => {
+        if (isInitialMount.current) {
+            // If on overview page, always open sidebar
+            if (location.pathname === RouterPath.OVERVIEW) {
+                setOpen(true);
+            } else {
+                const savedState = localStorage.getItem('sidebar-open-state');
+                if (savedState !== null) {
+                    const isOpen = savedState === 'true';
+                    setOpen(isOpen);
+                }
+            }
+            isInitialMount.current = false;
+        }
+    }, [setOpen, location.pathname]);
+
+    // Save sidebar state to localStorage whenever it changes (after initial mount)
+    useEffect(() => {
+        if (!isInitialMount.current) {
+            localStorage.setItem('sidebar-open-state', String(open));
+        }
+    }, [open]);
 
     const sidebarItems = [
         {
@@ -55,16 +83,16 @@ const StudioSidebar = () => {
                     url: RouterPath.PROJECTS,
                 },
                 // TODO: activate tracing and evaluation when they are ready
-                {
-                    title: t('common.tracing'),
-                    icon: RouteIcon,
-                    url: RouterPath.TRACING,
-                },
-                {
-                    title: t('common.evaluation'),
-                    icon: ListChecksIcon,
-                    url: RouterPath.EVAL,
-                },
+                // {
+                //     title: t('common.tracing'),
+                //     icon: RouteIcon,
+                //     url: RouterPath.TRACING,
+                // },
+                // {
+                //     title: t('common.evaluation'),
+                //     icon: ListChecksIcon,
+                //     url: RouterPath.EVAL,
+                // },
             ],
         },
         {
@@ -151,6 +179,7 @@ const StudioSidebar = () => {
                                 <SidebarMenu>
                                     <SidebarMenuItem>
                                         <SidebarMenuButton
+                                            className="cursor-pointer"
                                             tooltip={subItem.title}
                                             onClick={() => {
                                                 navigate(subItem.url);

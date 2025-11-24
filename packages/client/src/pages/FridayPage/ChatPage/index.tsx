@@ -80,7 +80,9 @@ const ChatPage = () => {
                     }
                     placeholder={t(`placeholder.input-friday-${timeOfDay}`)}
                     tooltips={{
-                        sendButton: t('tooltip.button.send-message'),
+                        sendButton: isReplying
+                            ? t('tooltip.button.interrupt-reply')
+                            : t('tooltip.button.send-message'),
                         interruptButton: t('tooltip.button.interrupt-reply'),
                         attachButton: t('tooltip.button.attachment-add'),
                         expandTextarea: t('tooltip.button.expand-textarea'),

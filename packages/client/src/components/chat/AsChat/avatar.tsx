@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Avatar } from '@/components/ui/avatar.tsx';
 import SystemAvatar from '@/assets/svgs/avatar-system.svg?react';
 import { FC, SVGProps } from 'react';
@@ -42,16 +42,37 @@ const hashString = (str: string, seed: number): number => {
  *
  * @param name - The name to hash for avatar selection.
  * @param seed - The seed value for the hash function.
+ * @param avatarSet - The avatar set to select from.
  *
  * @return The selected avatar path.
  */
-const getAvatarPathByName = (name: string, seed: number): string => {
+const getAvatarPathByName = (
+    name: string,
+    seed: number,
+    avatarSet: AvatarSet,
+): string => {
     if (AVATAR_PATHS.length === 0) {
         return '';
     }
+
+    // Filter avatar paths based on avatarSet
+    let filteredPaths = AVATAR_PATHS;
+    if (avatarSet !== AvatarSet.RANDOM) {
+        // Map avatarSet enum to folder name
+        const folderName = avatarSet.toLowerCase();
+        filteredPaths = AVATAR_PATHS.filter((path) =>
+            path.startsWith(`${folderName}/`),
+        );
+    }
+
+    // If no avatars found in the specified set, fall back to all avatars
+    if (filteredPaths.length === 0) {
+        filteredPaths = AVATAR_PATHS;
+    }
+
     const hash = hashString(name, seed);
-    const index = hash % AVATAR_PATHS.length;
-    return AVATAR_PATHS[index];
+    const index = hash % filteredPaths.length;
+    return filteredPaths[index];
 };
 
 /*
@@ -91,23 +112,25 @@ const loadAvatarComponent = async (
 export const AsAvatar = ({
     name,
     role,
-    randomAvatar,
+    avatarSet,
     seed,
-    renderAvatar,
 }: {
     name: string;
     role: string;
-    randomAvatar: boolean;
+    avatarSet: AvatarSet;
     seed: number;
-    renderAvatar?: (name: string, role: string) => ReactNode | null;
 }) => {
     const [AvatarComponent, setAvatarComponent] = useState<FC<
         SVGProps<SVGSVGElement>
     > | null>(null);
 
     useEffect(() => {
-        if (randomAvatar && role.toLowerCase() !== 'system') {
-            const avatarPath = getAvatarPathByName(name, seed);
+        if (avatarSet !== AvatarSet.LETTER && role.toLowerCase() !== 'system') {
+            // TODO: 我需要这里根据 avatarSet 来在对应的集合中根据seed随机选择头像
+            //  avatarSet 决定了'../../../assets/svgs/avatar/**/*.svg'中**的字段
+            //  如果是 AvatarSet.RANDOM 则从所有头像中选择
+            //  如果是 AvatarSet.POKEMON 则从pokemon文件夹中选择，依此类推
+            const avatarPath = getAvatarPathByName(name, seed, avatarSet);
             if (avatarPath) {
                 loadAvatarComponent(avatarPath)
                     .then((component) => {
@@ -118,31 +141,33 @@ export const AsAvatar = ({
                     .catch(console.error);
             }
         }
-    }, [name, role, randomAvatar, seed]);
+    }, [name, role, avatarSet, seed]);
 
     let avatarComponent;
-    if (renderAvatar) {
-        const customAvatar = renderAvatar(name, role);
-        if (customAvatar) {
-            avatarComponent = customAvatar;
-        }
-    }
-
-    if (!avatarComponent) {
-        if (role.toLowerCase() === 'system') {
-            avatarComponent = <SystemAvatar />;
-        } else if (randomAvatar && AvatarComponent) {
-            avatarComponent = <AvatarComponent />;
-        } else {
-            avatarComponent = (
-                <div className="flex items-center justify-center font-medium bg-primary text-white w-full h-full">
-                    {name.slice(0, 2).toUpperCase()}
-                </div>
-            );
-        }
+    if (role.toLowerCase() === 'system') {
+        avatarComponent = <SystemAvatar />;
+    } else if (avatarSet !== AvatarSet.LETTER && AvatarComponent) {
+        avatarComponent = <AvatarComponent />;
+    } else {
+        // Fallback: Display initials
+        avatarComponent = (
+            <div className="flex items-center justify-center font-medium bg-primary text-white w-full h-full">
+                {name.slice(0, 2).toUpperCase()}
+            </div>
+        );
     }
 
     const className =
         'flex items-center justify-center w-9 h-9 min-h-9 min-w-9 mt-0.5';
     return <Avatar className={className}>{avatarComponent}</Avatar>;
 };
+
+export enum AvatarSet {
+    CHARACTER = 'character',
+    RANDOM = 'random',
+    POKEMON = 'pokemon',
+    FAIRYTALE = 'fairytale',
+    SUPERHERO = 'superhero',
+    FAMILY_MEMBERS = 'family-members',
+    LETTER = 'letter',
+}
