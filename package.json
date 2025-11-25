@@ -41,6 +41,7 @@
         "typescript-eslint": "^8.30.1"
     },
     "dependencies": {
+        "@opentelemetry/api": "^1.9.0",
         "@trpc/server": "^11.0.1",
         "cors": "^2.8.5",
         "express": "^5.1.0",

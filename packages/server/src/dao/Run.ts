@@ -1,9 +1,14 @@
-import { InputRequestData, ProjectData, RunData } from '../../../shared/src';
-import { RunTable } from '../models/Run';
-import { checkProcessByPid } from '../utils';
-import { RunView } from '../models/RunView';
 import { FindOptionsWhere, In } from 'typeorm';
-import { Status } from '../../../shared/src';
+import {
+    InputRequestData,
+    ProjectData,
+    RunData,
+    Status,
+} from '../../../shared/src';
+import { RunTable } from '../models/Run';
+import { RunView } from '../models/RunView';
+import { checkProcessByPid } from '../utils';
+import { SpanDao } from './Trace';
 
 export class RunDao {
     static async doesProjectExist(project: string) {
@@ -136,13 +141,10 @@ export class RunDao {
         try {
             const result = await RunTable.findOne({
                 where: { id: runId },
-                relations: [
-                    'replies',
-                    'replies.messages',
-                    'inputRequests',
-                    'spans',
-                ],
+                relations: ['replies', 'replies.messages', 'inputRequests'],
             });
+
+            const spans = await SpanDao.getSpansByRunId(runId);
 
             if (result) {
                 return {
@@ -179,7 +181,7 @@ export class RunDao {
                             metadata: msg.msg.metadata,
                         })),
                     })),
-                    spans: result.spans,
+                    spans: spans,
                 };
             } else {
                 throw new Error(`Run with id ${runId} not found`);
@@ -252,18 +254,41 @@ export class RunDao {
     }
 
     static async deleteRuns(runIds: string[]) {
-        const conditions: FindOptionsWhere<RunTable> = {
-            id: In(runIds),
-        };
-        const result = await RunTable.delete(conditions);
-        return result.affected;
+        try {
+            if (runIds.length > 0) {
+                await SpanDao.deleteSpansByRunIds(runIds);
+            }
+            const conditions: FindOptionsWhere<RunTable> = {
+                id: In(runIds),
+            };
+            const result = await RunTable.delete(conditions);
+            return result.affected;
+        } catch (error) {
+            console.error('Error deleting runs:', error);
+            throw error;
+        }
     }
 
     static async deleteProjects(projects: string[]) {
-        const conditions: FindOptionsWhere<RunTable> = {
-            project: In(projects),
-        };
-        const result = await RunTable.delete(conditions);
-        return result.affected;
+        try {
+            const runsToDelete = await RunTable.find({
+                where: { project: In(projects) },
+                select: ['id'],
+            });
+            const runIds = runsToDelete.map((run) => run.id);
+
+            if (runIds.length > 0) {
+                await SpanDao.deleteSpansByRunIds(runIds);
+            }
+
+            const conditions: FindOptionsWhere<RunTable> = {
+                project: In(projects),
+            };
+            const result = await RunTable.delete(conditions);
+            return result.affected;
+        } catch (error) {
+            console.error('Error deleting projects:', error);
+            throw error;
+        }
     }
 }
