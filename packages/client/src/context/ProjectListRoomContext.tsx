@@ -11,7 +11,7 @@ import {
 import { debounce } from 'lodash';
 
 import { ProjectData, SocketEvents, TableRequestParams } from '@shared/types';
-import { trpcClient } from '@/api/trpc';
+import { trpcClient, trpc } from '@/api/trpc';
 import { useSocket } from './SocketContext';
 import { useMessageApi } from './MessageApiContext.tsx';
 import type {
@@ -72,32 +72,22 @@ export function ProjectListRoomContextProvider({ children }: Props) {
 
     // Polling state
     const [isPolling, setIsPolling] = useState<boolean>(false);
-    const isPollingRef = useRef<boolean>(false);
-    const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-    const pollingCountRef = useRef<number>(0);
-    const maxPollingCount = 1000; // Maximum number of polls
     const pollingInterval = 5000; // 5-second polling interval
+    const initialFetchDelayRef = useRef<boolean>(false);
+    const isUserActionRef = useRef<boolean>(false);
 
-    // Store current state for polling
-    const currentStateRef = useRef({
-        pagination: { current: 1, pageSize: 10, total: 0 },
-        searchText: '',
-        sortField: undefined as string | undefined,
-        sortOrder: undefined as 'asc' | 'desc' | undefined,
-    });
+    /** Stop polling */
+    const stopPolling = useCallback(() => {
+        setIsPolling(false);
+    }, []);
 
-    // Sync current state to ref for polling
-    useEffect(() => {
-        currentStateRef.current = {
-            pagination,
-            searchText,
-            sortField,
-            sortOrder,
-        };
-    }, [pagination, searchText, sortField, sortOrder]);
+    /** Start polling */
+    const startPolling = useCallback(() => {
+        setIsPolling(true);
+    }, []);
 
     /**
-     * tRPC: Get project list
+     * tRPC: Get project list (for manual calls)
      */
     const getProjects = useCallback(
         async (params: TableRequestParams) => {
@@ -113,148 +103,125 @@ export function ProjectListRoomContextProvider({ children }: Props) {
         [messageApi],
     );
 
-    /**
-     * Fetch and write table data
-     */
-    type FetchTableDataFn = (
-        params: TableRequestParams,
-        options?: { force?: boolean },
-    ) => Promise<void> | void;
-
-    const lastRequestRef = useRef<string | null>(null);
-    const fetchTableDataRef = useRef<FetchTableDataFn | null>(null);
-    const startPollingRef = useRef<(() => void) | null>(null);
-    const stopPollingRef = useRef<(() => void) | null>(null);
-    const initialFetchTimestampRef = useRef<number>(0);
-
-    const fetchTableData = useCallback(
-        async (params: TableRequestParams, options?: { force?: boolean }) => {
-            const requestKey = JSON.stringify(params);
-            if (!options?.force && lastRequestRef.current === requestKey) {
-                return;
-            }
-            lastRequestRef.current = requestKey;
-
-            setTableLoading(true);
-            try {
-                const res = await getProjects(params);
-                // Parse the actual response structure
-                if (res.success && res.data) {
-                    setTableDataSource(res.data.list);
-                    setPagination({
-                        current: res.data.page,
-                        pageSize: res.data.pageSize,
-                        total: res.data.total,
-                    });
-                } else {
-                    messageApi.error(res.message || 'Failed to load projects');
-                }
-            } catch (error) {
-                lastRequestRef.current = null;
-                console.error('Failed to load data', error);
-            } finally {
-                setTableLoading(false);
-
-                if (options?.force) {
-                    stopPollingRef.current?.();
-                    startPollingRef.current?.();
-                }
-            }
-        },
-        [getProjects, messageApi],
+    // Build query parameters based on current state
+    const queryParams = useMemo<TableRequestParams>(
+        () => ({
+            pagination: {
+                page: pagination.current,
+                pageSize: pagination.pageSize,
+            },
+            filters: searchText ? { project: searchText } : undefined,
+            sort: sortField
+                ? {
+                      field: sortField,
+                      order: sortOrder || 'asc',
+                  }
+                : undefined,
+        }),
+        [
+            pagination.current,
+            pagination.pageSize,
+            searchText,
+            sortField,
+            sortOrder,
+        ],
     );
 
+    // Use tRPC useQuery with polling
+    const {
+        data: queryData,
+        isLoading: queryLoading,
+        isFetching: queryFetching,
+        error: queryError,
+        refetch: refetchQuery,
+    } = trpc.getProjects.useQuery(queryParams, {
+        enabled: true, // Always enabled for initial load
+        refetchInterval: isPolling ? pollingInterval : false,
+        // When polling and not user action, only notify on data changes to avoid triggering loading state
+        // When user action, always notify on isLoading to show loading state
+        notifyOnChangeProps:
+            isPolling && !isUserActionRef.current
+                ? ['data']
+                : ['data', 'isLoading', 'isFetching'],
+    });
+
+    // Handle query errors
     useEffect(() => {
-        fetchTableDataRef.current = fetchTableData;
-    }, [fetchTableData]);
+        if (queryError) {
+            const errorMessage =
+                queryError instanceof Error
+                    ? queryError.message
+                    : String(queryError);
+            messageApi.error(errorMessage);
+        }
+    }, [queryError, messageApi]);
 
-    /** Silent refresh for polling - only updates data without affecting UI state */
-    const silentRefresh = useCallback(async () => {
-        try {
-            const currentState = currentStateRef.current;
-
-            const res = await getProjects({
-                pagination: {
-                    page: currentState.pagination.current,
-                    pageSize: currentState.pagination.pageSize,
-                },
-                filters: currentState.searchText
-                    ? { project: currentState.searchText }
-                    : undefined,
-                sort: currentState.sortField
-                    ? {
-                          field: currentState.sortField,
-                          order: currentState.sortOrder || 'asc',
-                      }
-                    : undefined,
-            });
-
-            // Parse the actual response structure
-            if (res.success && res.data) {
-                setTableDataSource(res.data.list);
-                setPagination((prev) => ({
-                    ...prev,
-                    total: res.data?.total || 0,
-                }));
+    // Update table data when query data changes
+    useEffect(() => {
+        if (queryData?.success && queryData?.data) {
+            setTableDataSource(queryData.data.list);
+            setPagination((prev) => ({
+                current: queryData.data?.page || prev.current,
+                pageSize: queryData.data?.pageSize || prev.pageSize,
+                total: queryData.data?.total || 0,
+            }));
+            // Reset user action flag after data is loaded
+            if (isUserActionRef.current && !queryFetching) {
+                isUserActionRef.current = false;
             }
-        } catch (error) {
-            console.error('Silent refresh failed', error);
+        } else if (queryData && !queryData.success) {
+            messageApi.error(queryData.message || 'Failed to load projects');
+            // Reset user action flag on error
+            if (isUserActionRef.current) {
+                isUserActionRef.current = false;
+            }
         }
-    }, [getProjects]);
+    }, [queryData, queryFetching, messageApi]);
 
-    /** When the component initializes, load data */
+    // Set loading state
+    // Show loading when: user action OR not polling OR actively fetching
     useEffect(() => {
-        const now = Date.now();
-        const shouldFetch = now - initialFetchTimestampRef.current >= 1000;
-        if (shouldFetch) {
-            fetchTableDataRef.current?.({
-                pagination: { page: 1, pageSize: 10 },
-                filters: undefined,
-                sort: undefined,
-            });
+        if (isUserActionRef.current || !isPolling || queryFetching) {
+            setTableLoading(queryLoading || queryFetching);
+        } else {
+            // When polling and not user action, don't show loading to avoid flicker
+            setTableLoading(false);
         }
+    }, [queryLoading, queryFetching, isPolling]);
 
-        if (shouldFetch) {
-            initialFetchTimestampRef.current = now;
+    // Initialize: delay first fetch and start polling after 1 second
+    useEffect(() => {
+        if (!initialFetchDelayRef.current) {
+            initialFetchDelayRef.current = true;
+            const timer = window.setTimeout(() => {
+                startPolling();
+            }, 1000);
+            return () => {
+                clearTimeout(timer);
+            };
         }
-
-        const timer = window.setTimeout(
-            () => {
-                startPollingRef.current?.();
-            },
-            shouldFetch ? 1000 : 0,
-        );
-
-        return () => {
-            clearTimeout(timer);
-        };
-    }, []);
+    }, [startPolling]);
 
     /** Create debounced search function */
     const debouncedSearch = useMemo(
         () =>
-            debounce((searchValue: string) => {
-                const current = currentStateRef.current;
-                fetchTableDataRef.current?.(
-                    {
-                        pagination: {
-                            page: 1,
-                            pageSize: current.pagination.pageSize,
-                        },
-                        filters: searchValue
-                            ? { project: searchValue }
-                            : undefined,
-                        sort: current.sortField
-                            ? {
-                                  field: current.sortField,
-                                  order: current.sortOrder || 'asc',
-                              }
-                            : undefined,
-                    },
-                    { force: true },
-                );
+            debounce(() => {
+                // Mark as user action
+                isUserActionRef.current = true;
+                // Reset to first page when searching
+                setPagination((prev) => ({
+                    ...prev,
+                    current: 1,
+                }));
+                // Stop polling temporarily to show loading state
+                stopPolling();
+                // The query will automatically refetch when queryParams change
+                // Restart polling after a delay
+                setTimeout(() => {
+                    startPolling();
+                }, 100);
             }, 500),
-        [],
+        [stopPolling, startPolling],
     );
 
     const isFirstSearch = useRef(true);
@@ -296,84 +263,40 @@ export function ProjectListRoomContextProvider({ children }: Props) {
                 }
             }
 
+            // Mark as user action
+            isUserActionRef.current = true;
+
             setSortField(nextSortField);
             setSortOrder(nextSortOrder);
+            setPagination((prev) => ({
+                ...prev,
+                current: nextPage,
+                pageSize: nextSize,
+            }));
 
-            const requestParams = {
-                pagination: { page: nextPage, pageSize: nextSize },
-                filters: searchText ? { project: searchText } : undefined,
-                sort: nextSortField
-                    ? { field: nextSortField, order: nextSortOrder || 'asc' }
-                    : undefined,
-            };
-
-            fetchTableData(requestParams, { force: true });
+            // Stop polling temporarily to show loading state
+            stopPolling();
+            // The query will automatically refetch when queryParams change
+            // Restart polling after a delay
+            setTimeout(() => {
+                startPolling();
+            }, 100);
         },
-        [fetchTableData, pagination.pageSize, searchText],
+        [pagination.pageSize, stopPolling, startPolling],
     );
 
     const refresh = useCallback(() => {
-        fetchTableData(
-            {
-                pagination: {
-                    page: pagination.current,
-                    pageSize: pagination.pageSize,
-                },
-                filters: searchText ? { project: searchText } : undefined,
-                sort: sortField
-                    ? { field: sortField, order: sortOrder || 'asc' }
-                    : undefined,
-            },
-            { force: true },
-        );
-    }, [fetchTableData, pagination, searchText, sortField, sortOrder]);
-
-    /** Stop polling */
-    const stopPolling = useCallback(() => {
-        if (pollingIntervalRef.current) {
-            clearTimeout(pollingIntervalRef.current);
-            pollingIntervalRef.current = null;
-        }
-        setIsPolling(false);
-        isPollingRef.current = false;
-        pollingCountRef.current = 0;
-    }, []);
-
-    /** Start polling */
-    const startPolling = useCallback(() => {
-        if (isPollingRef.current || pollingIntervalRef.current) {
-            return;
-        }
-
-        setIsPolling(true);
-        isPollingRef.current = true;
-        pollingCountRef.current = 0;
-
-        const poll = async () => {
-            // Check if we've reached max polling count
-            if (pollingCountRef.current >= maxPollingCount) {
-                stopPolling();
-                return;
-            }
-
-            pollingCountRef.current += 1;
-            // Silent refresh without affecting UI
-            await silentRefresh();
-
-            // Schedule next poll
-            if (pollingIntervalRef.current) {
-                pollingIntervalRef.current = setTimeout(poll, pollingInterval);
-            }
-        };
-
-        // Start first poll after interval
-        pollingIntervalRef.current = setTimeout(poll, pollingInterval);
-    }, [silentRefresh, stopPolling]);
-
-    useEffect(() => {
-        startPollingRef.current = startPolling;
-        stopPollingRef.current = stopPolling;
-    }, [startPolling, stopPolling]);
+        // Mark as user action
+        isUserActionRef.current = true;
+        // Manually refetch the query
+        refetchQuery();
+        // Stop polling temporarily to show loading state
+        stopPolling();
+        // Restart polling after a delay
+        setTimeout(() => {
+            startPolling();
+        }, 100);
+    }, [refetchQuery, stopPolling, startPolling]);
 
     // After deleting a project, refresh the project list
     const deleteProjects = (projects: string[]) => {
@@ -399,7 +322,7 @@ export function ProjectListRoomContextProvider({ children }: Props) {
         }
     };
 
-    /** Auto-start polling when component mounts */
+    /** Auto-stop polling when component unmounts */
     useEffect(() => {
         return () => {
             stopPolling();

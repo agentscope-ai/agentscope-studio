@@ -1,7 +1,8 @@
-import { Key, memo, MouseEvent, useEffect, useState } from 'react';
+import { Key, memo, MouseEvent, useEffect, useState, useMemo } from 'react';
 import { Input, TableColumnsType, Table } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { debounce } from 'lodash';
 
 import DeleteIcon from '@/assets/svgs/delete.svg?react';
 import PageTitleSpan from '@/components/spans/PageTitleSpan.tsx';
@@ -29,6 +30,21 @@ const ProjectPage = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
+    const [localSearchText, setLocalSearchText] = useState<string>(searchText);
+
+    // Sync searchText from context to local state
+    useEffect(() => {
+        setLocalSearchText(searchText);
+    }, [searchText]);
+
+    // Debounced function to update search text in context
+    const debouncedSetSearchText = useMemo(
+        () =>
+            debounce((value: string) => {
+                setSearchText(value);
+            }, 300),
+        [setSearchText],
+    );
 
     const rowSelection = {
         selectedRowKeys,
@@ -139,9 +155,15 @@ const ProjectPage = () => {
             <div className="flex gap-4 items-center">
                 <div className="w-1/4">
                     <Input
-                        value={searchText}
+                        value={localSearchText}
                         onChange={(event) => {
-                            setSearchText(event.target.value);
+                            const value = event.target.value;
+                            setLocalSearchText(value);
+                            debouncedSetSearchText(value);
+                        }}
+                        onClear={() => {
+                            setLocalSearchText('');
+                            debouncedSetSearchText('');
                         }}
                         className="rounded-[calc(var(--radius)-2px)]"
                         variant="outlined"
