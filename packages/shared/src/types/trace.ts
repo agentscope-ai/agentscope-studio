@@ -85,3 +85,25 @@ export interface SpanData {
     runId: string;
     latencyNs: number;
 }
+
+// Trace list item interface for UI display
+export interface TraceListItem {
+    traceId: string;
+    name: string;
+    startTime: string;
+    endTime: string;
+    duration: number;
+    status: number;
+    spanCount: number;
+    totalTokens?: number;
+}
+
+// Trace statistics interface
+export interface TraceStatistics {
+    totalTraces: number;
+    totalSpans: number;
+    errorTraces: number;
+    avgDuration: number;
+    totalTokens: number;
+    tracesByStatus: Array<{ status: number; count: number }>;
+}

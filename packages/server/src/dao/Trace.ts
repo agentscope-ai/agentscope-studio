@@ -495,9 +495,6 @@ export class SpanDao {
             status: number;
             spanCount: number;
             totalTokens?: number;
-            input?: unknown;
-            output?: unknown;
-            nodeType?: string;
         }>;
         total: number;
     }> {
@@ -576,17 +573,17 @@ export class SpanDao {
                 totalTokens: number | string | null;
             }
             const traceIds = results.map((row: TraceListRow) => row.traceId);
+
+            // Get root spans (spans with no parent or empty parent) for the traces in results
             const rootSpans =
                 traceIds.length > 0
                     ? await SpanTable.createQueryBuilder('span')
                           .where('span.traceId IN (:...traceIds)', { traceIds })
-                          .andWhere('span.parentSpanId IS NULL')
-                          .select([
-                              'span.traceId',
-                              'span.attributes',
-                              'span.name',
-                              'span.operationName',
-                          ])
+                          .andWhere(
+                              '(span.parentSpanId IS NULL OR span.parentSpanId = :emptyString)',
+                              { emptyString: '' },
+                          )
+                          .select(['span.traceId', 'span.name'])
                           .getMany()
                     : [];
 
@@ -601,94 +598,10 @@ export class SpanDao {
                     const duration = Number(endTimeNs - startTimeNs) / 1e9; // Convert nanoseconds to seconds
 
                     const rootSpan = rootSpanMap.get(row.traceId);
-                    const attrs = rootSpan?.attributes || {};
-
-                    // Extract input
-                    let input: unknown = undefined;
-                    if (attrs['gen_ai']) {
-                        const genAi = attrs['gen_ai'] as Record<
-                            string,
-                            unknown
-                        >;
-                        if (genAi['input']) {
-                            const inputObj = genAi['input'] as Record<
-                                string,
-                                unknown
-                            >;
-                            if (inputObj['messages']) {
-                                input = inputObj['messages'];
-                            }
-                        }
-                    }
-                    if (!input && attrs['agentscope']) {
-                        const agentscope = attrs['agentscope'] as Record<
-                            string,
-                            unknown
-                        >;
-                        if (agentscope['function']) {
-                            const functionObj = agentscope[
-                                'function'
-                            ] as Record<string, unknown>;
-                            if (functionObj['input']) {
-                                input = functionObj['input'];
-                            }
-                        }
-                    }
-                    if (!input && attrs['input']) {
-                        input = attrs['input'];
-                    }
-
-                    // Extract output
-                    let output: unknown = undefined;
-                    if (attrs['gen_ai']) {
-                        const genAi = attrs['gen_ai'] as Record<
-                            string,
-                            unknown
-                        >;
-                        if (genAi['output']) {
-                            const outputObj = genAi['output'] as Record<
-                                string,
-                                unknown
-                            >;
-                            if (outputObj['messages']) {
-                                output = outputObj['messages'];
-                            }
-                        }
-                    }
-                    if (!output && attrs['agentscope']) {
-                        const agentscope = attrs['agentscope'] as Record<
-                            string,
-                            unknown
-                        >;
-                        if (agentscope['function']) {
-                            const functionObj = agentscope[
-                                'function'
-                            ] as Record<string, unknown>;
-                            if (functionObj['output']) {
-                                output = functionObj['output'];
-                            }
-                        }
-                    }
-                    if (!output && attrs['output']) {
-                        output = attrs['output'];
-                    }
-
-                    // Determine node type
-                    let nodeType = 'App';
-                    if (rootSpan?.operationName) {
-                        const opName = rootSpan.operationName.toUpperCase();
-                        if (opName.includes('LLM') || opName.includes('CHAT')) {
-                            nodeType = 'LLM';
-                        } else if (opName.includes('TOOL')) {
-                            nodeType = 'TOOL';
-                        } else if (opName.includes('AGENT')) {
-                            nodeType = 'AGENT';
-                        }
-                    }
 
                     return {
                         traceId: row.traceId || '',
-                        name: row.name || 'Unknown',
+                        name: rootSpan?.name || row.name || 'Unknown',
                         startTime: row.startTime || '0',
                         endTime: row.endTime || '0',
                         duration,
@@ -699,9 +612,6 @@ export class SpanDao {
                             row.totalTokens !== undefined
                                 ? Number(row.totalTokens)
                                 : undefined,
-                        input,
-                        output,
-                        nodeType,
                     };
                 } catch (err) {
                     console.error('Error processing trace row:', row, err);
