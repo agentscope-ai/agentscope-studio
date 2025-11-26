@@ -6,18 +6,17 @@ import {
     useState,
 } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-
 import { RouterPath } from '@/pages/RouterPath.ts';
 import { useSocket } from '@/context/SocketContext.tsx';
 import { FridayConfig } from '@shared/config/friday.ts';
-import { BackendResponse, SocketEvents } from '@shared/types';
+import { ResponseBody, SocketEvents } from '@shared/types';
 
 interface FridaySettingRoomContextType {
-    saveFridayConfig: (config: FridayConfig) => Promise<BackendResponse>;
-    installFridayRequirements: (pythonEnv: string) => Promise<BackendResponse>;
+    saveFridayConfig: (config: FridayConfig) => Promise<ResponseBody>;
+    installFridayRequirements: (pythonEnv: string) => Promise<ResponseBody>;
     loadingConfig: boolean;
     fridayConfig?: FridayConfig | null;
-    verifyPythonEnv: (pythonEnv: string) => Promise<BackendResponse>;
+    verifyPythonEnv: (pythonEnv: string) => Promise<ResponseBody>;
 }
 
 const FridaySettingRoomContext =
@@ -51,7 +50,7 @@ export function FridaySettingRoomContextProvider({ children }: Props) {
         // Obtain config from the backend
         socket.emit(
             SocketEvents.client.getFridayConfig,
-            (response: BackendResponse) => {
+            (response: ResponseBody) => {
                 if (response.data) {
                     setFridayConfig(response.data as FridayConfig);
 
@@ -69,13 +68,13 @@ export function FridaySettingRoomContextProvider({ children }: Props) {
 
     const saveFridayConfig = async (
         config: FridayConfig,
-    ): Promise<BackendResponse> => {
+    ): Promise<ResponseBody> => {
         return new Promise((resolve, reject) => {
             if (socket) {
                 socket.emit(
                     SocketEvents.client.saveFridayConfig,
                     config,
-                    (response: BackendResponse) => {
+                    (response: ResponseBody) => {
                         resolve(response);
                     },
                 );
@@ -87,13 +86,13 @@ export function FridaySettingRoomContextProvider({ children }: Props) {
 
     const installFridayRequirements = async (
         pythonEnv: string,
-    ): Promise<BackendResponse> => {
+    ): Promise<ResponseBody> => {
         return new Promise((resolve, reject) => {
             if (socket) {
                 socket.emit(
                     SocketEvents.client.installFridayRequirements,
                     pythonEnv,
-                    (response: BackendResponse) => {
+                    (response: ResponseBody) => {
                         resolve(response);
                     },
                 );
@@ -103,7 +102,7 @@ export function FridaySettingRoomContextProvider({ children }: Props) {
         });
     };
 
-    const verifyPythonEnv = (pythonEnv: string): Promise<BackendResponse> => {
+    const verifyPythonEnv = (pythonEnv: string): Promise<ResponseBody> => {
         return new Promise((resolve, reject) => {
             if (!socket) {
                 reject(new Error('Missing connection to the server'));
@@ -112,7 +111,7 @@ export function FridaySettingRoomContextProvider({ children }: Props) {
             socket.emit(
                 SocketEvents.client.verifyFridayConfig,
                 pythonEnv,
-                (response: BackendResponse) => {
+                (response: ResponseBody) => {
                     resolve(response);
                 },
             );

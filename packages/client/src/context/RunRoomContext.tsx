@@ -7,7 +7,7 @@ import {
 } from 'react';
 import { useSocket } from './SocketContext';
 import {
-    BackendResponse,
+    ResponseBody,
     InputRequestData,
     ModelInvocationData,
     Reply,
@@ -117,7 +117,7 @@ export function RunRoomContextProvider({ children }: Props) {
         socket.emit(
             SocketEvents.client.joinRunRoom,
             runId,
-            (response: BackendResponse) => {
+            (response: ResponseBody) => {
                 if (!response.success) {
                     messageApi.error(response.message);
                 }
