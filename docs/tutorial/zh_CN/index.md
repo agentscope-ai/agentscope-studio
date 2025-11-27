@@ -1,7 +1,5 @@
 ---
-# h
-
-ttps://vitepress.dev/reference/default-theme-home-page
+# https://vitepress.dev/reference/default-theme-home-page
 layout: home
 
 hero:
