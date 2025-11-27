@@ -29,7 +29,7 @@ AgentScope-Studio 作为 `@agentscope/studio` 包发布在 NPM 注册表上，�
 
 ## _如何贡献？_
 
-AgentScope-Studio 是一个开源项目，我们欢迎来自社区的贡献。请参阅我们的[贡献指南]()了解更多关于如何参与的详细信息。
+AgentScope-Studio 是一个开源项目，我们欢迎来自社区的贡献。请参阅我们的[贡献指南](./contributing)了解更多关于如何参与的详细信息。
 
 ## _顺便说一句_
 

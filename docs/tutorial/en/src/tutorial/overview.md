@@ -32,7 +32,7 @@ AgentScope-Studio is released on the NPM registry as the package `@agentscope/st
 ## _How to Contribute?_
 
 AgentScope-Studio is an open-source project, and we welcome contributions from the community. Please refer to our
-[contribution guide]() for more details on how to get involved.
+[contribution guide](./contributing) for more details on how to get involved.
 
 ## _By the Way_
 
