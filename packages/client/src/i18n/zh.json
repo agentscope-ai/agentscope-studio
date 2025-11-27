@@ -114,12 +114,14 @@
     "help": {
         "friday": {
             "api-key": "用于访问 {{llmProvider}} LLM API 的密钥",
+            "base-url": "LLM API 提供商的基础 URL",
+            "base-url-placeholder": "例如 https://api.openai.com/v1,http://localhost:11434",
+            "client-kwargs": "API client 初始化的关键字参数，例如 OpenAI 客户端的 \"base_url\" 字段",
+            "generate-kwargs": "实际调用 LLM API 时传入的关键字参数，例如 \"temperature\"、\"max_tokens\" 等",
             "llm-provider": "选择 LLM API 提供商",
             "model-name": "用于生成回复的{{llmProvider}}模型",
             "python-env": "Python 环境的绝对路径（3.10+），例如 /usr/bin/python",
-            "write-permission": "是否允许 Friday 修改你的本地文件，如果允许，Friday 将会装备一个写文件的工具",
-            "base-url": "LLM API 提供商的基础 URL",
-            "base-url-placeholder": "例如 https://api.openai.com/v1,http://localhost:11434"
+            "write-permission": "是否允许 Friday 修改你的本地文件，如果允许，Friday 将会装备一个写文件的工具"
         }
     },
     "hint": {

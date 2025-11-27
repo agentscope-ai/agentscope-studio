@@ -1,17 +1,17 @@
 import { memo, ReactNode, useEffect, useMemo, useState } from 'react';
-import { Button, Flex, Form, Input, Select, Spin, Switch, Space } from 'antd';
-import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
+import { Button, Flex, Form, Input, Select, Spin, Switch } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-import CheckSvg from '@/assets/svgs/check-circle.svg?react';
+import { CheckCircle } from 'lucide-react';
 import PageTitleSpan from '@/components/spans/PageTitleSpan.tsx';
 
 import { FridayConfig } from '@shared/config/friday.ts';
 import { useMessageApi } from '@/context/MessageApiContext.tsx';
 import { RouterPath } from '@/pages/RouterPath.ts';
 import { useFridaySettingRoom } from '@/context/FridaySettingRoomContext.tsx';
-import { inputTypeOptions, llmProviderOptions, booleanOptions } from '../config';
+import { llmProviderOptions } from '../config';
+import KwargsFormList from '@/pages/FridayPage/SettingPage/KwargsFormList.tsx';
 
 // Form format for kwargs
 interface KwargsFormItem {
@@ -87,125 +87,6 @@ interface FridayConfigBackend extends FridayConfig {
     generateKwargs?: KwargsBackendItem[];
 }
 
-// Reusable component for kwargs form list
-const KwargsFormList = ({ name }: { name: string }) => {
-    return (
-        <Form.Item
-            label={name === 'clientKwargs' ? 'Client Kwargs' : 'Generate Kwargs'}
-            className="-mb-[15px]!"
-            shouldUpdate
-        >
-            {({ getFieldValue, setFieldValue }) => (
-                <Form.List name={name}>
-                    {(fields, { add, remove }) => (
-                        <>
-                            {fields.map(
-                                ({ key, name: fieldName, ...restField }) => (
-                                    <Space
-                                        key={key}
-                                        className="flex mb-2"
-                                        align="baseline"
-                                    >
-                                        <Form.Item
-                                            {...restField}
-                                            name={[fieldName, 'key']}
-                                            rules={[
-                                                {
-                                                    required: true,
-                                                    message: 'Missing key name',
-                                                },
-                                            ]}
-                                        >
-                                            <Input placeholder="Key Name" />
-                                        </Form.Item>
-                                        <Form.Item
-                                            {...restField}
-                                            name={[fieldName, 'type']}
-                                            initialValue="string"
-                                            rules={[
-                                                {
-                                                    required: true,
-                                                    message: 'Missing type name',
-                                                },
-                                            ]}
-                                        >
-                                            <Select
-                                                placeholder="Type Name"
-                                                popupMatchSelectWidth={false}
-                                                options={inputTypeOptions}
-                                                className="w-[94px]!"
-                                                onChange={() => {
-                                                    // Clear value when switching types
-                                                    setFieldValue(
-                                                        [name, fieldName, 'value'],
-                                                        undefined,
-                                                    );
-                                                }}
-                                            />
-                                        </Form.Item>
-                                        <Form.Item
-                                            {...restField}
-                                            name={[fieldName, 'value']}
-                                            rules={
-                                                getFieldValue([
-                                                    name,
-                                                    fieldName,
-                                                    'type',
-                                                ]) === 'number'
-                                                    ? [
-                                                          {
-                                                              pattern: /^[0-9]+$/,
-                                                              whitespace: true,
-                                                              message: 'Only numbers can be entered.',
-                                                          },
-                                                      ]
-                                                    : [
-                                                          {
-                                                              required: true,
-                                                              whitespace: true,
-                                                              message: 'Missing value name',
-                                                          },
-                                                      ]
-                                            }
-                                        >
-                                            {getFieldValue([
-                                                name,
-                                                fieldName,
-                                                'type',
-                                            ]) === 'boolean' ? (
-                                                <Select
-                                                    placeholder="Value Name"
-                                                    className="w-[150px]!"
-                                                    options={booleanOptions}
-                                                />
-                                            ) : (
-                                                <Input placeholder="Value Name" />
-                                            )}
-                                        </Form.Item>
-                                        <MinusCircleOutlined
-                                            onClick={() => remove(fieldName)}
-                                        />
-                                    </Space>
-                                ),
-                            )}
-                            <Form.Item>
-                                <Button
-                                    type="dashed"
-                                    onClick={() => add()}
-                                    block
-                                    icon={<PlusOutlined />}
-                                >
-                                    Add field
-                                </Button>
-                            </Form.Item>
-                        </>
-                    )}
-                </Form.List>
-            )}
-        </Form.Item>
-    );
-};
-
 const SettingPage = () => {
     const navigate = useNavigate();
     const { messageApi } = useMessageApi();
@@ -229,14 +110,15 @@ const SettingPage = () => {
     } = useFridaySettingRoom();
     const [loading, setLoading] = useState<boolean>(false);
     const [form] = Form.useForm();
-    const [btnText, setBtnText] = useState<string>('Let\'s Go!');
+    const [btnText, setBtnText] = useState<string>("Let's Go!");
     const [btnIcon, setBtnIcon] = useState<ReactNode>(null);
 
     // Load the existing Friday config if it exists
     useEffect(() => {
         if (fridayConfig) {
             // Convert backend format to form format
-            const backendConfig = fridayConfig as unknown as FridayConfigBackend;
+            const backendConfig =
+                fridayConfig as unknown as FridayConfigBackend;
             const formData: FridayConfigForm = {
                 ...fridayConfig,
                 clientKwargs: convertKwargsFromBackendFormat(
@@ -309,7 +191,7 @@ const SettingPage = () => {
                             await installFridayRequirements(config.pythonEnv);
                         if (installFridayRequirementsRes.success) {
                             setBtnIcon(
-                                <CheckSvg
+                                <CheckCircle
                                     width={14}
                                     height={14}
                                     fill="#04b304"
@@ -333,7 +215,7 @@ const SettingPage = () => {
                             if (saveFridayConfigRes.success) {
                                 // wait for 1 second
                                 setBtnIcon(
-                                    <CheckSvg
+                                    <CheckCircle
                                         width={14}
                                         height={14}
                                         fill="#04b304"
@@ -420,13 +302,15 @@ const SettingPage = () => {
                             help={t('help.friday.base-url')}
                         >
                             <Input
-                                placeholder={t( 'help.friday.base-url-placeholder')}
+                                placeholder={t(
+                                    'help.friday.base-url-placeholder',
+                                )}
                             />
                         </Form.Item>
                     )}
 
                     <KwargsFormList name="clientKwargs" />
-                    
+
                     <KwargsFormList name="generateKwargs" />
 
                     <Form.Item

@@ -1,5 +1,4 @@
 import { ReactNode } from 'react';
-import { Flex } from 'antd';
 
 import QwenLogo from '@/assets/svgs/qwen.svg?react';
 import OpenAILogo from '@/assets/svgs/logo-openai.svg?react';
@@ -29,17 +28,17 @@ interface booleanOption {
 
 const ModelOption = ({ logo, name }: ModelOptionProps) => {
     return (
-        <Flex gap="small" align="center">
+        <div className="flex flex-row items-center gap-x-2">
             {logo}
             {name}
-        </Flex>
+        </div>
     );
 };
 
 export const inputTypeOptions: InputTypeOption[] = [
-    { label: 'String', value: 'string' },
-    { label: 'Number', value: 'number' },
-    { label: 'Boolean', value: 'boolean' },
+    { label: 'string', value: 'string' },
+    { label: 'number', value: 'number' },
+    { label: 'bool', value: 'boolean' },
 ];
 
 export const llmProviderOptions: llmProviderOption[] = [
