@@ -5,11 +5,11 @@ layout: home
 hero:
     name: 'AgentScope-Studio'
     text: 'A development-oriented visualization toolkit for AgentScope'
-    tagline: 'One-stop visualization solution for development, debugging, and evaluation'
+    tagline: 'Transparent, Simple, and Fun'
     actions:
         - theme: brand
           text: Tutorial
-          link: /src/overview
+          link: /src/tutorial/overview
         - theme: alt
           text: API Documentation
           link: /src/api-examples

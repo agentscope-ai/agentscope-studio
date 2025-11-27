@@ -1,15 +1,17 @@
 ---
-# https://vitepress.dev/reference/default-theme-home-page
+# h
+
+ttps://vitepress.dev/reference/default-theme-home-page
 layout: home
 
 hero:
     name: 'AgentScope-Studio'
     text: 'AgentScope 开发者的可视化开发组件'
-    tagline: '从开发、调试到应用评测的全流程可视化解决方案'
+    tagline: '透明、更简单、更有趣'
     actions:
         - theme: brand
           text: 使用教程
-          link: /zh_CN/overview
+          link: /zh_CN/tutorial/overview
         - theme: alt
           text: API 文档
           link: /zh_CN/src/api-examples
