@@ -53,7 +53,6 @@ const getStatusIcon = (statusCode: number) => {
 
 interface TraceDetailPageProps {
     traceId: string;
-    // onClose?: () => void;
 }
 
 const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {

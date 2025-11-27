@@ -15,13 +15,14 @@ import {
  * 3. 将 message_table.replyId 改为不可空的外键
  */
 export class AddMessageReplyForeignKey1730000000000
-    implements MigrationInterface {
+    implements MigrationInterface
+{
     name = 'AddMessageReplyForeignKey1730000000000';
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         console.log('开始迁移：添加 Reply 表并建立外键关系...');
 
-        if ((await queryRunner.hasTable('reply_table'))) {
+        if (await queryRunner.hasTable('reply_table')) {
             console.log('reply_table 已存在，跳过');
             return;
         }

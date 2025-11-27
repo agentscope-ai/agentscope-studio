@@ -323,7 +323,7 @@ export class SpanDao {
                     THEN CAST(COALESCE(span.inputTokens, 0) AS INTEGER)
                     ELSE 0 END
                 ), 0) as totalPromptTokens`,
-                // 总计 - output tokens
+                // Total - output tokens
                 `COALESCE(SUM(
                     CASE WHEN (span.operationName = 'chat'
                              OR span.operationName = 'chat_model')
@@ -331,7 +331,7 @@ export class SpanDao {
                     THEN CAST(COALESCE(span.outputTokens, 0) AS INTEGER)
                     ELSE 0 END
                 ), 0) as totalCompletionTokens`,
-                // 总计 - total tokens
+                // Total - total tokens
                 `COALESCE(SUM(
                     CASE WHEN (span.operationName = 'chat'
                              OR span.operationName = 'chat_model')
@@ -339,7 +339,7 @@ export class SpanDao {
                     THEN CAST(COALESCE(span.totalTokens, 0) AS INTEGER)
                     ELSE 0 END
                 ), 0) as totalTokens`,
-                // 平均 - input tokens
+                // Average - input tokens
                 `COALESCE(
                     CAST(SUM(
                         CASE WHEN (span.operationName = 'chat'
@@ -352,7 +352,7 @@ export class SpanDao {
                                          OR span.operationName = 'chat_model')
                                      AND span.totalTokens IS NOT NULL THEN 1 END), 0)
                 , 0) as avgPromptTokens`,
-                // 平均 - output tokens
+                // Average - output tokens
                 `COALESCE(
                     CAST(SUM(
                         CASE WHEN (span.operationName = 'chat'
@@ -365,7 +365,7 @@ export class SpanDao {
                                          OR span.operationName = 'chat_model')
                                      AND span.totalTokens IS NOT NULL THEN 1 END), 0)
                 , 0) as avgCompletionTokens`,
-                // 平均 - total tokens
+                // Average - total tokens
                 `COALESCE(
                     CAST(SUM(
                         CASE WHEN (span.operationName = 'chat'

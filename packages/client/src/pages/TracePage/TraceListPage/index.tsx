@@ -339,13 +339,7 @@ const TraceListPage = () => {
                     className="w-full sm:w-[80%] sm:max-w-[80%] p-0"
                 >
                     {selectedTraceId && (
-                        <TraceDetailPage
-                            traceId={selectedTraceId}
-                            // onClose={() => {
-                            //     setDrawerOpen(false);
-                            //     setSelectedTraceId(null);
-                            // }}
-                        />
+                        <TraceDetailPage traceId={selectedTraceId} />
                     )}
                 </SheetContent>
             </Sheet>

@@ -90,8 +90,8 @@ function decodeEvents(eventsValue: unknown): SpanEvent[] {
             name: asString(e.name),
             time: timeUnixNano,
             attributes: (e.attributes &&
-                typeof e.attributes === 'object' &&
-                e.attributes !== null
+            typeof e.attributes === 'object' &&
+            e.attributes !== null
                 ? (e.attributes as Record<string, unknown>)
                 : {}) as SpanAttributes,
             droppedAttributesCount: asNumber(e.droppedAttributesCount, 0),
@@ -259,8 +259,8 @@ function convertOldRecordToSpanTable(oldRecord: unknown): SpanTable {
         asNumber(r.latencyMs, 0) > 0
             ? asNumber(r.latencyMs) * 1_000_000
             : asNumber(r.latencyNs, 0) > 0
-                ? asNumber(r.latencyNs)
-                : getTimeDifferenceNano(startTimeUnixNano, endTimeUnixNano);
+              ? asNumber(r.latencyNs)
+              : getTimeDifferenceNano(startTimeUnixNano, endTimeUnixNano);
 
     const statusObj = decodeStatus(r.status);
     const statusMessage = asOptionalString(r.statusMessage);
