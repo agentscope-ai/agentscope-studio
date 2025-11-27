@@ -144,7 +144,7 @@ export class RunDao {
                 relations: ['replies', 'replies.messages', 'inputRequests'],
             });
 
-            const spans = await SpanDao.getSpansByRunId(runId);
+            const spans = await SpanDao.getSpansByConversationId(runId);
 
             if (result) {
                 return {
@@ -256,7 +256,7 @@ export class RunDao {
     static async deleteRuns(runIds: string[]) {
         try {
             if (runIds.length > 0) {
-                await SpanDao.deleteSpansByRunIds(runIds);
+                await SpanDao.deleteSpansByConversationIds(runIds);
             }
             const conditions: FindOptionsWhere<RunTable> = {
                 id: In(runIds),
@@ -278,7 +278,7 @@ export class RunDao {
             const runIds = runsToDelete.map((run) => run.id);
 
             if (runIds.length > 0) {
-                await SpanDao.deleteSpansByRunIds(runIds);
+                await SpanDao.deleteSpansByConversationIds(runIds);
             }
 
             const conditions: FindOptionsWhere<RunTable> = {

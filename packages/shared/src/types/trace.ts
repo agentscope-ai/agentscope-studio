@@ -82,7 +82,7 @@ export interface SpanData {
     // Resource and scope information from resourceSpans structure
     resource: SpanResource;
     scope: SpanScope;
-    runId: string;
+    conversationId: string;
     latencyNs: number;
 }
 

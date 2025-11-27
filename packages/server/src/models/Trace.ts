@@ -15,7 +15,7 @@ import { BaseEntity, Column, Entity, Index, PrimaryColumn } from 'typeorm';
 @Index(['inputTokens'])
 @Index(['outputTokens'])
 @Index(['totalTokens'])
-@Index(['runId'])
+@Index(['conversationId'])
 export class SpanTable extends BaseEntity {
     @PrimaryColumn({ nullable: false })
     id: string;
@@ -68,47 +68,55 @@ export class SpanTable extends BaseEntity {
     @Column('json')
     status: Record<string, unknown>;
 
-    // Resource information - 直接嵌入，避免JOIN
+    // Resource information
     @Column('json')
     resource: Record<string, unknown>;
 
-    // InstrumentationScope information - 直接嵌入，避免JOIN
+    // InstrumentationScope information
     @Column('json')
     scope: Record<string, unknown>;
 
-    // Status code - 直接嵌入
+    // Status code
     @Column({ nullable: true })
     statusCode?: number;
 
-    // 提取的关键字段用于索引和快速查询
+    // Resource.service.name
     @Column({ nullable: true })
-    serviceName?: string; // resource.service.name
+    serviceName?: string;
 
+    // Attributes.gen_ai.operation.name
     @Column({ nullable: true })
-    operationName?: string; // attributes.gen_ai.operation.name
+    operationName?: string;
 
+    // InstrumentationScope.name
     @Column({ nullable: true })
-    instrumentationName?: string; // instrumentationScope.name
+    instrumentationName?: string;
 
+    // InstrumentationScope.version
     @Column({ nullable: true })
-    instrumentationVersion?: string; // instrumentationScope.version
+    instrumentationVersion?: string;
 
+    // Attributes.gen_ai.request.model
     @Column({ nullable: true })
-    model?: string; // attributes.gen_ai.request.model
+    model?: string;
 
+    // Attributes.gen_ai.usage.input_token
     @Column({ nullable: true })
-    inputTokens?: number; // attributes.gen_ai.usage.input_token
+    inputTokens?: number;
 
+    // Attributes.gen_ai.usage.output_token
     @Column({ nullable: true })
-    outputTokens?: number; // attributes.gen_ai.usage.output_token
+    outputTokens?: number;
 
+    // Attributes.gen_ai.usage.total_token
     @Column({ nullable: true })
     totalTokens?: number;
 
-    // Additional fields for our application
+    // GenAI conversation ID
     @Column({ nullable: true })
-    runId?: string;
+    conversationId?: string;
 
+    // Latency in nanoseconds
     @Column('float')
     latencyNs: number;
 }

@@ -76,7 +76,6 @@ export function getTimeDifference(
     return endTime - startTime;
 }
 
-// 纳秒时间戳相关工具函数
 export function getTimeDifferenceNano(
     startNano: string | number,
     endNano: string | number,
@@ -101,8 +100,7 @@ export function millisecondsToNano(milliseconds: number): number {
 
 export function isValidNanoTimestamp(nanoTimestamp: string | number): boolean {
     const nano = Number(nanoTimestamp);
-    // 检查是否为有效的纳秒时间戳（1970年1月1日之后，且不超过当前时间太多）
     const minNano = 0; // 1970-01-01 00:00:00 UTC
-    const maxNano = Date.now() * 1_000_000 + 365 * 24 * 60 * 60 * 1_000_000; // 当前时间 + 1年
+    const maxNano = Date.now() * 1_000_000 + 365 * 24 * 60 * 60 * 1_000_000; // Current time + 1 year
     return !isNaN(nano) && nano >= minNano && nano <= maxNano;
 }

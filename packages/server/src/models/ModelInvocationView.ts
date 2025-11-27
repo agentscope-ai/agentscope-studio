@@ -6,7 +6,7 @@ import { SpanTable } from './Trace';
         dataSource
             .createQueryBuilder()
             .from(SpanTable, 'span')
-            .innerJoin('run_table', 'run', 'run.id = span.runId')
+            .innerJoin('run_table', 'run', 'run.id = span.conversationId')
             .select(
                 `COUNT(CASE
                     WHEN (span.operationName = 'chat'
@@ -34,7 +34,7 @@ import { SpanTable } from './Trace';
         END)`,
                 'chatModelInvocations',
             )
-            // 一个月前的统计
+            // A month ago
             .addSelect(
                 `COALESCE(SUM(CASE
             WHEN span.totalTokens IS NOT NULL
@@ -46,7 +46,7 @@ import { SpanTable } from './Trace';
         END), 0)`,
                 'tokensMonthAgo',
             )
-            // 一周前的统计
+            // A week ago
             .addSelect(
                 `COALESCE(SUM(CASE
             WHEN span.totalTokens IS NOT NULL
@@ -58,7 +58,7 @@ import { SpanTable } from './Trace';
         END), 0)`,
                 'tokensWeekAgo',
             )
-            // 一年前的统计
+            // A year ago
             .addSelect(
                 `COALESCE(SUM(CASE
             WHEN span.totalTokens IS NOT NULL
@@ -70,7 +70,7 @@ import { SpanTable } from './Trace';
         END), 0)`,
                 'tokensYearAgo',
             )
-            // 一个月内的调用次数
+            // A month ago
             .addSelect(
                 `COUNT(CASE
                     WHEN (span.operationName = 'chat'
@@ -80,7 +80,7 @@ import { SpanTable } from './Trace';
                 END)`,
                 'modelInvocationsMonthAgo',
             )
-            // 一周内的调用次数
+            // A week ago
             .addSelect(
                 `COUNT(CASE
                     WHEN (span.operationName = 'chat'
@@ -90,7 +90,7 @@ import { SpanTable } from './Trace';
                 END)`,
                 'modelInvocationsWeekAgo',
             )
-            // 一年内的调用次数
+            // A year ago
             .addSelect(
                 `COUNT(CASE
                     WHEN (span.operationName = 'chat'

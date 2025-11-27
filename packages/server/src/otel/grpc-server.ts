@@ -122,7 +122,7 @@ export class OtelGrpcServer {
                     }
 
                     this.server.start();
-                    console.log(
+                    console.debug(
                         `[OTEL gRPC] Server started on port ${port} (0.0.0.0:${this.port})`,
                     );
                     resolve();
@@ -144,7 +144,7 @@ export class OtelGrpcServer {
                     );
                     reject(error);
                 } else {
-                    console.log('[OTEL gRPC] Server stopped');
+                    console.debug('[OTEL gRPC] Server stopped');
                     resolve();
                 }
             });
@@ -156,6 +156,6 @@ export class OtelGrpcServer {
      */
     public forceShutdown(): void {
         this.server.forceShutdown();
-        console.log('[OTEL gRPC] Server force shutdown');
+        console.debug('[OTEL gRPC] Server force shutdown');
     }
 }

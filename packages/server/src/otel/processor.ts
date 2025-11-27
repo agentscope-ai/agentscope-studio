@@ -164,7 +164,7 @@ export class SpanProcessor {
             status: status,
             resource: resource,
             scope: scope,
-            runId: this.getRunId(attributes),
+            conversationId: this.getConversationId(attributes),
             latencyNs: getTimeDifferenceNano(
                 startTimeUnixNano,
                 endTimeUnixNano,
@@ -186,9 +186,14 @@ export class SpanProcessor {
         return Array.isArray(value) ? value.map(mapper) : [];
     }
 
-    private static getRunId(attributes: Record<string, unknown>): string {
-        const newRunId = getNestedValue(attributes, 'gen_ai.conversation.id');
-        if (newRunId) return String(newRunId);
+    private static getConversationId(
+        attributes: Record<string, unknown>,
+    ): string {
+        const conversationId = getNestedValue(
+            attributes,
+            'gen_ai.conversation.id',
+        );
+        if (conversationId) return String(conversationId);
         const oldRunId = getNestedValue(attributes, 'project.run_id');
         return oldRunId ? String(oldRunId) : 'unknown';
     }

@@ -1,6 +1,7 @@
 import { TraceListItem, TraceStatistics } from '@shared/types';
 import dayjs from 'dayjs';
 import { createContext, ReactNode, useContext, useMemo, useState } from 'react';
+import { TrpcProvider } from '../api/TrpcProvider';
 import { trpc } from '../api/trpc';
 
 export interface TraceContextType {
@@ -72,9 +73,10 @@ interface TraceContextProviderProps {
     defaultPollingEnabled?: boolean;
 }
 
-export function TraceContextProvider({
+// Internal component that uses tRPC hooks - must be inside trpc.Provider
+function TraceContextProviderInner({
     children,
-    defaultPollingInterval = 5000, // 5 seconds default
+    defaultPollingInterval = 5000,
     defaultPollingEnabled = true,
 }: TraceContextProviderProps) {
     // Filter state
@@ -292,6 +294,24 @@ export function TraceContextProvider({
 
     return (
         <TraceContext.Provider value={value}>{children}</TraceContext.Provider>
+    );
+}
+
+// External wrapper that provides QueryClientProvider and trpc.Provider
+export function TraceContextProvider({
+    children,
+    defaultPollingInterval = 5000, // 5 seconds default
+    defaultPollingEnabled = true,
+}: TraceContextProviderProps) {
+    return (
+        <TrpcProvider>
+            <TraceContextProviderInner
+                defaultPollingInterval={defaultPollingInterval}
+                defaultPollingEnabled={defaultPollingEnabled}
+            >
+                {children}
+            </TraceContextProviderInner>
+        </TrpcProvider>
     );
 }
 

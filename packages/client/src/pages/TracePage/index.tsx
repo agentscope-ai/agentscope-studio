@@ -1,13 +1,12 @@
 import { memo } from 'react';
-import { Route, Routes } from 'react-router-dom';
 
 import { TraceContextProvider } from '../../context/TraceContext';
 import TraceListPage from './TraceListPage';
 
 /**
- * Main trace page that provides routing for trace listing and detail views.
+ * Main trace page that provides trace listing view.
  * Wraps the page with TraceContextProvider for state management and polling.
- * Note: QueryClientProvider and trpc.Provider are provided at App level.
+ * TraceContextProvider internally provides QueryClientProvider and trpc.Provider.
  */
 const TracePage = () => {
     return (
@@ -16,10 +15,7 @@ const TracePage = () => {
             defaultPollingEnabled={true}
         >
             <div className="h-full flex flex-1">
-                <Routes>
-                    {/* Default route: Trace list page */}
-                    <Route index element={<TraceListPage />} />
-                </Routes>
+                <TraceListPage />
             </div>
         </TraceContextProvider>
     );

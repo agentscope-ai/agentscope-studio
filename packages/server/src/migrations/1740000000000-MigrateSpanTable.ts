@@ -90,8 +90,8 @@ function decodeEvents(eventsValue: unknown): SpanEvent[] {
             name: asString(e.name),
             time: timeUnixNano,
             attributes: (e.attributes &&
-            typeof e.attributes === 'object' &&
-            e.attributes !== null
+                typeof e.attributes === 'object' &&
+                e.attributes !== null
                 ? (e.attributes as Record<string, unknown>)
                 : {}) as SpanAttributes,
             droppedAttributesCount: asNumber(e.droppedAttributesCount, 0),
@@ -131,7 +131,7 @@ function decodeScope(): SpanScope {
     };
 }
 
-function getRunId(
+function getConversationId(
     attributes: Record<string, unknown>,
     record: Record<string, unknown>,
 ): string {
@@ -140,8 +140,8 @@ function getRunId(
             getNestedValue(attributes, 'gen_ai.conversation.id'),
         ) ||
         toStringOrUndefined(getNestedValue(attributes, 'project.run_id')) ||
-        toStringOrUndefined(record.runId) ||
-        toStringOrUndefined(record.run_id) ||
+        toStringOrUndefined(record.conversationId) ||
+        toStringOrUndefined(record.conversation_id) ||
         'unknown'
     );
 }
@@ -259,8 +259,8 @@ function convertOldRecordToSpanTable(oldRecord: unknown): SpanTable {
         asNumber(r.latencyMs, 0) > 0
             ? asNumber(r.latencyMs) * 1_000_000
             : asNumber(r.latencyNs, 0) > 0
-              ? asNumber(r.latencyNs)
-              : getTimeDifferenceNano(startTimeUnixNano, endTimeUnixNano);
+                ? asNumber(r.latencyNs)
+                : getTimeDifferenceNano(startTimeUnixNano, endTimeUnixNano);
 
     const statusObj = decodeStatus(r.status);
     const statusMessage = asOptionalString(r.statusMessage);
@@ -270,7 +270,7 @@ function convertOldRecordToSpanTable(oldRecord: unknown): SpanTable {
     const events = decodeEvents(r.events);
     const resource = decodeResource(attributes);
     const scope = decodeScope();
-    const runId = getRunId(attributes, r);
+    const conversationId = getConversationId(attributes, r);
     const spanId = getSpanId(r, attributes);
 
     // Extract key fields for indexing
@@ -314,7 +314,7 @@ function convertOldRecordToSpanTable(oldRecord: unknown): SpanTable {
         inputTokens: inputTokens,
         outputTokens: outputTokens,
         totalTokens: totalTokens,
-        runId: runId,
+        conversationId: conversationId,
         latencyNs: latencyNs,
     });
 
@@ -555,7 +555,7 @@ export class MigrateSpanTable1740000000000 implements MigrationInterface {
                         isNullable: true,
                     },
                     {
-                        name: 'runId',
+                        name: 'conversationId',
                         type: 'varchar',
                         isNullable: true,
                     },
@@ -619,8 +619,8 @@ export class MigrateSpanTable1740000000000 implements MigrationInterface {
                         columnNames: ['totalTokens'],
                     },
                     {
-                        name: 'IDX_span_runId',
-                        columnNames: ['runId'],
+                        name: 'IDX_span_conversationId',
+                        columnNames: ['conversationId'],
                     },
                 ],
             }),

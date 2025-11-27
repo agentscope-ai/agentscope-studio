@@ -68,7 +68,7 @@ export class SpanDao {
                     inputTokens: inputTokens,
                     outputTokens: outputTokens,
                     totalTokens: totalTokens,
-                    runId: data.runId,
+                    conversationId: data.conversationId,
                     latencyNs: data.latencyNs,
                 });
                 return span;
@@ -82,11 +82,13 @@ export class SpanDao {
         }
     }
 
-    static async getSpansByRunId(runId: string): Promise<SpanData[]> {
+    static async getSpansByConversationId(
+        conversationId: string,
+    ): Promise<SpanData[]> {
         try {
             const spans = await SpanTable.find({
-                where: { runId },
-                order: { startTimeUnixNano: 'ASC' }, // 按开始时间排序，便于构建树形结构
+                where: { conversationId },
+                order: { startTimeUnixNano: 'ASC' },
             });
 
             return spans.map(
@@ -111,12 +113,15 @@ export class SpanDao {
                         status: span.status as unknown as SpanStatus,
                         resource: span.resource as unknown as SpanResource,
                         scope: span.scope as unknown as SpanScope,
-                        runId: span.runId,
+                        conversationId: span.conversationId,
                         latencyNs: span.latencyNs,
                     }) as SpanData,
             );
         } catch (error) {
-            console.error(`Error fetching spans for runId ${runId}:`, error);
+            console.error(
+                `Error fetching spans for conversationId ${conversationId}:`,
+                error,
+            );
             throw error;
         }
     }
@@ -145,13 +150,6 @@ export class SpanDao {
         resource: SpanResource,
     ): string | undefined {
         const value = getNestedValue(resource.attributes, 'service.name');
-        return typeof value === 'string' ? value : undefined;
-    }
-
-    private static extractRunId(
-        attributes: Record<string, unknown>,
-    ): string | undefined {
-        const value = getNestedValue(attributes, 'gen_ai.conversation.id');
         return typeof value === 'string' ? value : undefined;
     }
 
@@ -291,8 +289,8 @@ export class SpanDao {
         }
     }
 
-    static async getModelInvocationData(runId: string) {
-        // 1. 基础统计
+    static async getModelInvocationData(conversationId: string) {
+        // 1. Basic statistics
         const basicStats = await SpanTable.createQueryBuilder('span')
             .select(
                 `COUNT(CASE
@@ -311,13 +309,13 @@ export class SpanDao {
                 END)`,
                 'chatInvocations',
             )
-            .where('span.runId = :runId', { runId })
+            .where('span.conversationId = :conversationId', { conversationId })
             .getRawOne();
 
-        // 2. Chat类型的token统计（总计和平均值）
+        // 2. Chat token statistics (total and average)
         const chatTokenStats = await SpanTable.createQueryBuilder('span')
             .select([
-                // 总计 - input tokens
+                // Total - input tokens
                 `COALESCE(SUM(
                     CASE WHEN (span.operationName = 'chat'
                              OR span.operationName = 'chat_model')
@@ -381,13 +379,13 @@ export class SpanDao {
                                      AND span.totalTokens IS NOT NULL THEN 1 END), 0)
                 , 0) as avgTotalTokens`,
             ])
-            .where('span.runId = :runId', { runId })
+            .where('span.conversationId = :conversationId', { conversationId })
             .getRawOne();
 
-        // 3. 按模型分组的调用次数
+        // 3. Model invocation statistics (grouped by model)
         const modelInvocations = await SpanTable.createQueryBuilder('span')
             .select(['span.model as modelName', 'COUNT(*) as invocations'])
-            .where('span.runId = :runId', { runId })
+            .where('span.conversationId = :conversationId', { conversationId })
             .andWhere(
                 "(span.operationName = 'chat' OR span.operationName = 'chat_model')",
             )
@@ -395,20 +393,20 @@ export class SpanDao {
             .groupBy('modelName')
             .getRawMany();
 
-        // 4. 按模型分组的token统计
+        // 4. Model token statistics (grouped by model)
         const modelTokenStats = await SpanTable.createQueryBuilder('span')
             .select([
                 'span.model as modelName',
-                // 总计
+                // Total
                 `SUM(CAST(COALESCE(span.inputTokens, 0) AS INTEGER)) as totalPromptTokens`,
                 `SUM(CAST(COALESCE(span.outputTokens, 0) AS INTEGER)) as totalCompletionTokens`,
                 `SUM(CAST(COALESCE(span.totalTokens, 0) AS INTEGER)) as totalTokens`,
-                // 平均值
+                // Average
                 `CAST(SUM(CAST(COALESCE(span.inputTokens, 0) AS INTEGER)) AS FLOAT) / COUNT(*) as avgPromptTokens`,
                 `CAST(SUM(CAST(COALESCE(span.outputTokens, 0) AS INTEGER)) AS FLOAT) / COUNT(*) as avgCompletionTokens`,
                 `CAST(SUM(CAST(COALESCE(span.totalTokens, 0) AS INTEGER)) AS FLOAT) / COUNT(*) as avgTotalTokens`,
             ])
-            .where('span.runId = :runId', { runId })
+            .where('span.conversationId = :conversationId', { conversationId })
             .andWhere(
                 "(span.operationName = 'chat' OR span.operationName = 'chat_model')",
             )
@@ -416,7 +414,7 @@ export class SpanDao {
             .groupBy('modelName')
             .getRawMany();
 
-        // 5. 构建返回结构
+        // 5. Build return structure
         return {
             modelInvocations: Number(basicStats.totalInvocations),
             chat: {
@@ -460,18 +458,22 @@ export class SpanDao {
         } as ModelInvocationData;
     }
 
-    static async deleteSpansByRunIds(runIds: string[]): Promise<number> {
+    static async deleteSpansByConversationIds(
+        conversationIds: string[],
+    ): Promise<number> {
         try {
-            if (runIds.length === 0) {
+            if (conversationIds.length === 0) {
                 return 0;
             }
             const result = await SpanTable.createQueryBuilder()
                 .delete()
-                .where('runId IN (:...runIds)', { runIds })
+                .where('conversationId IN (:...conversationIds)', {
+                    conversationIds,
+                })
                 .execute();
             return result.affected || 0;
         } catch (error) {
-            console.error('Error deleting spans by runIds:', error);
+            console.error('Error deleting spans by conversationIds:', error);
             throw error;
         }
     }
@@ -558,7 +560,7 @@ export class SpanDao {
 
             const results = await queryBuilder.getRawMany();
 
-            console.log(
+            console.debug(
                 `[TraceDao] getTraceList: found ${total} traces, returning ${results.length} with limit=${filters.limit}, offset=${filters.offset}`,
             );
 
@@ -619,7 +621,7 @@ export class SpanDao {
                 }
             });
 
-            console.log(
+            console.debug(
                 `[TraceDao] getTraceList: returning ${traces.length} traces`,
             );
             return { traces, total };
@@ -684,7 +686,7 @@ export class SpanDao {
                         status: span.status as unknown as SpanStatus,
                         resource: span.resource as unknown as SpanResource,
                         scope: span.scope as unknown as SpanScope,
-                        runId: span.runId,
+                        conversationId: span.conversationId,
                         latencyNs: span.latencyNs,
                     }) as SpanData,
             );

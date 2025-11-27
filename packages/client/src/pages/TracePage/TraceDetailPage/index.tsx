@@ -53,7 +53,7 @@ const getStatusIcon = (statusCode: number) => {
 
 interface TraceDetailPageProps {
     traceId: string;
-    onClose?: () => void;
+    // onClose?: () => void;
 }
 
 const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
@@ -142,7 +142,7 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
         const success = await copyToClipboard(text);
         if (success) {
             // TODO: Add toast notification
-            console.log(t('trace.message.traceIdCopied'));
+            console.log(t('trace.message.copySuccess'));
             setIdPanelOpen(false);
         } else {
             console.error(t('trace.message.copyFailed'));
@@ -282,7 +282,7 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                         <div className="mt-4 p-3 bg-muted rounded-md">
                             <div className="mb-2">
                                 <span className="text-xs text-muted-foreground mr-2">
-                                    {t('trace.detail.status')}:
+                                    {t('common.status')}:
                                 </span>
                                 <span
                                     className={`text-xs px-2 py-0.5 rounded ${getStatusColor(
@@ -294,7 +294,7 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                             </div>
                             <div className="mb-2">
                                 <span className="text-xs text-muted-foreground mr-2">
-                                    {t('trace.detail.duration')}:
+                                    {t('table.column.duration')}:
                                 </span>
                                 <span className="text-xs">
                                     {formatDuration(traceDuration)}
@@ -302,7 +302,7 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                             </div>
                             <div>
                                 <span className="text-xs text-muted-foreground mr-2">
-                                    {t('trace.detail.callTime')}:
+                                    {t('table.column.startTime')}:
                                 </span>
                                 <span className="text-xs">
                                     {formatTime(rootSpan.startTimeUnixNano)}
@@ -335,7 +335,7 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                                 className="shrink-0"
                             >
                                 <EyeIcon className="size-4 mr-2" />
-                                {t('trace.detail.viewId')}
+                                {t('common.id')}
                             </Button>
                         </div>
 
@@ -381,7 +381,7 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                         <div className="mb-4 p-4 bg-muted rounded-md grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
                             <div>
                                 <div className="text-xs text-muted-foreground mb-1">
-                                    {t('trace.detail.startTime')}
+                                    {t('common.start-time')}
                                 </div>
                                 <div className="text-sm font-medium break-words">
                                     {formatTime(displaySpan.startTimeUnixNano)}
@@ -389,7 +389,7 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                             </div>
                             <div>
                                 <div className="text-xs text-muted-foreground mb-1">
-                                    {t('trace.detail.duration')}
+                                    {t('table.column.duration')}
                                 </div>
                                 <div className="text-sm font-medium">
                                     {formatDuration(
@@ -424,14 +424,14 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                         >
                             <AccordionItem value="info">
                                 <AccordionTrigger>
-                                    {t('trace.info')}
+                                    {t('common.metadata')}
                                 </AccordionTrigger>
                                 <AccordionContent>
                                     <div className="space-y-4">
                                         <div>
                                             <div className="flex items-center justify-between mb-2">
                                                 <div className="text-sm font-medium">
-                                                    {t('trace.input')}
+                                                    {t('common.input')}
                                                 </div>
                                                 <Button
                                                     variant="ghost"
@@ -464,7 +464,7 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                                         <div>
                                             <div className="flex items-center justify-between mb-2">
                                                 <div className="text-sm font-medium">
-                                                    {t('trace.output')}
+                                                    {t('common.output')}
                                                 </div>
                                                 <Button
                                                     variant="ghost"
@@ -498,12 +498,12 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                             </AccordionItem>
                             <AccordionItem value="attributes">
                                 <AccordionTrigger>
-                                    {t('trace.attributes')}
+                                    {t('common.attributes')}
                                 </AccordionTrigger>
                                 <AccordionContent>
                                     <div className="flex items-center justify-between mb-2">
                                         <div className="text-sm font-medium">
-                                            {t('trace.attributes')}
+                                            {t('common.attributes')}
                                         </div>
                                         <Button
                                             variant="ghost"

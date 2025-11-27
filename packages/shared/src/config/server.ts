@@ -42,7 +42,6 @@ export const PATHS = {
 
 export const ServerConfig = {
     port: parseInt(process.env.PORT || DEFAULT_CONFIG.server.port.toString()),
-    grpcPort: parseInt(process.env.OTEL_GRPC_PORT || '4317'),
     database: {
         type: 'sqlite' as const,
         database: path.join(PATHS.getAppDataDir(), 'database.sqlite'),

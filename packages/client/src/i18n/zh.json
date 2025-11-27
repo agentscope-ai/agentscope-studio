@@ -242,56 +242,28 @@
         }
     },
     "trace": {
-        "name": "名称",
-        "callTime": "调用时间",
-        "latency": "延时",
-        "statusLabel": "状态",
+        "detail": {
+            "loading": "加载中..."
+        },
+        "message": {
+            "copyFailed": "复制失败",
+            "copySuccess": "已复制到剪贴板",
+            "loadFailed": "加载 traces 失败"
+        },
         "nodeDetails": "节点详情",
-        "info": "信息",
-        "input": "输入",
-        "output": "输出",
-        "attributes": "属性",
         "selectSpan": "选择一个 span 以查看详情",
-        "traceId": "Trace ID",
         "spanId": "Span ID",
-        "timeRange": {
-            "week": "最近 7 天",
-            "month": "最近 30 天",
-            "all": "全部"
-        },
-        "search": {
-            "traceId": "搜索 traceId...",
-            "name": "搜索名称...",
-            "placeholder": "搜索 {{field}}..."
-        },
-        "statistics": {
-            "avgLatency": "平均延时"
-        },
-        "polling": {
-            "autoRefresh": "自动刷新",
-            "startPolling": "开始轮询",
-            "stopPolling": "停止轮询"
-        },
         "status": {
             "error": "错误",
             "ok": "正常",
             "unset": "未设置"
         },
-        "detail": {
-            "status": "状态",
-            "duration": "调用时长",
-            "callTime": "调用时间",
-            "startTime": "开始时间",
-            "firstPacketTime": "首包时长",
-            "tokenCount": "Token 量",
-            "viewId": "查看 ID",
-            "loading": "加载中..."
+        "timeRange": {
+            "all": "全部",
+            "month": "最近 30 天",
+            "week": "最近 7 天"
         },
-        "message": {
-            "traceIdCopied": "Trace ID 已复制",
-            "copyFailed": "复制失败",
-            "loadFailed": "加载 traces 失败"
-        }
+        "traceId": "Trace ID"
     },
     "unit": {
         "character": "字符",

@@ -250,56 +250,28 @@
         }
     },
     "trace": {
-        "name": "Name",
-        "callTime": "Call Time",
-        "latency": "Latency",
-        "statusLabel": "Status",
+        "detail": {
+            "loading": "Loading..."
+        },
+        "message": {
+            "copyFailed": "Copy failed",
+            "copySuccess": "Copied to clipboard",
+            "loadFailed": "Failed to load traces"
+        },
         "nodeDetails": "Node Details",
-        "info": "Info",
-        "input": "Input",
-        "output": "Output",
-        "attributes": "Attributes",
         "selectSpan": "Select a span to view details",
-        "traceId": "Trace ID",
         "spanId": "Span ID",
-        "timeRange": {
-            "week": "Last 7 days",
-            "month": "Last 30 days",
-            "all": "All"
-        },
-        "search": {
-            "traceId": "Search traceId...",
-            "name": "Search name...",
-            "placeholder": "Search {{field}}..."
-        },
-        "statistics": {
-            "avgLatency": "Average Latency"
-        },
-        "polling": {
-            "autoRefresh": "Auto Refresh",
-            "startPolling": "Start Polling",
-            "stopPolling": "Stop Polling"
-        },
         "status": {
             "error": "ERROR",
             "ok": "OK",
             "unset": "UNSET"
         },
-        "detail": {
-            "status": "Status",
-            "duration": "Duration",
-            "callTime": "Call Time",
-            "startTime": "Start Time",
-            "firstPacketTime": "First Packet Time",
-            "tokenCount": "Token Count",
-            "viewId": "View ID",
-            "loading": "Loading..."
+        "timeRange": {
+            "all": "All",
+            "month": "Last 30 days",
+            "week": "Last 7 days"
         },
-        "message": {
-            "traceIdCopied": "Trace ID copied",
-            "copyFailed": "Copy failed",
-            "loadFailed": "Failed to load traces"
-        }
+        "traceId": "Trace ID"
     },
     "unit": {
         "character": "character",

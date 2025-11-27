@@ -141,7 +141,7 @@ const TraceListPage = () => {
         const success = await copyToClipboard(traceId);
         if (success) {
             // TODO: Add toast notification
-            console.log(t('trace.message.traceIdCopied'));
+            console.log(t('trace.message.copySuccess'));
         } else {
             console.error(t('trace.message.copyFailed'));
         }
@@ -287,7 +287,7 @@ const TraceListPage = () => {
                     unit={t('unit.tokens')}
                 />
                 <StatCard
-                    title={t('trace.statistics.avgLatency')}
+                    title={`${t('common.average')} ${t('common.latency')}`}
                     value={
                         statistics?.avgDuration
                             ? formatDuration(statistics.avgDuration)
@@ -341,10 +341,10 @@ const TraceListPage = () => {
                     {selectedTraceId && (
                         <TraceDetailPage
                             traceId={selectedTraceId}
-                            onClose={() => {
-                                setDrawerOpen(false);
-                                setSelectedTraceId(null);
-                            }}
+                            // onClose={() => {
+                            //     setDrawerOpen(false);
+                            //     setSelectedTraceId(null);
+                            // }}
                         />
                     )}
                 </SheetContent>
