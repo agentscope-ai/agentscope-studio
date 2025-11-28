@@ -2,8 +2,9 @@ import { memo, ReactNode, useEffect, useMemo, useState } from 'react';
 import { Button, Flex, Form, Input, Select, Spin, Switch } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-
 import { CheckCircle } from 'lucide-react';
+
+import KwargsFormList from './KwargsFormList.tsx';
 import PageTitleSpan from '@/components/spans/PageTitleSpan.tsx';
 
 import { FridayConfig } from '@shared/config/friday.ts';
@@ -11,7 +12,6 @@ import { useMessageApi } from '@/context/MessageApiContext.tsx';
 import { RouterPath } from '@/pages/RouterPath.ts';
 import { useFridaySettingRoom } from '@/context/FridaySettingRoomContext.tsx';
 import { llmProviderOptions } from '../config';
-import KwargsFormList from '@/pages/FridayPage/SettingPage/KwargsFormList.tsx';
 
 // Form format for kwargs
 interface KwargsFormItem {
@@ -23,14 +23,16 @@ interface KwargsFormItem {
 // Backend format for kwargs
 type KwargsBackendItem = { [key: string]: string | number | boolean };
 
-// Convert kwargs from form format [{type, key, value}] to backend format [{key: value}]
+// Convert kwargs from form format [{type, key, value}] to backend format {key1: value1, key2: value2}
 const convertKwargsToBackendFormat = (
     kwargs: KwargsFormItem[] | undefined,
-): KwargsBackendItem[] | undefined => {
-    if (!kwargs || !Array.isArray(kwargs)) {
+): KwargsBackendItem | undefined => {
+    if (!kwargs || !Array.isArray(kwargs) || kwargs.length === 0) {
         return undefined;
     }
-    return kwargs.map((item) => {
+    const result: KwargsBackendItem = {};
+    kwargs.forEach((item) => {
+        if (!item.key) return; // Skip items without key
         let convertedValue: string | number | boolean = item.value;
         // Convert value based on type
         if (item.type === 'number') {
@@ -38,23 +40,19 @@ const convertKwargsToBackendFormat = (
         } else if (item.type === 'boolean') {
             convertedValue = item.value === 'true';
         }
-        return { [item.key]: convertedValue };
+        result[item.key] = convertedValue;
     });
+    return Object.keys(result).length > 0 ? result : undefined;
 };
 
-// Convert kwargs from backend format [{key: value}] to form format [{type, key, value}]
+// Convert kwargs from backend format {key1: value1, key2: value2} to form format [{type, key, value}]
 const convertKwargsFromBackendFormat = (
-    kwargs: KwargsBackendItem[] | undefined,
+    kwargs: KwargsBackendItem | undefined,
 ): KwargsFormItem[] | undefined => {
-    if (!kwargs || !Array.isArray(kwargs)) {
+    if (!kwargs || typeof kwargs !== 'object' || Array.isArray(kwargs)) {
         return undefined;
     }
-    return kwargs.map((item) => {
-        const entries = Object.entries(item);
-        if (entries.length === 0) {
-            return { type: 'string', key: '', value: '' };
-        }
-        const [key, value] = entries[0];
+    return Object.entries(kwargs).map(([key, value]) => {
         // Infer type from value
         let type = 'string';
         let stringValue = String(value);
@@ -83,8 +81,8 @@ interface FridayConfigForm extends FridayConfig {
 
 // Extended FridayConfig for backend (includes kwargs in backend format)
 interface FridayConfigBackend extends FridayConfig {
-    clientKwargs?: KwargsBackendItem[];
-    generateKwargs?: KwargsBackendItem[];
+    clientKwargs?: KwargsBackendItem;
+    generateKwargs?: KwargsBackendItem;
 }
 
 const SettingPage = () => {
@@ -110,7 +108,7 @@ const SettingPage = () => {
     } = useFridaySettingRoom();
     const [loading, setLoading] = useState<boolean>(false);
     const [form] = Form.useForm();
-    const [btnText, setBtnText] = useState<string>("Let's Go!");
+    const [btnText, setBtnText] = useState<string>('Let\'s Go!');
     const [btnIcon, setBtnIcon] = useState<ReactNode>(null);
 
     // Load the existing Friday config if it exists

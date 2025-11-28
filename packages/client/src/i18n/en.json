@@ -121,7 +121,15 @@
             "llm-provider": "Select the LLM API provider",
             "model-name": "The {{llmProvider}} model used to generate response",
             "python-env": "Absolute path to your Python env (3.10+), e.g. /usr/bin/python",
-            "write-permission": "Whether allow Friday to modify your local files. If allowed, Friday will equip a tool to write text files"
+            "write-permission": "Whether allow Friday to modify your local files. If allowed, Friday will equip a tool to write text files",
+            "key-name": "Key Name",
+            "missing-key-name": "Missing key name",
+            "type-name": "Type Name",
+            "missing-type-name": "Missing type name",
+            "value-name": "Key Name",
+            "missing-value-name": "Missing value name",
+            "check-only-number": "Only numbers can be entered",
+            "add-form-list-btn": "Add keyword argument"
         }
     },
     "hint": {

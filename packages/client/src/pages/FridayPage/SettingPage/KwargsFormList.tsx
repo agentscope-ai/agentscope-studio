@@ -1,11 +1,15 @@
+import { useRef } from 'react';
 import { Form, Select, Input } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { MinusCircleIcon, PlusCircleIcon } from 'lucide-react';
-import { inputTypeOptions, booleanOptions } from '../config';
+
 import { Button } from '@/components/ui/button.tsx';
+import { inputTypeOptions, booleanOptions } from '../config';
 
 const KwargsFormList = ({ name }: { name: string }) => {
     const { t } = useTranslation();
+    const form = Form.useFormInstance();
+    const newlyAddedRef = useRef<Set<number>>(new Set());
 
     const label = name === 'clientKwargs' ? 'Client Kwargs' : 'Generate Kwargs';
     const help =
@@ -20,113 +24,206 @@ const KwargsFormList = ({ name }: { name: string }) => {
                     {(fields, { add, remove }) => (
                         <>
                             {fields.map(
-                                ({ key, name: fieldName, ...restField }) => (
-                                    <div
-                                        key={key}
-                                        className="flex flex-row items-start gap-x-2 justify-center"
-                                    >
-                                        <Form.Item
-                                            {...restField}
-                                            name={[fieldName, 'key']}
-                                            rules={[
-                                                {
-                                                    required: true,
-                                                    message: 'Missing key name',
-                                                },
-                                            ]}
+                                ({ key, name: fieldName, ...restField }) => {
+                                    const isNewlyAdded =
+                                        newlyAddedRef.current.has(fieldName);
+                                    return (
+                                        <div
+                                            key={key}
+                                            className="flex flex-row items-start gap-x-2 justify-center"
                                         >
-                                            <Input placeholder="Key Name" />
-                                        </Form.Item>
-                                        <Form.Item
-                                            {...restField}
-                                            name={[fieldName, 'type']}
-                                            initialValue="string"
-                                            rules={[
-                                                {
-                                                    required: true,
-                                                    message:
-                                                        'Missing type name',
-                                                },
-                                            ]}
-                                        >
-                                            <Select
-                                                placeholder="Type Name"
-                                                popupMatchSelectWidth={false}
-                                                options={inputTypeOptions}
-                                                onChange={() => {
-                                                    // Clear value when switching types
-                                                    setFieldValue(
-                                                        [
-                                                            name,
+                                            <Form.Item
+                                                {...restField}
+                                                name={[fieldName, 'key']}
+                                                validateTrigger={
+                                                    isNewlyAdded
+                                                        ? ['onSubmit']
+                                                        : ['onBlur', 'onChange']
+                                                }
+                                                rules={[
+                                                    {
+                                                        required: true,
+                                                        message: t(
+                                                            'help.friday.missing-key-name',
+                                                        ),
+                                                    },
+                                                ]}
+                                            >
+                                                <Input
+                                                    placeholder={t(
+                                                        'help.friday.key-name',
+                                                    )}
+                                                    onFocus={() => {
+                                                        newlyAddedRef.current.delete(
                                                             fieldName,
-                                                            'value',
-                                                        ],
-                                                        undefined,
-                                                    );
-                                                }}
-                                            />
-                                        </Form.Item>
-                                        <Form.Item
-                                            {...restField}
-                                            name={[fieldName, 'value']}
-                                            rules={
-                                                getFieldValue([
+                                                        );
+                                                    }}
+                                                />
+                                            </Form.Item>
+                                            <Form.Item
+                                                {...restField}
+                                                name={[fieldName, 'type']}
+                                                initialValue="string"
+                                                validateTrigger={
+                                                    isNewlyAdded
+                                                        ? ['onSubmit']
+                                                        : ['onBlur', 'onChange']
+                                                }
+                                                rules={[
+                                                    {
+                                                        required: true,
+                                                        message: t(
+                                                            'help.friday.missing-type-name',
+                                                        ),
+                                                    },
+                                                ]}
+                                            >
+                                                <Select
+                                                    placeholder={t(
+                                                        'help.friday.type-name',
+                                                    )}
+                                                    popupMatchSelectWidth={
+                                                        false
+                                                    }
+                                                    options={inputTypeOptions}
+                                                    onFocus={() => {
+                                                        newlyAddedRef.current.delete(
+                                                            fieldName,
+                                                        );
+                                                    }}
+                                                    onChange={() => {
+                                                        // Clear value when switching types
+                                                        setFieldValue(
+                                                            [
+                                                                name,
+                                                                fieldName,
+                                                                'value',
+                                                            ],
+                                                            undefined,
+                                                        );
+                                                        newlyAddedRef.current.delete(
+                                                            fieldName,
+                                                        );
+                                                    }}
+                                                />
+                                            </Form.Item>
+                                            <Form.Item
+                                                {...restField}
+                                                name={[fieldName, 'value']}
+                                                validateTrigger={
+                                                    isNewlyAdded
+                                                        ? ['onSubmit']
+                                                        : ['onBlur', 'onChange']
+                                                }
+                                                rules={
+                                                    getFieldValue([
+                                                        name,
+                                                        fieldName,
+                                                        'type',
+                                                    ]) === 'number'
+                                                        ? [
+                                                              {
+                                                                  pattern:
+                                                                      /^[0-9]+$/,
+                                                                  required: true,
+                                                                  whitespace: true,
+                                                                  message: t(
+                                                                      'help.friday.check-only-number',
+                                                                  ),
+                                                              },
+                                                          ]
+                                                        : [
+                                                              {
+                                                                  required: true,
+                                                                  whitespace: true,
+                                                                  message: t(
+                                                                      'help.friday.missing-value-name',
+                                                                  ),
+                                                              },
+                                                          ]
+                                                }
+                                            >
+                                                {getFieldValue([
                                                     name,
                                                     fieldName,
                                                     'type',
-                                                ]) === 'number'
-                                                    ? [
-                                                          {
-                                                              pattern:
-                                                                  /^[0-9]+$/,
-                                                              whitespace: true,
-                                                              message:
-                                                                  'Only numbers can be entered.',
-                                                          },
-                                                      ]
-                                                    : [
-                                                          {
-                                                              required: true,
-                                                              whitespace: true,
-                                                              message:
-                                                                  'Missing value name',
-                                                          },
-                                                      ]
-                                            }
-                                        >
-                                            {getFieldValue([
-                                                name,
-                                                fieldName,
-                                                'type',
-                                            ]) === 'boolean' ? (
-                                                <Select
-                                                    placeholder="Value Name"
-                                                    className="w-[150px]!"
-                                                    options={booleanOptions}
-                                                />
-                                            ) : (
-                                                <Input placeholder="Value Name" />
-                                            )}
-                                        </Form.Item>
+                                                ]) === 'boolean' ? (
+                                                    <Select
+                                                        placeholder={t(
+                                                            'help.friday.value-name',
+                                                        )}
+                                                        className="w-[150px]!"
+                                                        options={booleanOptions}
+                                                        onFocus={() => {
+                                                            newlyAddedRef.current.delete(
+                                                                fieldName,
+                                                            );
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <Input
+                                                        placeholder={t(
+                                                            'help.friday.value-name',
+                                                        )}
+                                                        onFocus={() => {
+                                                            newlyAddedRef.current.delete(
+                                                                fieldName,
+                                                            );
+                                                        }}
+                                                    />
+                                                )}
+                                            </Form.Item>
 
-                                        <Button
-                                            variant="ghost"
-                                            size="icon-sm"
-                                            onClick={() => remove(fieldName)}
-                                        >
-                                            <MinusCircleIcon className="size-3" />
-                                        </Button>
-                                    </div>
-                                ),
+                                            <Button
+                                                variant="ghost"
+                                                size="icon-sm"
+                                                onClick={() => {
+                                                    newlyAddedRef.current.delete(
+                                                        fieldName,
+                                                    );
+                                                    remove(fieldName);
+                                                }}
+                                            >
+                                                <MinusCircleIcon className="size-3" />
+                                            </Button>
+                                        </div>
+                                    );
+                                },
                             )}
-                            <Form.Item>
+                            <Form.Item noStyle>
                                 <Button
                                     className="w-full text-muted-foreground font-normal"
                                     variant="outline"
-                                    onClick={() => add()}
+                                    onClick={() => {
+                                        const index = fields.length;
+                                        add({
+                                            key: '',
+                                            type: 'string',
+                                            value: '',
+                                        });
+                                        // Mark this field as newly added to prevent immediate validation
+                                        newlyAddedRef.current.add(index);
+                                        // Clear any validation errors that might have been triggered
+                                        requestAnimationFrame(() => {
+                                            form.setFields([
+                                                {
+                                                    name: [name, index, 'key'],
+                                                    errors: [],
+                                                },
+                                                {
+                                                    name: [
+                                                        name,
+                                                        index,
+                                                        'value',
+                                                    ],
+                                                    errors: [],
+                                                },
+                                            ]);
+                                        });
+                                    }}
                                 >
                                     <PlusCircleIcon className="size-3" />
-                                    Add keyword argument
+                                    {t('help.friday.add-form-list-btn')}
                                 </Button>
                             </Form.Item>
                         </>
