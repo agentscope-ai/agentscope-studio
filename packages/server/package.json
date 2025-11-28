@@ -8,6 +8,7 @@
         "build": "tsc -p tsconfig.json"
     },
     "dependencies": {
+        "@grpc/grpc-js": "^1.10.9",
         "@trpc/server": "^11.0.1",
         "@types/google-protobuf": "^3.15.12",
         "cors": "^2.8.5",
@@ -15,6 +16,7 @@
         "find-process": "^1.4.10",
         "google-protobuf": "^3.21.4",
         "opener": "^1.5.2",
+        "portfinder": "^1.0.32",
         "protobufjs": "^7.5.3",
         "socket.io": "^4.8.1",
         "sqlite3": "^5.1.7",

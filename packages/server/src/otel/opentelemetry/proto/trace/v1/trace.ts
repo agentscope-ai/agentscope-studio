@@ -3,8 +3,8 @@
  * compiler version: 5.27.0
  * source: opentelemetry/proto/trace/v1/trace.proto
  * git: https://github.com/thesayyn/protoc-gen-ts */
-import * as dependency_1 from './../../common/v1/common';
-import * as dependency_2 from './../../resource/v1/resource';
+import * as dependency_1 from '../../common/v1/common';
+import * as dependency_2 from '../../resource/v1/resource';
 import * as pb_1 from 'google-protobuf';
 export namespace opentelemetry.proto.trace.v1 {
     export enum SpanFlags {

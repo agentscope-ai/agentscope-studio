@@ -10,15 +10,13 @@ export function getNestedValue(
     const keys: string[] = Array.isArray(path)
         ? path.flatMap((k) => k.split(separator))
         : path.split(separator);
-    let current: unknown = obj;
-    for (const key of keys) {
-        if (current && typeof current === 'object') {
-            current = (current as Record<string, unknown>)[key];
-        } else {
-            return undefined;
+
+    return keys.reduce<unknown>((acc, key) => {
+        if (acc && typeof acc === 'object' && key in acc) {
+            return (acc as Record<string, unknown>)[key];
         }
-    }
-    return current;
+        return undefined;
+    }, obj);
 }
 
 export function unflattenObject(
@@ -29,11 +27,10 @@ export function unflattenObject(
         const parts = key.split('.');
         let current: Record<string, unknown> = result;
         for (let i = 0; i < parts.length - 1; i++) {
-            const part = parts[i];
-            if (!current[part] || typeof current[part] !== 'object') {
-                current[part] = {};
+            if (!current[parts[i]] || typeof current[parts[i]] !== 'object') {
+                current[parts[i]] = {};
             }
-            current = current[part] as Record<string, unknown>;
+            current = current[parts[i]] as Record<string, unknown>;
         }
         current[parts[parts.length - 1]] = value;
     }

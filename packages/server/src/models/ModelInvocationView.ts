@@ -1,5 +1,4 @@
 import { BaseEntity, DataSource, ViewColumn, ViewEntity } from 'typeorm';
-import { SpanKind } from '../../../shared/src/types/trace';
 import { SpanTable } from './Trace';
 
 @ViewEntity({
@@ -7,91 +6,97 @@ import { SpanTable } from './Trace';
         dataSource
             .createQueryBuilder()
             .from(SpanTable, 'span')
+            .innerJoin('run_table', 'run', 'run.id = span.conversationId')
             .select(
-                `COUNT(CASE WHEN span.spanKind = '${SpanKind.LLM}' THEN 1 END)`,
+                `COUNT(CASE
+                    WHEN (span.operationName = 'chat'
+                         OR span.operationName = 'chat_model')
+                    THEN 1
+                END)`,
                 'totalModelInvocations',
             )
             .addSelect(
-                `COALESCE(SUM(CASE 
-            WHEN span.spanKind = '${SpanKind.LLM}' AND json_extract(span.attributes, '$.output.usage') IS NOT NULL
-            THEN (
-                CAST(COALESCE(json_extract(span.attributes, '$.output.usage.input_tokens'), 0) AS INTEGER) +
-                CAST(COALESCE(json_extract(span.attributes, '$.output.usage.output_tokens'), 0) AS INTEGER)
-            )
-            ELSE 0 
+                `COALESCE(SUM(CASE
+            WHEN span.totalTokens IS NOT NULL
+            AND (span.operationName = 'chat'
+                 OR span.operationName = 'chat_model')
+            THEN CAST(span.totalTokens AS INTEGER)
+            ELSE 0
         END), 0)`,
                 'totalTokens',
             )
             .addSelect(
-                `COUNT(CASE 
-            WHEN span.spanKind = '${SpanKind.LLM}' AND json_extract(span.attributes, '$.output.usage') IS NOT NULL
-            THEN 1 
+                `COUNT(CASE
+            WHEN span.totalTokens IS NOT NULL
+            AND (span.operationName = 'chat'
+                 OR span.operationName = 'chat_model')
+            THEN 1
         END)`,
                 'chatModelInvocations',
             )
-            // 一个月前的统计
+            // A month ago
             .addSelect(
-                `COALESCE(SUM(CASE 
-            WHEN span.spanKind = '${SpanKind.LLM}' AND json_extract(span.attributes, '$.output.usage') IS NOT NULL
-                AND span.startTime > strftime('%Y-%m-%d %H:%M:%S', 'now', '-1 month')
-            THEN (
-                CAST(COALESCE(json_extract(span.attributes, '$.output.usage.input_tokens'), 0) AS INTEGER) +
-                CAST(COALESCE(json_extract(span.attributes, '$.output.usage.output_tokens'), 0) AS INTEGER)
-            )
-            ELSE 0 
+                `COALESCE(SUM(CASE
+            WHEN span.totalTokens IS NOT NULL
+            AND (span.operationName = 'chat'
+                 OR span.operationName = 'chat_model')
+            AND span.startTimeUnixNano > (strftime('%s', 'now', '-1 month') * 1000000000)
+            THEN CAST(span.totalTokens AS INTEGER)
+            ELSE 0
         END), 0)`,
                 'tokensMonthAgo',
             )
-            // 一周前的统计
+            // A week ago
             .addSelect(
-                `COALESCE(SUM(CASE 
-            WHEN span.spanKind = '${SpanKind.LLM}' AND json_extract(span.attributes, '$.output.usage') IS NOT NULL
-                AND span.startTime > strftime('%Y-%m-%d %H:%M:%S', 'now', '-7 days')
-            THEN (
-                CAST(COALESCE(json_extract(span.attributes, '$.output.usage.input_tokens'), 0) AS INTEGER) +
-                CAST(COALESCE(json_extract(span.attributes, '$.output.usage.output_tokens'), 0) AS INTEGER)
-            )
-            ELSE 0 
+                `COALESCE(SUM(CASE
+            WHEN span.totalTokens IS NOT NULL
+            AND (span.operationName = 'chat'
+                 OR span.operationName = 'chat_model')
+            AND span.startTimeUnixNano > (strftime('%s', 'now', '-7 days') * 1000000000)
+            THEN CAST(span.totalTokens AS INTEGER)
+            ELSE 0
         END), 0)`,
                 'tokensWeekAgo',
             )
-            // 一年前的统计
+            // A year ago
             .addSelect(
-                `COALESCE(SUM(CASE 
-            WHEN span.spanKind = '${SpanKind.LLM}' AND json_extract(span.attributes, '$.output.usage') IS NOT NULL
-                AND span.startTime > strftime('%Y-%m-%d %H:%M:%S', 'now', '-1 year')
-            THEN (
-                CAST(COALESCE(json_extract(span.attributes, '$.output.usage.input_tokens'), 0) AS INTEGER) +
-                CAST(COALESCE(json_extract(span.attributes, '$.output.usage.output_tokens'), 0) AS INTEGER)
-            )
-            ELSE 0 
+                `COALESCE(SUM(CASE
+            WHEN span.totalTokens IS NOT NULL
+            AND (span.operationName = 'chat'
+                 OR span.operationName = 'chat_model')
+            AND span.startTimeUnixNano > (strftime('%s', 'now', '-1 year') * 1000000000)
+            THEN CAST(span.totalTokens AS INTEGER)
+            ELSE 0
         END), 0)`,
                 'tokensYearAgo',
             )
-            // 一个月内的调用次数
+            // A month ago
             .addSelect(
-                `COUNT(CASE 
-                    WHEN span.spanKind = '${SpanKind.LLM}' 
-                    AND span.startTime > strftime('%Y-%m-%d %H:%M:%S', 'now', '-1 month')
-                    THEN 1 
+                `COUNT(CASE
+                    WHEN (span.operationName = 'chat'
+                         OR span.operationName = 'chat_model')
+                    AND span.startTimeUnixNano > (strftime('%s', 'now', '-1 month') * 1000000000)
+                    THEN 1
                 END)`,
                 'modelInvocationsMonthAgo',
             )
-            // 一周内的调用次数
+            // A week ago
             .addSelect(
-                `COUNT(CASE 
-                    WHEN span.spanKind = '${SpanKind.LLM}' 
-                    AND span.startTime > strftime('%Y-%m-%d %H:%M:%S', 'now', '-7 days')
-                    THEN 1 
+                `COUNT(CASE
+                    WHEN (span.operationName = 'chat'
+                         OR span.operationName = 'chat_model')
+                    AND span.startTimeUnixNano > (strftime('%s', 'now', '-7 days') * 1000000000)
+                    THEN 1
                 END)`,
                 'modelInvocationsWeekAgo',
             )
-            // 一年内的调用次数
+            // A year ago
             .addSelect(
-                `COUNT(CASE 
-                    WHEN span.spanKind = '${SpanKind.LLM}' 
-                    AND span.startTime > strftime('%Y-%m-%d %H:%M:%S', 'now', '-1 year')
-                    THEN 1 
+                `COUNT(CASE
+                    WHEN (span.operationName = 'chat'
+                         OR span.operationName = 'chat_model')
+                    AND span.startTimeUnixNano > (strftime('%s', 'now', '-1 year') * 1000000000)
+                    THEN 1
                 END)`,
                 'modelInvocationsYearAgo',
             ),

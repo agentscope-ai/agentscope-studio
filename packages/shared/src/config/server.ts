@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
-import path from 'path';
 import fs from 'fs';
+import path from 'path';
 import { APP_INFO, DEFAULT_CONFIG } from './common';
 
 // Load environment variables

@@ -12,6 +12,7 @@ import { checkForUpdates } from '@/utils/versionCheck.ts';
 import { useNotification } from '@/context/NotificationContext.tsx';
 import { OverviewRoomContextProvider } from '@/context/OverviewRoomContext.tsx';
 import StudioSidebar from '@/pages/HomePage/sidebar.tsx';
+import TracePage from '../TracePage/index.tsx';
 
 const HomePage = () => {
     const { t } = useTranslation();
@@ -62,6 +63,10 @@ const HomePage = () => {
                     <Route
                         path={`${RouterPath.PROJECTS}/*`}
                         element={<DashboardPage />}
+                    />
+                    <Route
+                        path={`${RouterPath.TRACING}/*`}
+                        element={<TracePage />}
                     />
                     <Route
                         path={`${RouterPath.EVAL}/*`}
