@@ -105,12 +105,12 @@ export class SpanProcessor {
         let attributes = this.decodeAttributes(spanObj.attributes);
 
         let spanName = typeof spanObj.name === 'string' ? spanObj.name : '';
-        if (scope.name.toLowerCase().includes('agentscope')) {
-            // Check version and throw error if version is less than 1.0.7
+        if (scope.name.toLowerCase().includes('agentscope.tracing._trace') ||
+            scope.name.toLowerCase() === 'agentscope') {
             const version = scope.version || '';
-            if (version && this.compareVersion(version, '1.0.7') < 0) {
+            if (version && this.compareVersion(version, '1.0.9') < 0) {
                 throw new Error(
-                    `Invalid version: agentscope SDK version ${version} is less than 1.0.7. Please update agentscope SDK to version 1.0.7 or higher.`,
+                    `Invalid version: agentscope SDK version ${version} is too low. Please update to 1.0.9 or higher.`,
                 );
             }
 
@@ -120,8 +120,6 @@ export class SpanProcessor {
             spanName = newValues.span_name;
             attributes = newValues.attributes as unknown as Attributes;
         }
-
-        // console.debug('[SpanProcessor] new attributes', attributes);
 
         const events = this.decodeArray(spanObj.events, (e) =>
             this.decodeEvent(e),
