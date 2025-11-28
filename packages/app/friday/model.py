@@ -36,7 +36,13 @@ def get_formatter(llmProvider: str) -> FormatterBase:
                 f"Unsupported model provider: {llmProvider}. "
             )
 
-def get_model(llmProvider:str, modelName: str, apiKey: str, baseUrl: str = None) -> ChatModelBase:
+def get_model(
+    llmProvider:str,
+    modelName: str,
+    apiKey: str,
+    client_kwargs: dict = {},
+    generate_kwargs: dict = {},
+) -> ChatModelBase:
     """Get the model instance based on the input arguments."""
 
     match llmProvider.lower():
@@ -45,34 +51,40 @@ def get_model(llmProvider:str, modelName: str, apiKey: str, baseUrl: str = None)
                 model_name=modelName,
                 api_key=apiKey,
                 stream=True,
+                # client_kwargs=client_kwargs,
+                generate_kwargs=generate_kwargs,
             )
         case "openai":
-            client_args = {}
-            if baseUrl:
-                client_args["base_url"] = baseUrl
             return OpenAIChatModel(
                 model_name=modelName,
                 api_key=apiKey,
                 stream=True,
-                client_args=client_args,
+                client_kwargs=client_kwargs,
+                generate_kwargs=generate_kwargs,
             )
         case "ollama":
             return OllamaChatModel(
                 model_name=modelName,
                 stream=True,
                 host=baseUrl,
+                client_kwargs=client_kwargs,
+                generate_kwargs=generate_kwargs,
             )
         case "gemini":
             return GeminiChatModel(
                 model_name=modelName,
                 api_key=apiKey,
                 stream=True,
+                client_kwargs=client_kwargs,
+                generate_kwargs=generate_kwargs,
             )
         case "anthropic":
             return AnthropicChatModel(
                 model_name=modelName,
                 api_key=apiKey,
                 stream=True,
+                client_kwargs=client_kwargs,
+                generate_kwargs=generate_kwargs,
             )
         case _:
             raise ValueError(
