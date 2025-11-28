@@ -1,4 +1,3 @@
-import { ReplyDao } from '@/dao/Reply';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import {
@@ -18,6 +17,7 @@ import { FridayConfigManager } from '../../../shared/src/config/friday';
 import { FridayAppMessageDao } from '../dao/FridayAppMessage';
 import { InputRequestDao } from '../dao/InputRequest';
 import { MessageDao } from '../dao/Message';
+import { ReplyDao } from '../dao/Reply';
 import { RunDao } from '../dao/Run';
 import { SpanDao } from '../dao/Trace';
 import { SocketManager } from './socket';

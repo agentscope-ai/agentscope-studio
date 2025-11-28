@@ -10,10 +10,10 @@ import { SpanProcessor } from './processor';
  */
 export class OtelGrpcServer {
     private server: grpc.Server;
-    private port: number;
+    private defaultPort: number;
 
-    constructor(port: number = 4317) {
-        this.port = port;
+    constructor(defaultPort: number = 4317) {
+        this.defaultPort = defaultPort;
         this.server = new grpc.Server();
         this.setupService();
     }
@@ -105,25 +105,28 @@ export class OtelGrpcServer {
 
     /**
      * Start the gRPC server
+     * @param port - Port to bind the server to. If not provided, uses the default port from constructor.
      */
-    public start(): Promise<void> {
+    public start(port?: number): Promise<void> {
+        const bindPort = port ?? this.defaultPort;
         return new Promise((resolve, reject) => {
             this.server.bindAsync(
-                `0.0.0.0:${this.port}`,
+                `0.0.0.0:${bindPort}`,
                 grpc.ServerCredentials.createInsecure(),
-                (error: Error | null, port: number) => {
+                (error: Error | null, actualPort: number) => {
                     if (error) {
                         console.error(
-                            `[OTEL gRPC] Failed to start server on port ${this.port}:`,
+                            `[OTEL gRPC] Failed to start server on port ${bindPort}:`,
                             error,
                         );
                         reject(error);
                         return;
                     }
 
-                    this.server.start();
+                    // Note: server.start() is no longer needed in newer versions of @grpc/grpc-js
+                    // The server is automatically started after bindAsync succeeds
                     console.debug(
-                        `[OTEL gRPC] Server started on port ${port} (0.0.0.0:${this.port})`,
+                        `[OTEL gRPC] Server started on port ${actualPort} (0.0.0.0:${bindPort})`,
                     );
                     resolve();
                 },

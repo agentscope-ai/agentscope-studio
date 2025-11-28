@@ -3,9 +3,9 @@ import express, { Request, Response } from 'express';
 import { promisify } from 'util';
 import { gunzip, inflate } from 'zlib';
 import { SpanDao } from '../dao/Trace';
-import { SpanProcessor } from './processor';
 import { SocketManager } from '../trpc/socket';
 import { opentelemetry } from './opentelemetry/proto/trace/v1/trace';
+import { SpanProcessor } from './processor';
 const gunzipAsync = promisify(gunzip);
 const inflateAsync = promisify(inflate);
 

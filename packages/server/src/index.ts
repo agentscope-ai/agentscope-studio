@@ -1,4 +1,5 @@
 import * as trpcExpress from '@trpc/server/adapters/express';
+import cors from 'cors';
 import express from 'express';
 import { createServer } from 'http';
 import opener from 'opener';
@@ -25,22 +26,43 @@ async function initializeServer() {
         if (availablePort !== config.port) {
             console.log(`Port ${config.port} is already in use.`);
 
-            const useNewPort = await promptUser(
-                `Would you like to start the server on port ${availablePort} instead? (y/n): `,
-            );
+            // In non-interactive environments (like Docker), automatically use the available port
+            const isInteractive = process.stdin.isTTY && process.stdout.isTTY;
 
-            if (useNewPort) {
-                await configManager.setPort(availablePort);
-                console.log(`Server will start on port ${availablePort}`);
+            if (isInteractive) {
+                const useNewPort = await promptUser(
+                    `Would you like to start the server on port ${availablePort} instead? (y/n): `,
+                );
+
+                if (useNewPort) {
+                    await configManager.setPort(availablePort);
+                    console.log(`Server will start on port ${availablePort}`);
+                } else {
+                    console.log('Exiting...');
+                    process.exit(1);
+                }
             } else {
-                console.log('Exiting...');
-                process.exit(1);
+                // Non-interactive mode (Docker): automatically use available port
+                await configManager.setPort(availablePort);
+                console.log(
+                    `Automatically using available port ${availablePort} (non-interactive mode)`,
+                );
             }
         }
 
         // Create APP instance
         const app = express();
         const httpServer = createServer(app);
+
+        // Enable CORS for all routes (needed for external Python clients)
+        app.use(
+            cors({
+                origin: '*', // Allow all origins
+                methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+                allowedHeaders: ['Content-Type', 'Authorization'],
+                credentials: false,
+            }),
+        );
 
         // Initialize the database
         await initializeDatabase(config.database);
@@ -56,7 +78,14 @@ async function initializeServer() {
         app.use(
             '/v1',
             express.raw({
-                type: ['application/x-protobuf', 'application/json'],
+                // Support various protobuf and JSON content types
+                type: [
+                    'application/x-protobuf',
+                    'application/vnd.google.protobuf',
+                    'application/protobuf',
+                    'application/json',
+                    'application/octet-stream', // Some clients send protobuf as octet-stream
+                ],
                 limit: '10mb',
             }),
             otelRouter,
@@ -65,12 +94,19 @@ async function initializeServer() {
         // Initialize SocketManager
         SocketManager.init(httpServer);
 
-        // Initialize and start gRPC server
-        // If you want to reuse HTTP port, set grpcPort to the same value as port in config
-        const otelGrpcServer = new OtelGrpcServer(
-            configManager.getConfig().port,
-        );
-        await otelGrpcServer.start();
+        // Initialize and start gRPC server on a separate port
+        // Use OpenTelemetry standard gRPC port (4317) or from environment variable
+        const grpcPort = parseInt(process.env.OTEL_GRPC_PORT || '4317', 10);
+        const otelGrpcServer = new OtelGrpcServer();
+        try {
+            await otelGrpcServer.start(grpcPort);
+        } catch (error) {
+            console.warn(
+                `[OTEL gRPC] Failed to start gRPC server on port ${grpcPort}, ` +
+                    'traces will be received via HTTP endpoint /v1/traces:',
+                error instanceof Error ? error.message : error,
+            );
+        }
 
         // Serve static files in development mode
         if (process.env.NODE_ENV === 'production') {
