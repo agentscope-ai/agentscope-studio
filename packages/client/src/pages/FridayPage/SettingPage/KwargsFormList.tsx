@@ -30,11 +30,13 @@ const KwargsFormList = ({ name }: { name: string }) => {
                                     return (
                                         <div
                                             key={key}
-                                            className="flex flex-row items-start gap-x-2 justify-center"
+                                            className="flex flex-row items-start gap-x-2"
                                         >
                                             <Form.Item
                                                 {...restField}
                                                 name={[fieldName, 'key']}
+                                                className="flex-1 min-w-0"
+                                                style={{ flex: '1 1 0%' }}
                                                 validateTrigger={
                                                     isNewlyAdded
                                                         ? ['onSubmit']
@@ -53,6 +55,7 @@ const KwargsFormList = ({ name }: { name: string }) => {
                                                     placeholder={t(
                                                         'help.friday.key-name',
                                                     )}
+                                                    className="w-full"
                                                     onFocus={() => {
                                                         newlyAddedRef.current.delete(
                                                             fieldName,
@@ -64,6 +67,8 @@ const KwargsFormList = ({ name }: { name: string }) => {
                                                 {...restField}
                                                 name={[fieldName, 'type']}
                                                 initialValue="string"
+                                                className="flex-1 min-w-0"
+                                                style={{ flex: '1 1 0%' }}
                                                 validateTrigger={
                                                     isNewlyAdded
                                                         ? ['onSubmit']
@@ -82,6 +87,7 @@ const KwargsFormList = ({ name }: { name: string }) => {
                                                     placeholder={t(
                                                         'help.friday.type-name',
                                                     )}
+                                                    className="w-full"
                                                     popupMatchSelectWidth={
                                                         false
                                                     }
@@ -110,6 +116,8 @@ const KwargsFormList = ({ name }: { name: string }) => {
                                             <Form.Item
                                                 {...restField}
                                                 name={[fieldName, 'value']}
+                                                className="flex-1 min-w-0"
+                                                style={{ flex: '1 1 0%' }}
                                                 validateTrigger={
                                                     isNewlyAdded
                                                         ? ['onSubmit']
@@ -152,7 +160,7 @@ const KwargsFormList = ({ name }: { name: string }) => {
                                                         placeholder={t(
                                                             'help.friday.value-name',
                                                         )}
-                                                        className="w-[150px]!"
+                                                        className="w-full"
                                                         options={booleanOptions}
                                                         onFocus={() => {
                                                             newlyAddedRef.current.delete(
@@ -165,6 +173,7 @@ const KwargsFormList = ({ name }: { name: string }) => {
                                                         placeholder={t(
                                                             'help.friday.value-name',
                                                         )}
+                                                        className="w-full"
                                                         onFocus={() => {
                                                             newlyAddedRef.current.delete(
                                                                 fieldName,
