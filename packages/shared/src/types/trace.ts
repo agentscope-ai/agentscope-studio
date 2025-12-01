@@ -4,6 +4,7 @@ import { Attributes, SpanKind, SpanStatus } from '@opentelemetry/api';
 export enum TraceStatus {
     OK = 'OK',
     ERROR = 'ERROR',
+    UNSET = 'UNSET',
 }
 
 // Trace data interface

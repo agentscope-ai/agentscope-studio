@@ -10,10 +10,7 @@ import TraceListPage from './TraceListPage';
  */
 const TracePage = () => {
     return (
-        <TraceContextProvider
-            defaultPollingInterval={5000}
-            defaultPollingEnabled={true}
-        >
+        <TraceContextProvider pollingInterval={5000} pollingEnabled={true}>
             <div className="h-full flex flex-1">
                 <TraceListPage />
             </div>

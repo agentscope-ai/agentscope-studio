@@ -8,10 +8,6 @@ export interface TraceContextType {
     // Filter state
     timeRange: 'week' | 'month' | 'all';
     setTimeRange: (range: 'week' | 'month' | 'all') => void;
-    searchText: string;
-    setSearchText: (text: string) => void;
-    searchField: 'traceId' | 'name';
-    setSearchField: (field: 'traceId' | 'name') => void;
 
     // Pagination state
     page: number;
@@ -34,24 +30,9 @@ export interface TraceContextType {
           }
         | undefined; // Selected trace detail data
     isLoading: boolean;
-    isLoadingStatistics: boolean;
     isLoadingTrace: boolean;
     error: Error | null;
-    errorStatistics: Error | null;
-    errorTrace: Error | null;
     total: number;
-
-    // Time range filter
-    timeRangeFilter: {
-        startTime?: string;
-        endTime?: string;
-    };
-
-    // Polling control
-    pollingEnabled: boolean;
-    setPollingEnabled: (enabled: boolean) => void;
-    pollingInterval: number;
-    setPollingInterval: (interval: number) => void;
 
     // Selected trace
     selectedTraceId: string | null;
@@ -61,7 +42,6 @@ export interface TraceContextType {
 
     // Refresh functions
     refetch: () => void;
-    refetchStatistics: () => void;
     refetchTrace: () => void;
 }
 
@@ -69,34 +49,24 @@ const TraceContext = createContext<TraceContextType | null>(null);
 
 interface TraceContextProviderProps {
     children: ReactNode;
-    defaultPollingInterval?: number; // in milliseconds
-    defaultPollingEnabled?: boolean;
+    pollingInterval?: number; // in milliseconds
+    pollingEnabled?: boolean;
 }
 
 // Internal component that uses tRPC hooks - must be inside trpc.Provider
 function TraceContextProviderInner({
     children,
-    defaultPollingInterval = 5000,
-    defaultPollingEnabled = true,
+    pollingInterval = 5000,
+    pollingEnabled = true,
 }: TraceContextProviderProps) {
     // Filter state
     const [timeRange, setTimeRange] = useState<'week' | 'month' | 'all'>(
         'week',
     );
-    const [searchText, setSearchText] = useState<string>('');
-    const [searchField, setSearchField] = useState<'traceId' | 'name'>(
-        'traceId',
-    );
 
     // Pagination state
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
-
-    // Polling control
-    const [pollingEnabled, setPollingEnabled] = useState(defaultPollingEnabled);
-    const [pollingInterval, setPollingInterval] = useState(
-        defaultPollingInterval,
-    );
 
     // Selected trace
     const [selectedTraceId, setSelectedTraceId] = useState<string | null>(null);
@@ -160,25 +130,20 @@ function TraceContextProviderInner({
     );
 
     // Fetch statistics with polling
-    const {
-        data: statistics,
-        isLoading: isLoadingStatistics,
-        error: errorStatistics,
-        refetch: refetchStatistics,
-    } = trpc.getTraceStatistic.useQuery(timeRangeFilter, {
-        refetchOnMount: true,
-        refetchOnWindowFocus: false,
-        staleTime: 0,
-        gcTime: 0,
-        refetchInterval: pollingEnabled ? pollingInterval : false,
-        refetchIntervalInBackground: true,
-    });
+    const { data: statistics, refetch: refetchStatistics } =
+        trpc.getTraceStatistic.useQuery(timeRangeFilter, {
+            refetchOnMount: true,
+            refetchOnWindowFocus: false,
+            staleTime: 0,
+            gcTime: 0,
+            refetchInterval: pollingEnabled ? pollingInterval : false,
+            refetchIntervalInBackground: true,
+        });
 
     // Fetch selected trace detail with polling
     const {
         data: traceData,
         isLoading: isLoadingTrace,
-        error: errorTrace,
         refetch: refetchTrace,
     } = trpc.getTrace.useQuery(
         { traceId: selectedTraceId || '' },
@@ -193,36 +158,14 @@ function TraceContextProviderInner({
         },
     );
 
-    // Filter traces based on search
-    const filteredTraces = useMemo(() => {
-        if (!traceListData?.traces) return [];
-        if (!searchText) return traceListData.traces;
-
-        const searchValue = searchText.toLowerCase();
-        return traceListData.traces.filter((trace) => {
-            switch (searchField) {
-                case 'traceId':
-                    return trace.traceId.toLowerCase().includes(searchValue);
-                case 'name':
-                    return trace.name.toLowerCase().includes(searchValue);
-                default:
-                    return (
-                        trace.traceId.toLowerCase().includes(searchValue) ||
-                        trace.name.toLowerCase().includes(searchValue)
-                    );
-            }
-        });
-    }, [traceListData?.traces, searchText, searchField]);
+    // Use traces directly from API (no client-side filtering needed)
+    const traces = traceListData?.traces || [];
 
     const value: TraceContextType = useMemo(
         () => ({
             // Filter state
             timeRange,
             setTimeRange,
-            searchText,
-            setSearchText,
-            searchField,
-            setSearchField,
 
             // Pagination state
             page,
@@ -231,25 +174,13 @@ function TraceContextProviderInner({
             setPageSize,
 
             // Data
-            traces: filteredTraces,
+            traces,
             statistics,
             traceData,
             isLoading,
-            isLoadingStatistics,
             isLoadingTrace,
             error: error as Error | null,
-            errorStatistics: errorStatistics as Error | null,
-            errorTrace: errorTrace as Error | null,
             total: traceListData?.total || 0,
-
-            // Time range filter
-            timeRangeFilter,
-
-            // Polling control
-            pollingEnabled,
-            setPollingEnabled,
-            pollingInterval,
-            setPollingInterval,
 
             // Selected trace
             selectedTraceId,
@@ -262,28 +193,19 @@ function TraceContextProviderInner({
                 refetch();
                 refetchStatistics();
             },
-            refetchStatistics,
             refetchTrace,
         }),
         [
             timeRange,
-            searchText,
-            searchField,
             page,
             pageSize,
-            filteredTraces,
+            traces,
             statistics,
             traceData,
             isLoading,
-            isLoadingStatistics,
             isLoadingTrace,
             error,
-            errorStatistics,
-            errorTrace,
             traceListData?.total,
-            timeRangeFilter,
-            pollingEnabled,
-            pollingInterval,
             selectedTraceId,
             drawerOpen,
             refetch,
@@ -300,14 +222,14 @@ function TraceContextProviderInner({
 // External wrapper that provides QueryClientProvider and trpc.Provider
 export function TraceContextProvider({
     children,
-    defaultPollingInterval = 5000, // 5 seconds default
-    defaultPollingEnabled = true,
+    pollingInterval = 5000, // 5 seconds default
+    pollingEnabled = true,
 }: TraceContextProviderProps) {
     return (
         <TrpcProvider>
             <TraceContextProviderInner
-                defaultPollingInterval={defaultPollingInterval}
-                defaultPollingEnabled={defaultPollingEnabled}
+                pollingInterval={pollingInterval}
+                pollingEnabled={pollingEnabled}
             >
                 {children}
             </TraceContextProviderInner>

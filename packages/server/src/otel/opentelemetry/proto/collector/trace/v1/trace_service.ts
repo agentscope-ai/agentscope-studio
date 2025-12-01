@@ -3,9 +3,9 @@
  * compiler version: 5.27.0
  * source: opentelemetry/proto/collector/trace/v1/trace_service.proto
  * git: https://github.com/thesayyn/protoc-gen-ts */
-import * as dependency_1 from '../../../trace/v1/trace';
-import * as pb_1 from 'google-protobuf';
 import * as grpc_1 from '@grpc/grpc-js';
+import * as pb_1 from 'google-protobuf';
+import * as dependency_1 from '../../../trace/v1/trace';
 export namespace opentelemetry.proto.collector.trace.v1 {
     export class ExportTraceServiceRequest extends pb_1.Message {
         #one_of_decls: number[][] = [];
@@ -382,7 +382,7 @@ export namespace opentelemetry.proto.collector.trace.v1 {
             options?: grpc_1.CallOptions,
         ): grpc_1.ClientReadableStream<R>;
     }
-    interface GrpWritableServiceInterface<P, R> {
+    interface GrpcWritableServiceInterface<P, R> {
         (
             metadata: grpc_1.Metadata,
             options: grpc_1.CallOptions,

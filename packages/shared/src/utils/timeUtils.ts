@@ -97,10 +97,3 @@ export function secondsToNano(seconds: number): number {
 export function millisecondsToNano(milliseconds: number): number {
     return Number(milliseconds) * 1_000_000;
 }
-
-export function isValidNanoTimestamp(nanoTimestamp: string | number): boolean {
-    const nano = Number(nanoTimestamp);
-    const minNano = 0; // 1970-01-01 00:00:00 UTC
-    const maxNano = Date.now() * 1_000_000 + 365 * 24 * 60 * 60 * 1_000_000; // Current time + 1 year
-    return !isNaN(nano) && nano >= minNano && nano <= maxNano;
-}

@@ -20,8 +20,6 @@ export class AddMessageReplyForeignKey1730000000000
     name = 'AddMessageReplyForeignKey1730000000000';
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        console.log('开始迁移：添加 Reply 表并建立外键关系...');
-
         if (await queryRunner.hasTable('reply_table')) {
             console.log('reply_table 已存在，跳过');
             return;

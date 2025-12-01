@@ -216,12 +216,12 @@ export class SpanProcessor {
         span: { name?: string },
     ): { span_name: string; attributes: Record<string, unknown> } {
         if (!attributes || typeof attributes !== 'object') {
-            return attributes || {};
+            return { span_name: span.name || '', attributes: attributes || {} };
         }
 
         // Check if already in new format by looking for gen_ai attributes
         if (getNestedValue(attributes, 'gen_ai')) {
-            return { span_name: span.name || '', attributes };
+            return { span_name: span.name || '', attributes: attributes };
         }
 
         const newAttributes: Record<string, unknown> = {

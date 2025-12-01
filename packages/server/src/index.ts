@@ -19,34 +19,74 @@ async function initializeServer() {
         const configManager = ConfigManager.getInstance();
         const config = configManager.getConfig();
 
-        portfinder.basePort = 3000;
-        portfinder.highestPort = 5000;
-        const availablePort = await portfinder.getPortPromise();
+        portfinder.basePort = config.port;
+        portfinder.highestPort = portfinder.basePort + 2000;
+        // Handle HTTP port
+        const availableHttpPort = await portfinder.getPortPromise();
 
-        if (availablePort !== config.port) {
-            console.log(`Port ${config.port} is already in use.`);
+        if (availableHttpPort !== config.port) {
+            console.log(`HTTP port ${config.port} is already in use.`);
 
-            // In non-interactive environments (like Docker), automatically use the available port
+            // Check if running in interactive environment
             const isInteractive = process.stdin.isTTY && process.stdout.isTTY;
 
+            let useNewPort: boolean;
             if (isInteractive) {
-                const useNewPort = await promptUser(
-                    `Would you like to start the server on port ${availablePort} instead? (y/n): `,
+                useNewPort = await promptUser(
+                    `Would you like to start the HTTP server on port ${availableHttpPort} instead? (y/n): `,
                 );
-
-                if (useNewPort) {
-                    await configManager.setPort(availablePort);
-                    console.log(`Server will start on port ${availablePort}`);
-                } else {
-                    console.log('Exiting...');
-                    process.exit(1);
-                }
             } else {
-                // Non-interactive mode (Docker): automatically use available port
-                await configManager.setPort(availablePort);
+                // Non-interactive mode: automatically use available port
                 console.log(
-                    `Automatically using available port ${availablePort} (non-interactive mode)`,
+                    `Automatically using available HTTP port ${availableHttpPort} (non-interactive mode)`,
                 );
+                useNewPort = true;
+            }
+
+            if (useNewPort) {
+                await configManager.setPort(availableHttpPort);
+                console.log(
+                    `HTTP server will start on port ${availableHttpPort}`,
+                );
+            } else {
+                console.log('Exiting...');
+                process.exit(1);
+            }
+        }
+
+        // Handle gRPC port
+        portfinder.basePort = config.grpcPort;
+        portfinder.highestPort = portfinder.basePort + 2000;
+
+        const availableGrpcPort = await portfinder.getPortPromise();
+
+        if (availableGrpcPort !== config.grpcPort) {
+            console.log(`gRPC port ${config.grpcPort} is already in use.`);
+
+            // Check if running in interactive environment
+            const isInteractive = process.stdin.isTTY && process.stdout.isTTY;
+
+            let useNewPort: boolean;
+            if (isInteractive) {
+                useNewPort = await promptUser(
+                    `Would you like to start the gRPC server on port ${availableGrpcPort} instead? (y/n): `,
+                );
+            } else {
+                // Non-interactive mode: automatically use available port
+                console.log(
+                    `Automatically using available gRPC port ${availableGrpcPort} (non-interactive mode)`,
+                );
+                useNewPort = true;
+            }
+
+            if (useNewPort) {
+                await configManager.setgrpcPort(availableGrpcPort);
+                console.log(
+                    `gRPC server will start on port ${availableGrpcPort}`,
+                );
+            } else {
+                console.log('Exiting...');
+                process.exit(1);
             }
         }
 
@@ -95,14 +135,15 @@ async function initializeServer() {
         SocketManager.init(httpServer);
 
         // Initialize and start gRPC server on a separate port
-        // Use OpenTelemetry standard gRPC port (4317) or from environment variable
-        const grpcPort = parseInt(process.env.OTEL_GRPC_PORT || '4317', 10);
+        // Use environment variable if set, otherwise use config (which may have been updated after port conflict resolution)
+        const finalGrpcPort = configManager.getConfig().grpcPort;
         const otelGrpcServer = new OtelGrpcServer();
         try {
-            await otelGrpcServer.start(grpcPort);
+            await otelGrpcServer.start(finalGrpcPort);
+            console.log(`gRPC server started on port ${finalGrpcPort}`);
         } catch (error) {
             console.warn(
-                `[OTEL gRPC] Failed to start gRPC server on port ${grpcPort}, ` +
+                `[OTEL gRPC] Failed to start gRPC server on port ${finalGrpcPort}, ` +
                     'traces will be received via HTTP endpoint /v1/traces:',
                 error instanceof Error ? error.message : error,
             );

@@ -42,6 +42,9 @@ export const PATHS = {
 
 export const ServerConfig = {
     port: parseInt(process.env.PORT || DEFAULT_CONFIG.server.port.toString()),
+    grpcPort: parseInt(
+        process.env.GRPC_PORT || DEFAULT_CONFIG.server.grpcPort.toString(),
+    ),
     database: {
         type: 'sqlite' as const,
         database: path.join(PATHS.getAppDataDir(), 'database.sqlite'),
@@ -99,7 +102,13 @@ export class ConfigManager {
     async setPort(port: number) {
         this.config = {
             ...this.config,
-            port,
+            port: port,
+        };
+    }
+    async setgrpcPort(grpcPort: number) {
+        this.config = {
+            ...this.config,
+            grpcPort: grpcPort,
         };
     }
 }
