@@ -105,8 +105,10 @@ export class SpanProcessor {
         let attributes = this.decodeAttributes(spanObj.attributes);
 
         let spanName = typeof spanObj.name === 'string' ? spanObj.name : '';
-        if (scope.name.toLowerCase().includes('agentscope.tracing._trace') ||
-            scope.name.toLowerCase() === 'agentscope') {
+        if (
+            scope.name.toLowerCase().includes('agentscope.tracing._trace') ||
+            scope.name.toLowerCase() === 'agentscope'
+        ) {
             const version = scope.version || '';
             if (version && this.compareVersion(version, '1.0.9') < 0) {
                 throw new Error(

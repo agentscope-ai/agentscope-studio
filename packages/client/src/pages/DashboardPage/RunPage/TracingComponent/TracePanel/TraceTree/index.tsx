@@ -30,6 +30,8 @@ const SpanNodeTitle = ({
     const model_name =
         (attributes.gen_ai?.request?.model as string) || undefined;
     const tool_name = (attributes.gen_ai?.tool?.name as string) || undefined;
+    const format_target =
+        (attributes.agentscope?.format?.target as string) || undefined;
 
     let displayKind: string;
     if (operationName === 'invoke_agent' && agent_name) {
@@ -43,6 +45,8 @@ const SpanNodeTitle = ({
         model_name
     ) {
         displayKind = operationName + ': ' + String(model_name);
+    } else if (operationName === 'format' && format_target) {
+        displayKind = operationName + ': ' + String(format_target);
     } else if (operationName) {
         displayKind = operationName;
     } else {
