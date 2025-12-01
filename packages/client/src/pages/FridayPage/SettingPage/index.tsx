@@ -108,7 +108,7 @@ const SettingPage = () => {
     } = useFridaySettingRoom();
     const [loading, setLoading] = useState<boolean>(false);
     const [form] = Form.useForm();
-    const [btnText, setBtnText] = useState<string>('Let\'s Go!');
+    const [btnText, setBtnText] = useState<string>("Let's Go!");
     const [btnIcon, setBtnIcon] = useState<ReactNode>(null);
 
     // Load the existing Friday config if it exists
@@ -145,11 +145,7 @@ const SettingPage = () => {
 
     const llmProvider = Form.useWatch('llmProvider', form);
     const requiredAPIKey = useMemo(() => {
-        return llmProvider ? llmProvider !== 'ollama' : false;
-    }, [llmProvider]);
-
-    const disabledAPIKey = useMemo(() => {
-        return !llmProvider || llmProvider.startsWith('ollama');
+        return !llmProvider || !llmProvider.startsWith('ollama');
     }, [llmProvider]);
 
     return (
@@ -288,24 +284,8 @@ const SettingPage = () => {
                         dependencies={['model']}
                         help={t('help.friday.api-key', { llmProvider })}
                     >
-                        <Input type="password" disabled={disabledAPIKey} />
+                        <Input type="password" />
                     </Form.Item>
-
-                    {!['dashscope', 'gemini', 'anthropic'].includes(
-                        llmProvider,
-                    ) && (
-                        <Form.Item
-                            name="baseUrl"
-                            label="Base URL"
-                            help={t('help.friday.base-url')}
-                        >
-                            <Input
-                                placeholder={t(
-                                    'help.friday.base-url-placeholder',
-                                )}
-                            />
-                        </Form.Item>
-                    )}
 
                     <KwargsFormList name="clientKwargs" />
 
