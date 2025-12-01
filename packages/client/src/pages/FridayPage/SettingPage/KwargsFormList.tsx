@@ -36,7 +36,6 @@ const KwargsFormList = ({ name }: { name: string }) => {
                                                 {...restField}
                                                 name={[fieldName, 'key']}
                                                 className="flex-1 min-w-0"
-                                                style={{ flex: '1 1 0%' }}
                                                 validateTrigger={
                                                     isNewlyAdded
                                                         ? ['onSubmit']
@@ -68,7 +67,6 @@ const KwargsFormList = ({ name }: { name: string }) => {
                                                 name={[fieldName, 'type']}
                                                 initialValue="string"
                                                 className="flex-1 min-w-0"
-                                                style={{ flex: '1 1 0%' }}
                                                 validateTrigger={
                                                     isNewlyAdded
                                                         ? ['onSubmit']
@@ -117,7 +115,6 @@ const KwargsFormList = ({ name }: { name: string }) => {
                                                 {...restField}
                                                 name={[fieldName, 'value']}
                                                 className="flex-1 min-w-0"
-                                                style={{ flex: '1 1 0%' }}
                                                 validateTrigger={
                                                     isNewlyAdded
                                                         ? ['onSubmit']
