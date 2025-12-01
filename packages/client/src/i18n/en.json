@@ -115,12 +115,22 @@
     "help": {
         "friday": {
             "api-key": "The {{llmProvider}} API key, used to access the LLM API provider",
+            "base-url": "The base URL for the LLM API provider",
+            "base-url-placeholder": "e.g. https://api.openai.com/v1,http://localhost:11434",
+            "client-kwargs": "The keyword arguments for the API client initialization, e.g. \"base_url\" for OpenAI client",
+            "generate-kwargs": "The keyword arguments passed when actually calling the LLM API, e.g. \"temperature\", \"max_tokens\", etc.",
             "llm-provider": "Select the LLM API provider",
             "model-name": "The {{llmProvider}} model used to generate response",
             "python-env": "Absolute path to your Python env (3.10+), e.g. /usr/bin/python",
             "write-permission": "Whether allow Friday to modify your local files. If allowed, Friday will equip a tool to write text files",
-            "base-url": "The base URL for the LLM API provider",
-            "base-url-placeholder": "e.g. https://api.openai.com/v1,http://localhost:11434"
+            "key-name": "Key Name",
+            "missing-key-name": "Missing key name",
+            "type-name": "Type Name",
+            "missing-type-name": "Missing type name",
+            "value-name": "Value Name",
+            "missing-value-name": "Missing value name",
+            "check-only-number": "Only numbers can be entered",
+            "add-form-list-btn": "Add keyword argument"
         }
     },
     "hint": {
