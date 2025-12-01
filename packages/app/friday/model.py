@@ -62,7 +62,7 @@ def get_formatter(llmProvider: str) -> FormatterBase:
             )
 
 def get_model(
-    llmProvider:str,
+    llmProvider: str,
     modelName: str,
     apiKey: str,
     client_kwargs: dict = {},

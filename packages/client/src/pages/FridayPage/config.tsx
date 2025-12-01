@@ -11,7 +11,7 @@ interface InputTypeOption {
     value: string;
 }
 
-interface llmProviderOption {
+interface LlmProviderOption {
     label: React.ReactNode;
     value: string;
 }
@@ -21,7 +21,7 @@ interface ModelOptionProps {
     name: string;
 }
 
-interface booleanOption {
+interface BooleanOption {
     label: string;
     value: string;
 }
@@ -41,7 +41,7 @@ export const inputTypeOptions: InputTypeOption[] = [
     { label: 'bool', value: 'boolean' },
 ];
 
-export const llmProviderOptions: llmProviderOption[] = [
+export const llmProviderOptions: LlmProviderOption[] = [
     {
         label: (
             <ModelOption
@@ -89,7 +89,7 @@ export const llmProviderOptions: llmProviderOption[] = [
     },
 ];
 
-export const booleanOptions: booleanOption[] = [
+export const booleanOptions: BooleanOption[] = [
     { label: 'True', value: 'true' },
     { label: 'False', value: 'false' },
 ];

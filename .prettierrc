@@ -2,13 +2,5 @@
     "semi": true,
     "tabWidth": 4,
     "singleQuote": true,
-    "printWidth": 80,
-    "ignore": [
-        "node_modules/**",
-        "dist/**",
-        "build/**",
-        ".vitepress/**",
-        "docs/.vitepress/cache/**",
-        "docs/.vitepress/dist/**"
-    ]
+    "printWidth": 80
 }

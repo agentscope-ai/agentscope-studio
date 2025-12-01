@@ -129,7 +129,7 @@ const KwargsFormList = ({ name }: { name: string }) => {
                                                         ? [
                                                               {
                                                                   pattern:
-                                                                      /^[0-9]+$/,
+                                                                      /^-?\d+(\.\d+)?$/,
                                                                   required: true,
                                                                   whitespace: true,
                                                                   message: t(

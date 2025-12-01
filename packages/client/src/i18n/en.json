@@ -126,7 +126,7 @@
             "missing-key-name": "Missing key name",
             "type-name": "Type Name",
             "missing-type-name": "Missing type name",
-            "value-name": "Key Name",
+            "value-name": "Value Name",
             "missing-value-name": "Missing value name",
             "check-only-number": "Only numbers can be entered",
             "add-form-list-btn": "Add keyword argument"
