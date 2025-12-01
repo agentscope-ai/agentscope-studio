@@ -125,7 +125,7 @@ otelRouter.post('/traces', async (req: Request, res: Response) => {
             error instanceof Error ? error.message : 'Unknown error occurred';
         res.statusMessage = errorMessage;
         res.json({
-            error: 'Internal Server Error: ',
+            error: 'Internal Server Error',
             message: 'Failed to process traces',
         });
     }
