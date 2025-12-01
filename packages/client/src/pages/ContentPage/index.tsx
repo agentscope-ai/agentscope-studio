@@ -377,7 +377,10 @@ const ContentPage = () => {
                                             width={yAxisWidth}
                                             axisLine={false}
                                             tickLine={false}
-                                            domain={[ticks[0], ticks[-1]]}
+                                            domain={[
+                                                ticks[0],
+                                                ticks[ticks.length - 1],
+                                            ]}
                                             ticks={ticks}
                                             tickFormatter={(count: number) => {
                                                 if (count >= 10000) {

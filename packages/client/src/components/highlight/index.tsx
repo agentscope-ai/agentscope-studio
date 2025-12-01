@@ -120,6 +120,9 @@ const HighlightGroup = ({
                 // Get card's position and dimensions
                 const rect = card.getBoundingClientRect();
 
+                // Guard against division by zero when card has no dimensions
+                if (rect.width === 0 || rect.height === 0) return;
+
                 // Clamp mouse coordinates within card boundaries
                 const clampedX = Math.min(
                     Math.max(event.clientX - rect.left, 0),
@@ -256,6 +259,8 @@ const HighlightCard = ({
     const updateMousePosition = (event: ReactMouseEvent<HTMLDivElement>) => {
         if (!cardRef.current) return;
         const rect = cardRef.current.getBoundingClientRect();
+        // Guard against division by zero when card has no dimensions
+        if (rect.width === 0 || rect.height === 0) return;
         // Calculate the percentage position of the mouse within the card
         const x = ((event.clientX - rect.left) / rect.width) * 100;
         const y = ((event.clientY - rect.top) / rect.height) * 100;
