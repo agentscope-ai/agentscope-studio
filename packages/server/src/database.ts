@@ -30,9 +30,9 @@ export const initializeDatabase = async (
                 FridayAppReplyTable,
                 FridayAppReplyView,
             ],
-            synchronize: true, // 可以改回 true 了，因为表由 Migration 创建
+            synchronize: true,
             migrations: migrations,
-            migrationsRun: true, // 自动运行迁移
+            migrationsRun: true, // Run migrations automatically
             logging: false,
         };
 

@@ -7,12 +7,12 @@ import {
 } from 'typeorm';
 
 /**
- * 迁移：添加 Reply 表并建立 Message 的外键关系
+ * Migration: Add Reply table and establish foreign key relationship with Message
  *
- * 任务：
- * 1. 创建 reply_table
- * 2. 迁移历史数据：为所有 replyId 创建对应的 Reply 记录
- * 3. 将 message_table.replyId 改为不可空的外键
+ * Tasks:
+ * 1. Create reply_table
+ * 2. Migrate historical data: create Reply records for all replyIds
+ * 3. Change message_table.replyId to a non-nullable foreign key
  */
 export class AddMessageReplyForeignKey1730000000000
     implements MigrationInterface
@@ -20,19 +20,57 @@ export class AddMessageReplyForeignKey1730000000000
     name = 'AddMessageReplyForeignKey1730000000000';
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        console.log('开始迁移：添加 Reply 表并建立外键关系...');
+        console.log(
+            'Starting migration: Adding Reply table and establishing foreign key relationship...',
+        );
 
         // ========================================
-        // 步骤 1: 创建 reply_table
+        // Step 0: Check current database state
         // ========================================
-        console.log('步骤 1: 创建 reply_table...');
+        const messageTableExists = await queryRunner.hasTable('message_table');
+
+        console.log(`Database state check:`);
+        console.log(`  - message_table exists: ${messageTableExists}`);
+
+        // Scenario 1: First-time installation - message_table does not exist
+        // TypeORM will create all tables from entity definitions, including foreign key relationships
+        if (!messageTableExists) {
+            console.log(
+                '⏭️  message_table does not exist. Skipping migration (first-time installation).',
+            );
+            console.log(
+                '   TypeORM will create all tables from entity definitions.',
+            );
+            return;
+        }
+
+        // Scenario 2: Check if migration is already completed
+        // If foreign key constraint exists, migration has already been completed
+        const messageTable = await queryRunner.getTable('message_table');
+        const hasForeignKey = messageTable?.foreignKeys.some(
+            (fk) =>
+                fk.columnNames.includes('replyId') &&
+                fk.referencedTableName === 'reply_table',
+        );
+
+        if (hasForeignKey) {
+            console.log(
+                '✅ Foreign key constraint already exists. Migration already completed.',
+            );
+            return;
+        }
+
+        // ========================================
+        // Step 1: Create reply_table
+        // ========================================
+        console.log('Step 1: Creating reply_table...');
 
         await queryRunner.createTable(
             new Table({
                 name: 'reply_table',
                 columns: [
                     {
-                        name: 'replyId', // 保持驼峰，与 message_table 一致
+                        name: 'replyId', // Keep camelCase, consistent with message_table
                         type: 'varchar',
                         isPrimary: true,
                     },
@@ -45,7 +83,7 @@ export class AddMessageReplyForeignKey1730000000000
                         type: 'varchar',
                     },
                     {
-                        name: 'run_id', // 保持下划线，与其他表一致
+                        name: 'run_id', // Keep underscore, consistent with other tables
                         type: 'varchar',
                     },
                     {
@@ -62,7 +100,7 @@ export class AddMessageReplyForeignKey1730000000000
             true, // ifNotExists
         );
 
-        // 添加 run_id 的外键
+        // Add foreign key for run_id
         await queryRunner.createForeignKey(
             'reply_table',
             new TableForeignKey({
@@ -74,21 +112,21 @@ export class AddMessageReplyForeignKey1730000000000
             }),
         );
 
-        console.log('reply_table 创建成功');
+        console.log('reply_table created successfully');
 
         // ========================================
-        // 步骤 2: 迁移历史数据
+        // Step 2: Migrate historical data
         // ========================================
-        console.log('步骤 2: 迁移历史数据到 reply_table...');
+        console.log('Step 2: Migrating historical data to reply_table...');
 
-        // 查询所有消息（注意：列名是 replyId 驼峰）
+        // Query all messages (Note: column name is replyId in camelCase)
         const allMessages = await queryRunner.query(
             `SELECT id, run_id, msg, replyId FROM message_table ORDER BY id`,
         );
 
-        console.log(`找到 ${allMessages.length} 条消息需要处理`);
+        console.log(`Found ${allMessages.length} messages to process`);
 
-        // 收集所有唯一的 Reply 信息
+        // Collect all unique Reply information
         const replyMap = new Map<
             string,
             {
@@ -140,10 +178,10 @@ export class AddMessageReplyForeignKey1730000000000
         }
 
         console.log(
-            `需要创建 ${replyMap.size} 个 Reply 记录，更新 ${nullReplyCount} 条消息`,
+            `Need to create ${replyMap.size} Reply records, update ${nullReplyCount} messages`,
         );
 
-        // 批量插入 Reply 记录
+        // Batch insert Reply records
         let insertedCount = 0;
         for (const reply of replyMap.values()) {
             await queryRunner.query(
@@ -161,26 +199,28 @@ export class AddMessageReplyForeignKey1730000000000
 
             if (insertedCount % 100 === 0) {
                 console.log(
-                    `进度：已插入 ${insertedCount}/${replyMap.size} 个 Reply`,
+                    `Progress: Inserted ${insertedCount}/${replyMap.size} Replies`,
                 );
             }
         }
 
-        console.log(`已创建 ${insertedCount} 个 Reply 记录`);
+        console.log(`Created ${insertedCount} Reply records`);
 
-        // 批量更新 replyId 为 NULL 的消息
+        // Batch update messages with NULL replyId
         if (nullReplyCount > 0) {
-            console.log(`开始更新 ${nullReplyCount} 条消息的 replyId...`);
+            console.log(
+                `Starting to update replyId for ${nullReplyCount} messages...`,
+            );
             await queryRunner.query(
                 `UPDATE message_table SET replyId = id WHERE replyId IS NULL OR replyId = ''`,
             );
-            console.log(`已更新 ${nullReplyCount} 条消息`);
+            console.log(`Updated ${nullReplyCount} messages`);
         }
 
         // ========================================
-        // 步骤 3: 验证数据完整性
+        // Step 3: Validate data integrity
         // ========================================
-        console.log('步骤 3: 验证数据...');
+        console.log('Step 3: Validating data...');
 
         const nullCount = await queryRunner.query(
             `SELECT COUNT(*) as count FROM message_table WHERE replyId IS NULL OR replyId = ''`,
@@ -189,21 +229,21 @@ export class AddMessageReplyForeignKey1730000000000
         const count = nullCount[0].count || nullCount[0].COUNT;
         if (count > 0) {
             throw new Error(
-                `数据迁移失败：仍有 ${count} 条消息的 replyId 为空`,
+                `Data migration failed: ${count} messages still have empty replyId`,
             );
         }
 
-        console.log('验证通过：所有消息都有 replyId');
+        console.log('Validation passed: All messages have replyId');
 
         // ========================================
-        // 步骤 4: 添加外键约束
+        // Step 4: Add foreign key constraint
         // ========================================
-        console.log('步骤 4: 添加外键约束...');
+        console.log('Step 4: Adding foreign key constraint...');
 
-        // 先将列改为不可空
+        // First change column to non-nullable
         await queryRunner.changeColumn(
             'message_table',
-            'replyId', // 注意：保持驼峰命名
+            'replyId', // Note: Keep camelCase naming
             new TableColumn({
                 name: 'replyId',
                 type: 'varchar',
@@ -211,26 +251,26 @@ export class AddMessageReplyForeignKey1730000000000
             }),
         );
 
-        // 添加外键约束
+        // Add foreign key constraint
         await queryRunner.createForeignKey(
             'message_table',
             new TableForeignKey({
                 name: 'FK_message_reply',
-                columnNames: ['replyId'], // message_table 中的列名（驼峰）
+                columnNames: ['replyId'], // Column name in message_table (camelCase)
                 referencedTableName: 'reply_table',
-                referencedColumnNames: ['replyId'], // reply_table 中的列名（驼峰）
+                referencedColumnNames: ['replyId'], // Column name in reply_table (camelCase)
                 onDelete: 'CASCADE',
             }),
         );
 
-        console.log('外键约束添加成功');
-        console.log('✅ 迁移完成！');
+        console.log('Foreign key constraint added successfully');
+        console.log('✅ Migration completed!');
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
-        console.log('开始回滚迁移...');
+        console.log('Starting migration rollback...');
 
-        // 删除外键约束
+        // Drop foreign key constraint
         const messageTable = await queryRunner.getTable('message_table');
         const foreignKey = messageTable?.foreignKeys.find((fk) =>
             fk.columnNames.includes('replyId'),
@@ -240,7 +280,7 @@ export class AddMessageReplyForeignKey1730000000000
             await queryRunner.dropForeignKey('message_table', foreignKey);
         }
 
-        // 将列改回可空
+        // Change column back to nullable
         await queryRunner.changeColumn(
             'message_table',
             'replyId',
@@ -251,12 +291,12 @@ export class AddMessageReplyForeignKey1730000000000
             }),
         );
 
-        // 将 Message 的 replyId 设为 NULL
+        // Set Message replyId to NULL
         await queryRunner.query(`UPDATE message_table SET replyId = NULL`);
 
-        // 删除 reply_table
+        // Drop reply_table
         await queryRunner.dropTable('reply_table', true);
 
-        console.log('✅ 回滚完成');
+        console.log('✅ Rollback completed');
     }
 }
