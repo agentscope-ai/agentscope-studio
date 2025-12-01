@@ -1,15 +1,4 @@
-import {
-    createContext,
-    HTMLAttributes,
-    memo,
-    ReactNode,
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useRef,
-} from 'react';
-import type { MouseEvent as ReactMouseEvent } from 'react';
+import { memo, ReactNode } from 'react';
 import { Avatar, Skeleton } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -20,6 +9,7 @@ import TokenIcon from '@/assets/svgs/token.svg?react';
 import ApiIcon from '@/assets/svgs/api.svg?react';
 import PageTitleSpan from '@/components/spans/PageTitleSpan.tsx';
 import NumberCounter from '@/components/numbers/NumberCounter';
+import { HighlightGroup, HighlightCard } from '@/components/highlight';
 import extended from '@/pages/ContentPage/utils.ts';
 
 import { OverviewData } from '@shared/types/trpc';
@@ -37,13 +27,6 @@ import {
 } from 'recharts';
 
 import './index.css';
-
-interface HighlightGroupContextValue {
-    registerCard: (card: HTMLDivElement) => void;
-    unregisterCard: (card: HTMLDivElement) => void;
-}
-
-const HighlightGroupContext = createContext<HighlightGroupContextValue | null>(null);
 
 interface BlockTitleProps {
     title: string;
@@ -75,192 +58,6 @@ interface BlockProps {
     footer: string | undefined;
     icon: ReactNode;
 }
-
-interface HighlightCardProps extends HTMLAttributes<HTMLDivElement> {
-    children: ReactNode;
-}
-
-interface HighlightGroupProps extends HTMLAttributes<HTMLDivElement> {
-    radius?: number;
-}
-
-const HighlightGroup = ({
-    children,
-    className = '',
-    radius = 140,
-    onMouseMove,
-    onMouseLeave,
-    ...rest
-}: HighlightGroupProps) => {
-    const cardsRef = useRef(new Set<HTMLDivElement>());
-
-    const registerCard = useCallback((card: HTMLDivElement) => {
-        cardsRef.current.add(card);
-        card.style.setProperty('--cursor-opacity', '0');
-    }, []);
-
-    const unregisterCard = useCallback((card: HTMLDivElement) => {
-        cardsRef.current.delete(card);
-    }, []);
-
-    const contextValue = useMemo(
-        () => ({
-            registerCard,
-            unregisterCard,
-        }),
-        [registerCard, unregisterCard],
-    );
-
-    const updateCards = useCallback(
-        (event: ReactMouseEvent<HTMLDivElement>) => {
-            cardsRef.current.forEach((card) => {
-                const rect = card.getBoundingClientRect();
-                const clampedX = Math.min(
-                    Math.max(event.clientX - rect.left, 0),
-                    rect.width,
-                );
-                const clampedY = Math.min(
-                    Math.max(event.clientY - rect.top, 0),
-                    rect.height,
-                );
-                const dx =
-                    event.clientX < rect.left
-                        ? rect.left - event.clientX
-                        : event.clientX > rect.right
-                        ? event.clientX - rect.right
-                        : 0;
-                const dy =
-                    event.clientY < rect.top
-                        ? rect.top - event.clientY
-                        : event.clientY > rect.bottom
-                        ? event.clientY - rect.bottom
-                        : 0;
-                const distance = Math.hypot(dx, dy);
-                const strength = Math.max(0, 1 - distance / radius);
-
-                if (strength > 0) {
-                    card.style.setProperty(
-                        '--cursor-x',
-                        `${(clampedX / rect.width) * 100}%`,
-                    );
-                    card.style.setProperty(
-                        '--cursor-y',
-                        `${(clampedY / rect.height) * 100}%`,
-                    );
-                }
-                card.style.setProperty(
-                    '--cursor-opacity',
-                    strength > 0 ? strength.toString() : '0',
-                );
-            });
-        },
-        [radius],
-    );
-
-    const handleMouseMove = useCallback(
-        (event: ReactMouseEvent<HTMLDivElement>) => {
-            updateCards(event);
-            onMouseMove?.(event);
-        },
-        [updateCards, onMouseMove],
-    );
-
-    const resetCards = useCallback(() => {
-        cardsRef.current.forEach((card) => {
-            card.style.setProperty('--cursor-opacity', '0');
-        });
-    }, []);
-
-    const handleMouseLeave = useCallback(
-        (event: ReactMouseEvent<HTMLDivElement>) => {
-            resetCards();
-            onMouseLeave?.(event);
-        },
-        [resetCards, onMouseLeave],
-    );
-
-    return (
-        <HighlightGroupContext.Provider value={contextValue}>
-            <div
-                className={className}
-                onMouseMove={handleMouseMove}
-                onMouseLeave={handleMouseLeave}
-                {...rest}
-            >
-                {children}
-            </div>
-        </HighlightGroupContext.Provider>
-    );
-};
-
-const HighlightCard = ({
-    children,
-    className = '',
-    onMouseMove,
-    onMouseEnter,
-    onMouseLeave,
-    ...rest
-}: HighlightCardProps) => {
-    const cardRef = useRef<HTMLDivElement>(null);
-    const groupContext = useContext(HighlightGroupContext);
-
-    useEffect(() => {
-        if (!groupContext || !cardRef.current) {
-            return;
-        }
-        const element = cardRef.current;
-        groupContext.registerCard(element);
-        return () => {
-            groupContext.unregisterCard(element);
-        };
-    }, [groupContext]);
-
-    const updateMousePosition = (event: ReactMouseEvent<HTMLDivElement>) => {
-        if (!cardRef.current) return;
-        const rect = cardRef.current.getBoundingClientRect();
-        const x = ((event.clientX - rect.left) / rect.width) * 100;
-        const y = ((event.clientY - rect.top) / rect.height) * 100;
-        cardRef.current.style.setProperty('--cursor-x', `${x}%`);
-        cardRef.current.style.setProperty('--cursor-y', `${y}%`);
-        cardRef.current.style.setProperty('--cursor-opacity', '1');
-    };
-
-    const handleMouseMove = (event: ReactMouseEvent<HTMLDivElement>) => {
-        if (!groupContext) {
-            updateMousePosition(event);
-        }
-        onMouseMove?.(event);
-    };
-
-    const handleMouseEnter = (event: ReactMouseEvent<HTMLDivElement>) => {
-        if (!groupContext) {
-            updateMousePosition(event);
-        }
-        onMouseEnter?.(event);
-    };
-
-    const handleMouseLeave = (event: ReactMouseEvent<HTMLDivElement>) => {
-        if (!groupContext && cardRef.current) {
-            cardRef.current.style.setProperty('--cursor-x', '50%');
-            cardRef.current.style.setProperty('--cursor-y', '50%');
-            cardRef.current.style.setProperty('--cursor-opacity', '0');
-        }
-        onMouseLeave?.(event);
-    };
-
-    return (
-        <div
-            ref={cardRef}
-            className={`as-highlight-card ${className}`}
-            onMouseMove={handleMouseMove}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-            {...rest}
-        >
-            {children}
-        </div>
-    );
-};
 
 const Block = ({ title, number, footer, icon }: BlockProps) => {
     return (
@@ -520,125 +317,210 @@ const ContentPage = () => {
         <div className="flex flex-1 flex-col gap-4 py-8 px-12 h-full w-full overflow-y-auto">
             <div className="flex flex-col w-full rounded-lg gap-4">
                 <PageTitleSpan title={t('common.projects')} />
-                        <HighlightGroup className="flex flex-col gap-4 w-full" radius={180}>
-                            {/* Stats cards */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-6 w-full">
-                                <Block
-                                    title={t('common.projects')}
-                                    number={overviewData?.totalProjects}
-                                    footer={renderProjectHint(overviewData)}
-                                    icon={<ProjectIcon width={16} height={16} />}
-                                />
-                                <Block
-                                    title={t('common.runs')}
-                                    number={overviewData?.totalRuns}
-                                    footer={renderRunHint(overviewData)}
-                                    icon={<RunIcon width={16} height={16} />}
-                                />
-                                <Block
-                                    title={t('common.total-tokens')}
-                                    number={overviewData?.totalTokens}
-                                    footer={renderTokenHint(overviewData)}
-                                    icon={<TokenIcon width={16} height={16} />}
-                                />
-                                <Block
-                                    title={t('common.llm-invocations')}
-                                    number={overviewData?.totalModelInvocations}
-                                    footer={renderModelInvocation(overviewData)}
-                                    icon={<ApiIcon width={16} height={16} />}
-                                />
-                            </div>
-
-                            {/* Chart + Recent projects */}
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 w-full">
-                                <HighlightCard className="lg:col-span-7 p-6 h-[325px] flex flex-col gap-6">
-                                    <BlockTitle title={t('common.overview')} description={t('home.overview-description')} />
-                                    <div className="flex flex-1">
-                                        <ResponsiveContainer width="100%" minWidth="100%">
-                                            <BarChart layout="horizontal" data={monthlyRuns.reverse()} margin={{ bottom: -5, top: 0 }}>
-                                                <CartesianGrid strokeDasharray="1 10" vertical={false} />
-                                                <YAxis
-                                                    type="number"
-                                                    fontSize={10}
-                                                    allowDecimals={false}
-                                                    width={yAxisWidth}
-                                                    axisLine={false}
-                                                    tickLine={false}
-                                                    domain={[ticks[0], ticks[-1]]}
-                                                    ticks={ticks}
-                                                    tickFormatter={(count: number) => {
-                                                        if (count >= 10000) {
-                                                            return count.toExponential(1);
-                                                        } else if (count >= 1000) {
-                                                            return count.toLocaleString();
-                                                        } else {
-                                                            return count.toLocaleString();
-                                                        }
-                                                    }}
-                                                />
-                                                <XAxis
-                                                    dataKey="month"
-                                                    type="category"
-                                                    fontSize={10}
-                                                    axisLine={false}
-                                                    tickLine={false}
-                                                    tickFormatter={(month: string) => {
-                                                        const numericMonth = parseInt(month.split('-')[1]);
-                                                        return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][numericMonth - 1];
-                                                    }}
-                                                />
-                                                <Tooltip
-                                                    contentStyle={{ borderRadius: 6, border: '1px solid var(--border)' }}
-                                                    labelStyle={{ fontWeight: 500 }}
-                                                    labelFormatter={(label) => {
-                                                        const numericMonth = parseInt(label.split('-')[1]);
-                                                        const year = parseInt(label.split('-')[0]);
-                                                        const strMonth = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][numericMonth - 1];
-                                                        return `${strMonth}, ${year}`;
-                                                    }}
-                                                    formatter={(value) => [value, t('home.run-number')]}
-                                                />
-                                                <Bar dataKey="count" radius={[6, 6, 0, 0]} />
-                                            </BarChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                </HighlightCard>
-                                <HighlightCard className="lg:col-span-5 p-6 h-[325px] flex flex-col gap-2">
-                                    <BlockTitle
-                                        title={t('home.recent-projects')}
-                                        description={overviewData && overviewData.recentProjects.length > 0 ? t('home.recent-projects-description') : t('home.recent-projects-empty')}
-                                    />
-                                    <div className="flex flex-col flex-1" style={RemoveScrollBarStyle}>
-                                        {overviewData
-                                            ? overviewData.recentProjects.map((proj) => (
-                                                  <ProjectRow key={proj.name} project={proj.name} runCount={proj.runCount} lastUpdateTime={proj.lastUpdateTime} />
-                                              ))
-                                            : null}
-                                    </div>
-                                </HighlightCard>
-                            </div>
-                        </HighlightGroup>
+                <HighlightGroup
+                    className="flex flex-col gap-4 w-full"
+                    radius={180}
+                >
+                    {/* Stats cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-6 w-full">
+                        <Block
+                            title={t('common.projects')}
+                            number={overviewData?.totalProjects}
+                            footer={renderProjectHint(overviewData)}
+                            icon={<ProjectIcon width={16} height={16} />}
+                        />
+                        <Block
+                            title={t('common.runs')}
+                            number={overviewData?.totalRuns}
+                            footer={renderRunHint(overviewData)}
+                            icon={<RunIcon width={16} height={16} />}
+                        />
+                        <Block
+                            title={t('common.total-tokens')}
+                            number={overviewData?.totalTokens}
+                            footer={renderTokenHint(overviewData)}
+                            icon={<TokenIcon width={16} height={16} />}
+                        />
+                        <Block
+                            title={t('common.llm-invocations')}
+                            number={overviewData?.totalModelInvocations}
+                            footer={renderModelInvocation(overviewData)}
+                            icon={<ApiIcon width={16} height={16} />}
+                        />
                     </div>
 
-                    {/* Applications */}
-                    <div className="flex flex-col w-full rounded-lg gap-4">
-                        <PageTitleSpan title={t('common.application')} />
-                        <HighlightGroup className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full" radius={160}>
-                            <HighlightCard
-                                className="p-6 cursor-pointer flex flex-col"
-                                onClick={() => navigate(RouterPath.FRIDAY_SETTING)}
+                    {/* Chart + Recent projects */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 w-full">
+                        <HighlightCard className="lg:col-span-7 p-6 h-[325px] flex flex-col gap-6">
+                            <BlockTitle
+                                title={t('common.overview')}
+                                description={t('home.overview-description')}
+                            />
+                            <div className="flex flex-1">
+                                <ResponsiveContainer
+                                    width="100%"
+                                    minWidth="100%"
+                                >
+                                    <BarChart
+                                        layout="horizontal"
+                                        data={monthlyRuns.reverse()}
+                                        margin={{ bottom: -5, top: 0 }}
+                                    >
+                                        <CartesianGrid
+                                            strokeDasharray="1 10"
+                                            vertical={false}
+                                        />
+                                        <YAxis
+                                            type="number"
+                                            fontSize={10}
+                                            allowDecimals={false}
+                                            width={yAxisWidth}
+                                            axisLine={false}
+                                            tickLine={false}
+                                            domain={[ticks[0], ticks[-1]]}
+                                            ticks={ticks}
+                                            tickFormatter={(count: number) => {
+                                                if (count >= 10000) {
+                                                    return count.toExponential(
+                                                        1,
+                                                    );
+                                                } else if (count >= 1000) {
+                                                    return count.toLocaleString();
+                                                } else {
+                                                    return count.toLocaleString();
+                                                }
+                                            }}
+                                        />
+                                        <XAxis
+                                            dataKey="month"
+                                            type="category"
+                                            fontSize={10}
+                                            axisLine={false}
+                                            tickLine={false}
+                                            tickFormatter={(month: string) => {
+                                                const numericMonth = parseInt(
+                                                    month.split('-')[1],
+                                                );
+                                                return [
+                                                    'Jan',
+                                                    'Feb',
+                                                    'Mar',
+                                                    'Apr',
+                                                    'May',
+                                                    'Jun',
+                                                    'Jul',
+                                                    'Aug',
+                                                    'Sep',
+                                                    'Oct',
+                                                    'Nov',
+                                                    'Dec',
+                                                ][numericMonth - 1];
+                                            }}
+                                        />
+                                        <Tooltip
+                                            contentStyle={{
+                                                borderRadius: 6,
+                                                border: '1px solid var(--border)',
+                                            }}
+                                            labelStyle={{ fontWeight: 500 }}
+                                            labelFormatter={(label) => {
+                                                const numericMonth = parseInt(
+                                                    label.split('-')[1],
+                                                );
+                                                const year = parseInt(
+                                                    label.split('-')[0],
+                                                );
+                                                const strMonth = [
+                                                    'Jan',
+                                                    'Feb',
+                                                    'Mar',
+                                                    'Apr',
+                                                    'May',
+                                                    'Jun',
+                                                    'Jul',
+                                                    'Aug',
+                                                    'Sep',
+                                                    'Oct',
+                                                    'Nov',
+                                                    'Dec',
+                                                ][numericMonth - 1];
+                                                return `${strMonth}, ${year}`;
+                                            }}
+                                            formatter={(value) => [
+                                                value,
+                                                t('home.run-number'),
+                                            ]}
+                                        />
+                                        <Bar
+                                            dataKey="count"
+                                            radius={[6, 6, 0, 0]}
+                                        />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </HighlightCard>
+                        <HighlightCard className="lg:col-span-5 p-6 h-[325px] flex flex-col gap-2">
+                            <BlockTitle
+                                title={t('home.recent-projects')}
+                                description={
+                                    overviewData &&
+                                    overviewData.recentProjects.length > 0
+                                        ? t('home.recent-projects-description')
+                                        : t('home.recent-projects-empty')
+                                }
+                            />
+                            <div
+                                className="flex flex-col flex-1"
+                                style={RemoveScrollBarStyle}
                             >
-                                <BlockTitle title="AgentScope Friday" description={t('home.as-friday-description')} />
-                            </HighlightCard>
-                            <HighlightCard
-                                className="p-6 cursor-pointer flex flex-col"
-                                onClick={() => navigate(RouterPath.EVAL)}
-                            >
-                                <BlockTitle title="AgentScope X" description={t('home.as-x-description')} />
-                            </HighlightCard>
-                        </HighlightGroup>
+                                {overviewData
+                                    ? overviewData.recentProjects.map(
+                                          (proj) => (
+                                              <ProjectRow
+                                                  key={proj.name}
+                                                  project={proj.name}
+                                                  runCount={proj.runCount}
+                                                  lastUpdateTime={
+                                                      proj.lastUpdateTime
+                                                  }
+                                              />
+                                          ),
+                                      )
+                                    : null}
+                            </div>
+                        </HighlightCard>
                     </div>
-                </div>
+                </HighlightGroup>
+            </div>
+
+            {/* Applications */}
+            <div className="flex flex-col w-full rounded-lg gap-4">
+                <PageTitleSpan title={t('common.application')} />
+                <HighlightGroup
+                    className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full"
+                    radius={160}
+                >
+                    <HighlightCard
+                        className="p-6 cursor-pointer flex flex-col"
+                        onClick={() => navigate(RouterPath.FRIDAY_SETTING)}
+                    >
+                        <BlockTitle
+                            title="AgentScope Friday"
+                            description={t('home.as-friday-description')}
+                        />
+                    </HighlightCard>
+                    <HighlightCard
+                        className="p-6 cursor-pointer flex flex-col"
+                        onClick={() => navigate(RouterPath.EVAL)}
+                    >
+                        <BlockTitle
+                            title="AgentScope X"
+                            description={t('home.as-x-description')}
+                        />
+                    </HighlightCard>
+                </HighlightGroup>
+            </div>
+        </div>
     );
 };
 
