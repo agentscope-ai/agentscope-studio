@@ -467,10 +467,14 @@ export class SocketManager {
                         '--studio_url',
                         `http://localhost:${config.port}`,
                     ];
-                    console.log(fridayConfig);
+                    console.debug(fridayConfig);
                     for (const [key, value] of Object.entries(fridayConfig)) {
                         if (key !== 'pythonEnv' && key !== 'mainScriptPath') {
-                            args.push(`--${key}`, value);
+                            if (typeof value === 'object') {
+                                args.push(`--${key}`, JSON.stringify(value));
+                            } else {
+                                args.push(`--${key}`, value);
+                            }
                         }
                     }
 
