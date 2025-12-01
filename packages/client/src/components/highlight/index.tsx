@@ -205,7 +205,7 @@ const HighlightGroup = ({
  * HighlightCard component props
  * Inherits all standard HTML attributes of div element
  */
-interface HighlightCardProps extends HTMLAttributes<HTMLDivElement> {}
+type HighlightCardProps = HTMLAttributes<HTMLDivElement>;
 
 /**
  * HighlightCard Component
