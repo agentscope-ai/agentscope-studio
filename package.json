@@ -29,7 +29,10 @@
         "build:server": "npm run build --workspace=packages/server",
         "build:python": "cp -r packages/app dist/app",
         "prepublishOnly": "npm run build",
-        "format": "prettier --write . && eslint . --ext .js,.jsx,.ts,.tsx --fix"
+        "format": "prettier --write . && eslint . --ext .js,.jsx,.ts,.tsx --fix",
+        "docs:dev": "vitepress dev docs",
+        "docs:build": "vitepress build docs",
+        "docs:preview": "vitepress preview docs"
     },
     "devDependencies": {
         "@eslint/js": "^9.25.0",
@@ -39,7 +42,8 @@
         "eslint": "^9.25.0",
         "prettier": "^3.5.3",
         "typescript": "^5.8.3",
-        "typescript-eslint": "^8.30.1"
+        "typescript-eslint": "^8.30.1",
+        "vitepress": "^2.0.0-alpha.13"
     },
     "dependencies": {
         "@grpc/grpc-js": "^1.14.1",
