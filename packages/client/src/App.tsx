@@ -6,9 +6,9 @@ import HomePage from './pages/HomePage';
 
 import { I18nProvider } from './context/I18Context.tsx';
 import { trpc, queryClient, trpcReactClient } from './api/trpc';
-import { SocketContextProvider } from './context/SocketContext.tsx';
 import { MessageApiContextProvider } from './context/MessageApiContext.tsx';
 import { NotificationContextProvider } from './context/NotificationContext.tsx';
+import { SocketContextProvider } from './context/SocketContext.tsx';
 
 import './App.css';
 

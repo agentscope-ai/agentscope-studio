@@ -1,6 +1,9 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import {
+    GetTraceListParamsSchema,
+    GetTraceParamsSchema,
+    GetTraceStatisticParamsSchema,
     InputRequestData,
     // RunData,
     TableData,
@@ -24,6 +27,7 @@ import { SocketManager } from './socket';
 import { FridayConfigManager } from '../../../shared/src/config/friday';
 import { FridayAppMessageDao } from '../dao/FridayAppMessage';
 import { ReplyDao } from '@/dao/Reply';
+import { SpanDao } from '../dao/Trace';
 
 const textBlock = z.object({
     text: z.string(),
@@ -390,6 +394,63 @@ export const appRouter = t.router({
                             ? error.message
                             : 'Unknown error',
                 } as ResponseBody<TableData<ProjectData>>;
+            }
+        }),
+
+    getTraceList: t.procedure
+        .input(GetTraceListParamsSchema)
+        .query(async ({ input }) => {
+            try {
+                console.debug('[TRPC] getTraceList called with input:', input);
+                const result = await SpanDao.getTraceList(input);
+                console.debug('[TRPC] getTraceList result:', {
+                    total: result.total,
+                    tracesCount: result.traces.length,
+                });
+                return result;
+            } catch (error) {
+                console.error('Error in getTraceList:', error);
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : 'Failed to get trace list',
+                });
+            }
+        }),
+
+    getTrace: t.procedure
+        .input(GetTraceParamsSchema)
+        .query(async ({ input }) => {
+            try {
+                return await SpanDao.getTrace(input.traceId);
+            } catch (error) {
+                console.error('Error in getTrace:', error);
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : 'Failed to get trace',
+                });
+            }
+        }),
+
+    getTraceStatistic: t.procedure
+        .input(GetTraceStatisticParamsSchema)
+        .query(async ({ input }) => {
+            try {
+                return await SpanDao.getTraceStatistic(input);
+            } catch (error) {
+                console.error('Error in getTraceStatistic:', error);
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : 'Failed to get trace statistics',
+                });
             }
         }),
 });

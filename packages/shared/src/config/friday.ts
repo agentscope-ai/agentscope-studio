@@ -52,6 +52,12 @@ export class FridayConfigManager {
         try {
             const fridayConfigPath = PATHS.getFridayConfigPath();
             fs.mkdirSync(path.dirname(fridayConfigPath), { recursive: true });
+            console.debug(
+                'Saving friday config to:',
+                fridayConfigPath,
+                this.config,
+            );
+
             fs.writeFileSync(
                 fridayConfigPath,
                 JSON.stringify(this.config, null, 2),
@@ -62,7 +68,7 @@ export class FridayConfigManager {
     }
 
     updateConfig(newConfig: FridayConfig) {
-        this.config = { ...this.config, ...newConfig };
+        this.config = newConfig;
         this.saveConfig();
     }
 

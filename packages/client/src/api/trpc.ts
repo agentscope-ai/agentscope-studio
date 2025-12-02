@@ -1,24 +1,10 @@
-import { createTRPCProxyClient, httpLink } from '@trpc/client';
+import { httpLink, httpBatchLink } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
 import { QueryClient } from '@tanstack/react-query';
+
+// Import AppRouter type from server package using relative path
 import type { AppRouter } from '../../../server/src/trpc/router';
 
-/**
- * tRPC client instance
- * Type-safe API client that connects to the backend router
- */
-export const trpcClient = createTRPCProxyClient<AppRouter>({
-    links: [
-        httpLink({
-            url: '/trpc',
-        }),
-    ],
-});
-
-/**
- * tRPC React hooks
- * Use this for React components with hooks like useQuery
- */
 export const trpc = createTRPCReact<AppRouter>();
 
 /**
@@ -28,10 +14,30 @@ export const trpc = createTRPCReact<AppRouter>();
 export const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
-            staleTime: 1000,
+            refetchOnMount: true,
             refetchOnWindowFocus: false,
+            staleTime: 0,
+            gcTime: 0,
         },
     },
+});
+
+/**
+ * tRPC client instance
+ * Type-safe API client that connects to the backend router
+ */
+export const trpcClient = trpc.createClient({
+    links: [
+        httpBatchLink({
+            url: '/trpc',
+            fetch(url, options) {
+                return fetch(url, {
+                    ...options,
+                    cache: 'no-store', // Disable HTTP caching
+                });
+            },
+        }),
+    ],
 });
 
 /**

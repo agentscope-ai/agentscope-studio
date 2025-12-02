@@ -1,6 +1,6 @@
+import { z } from 'zod';
 import { ContentBlocks, ContentType, Status } from './messageForm';
 import { Usage } from './usage';
-import { z } from 'zod';
 
 export const RegisterReplyParamsSchema = z.object({
     runId: z.string(),
@@ -309,3 +309,30 @@ export interface EvaluationData {
     // Data
     results: Record<string, unknown>;
 }
+
+// TracePage trpc schemas
+export const GetTraceListParamsSchema = z.object({
+    serviceName: z.string().optional(),
+    operationName: z.string().optional(),
+    status: z.number().optional(),
+    startTime: z.string().optional(),
+    endTime: z.string().optional(),
+    limit: z.number().optional(),
+    offset: z.number().optional(),
+});
+export type GetTraceListParams = z.infer<typeof GetTraceListParamsSchema>;
+
+export const GetTraceParamsSchema = z.object({
+    traceId: z.string(),
+});
+export type GetTraceParams = z.infer<typeof GetTraceParamsSchema>;
+
+export const GetTraceStatisticParamsSchema = z.object({
+    startTime: z.string().optional(),
+    endTime: z.string().optional(),
+    serviceName: z.string().optional(),
+    operationName: z.string().optional(),
+});
+export type GetTraceStatisticParams = z.infer<
+    typeof GetTraceStatisticParamsSchema
+>;
