@@ -29,7 +29,7 @@ export default defineConfig({
                 ...sharedThemeConfig,
                 nav: [
                     { text: 'Home', link: '/' },
-                    { text: 'Tutorial', link: '/src/tutorial/overview' },
+                    { text: 'Tutorial', link: '/tutorial/overview' },
                 ],
                 sidebar: [
                     {
@@ -37,32 +37,32 @@ export default defineConfig({
                         items: [
                             {
                                 text: 'Overview',
-                                link: '/src/tutorial/overview',
+                                link: '/tutorial/overview',
                             },
                             {
                                 text: 'Quick Start',
-                                link: '/src/tutorial/quick_start',
+                                link: '/tutorial/quick_start',
                             },
                             {
                                 text: 'Contributing',
-                                link: '/src/tutorial/contributing',
+                                link: '/tutorial/contributing',
                             },
                         ],
                     },
                     {
                         text: 'Develop',
                         items: [
-                            { text: 'Project', link: '/src/develop/project' },
-                            { text: 'Tracing', link: '/src/develop/tracing' },
+                            { text: 'Project', link: '/develop/project' },
+                            { text: 'Tracing', link: '/develop/tracing' },
                             {
                                 text: 'Evaluation',
-                                link: '/src/develop/evaluation',
+                                link: '/develop/evaluation',
                             },
                         ],
                     },
                     {
                         text: 'Agent',
-                        items: [{ text: 'Friday', link: '/src/agent/friday' }],
+                        items: [{ text: 'Friday', link: '/agent/friday' }],
                     },
                 ],
             },
@@ -75,7 +75,7 @@ export default defineConfig({
                 ...sharedThemeConfig,
                 nav: [
                     { text: '首页', link: '/zh_CN/' },
-                    { text: '教程', link: '/zh_CN/src/tutorial/overview' },
+                    { text: '教程', link: '/zh_CN/tutorial/overview' },
                 ],
                 sidebar: [
                     {
@@ -83,15 +83,15 @@ export default defineConfig({
                         items: [
                             {
                                 text: '概览',
-                                link: '/zh_CN/src/tutorial/overview',
+                                link: '/zh_CN/tutorial/overview',
                             },
                             {
                                 text: '快速开始',
-                                link: '/zh_CN/src/tutorial/quick_start',
+                                link: '/zh_CN/tutorial/quick_start',
                             },
                             {
                                 text: '贡献指南',
-                                link: '/zh_CN/src/tutorial/contributing',
+                                link: '/zh_CN/tutorial/contributing',
                             },
                         ],
                     },
@@ -100,22 +100,22 @@ export default defineConfig({
                         items: [
                             {
                                 text: '项目管理',
-                                link: '/zh_CN/src/develop/project',
+                                link: '/zh_CN/develop/project',
                             },
                             {
                                 text: '运行追踪',
-                                link: '/zh_CN/src/develop/tracing',
+                                link: '/zh_CN/develop/tracing',
                             },
                             {
                                 text: '应用评测',
-                                link: '/zh_CN/src/develop/evaluation',
+                                link: '/zh_CN/develop/evaluation',
                             },
                         ],
                     },
                     {
                         text: '智能体',
                         items: [
-                            { text: 'Friday', link: '/zh_CN/src/agent/friday' },
+                            { text: 'Friday', link: '/zh_CN/agent/friday' },
                         ],
                     },
                 ],

@@ -30,7 +30,7 @@ packages/
 
 第一次使用 Friday 时，需要在以下页面中配置智能体，包括模型、API KEY、工具和其他参数。
 
-![Friday 配置页面](./assets/friday_setting.png)
+![Friday 配置页面](assets/friday_setting.png)
 
 之后，就可以在聊天页面开始与 Friday 对话了。
 

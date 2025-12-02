@@ -9,10 +9,7 @@ hero:
     actions:
         - theme: brand
           text: Tutorial
-          link: /src/tutorial/overview
-        - theme: alt
-          text: API Documentation
-          link: /src/api-examples
+          link: /tutorial/overview
 
 features:
     - title: Project Management

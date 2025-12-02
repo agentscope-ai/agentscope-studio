@@ -10,9 +10,6 @@ hero:
         - theme: brand
           text: 使用教程
           link: /zh_CN/tutorial/overview
-        - theme: alt
-          text: API 文档
-          link: /zh_CN/src/api-examples
 
 features:
     - title: 项目管理

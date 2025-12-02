@@ -4,7 +4,7 @@ In the Trace page of the Studio sidebar, you can view detailed information about
 
 This feature is built on the [OpenTelemetry semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/) and [OTLP protocol](https://opentelemetry.io/docs/specs/otlp/). It not only provides out-of-the-box reception and storage of various observability information reported by AgentScope, but also supports integration of data reported by any collection tools/AI application frameworks based on OpenTelemetry or LoongSuite.
 
-![Trace](./assets/tracing_detail_chat_history.png)
+![Trace](assets/tracing_detail_chat_history.png)
 
 ## Overview Page
 
@@ -12,7 +12,7 @@ On this page, you can view basic information about trace data reported to Studio
 
 > 💡 **Tip**: Hover your mouse over the icon next to the trace name to view basic metadata of that trace, such as Trace ID.
 
-![Trace](./assets/tracing_overview.png)
+![Trace](assets/tracing_overview.png)
 
 ## Details Page
 
@@ -21,11 +21,11 @@ Click on any trace in the overview page to view the call sequence and call relat
 In the Metadata area, you can view the input and output of calls.
 For AI-related calls, such as LLM, Agent, etc., inputs and outputs will be displayed according to the [structure](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/#recording-content-on-attributes) defined by the OpenTelemetry semantic conventions. For regular calls, such as Function, Format, etc., inputs and outputs will be displayed according to the AgentScope extended [semantic conventions](#agentscope-extended-conventions).
 
-![Trace](./assets/tracing_detail_chat_history.png)
+![Trace](assets/tracing_detail_chat_history.png)
 
 In the All Attributes area, you can see all key metadata of this call, with naming following the [semantic conventions](#semantic-conventions).
 
-![Trace](./assets/tracing_detail_attributes.png)
+![Trace](assets/tracing_detail_attributes.png)
 
 ## Semantic Conventions
 

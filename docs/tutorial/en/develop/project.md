@@ -15,7 +15,7 @@ In AgentScope-Studio, a **Project** contains multiple **Runs**. Specifically:
 
 The Projects page in AgentScope-Studio provides an overview and management functionality for running projects:
 
-![Project Management](./assets/project-management.png)
+![Project Management](assets/project-management.png)
 
 Click on any project in the project list to enter the run management interface and view all run instances under that project.
 
@@ -27,7 +27,7 @@ Run instances contain complete execution tracking and status monitoring function
 In the (left) sidebar, all run instances under the project are stacked in chronological order. Click on any run instance to view its complete interaction history and status in a Chatbot-style UI.
 In addition, the right panel provides detailed information and statistics for that run.
 
-![Run Management](./assets/run-management.png)
+![Run Management](assets/run-management.png)
 
 In AgentScope, a single agent reply (i.e., calling the `reply` function once) generates multiple messages (`Msg` objects). These messages may be prompt messages to guide the LLM (with role "user"), or tool execution results (with role "system").
 
@@ -46,7 +46,7 @@ AgentScope-Studio also provides OpenTelemetry-based trace data visualization in 
 
 The API protocols related to project management in AgentScope-Studio are as follows:
 
-> **Note**: For detailed information about Trace data format, push mechanism, and integration examples, please refer to the [Trace documentation](./tracing.md).
+> **Note**: For detailed information about Trace data format, push mechanism, and integration examples, please refer to the [Trace documentation](tracing.md).
 
 | Function           | Endpoint                 | Method | Purpose                                  |
 | ------------------ | ------------------------ | ------ | ---------------------------------------- |
@@ -142,7 +142,7 @@ Request user input on the Studio frontend page with a specific role/name/identit
 
 The specific implementation logic for user input involves multi-party interaction between the Python application, Studio server, and frontend. Below is the detailed interaction flow:
 
-![User Input Flow](./assets/user-input-flow.png)
+![User Input Flow](assets/user-input-flow.png)
 
 1. **Agent Sends Request**: The Agent sends a user input request to the Studio server via POST request
 2. **Server Saves Request**: The Studio server saves the request to the database and pushes it to the Web client via WebSocket

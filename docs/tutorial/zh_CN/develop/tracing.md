@@ -5,7 +5,7 @@
 该功能基于 [OpenTelemetry 语义规范](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/)和 [OTLP 协议](https://opentelemetry.io/docs/specs/otlp/)构建，不仅可以开箱即用地接收和存储 AgentScope 上报的各种可观测信息，
 还支持任意的基于 OpenTelemetry 或 LoongSuite 的采集工具/AI 应用框架上报的数据的集成。
 
-![Trace](./assets/tracing_detail_chat_history.png)
+![Trace](assets/tracing_detail_chat_history.png)
 
 ## 概览页面
 
@@ -13,7 +13,7 @@
 
 > 💡 **提示**：将鼠标移动到链路名称后面的图标上可以查看到该条链路的基本元信息，如 Trace ID。
 
-![Trace](./assets/tracing_overview.png)
+![Trace](assets/tracing_overview.png)
 
 ## 详情页面
 
@@ -22,11 +22,11 @@
 在 Metadata 区域可以查看调用的输入和输出。
 对于 AI 相关的调用，如 LLM、Agent 等，输入输出会按照 OpenTelemetry 语义规范定义的[结构](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/#recording-content-on-attributes)进行展示。对于常规调用，如 Function、Format 等，输入输出会遵循 AgentScope 扩展[语义规范](#agentscope-扩展规范)展示。
 
-![Trace](./assets/tracing_detail_chat_history.png)
+![Trace](assets/tracing_detail_chat_history.png)
 
 在 All Attributes 区域，能够看到本次调用的所有关键的元信息，命名遵循[语义规范](#语义规范)。
 
-![Trace](./assets/tracing_detail_attributes.png)
+![Trace](assets/tracing_detail_attributes.png)
 
 ## 语义规范
 

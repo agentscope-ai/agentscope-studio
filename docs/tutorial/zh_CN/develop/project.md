@@ -13,7 +13,7 @@ AgentScope-Studio 提供了强大的项目管理功能，帮助你可视化地�
 
 AgentScope-Studio 的项目页面（Projects）提供了运行项目的总览和管理功能：
 
-![项目管理](./assets/project-management.png)
+![项目管理](assets/project-management.png)
 
 点击项目列表中的任意项目，可以进入运行管理界面，查看该项目下的所有运行实例。
 
@@ -25,7 +25,7 @@ AgentScope-Studio 的项目页面（Projects）提供了运行项目的总览和
 在（左）侧栏中，按照时间顺序堆叠了该项目下所有的运行实例。点击任意运行实例，可以在 Chatbot 风格的 UI 中查看该运行的完整交互历史和状态。
 除此之外，右侧的面板还提供了该运行的详细信息和统计数据。
 
-![运行管理](./assets/run-management.png)
+![运行管理](assets/run-management.png)
 
 在 AgentScope 中，智能体一次回复（即调用一次 `reply` 函数）对应会产生多条消息（`Msg` 对象），这些消息的可能是用来引导大模型的提示消息
 （角色为 "user"），也可能是工具运行结果（角色为 "system"）。
@@ -48,7 +48,7 @@ AgentScope-Studio 在右侧面板中同时提供了基于 OpenTelemetry 的追�
 
 AgentScope-Studio 中项目管理相关的 API 协议如下：
 
-> **注意**: 关于 Trace 数据格式、推送机制和集成示例的详细信息，请参考 [Trace 文档](./tracing.md)。
+> **注意**: 关于 Trace 数据格式、推送机制和集成示例的详细信息，请参考 [Trace 文档](tracing.md)。
 
 | 功能         | 接口路径                 | 方法 | 用途                       |
 | ------------ | ------------------------ | ---- | -------------------------- |
@@ -144,7 +144,7 @@ content_blocks = [
 
 用户输入的具体实现逻辑涉及 Python 应用、Studio 服务器和前端之间的多方交互。以下是详细的交互流程：
 
-![用户输入流程](./assets/user-input-flow.png)
+![用户输入流程](assets/user-input-flow.png)
 
 1. **Agent 发送请求**：Agent 通过 POST 请求向 Studio 服务器发送用户输入请求
 2. **服务器保存请求**：Studio 服务器将请求保存到数据库，并通过 WebSocket 推送到 Web 客户端

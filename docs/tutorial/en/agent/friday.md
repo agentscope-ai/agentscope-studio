@@ -31,7 +31,7 @@ packages/
 At the first time using Friday, you need to configure the agent in the following page, including the model, API KEY,
 tools, and other parameters.
 
-![Friday Configuration Page](./assets/friday_setting.png)
+![Friday Configuration Page](assets/friday_setting.png)
 
 After that, you can start chatting with Friday in the chat page.
 
