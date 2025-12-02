@@ -5,13 +5,14 @@ import { createServer } from 'http';
 import opener from 'opener';
 import path from 'path';
 import portfinder from 'portfinder';
-import { ConfigManager } from '../../shared/src/config';
+import { APP_INFO, ConfigManager } from '../../shared/src/config';
 import { promptUser } from '../../shared/src/utils/terminal';
 import { initializeDatabase } from './database';
 import { OtelGrpcServer } from './otel/grpc-server';
 import otelRouter from './otel/router';
 import { appRouter } from './trpc/router';
 import { SocketManager } from './trpc/socket';
+import { displayBanner } from '../../shared/src/utils/banner';
 
 async function initializeServer() {
     try {
@@ -140,7 +141,7 @@ async function initializeServer() {
         const otelGrpcServer = new OtelGrpcServer();
         try {
             await otelGrpcServer.start(finalGrpcPort);
-            console.log(`gRPC server started on port ${finalGrpcPort}`);
+            console.debug(`gRPC server started on port ${finalGrpcPort}`);
         } catch (error) {
             console.warn(
                 `[OTEL gRPC] Failed to start gRPC server on port ${finalGrpcPort}, ` +
@@ -167,8 +168,18 @@ async function initializeServer() {
 
         httpServer.listen(configManager.getConfig().port, () => {
             const actualPort = configManager.getConfig().port;
-            console.log(
-                `Server running on port ${actualPort} in ${process.env.NODE_ENV} mode ...`,
+            const config = configManager.getConfig();
+            const mode = (process.env.NODE_ENV || 'production') as
+                | 'development'
+                | 'production';
+
+            // Display startup banner
+            displayBanner(
+                APP_INFO.name.replace('-', '\n'),
+                APP_INFO.version,
+                actualPort,
+                config.database.database,
+                mode,
             );
 
             if (process.env.NODE_ENV === 'production') {
@@ -189,10 +200,10 @@ initializeServer()
     .then(({ httpServer, otelGrpcServer }) => {
         // Handle graceful shutdown
         const cleanup = async () => {
-            console.log('Closing Socket.IO connections');
+            console.debug('Closing Socket.IO connections');
             SocketManager.close();
 
-            console.log('Stopping gRPC server');
+            console.debug('Stopping gRPC server');
             try {
                 await otelGrpcServer.stop();
             } catch (error) {
@@ -200,9 +211,9 @@ initializeServer()
                 otelGrpcServer.forceShutdown();
             }
 
-            console.log('Closing HTTP server');
+            console.debug('Closing HTTP server');
             httpServer.close(() => {
-                console.log('HTTP server closed');
+                console.debug('HTTP server closed');
                 process.exit(0);
             });
         };

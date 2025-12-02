@@ -44,13 +44,13 @@ export const initializeDatabase = async (
             entities: undefined,
             migrations: undefined,
         };
-        console.log(
+        console.debug(
             `Database initialized with options: ${JSON.stringify(printingOptions, null, 2)}`,
         );
-        console.log('Refresh the database ...');
+        console.debug('Refresh the database ...');
         await RunDao.updateRunStatusAtBeginning();
         await InputRequestDao.updateInputRequests();
-        console.log('Done');
+        console.debug('Done');
     } catch (error) {
         console.error('Error initializing database', error);
         throw error;
