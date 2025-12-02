@@ -105,16 +105,10 @@ export class SpanProcessor {
         let attributes = this.decodeAttributes(spanObj.attributes);
 
         let spanName = typeof spanObj.name === 'string' ? spanObj.name : '';
-        if (
-            scope.name.toLowerCase().includes('agentscope.tracing._trace') ||
-            scope.name.toLowerCase() === 'agentscope'
-        ) {
-            const version = scope.version || '';
-            if (version && this.compareVersion(version, '1.0.9') < 0) {
-                throw new Error(
-                    `Invalid version: agentscope SDK version ${version} is too low. Please update to 1.0.9 or higher.`,
-                );
-            }
+        if (scope.name.toLowerCase().includes('agentscope.tracing._trace')) {
+            console.warn(
+                '[Warning] Agentscope SDK version is too low. Please update to 1.0.9 or higher.',
+            );
 
             const newValues = this.convertOldProtocolToNew(attributes, {
                 name: spanName,

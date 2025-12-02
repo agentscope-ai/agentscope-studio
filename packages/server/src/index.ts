@@ -1,5 +1,4 @@
 import * as trpcExpress from '@trpc/server/adapters/express';
-import cors from 'cors';
 import express from 'express';
 import { createServer } from 'http';
 import opener from 'opener';
@@ -94,16 +93,6 @@ async function initializeServer() {
         const app = express();
         const httpServer = createServer(app);
 
-        // Enable CORS for all routes (needed for external Python clients)
-        app.use(
-            cors({
-                origin: '*', // Allow all origins
-                methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-                allowedHeaders: ['Content-Type', 'Authorization'],
-                credentials: false,
-            }),
-        );
-
         // Initialize the database
         await initializeDatabase(config.database);
 
@@ -119,13 +108,7 @@ async function initializeServer() {
             '/v1',
             express.raw({
                 // Support various protobuf and JSON content types
-                type: [
-                    'application/x-protobuf',
-                    'application/vnd.google.protobuf',
-                    'application/protobuf',
-                    'application/json',
-                    'application/octet-stream', // Some clients send protobuf as octet-stream
-                ],
+                type: ['application/x-protobuf', 'application/json'],
                 limit: '10mb',
             }),
             otelRouter,
