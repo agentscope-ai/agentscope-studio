@@ -1,183 +1,54 @@
 # 项目管理
 
-AgentScope Studio 提供了强大的项目管理功能，帮助你可视化地管理你的 AgentScope 项目。通过 Projects 和 Runs 的组织结构，你可以清晰地分离和管理你的可观测性数据。
+AgentScope-Studio 提供了强大的项目管理功能，帮助你可视化地管理你的 AgentScope 项目。通过 Projects 和 Runs 的组织结构，你可以清晰地分离和管理你的可观测性数据。
 
-## Projects 和 Runs 的关系
+## 概念
 
-在 AgentScope Studio 中，**Projects（项目）** 和 **Runs（运行）** 构成了一个层次化的组织结构：
+在 AgentScope-Studio 中，一个**项目（Projects）**包含多个**运行实例（Runs）**。具体而言：
 
-- **Projects（项目）**：用于组织和隔离相关的运行记录
-- **Runs（运行）**：项目内的单次执行实例，类似于会话（Session），跟踪一次完整的运行过程
+- **项目（Projects）**：用于组织和隔离不同的 AI 应用或实验
+- **运行实例（Runs）**：项目内的单次执行实例，类似于会话（Session），跟踪一次完整的运行过程
 
-这种结构让你能够：
+## 项目管理
 
-- 在项目级别进行逻辑分离，保持数据的清晰和专注
-- 在运行级别跟踪单次执行的完整历史
-- 在不同项目之间进行比较分析，而不会相互干扰
-
-## 核心功能
-
-### Project Management（项目管理）
-
-#### 多项目工作空间组织
-
-Projects 为你的 AI 应用提供了组织结构，允许你进行逻辑分离。你可以：
-
-- **按环境分离**：将开发、测试、生产环境的运行分离到不同的项目中
-- **隔离不同应用**：为不同的应用或用例创建独立的项目
-- **跟踪实验**：为不同的实验创建专门的项目，避免数据污染
-- **团队协作**：为不同团队创建独立的工作空间
+AgentScope-Studio 的项目页面（Projects）提供了运行项目的总览和管理功能：
 
 ![项目管理](./assets/project-management.png)
 
-#### 运行执行跟踪与状态监控
+点击项目列表中的任意项目，可以进入运行管理界面，查看该项目下的所有运行实例。
 
-Runs（运行）用于跟踪和组织单次执行的完整过程。通过 Runs，你可以：
+## 运行实例管理
 
-- **跟踪完整的运行历史**：在单个线程中跟踪一次运行的整个历史
-- **监控运行状态**：实时查看运行状态（Running、Pendding、Done）
-- **查看运行详情**：在类似聊天机器人的 UI 中查看每次交互的输入和输出
-- **搜索运行记录**：搜索运行记录以找到特定的交互
+### 运行可视化
+
+运行实例中包含了完整的执行跟踪和状态监控功能。
+在（左）侧栏中，按照时间顺序堆叠了该项目下所有的运行实例。点击任意运行实例，可以在 Chatbot 风格的 UI 中查看该运行的完整交互历史和状态。
+除此之外，右侧的面板还提供了该运行的详细信息和统计数据。
 
 ![运行管理](./assets/run-management.png)
 
-#### 历史项目分析与统计
+在 AgentScope 中，智能体一次回复（即调用一次 `reply` 函数）对应会产生多条消息（`Msg` 对象），这些消息的可能是用来引导大模型的提示消息
+（角色为 "user"），也可能是工具运行结果（角色为 "system"）。
 
-Studio 提供了项目级别的分析和统计功能：
+因此，在可视化的层面，我们在消息的层次之上引入了**回复（reply）**的概念，
+用于将多条消息组织在一起，形成一个完整的智能体回复单元。
+在运行可视化界面中，开发者可以选择按照 `replyId` 或 `msg.id` 来查看消息。
 
-- **项目信息**：查看项目名称、运行次数、最后更新时间
-- **运行记录详情**：查看每条运行的名称、ID、创建时间、状态
-- **比较分析**：在不同运行之间进行比较，识别改进或回归
-- **历史数据**：查看项目的完整历史运行记录
+### 用户输入托管
 
-### 实时可视化
+当 AgentScope 项目连接到 Studio 后，Studio 会自动托管用户的输入，并通过 WebSocket 实时推送到 Python 的智能体应用中。并且 Studio 支持
+在一个运行实例中包含多个不同的 `UserAgent` 实例，从而实现多用户协同交互的场景。
 
-#### 实时消息流
+### 运行追踪可视化
 
-在智能体执行过程中，Studio 提供实时消息流功能：
+AgentScope-Studio 在右侧面板中同时提供了基于 OpenTelemetry 的追踪数据可视化功能，帮助开发者详细了解每一次运行过程中智能体对象、
+大模型调用、工具使用等各个单元的详细输入输出。
 
-- **实时消息流**：在智能体执行过程中实时显示消息流
-- **消息推送**：通过 WebSocket 实时推送消息到前端 UI
-- **交互式界面**：在类似聊天机器人的 UI 中查看每次交互的输入和输出
+## API 协议
 
-#### 交互式 Trace 树可视化
+AgentScope-Studio 中项目管理相关的 API 协议如下：
 
-Studio 提供了强大的 Trace 可视化功能：
-
-- **Trace 树结构**：以树形结构展示完整的 Trace 信息
-- **Span 详情**：点击任意 Span 查看详细信息，包括：
-    - Span 名称、状态、时间戳
-    - 输入输出内容
-    - 元数据和属性
-    - 子 Span 关系
-- **交互式浏览**：展开/折叠节点，快速定位问题
-- **层级关系**：清晰展示 Span 之间的父子关系和调用链
-
-#### 性能指标与 Token 使用分析
-
-Studio 提供了详细的性能分析功能：
-
-- **Token 使用统计**：跟踪每次运行的 token 使用量（输入/输出 token）
-- **延迟分析**：查看每个 Span 的执行时间和整体延迟
-- **性能指标**：查看运行的整体性能指标
-- **成本分析**：基于 token 使用量进行成本估算
-
-## 如何连接 AgentScope 与 Studio
-
-要将你的 AgentScope 应用连接到 Studio 进行项目管理，你需要在初始化 AgentScope 时设置相关参数：
-
-```python
-import agentscope
-
-# 初始化 AgentScope，连接到 Studio
-agentscope.init(
-    project="my-agent-project",      # 项目名称
-    name="run-name",                 # 运行名称（可选）
-    run_id="run-id",                 # 运行ID（可选）
-    studio_url="http://localhost:3000",  # Studio 服务地址
-)
-```
-
-### 参数说明
-
-- **`project`** (str, 可选): 项目名称。如果不指定，默认会使用 `UnnamedProject_At{当前日期}` 格式，例如 `UnnamedProject_At20250101`
-- **`name`** (str, 可选): 运行名称。如果不指定，会自动生成一个基于时间的名称，格式为 `{HHMMSS}_{随机后缀}`
-- **`run_id`** (str, 可选): 运行ID，用于在 AgentScope Studio 中区分不同的运行实例。如果不指定，会自动生成一个 shortuuid
-- **`studio_url`** (str, 可选): AgentScope Studio 的服务地址。如果提供此参数，会自动注册运行并连接到 Studio
-
-## 使用示例
-
-```python
-import asyncio
-import os
-import shortuuid
-
-from agentscope.agent import ReActAgent, UserAgent
-from agentscope.formatter import DashScopeChatFormatter
-from agentscope.memory import InMemoryMemory
-from agentscope.model import DashScopeChatModel
-from agentscope.tool import (
-    Toolkit,
-    execute_shell_command,
-    execute_python_code,
-    view_text_file,
-)
-async def main() -> None:
-    """The main entry point for the ReAct agent example."""
-
-
-    import agentscope
-
-    agentscope.init(
-        project="ReActAgentExample",
-        name="Test-Friday",
-        run_id=shortuuid.uuid(),
-        studio_url="http://localhost:3000",
-    )
-    toolkit = Toolkit()
-
-    toolkit.register_tool_function(execute_shell_command)
-    toolkit.register_tool_function(execute_python_code)
-    toolkit.register_tool_function(view_text_file)
-
-    agent = ReActAgent(
-        name="Friday",
-        sys_prompt="You are a helpful assistant named Friday.",
-        model=DashScopeChatModel(
-            api_key=os.environ.get("DASHSCOPE_API_KEY"),
-            model_name="qwen-max",
-            enable_thinking=False,
-            stream=True,
-        ),
-        formatter=DashScopeChatFormatter(),
-        toolkit=toolkit,
-        memory=InMemoryMemory(),
-    )
-
-    user = UserAgent("User")
-
-    msg = None
-    while True:
-        msg = await user(msg)
-        if msg.get_text_content() == "exit":
-            break
-        msg = await agent(msg)
-
-
-asyncio.run(main())
-```
-
-运行上述代码后，你可以在 AgentScope Studio 中查看执行结果。以下截图展示了 ReAct Agent 示例在 Studio 中运行的效果，包括项目结构、运行详情和交互式对话界面：
-
-![ReAct Agent 示例](./assets/react-agent-example.png)
-
-## 高级集成：使用 Studio API 协议
-
-如果你需要更多控制权或想要构建自定义集成，可以直接使用 Studio 的核心 API 协议。Studio 提供了三个主要的 API 端点，用于你的 Agent 应用与 Web 界面之间的实时交互。
-
-> **Note**: 关于 Trace 数据格式、推送机制和集成示例的详细信息，请参考 [Trace 文档](./tracing.md)。
-
-### 协议概览
+> **注意**: 关于 Trace 数据格式、推送机制和集成示例的详细信息，请参考 [Trace 文档](./tracing.md)。
 
 | 功能         | 接口路径                 | 方法 | 用途                       |
 | ------------ | ------------------------ | ---- | -------------------------- |
@@ -187,36 +58,33 @@ asyncio.run(main())
 
 ### 1. 注册运行协议
 
-将你的运行实例注册到 Studio，以便在 Web 界面中跟踪和显示。
-
-**请求字段：**
+在 Studio 上注册运行实例。
 
 | 字段        | 类型   | 必需 | 说明                                          |
 | ----------- | ------ | ---- | --------------------------------------------- |
-| `id`        | string | ✓    | 唯一运行标识符                                |
+| `id`        | string | ✓    | 运行实例的 ID                                 |
 | `project`   | string | ✓    | 项目名称                                      |
 | `name`      | string | ✓    | 运行实例名称                                  |
 | `timestamp` | string | ✓    | ISO 时间戳                                    |
-| `run_dir`   | string | ✓    | 运行目录路径                                  |
 | `pid`       | number | ✓    | 进程 ID                                       |
 | `status`    | enum   | ✓    | 运行状态（如 "running"、"finished"、"error"） |
 
 ### 2. 消息推送协议
 
-从你的 Agent 发送消息到 Studio，以便在 Web 界面中实时显示。
+将 `Msg` 对象发送到 Studio 进行显示。
 
-**请求字段：**
-
-| 字段            | 类型          | 必需 | 说明                               |
-| --------------- | ------------- | ---- | ---------------------------------- |
-| `runId`         | string        | ✓    | 运行实例 ID                        |
-| `replyId`       | string        | ✗    | 回复消息 ID（用于线程化对话）      |
-| `msg.id`        | string        | ✓    | 消息唯一 ID                        |
-| `msg.name`      | string        | ✓    | 发送者名称                         |
-| `msg.role`      | string        | ✓    | 消息角色（如 "assistant"、"user"） |
-| `msg.content`   | ContentBlocks | ✓    | 消息内容                           |
-| `msg.metadata`  | object        | ✗    | 附加元数据                         |
-| `msg.timestamp` | string        | ✓    | ISO 时间戳                         |
+| 字段            | 类型          | 必需 | 说明                                               |
+| --------------- | ------------- | ---- | -------------------------------------------------- |
+| `runId`         | string        | ✓    | 运行实例 ID                                        |
+| `replyId`       | string        | ✓    | 回复消息 ID                                        |
+| `replyName`     | string        | ✓    | 回复者的名字                                       |
+| `replyRole`     | string        | ✓    | 回复者的角色（如 "assistant"、"user"）             |
+| `msg.id`        | string        | ✓    | 消息 ID                                            |
+| `msg.name`      | string        | ✓    | 消息发送者名字                                     |
+| `msg.role`      | string        | ✓    | 消息发送者角色（如 "assistant"、"user"、"system"） |
+| `msg.content`   | ContentBlocks | ✓    | 消息内容                                           |
+| `msg.metadata`  | object        | ✓    | 消息元数据                                         |
+| `msg.timestamp` | string        | ✓    | 消息 ISO 时间戳                                    |
 
 **ContentBlocks 格式：**
 
@@ -262,21 +130,21 @@ content_blocks = [
 
 ### 3. 用户输入协议
 
-从 Web 界面请求用户输入。这需要 WebSocket 连接来接收用户的响应。
+要求用户在 Studio 的前端页面上以某个角色/名字/身份进行输入。
 
 **请求字段：**
 
 | 字段              | 类型   | 必需 | 说明                         |
 | ----------------- | ------ | ---- | ---------------------------- |
-| `requestId`       | string | ✓    | 唯一请求 ID                  |
+| `requestId`       | string | ✓    | 用户输入请求 ID              |
 | `runId`           | string | ✓    | 运行实例 ID                  |
 | `agentId`         | string | ✓    | Agent ID                     |
 | `agentName`       | string | ✓    | Agent 名称                   |
-| `structuredInput` | object | ✗    | 结构化输入表单的 JSON Schema |
+| `structuredInput` | object |      | 结构化输入表单的 JSON Schema |
 
-**用户输入流程：**
+用户输入的具体实现逻辑涉及 Python 应用、Studio 服务器和前端之间的多方交互。以下是详细的交互流程：
 
-用户输入协议涉及 Agent、Studio 服务器和 Web 客户端之间的完整交互流程。当 Agent 需要用户输入时，会通过以下步骤完成：
+![用户输入流程](./assets/user-input-flow.png)
 
 1. **Agent 发送请求**：Agent 通过 POST 请求向 Studio 服务器发送用户输入请求
 2. **服务器保存请求**：Studio 服务器将请求保存到数据库，并通过 WebSocket 推送到 Web 客户端
@@ -285,22 +153,12 @@ content_blocks = [
 5. **服务器转发**：服务器验证并转发用户输入到 Agent 的 WebSocket 连接
 6. **Agent 接收**：Agent 通过 WebSocket 接收用户输入并继续执行
 
-以下流程图展示了完整的交互过程：
+## 集成示例
 
-![用户输入流程](./assets/user-input-flow.png)
-
-### 核心特性
-
-- **数据持久化**：所有数据自动保存到 SQLite 数据库，支持断线重连
-- **实时广播**：消息通过 WebSocket 实时广播，支持多客户端同步
-- **房间隔离**：基于房间的消息分发，确保数据安全隔离
-- **错误处理**：多层验证机制确保系统稳定性和数据完整性
-
-## 完整集成示例
-
-以下是一个完整的示例，展示如何使用 `StudioClient` 类集成所有三个协议：
+以下示例展示如何集成项目管理的相关协议：
 
 ```python
+from agentscope import Msg
 from datetime import datetime
 from queue import Queue
 from threading import Event
@@ -357,42 +215,25 @@ class StudioClient:
             print(f"Registration failed: {e}")
             return False
 
-    def push_message(self, reply_id: str, message_data: dict) -> bool:
+    def push_message(self, run_id: str, reply_id: str, reply_name: str, reply_role: str, msg: Msg) -> None:
         """推送消息到 Studio"""
-        if not self.run_id:
-            print("Please register run first")
-            return False
+        payload = {
+            "runId": run_id,
+            "replyId": reply_id,
+            "replyName": reply_name,
+            "replyRole": reply_role,
+            "msg": msg.to_dict()
+        }
 
-        try:
-            payload = {
-                "runId": self.run_id,
-                "replyId": reply_id,
-                "name": reply_id,
-                "role": "assistant",
-                "msg": {
-                    "id": message_data["id"],
-                    "name": message_data["name"],
-                    "role": message_data["role"],
-                    "content": message_data["content"],
-                    "metadata": message_data.get("metadata", {}),
-                    "timestamp": message_data["timestamp"]
-                }
-            }
-            response = requests.post(
-                f"{self.studio_url}/trpc/pushMessage",
-                json=payload,
-                timeout=10
-            )
-            response.raise_for_status()
-            return True
-        except Exception as e:
-            print(f"Push failed: {e}")
-            return False
+        response = requests.post(
+            f"{self.studio_url}/trpc/pushMessage",
+            json=payload,
+            timeout=10
+        )
+        response.raise_for_status()
 
-    def request_user_input(self, agent_id: str, agent_name: str, structured_input=None):
+    def request_user_input(self, run_id: str, agent_id: str, agent_name: str, structured_input=None):
         """从 Studio 请求用户输入"""
-        if not self.run_id:
-            raise RuntimeError("Please register run first")
 
         request_id = shortuuid.uuid()
         self.input_queues[request_id] = Queue()
@@ -403,7 +244,7 @@ class StudioClient:
                 f"{self.studio_url}/trpc/requestUserInput",
                 json={
                     "requestId": request_id,
-                    "runId": self.run_id,
+                    "runId": run_id,
                     "agentId": agent_id,
                     "agentName": agent_name,
                     "structuredInput": structured_input
@@ -434,7 +275,6 @@ run_data = {
     "project": "my-project",
     "name": "custom-agent",
     "timestamp": datetime.now().isoformat() + "Z",
-    "run_dir": "/tmp/run-12345",
     "pid": 12345,
     "status": "running"
 }
@@ -442,14 +282,8 @@ client.register_run(run_data)
 
 # 推送消息
 reply_id = "reply-1"
-message = {
-    "id": "msg-1",
-    "name": "my-agent",
-    "role": "assistant",
-    "content": [{"type": "text", "text": "你好，我需要你的输入。"}],
-    "timestamp": datetime.now().isoformat() + "Z"
-}
-client.push_message(reply_id=reply_id, message_data=message)
+msg = Msg("my-agent", "你好，我需要你的输入", "assistant")
+client.push_message(reply_id=reply_id, msg=msg)
 
 # 请求用户输入
 user_response = client.request_user_input(
@@ -458,7 +292,3 @@ user_response = client.request_user_input(
 )
 print(f"User responded: {user_response}")
 ```
-
-## 总结
-
-通过合理使用 Projects 和 Runs 的组织结构，你可以更高效地开发、调试和维护你的 AgentScope 应用，同时保持数据的清晰和可追溯性。

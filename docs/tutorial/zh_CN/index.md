@@ -5,7 +5,7 @@ layout: home
 hero:
     name: 'AgentScope-Studio'
     text: 'AgentScope 开发者的可视化开发组件'
-    tagline: '透明、更简单、更有趣'
+    tagline: '透明，简单，有趣'
     actions:
         - theme: brand
           text: 使用教程
