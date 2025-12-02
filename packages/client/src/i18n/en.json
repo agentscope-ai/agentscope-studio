@@ -77,7 +77,8 @@
         "thinking": "Thinking",
         "times": "Times",
         "timestamp": "Timestamp",
-        "trace": "TRACE",
+        "trace": "Trace",
+        "traces": "Traces",
         "trace-details": "Trace Details",
         "tracing": "Tracing",
         "total": "Total",
@@ -114,12 +115,22 @@
     "help": {
         "friday": {
             "api-key": "The {{llmProvider}} API key, used to access the LLM API provider",
+            "base-url": "The base URL for the LLM API provider",
+            "base-url-placeholder": "e.g. https://api.openai.com/v1,http://localhost:11434",
+            "client-kwargs": "The keyword arguments for the API client initialization, e.g. \"base_url\" for OpenAI client",
+            "generate-kwargs": "The keyword arguments passed when actually calling the LLM API, e.g. \"temperature\", \"max_tokens\", etc.",
             "llm-provider": "Select the LLM API provider",
             "model-name": "The {{llmProvider}} model used to generate response",
             "python-env": "Absolute path to your Python env (3.10+), e.g. /usr/bin/python",
             "write-permission": "Whether allow Friday to modify your local files. If allowed, Friday will equip a tool to write text files",
-            "base-url": "The base URL for the LLM API provider",
-            "base-url-placeholder": "e.g. https://api.openai.com/v1,http://localhost:11434"
+            "key-name": "Key Name",
+            "missing-key-name": "Missing key name",
+            "type-name": "Type Name",
+            "missing-type-name": "Missing type name",
+            "value-name": "Value Name",
+            "missing-value-name": "Missing value name",
+            "check-only-number": "Only numbers can be entered",
+            "add-form-list-btn": "Add keyword argument"
         }
     },
     "hint": {
@@ -192,7 +203,10 @@
             "running": "Running",
             "status": "Status",
             "time": "Time",
-            "total": "Total"
+            "total": "Total",
+            "totalTokens": "Tokens",
+            "duration": "Duration",
+            "startTime": "Start Time"
         }
     },
     "tooltip": {
@@ -244,6 +258,30 @@
             "send-description": "When user input is required in the application, this button will be activated. Click to send the message in the voice of the corresponding role",
             "send-title": "Send Message"
         }
+    },
+    "trace": {
+        "detail": {
+            "loading": "Loading..."
+        },
+        "message": {
+            "copyFailed": "Copy failed",
+            "copySuccess": "Copied to clipboard",
+            "loadFailed": "Failed to load traces"
+        },
+        "nodeDetails": "Node Details",
+        "selectSpan": "Select a span to view details",
+        "spanId": "Span ID",
+        "status": {
+            "error": "ERROR",
+            "ok": "OK",
+            "unset": "UNSET"
+        },
+        "timeRange": {
+            "all": "All",
+            "month": "Last 30 days",
+            "week": "Last 7 days"
+        },
+        "traceId": "Trace ID"
     },
     "unit": {
         "character": "character",

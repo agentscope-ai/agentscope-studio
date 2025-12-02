@@ -1,16 +1,16 @@
 import { DataSource, DataSourceOptions } from 'typeorm';
+import { InputRequestDao } from './dao/InputRequest';
+import { RunDao } from './dao/Run';
+import { migrations } from './migrations';
+import { FridayAppMessageTable, FridayAppReplyTable } from './models/FridayApp';
+import { FridayAppReplyView } from './models/FridayAppView';
+import { InputRequestTable } from './models/InputRequest';
 import { MessageTable } from './models/Message';
+import { ModelInvocationView } from './models/ModelInvocationView';
+import { ReplyTable } from './models/Reply';
 import { RunTable } from './models/Run';
 import { RunView } from './models/RunView';
 import { SpanTable } from './models/Trace';
-import { InputRequestTable } from './models/InputRequest';
-import { RunDao } from './dao/Run';
-import { InputRequestDao } from './dao/InputRequest';
-import { ModelInvocationView } from './models/ModelInvocationView';
-import { FridayAppMessageTable, FridayAppReplyTable } from './models/FridayApp';
-import { FridayAppReplyView } from './models/FridayAppView';
-import { ReplyTable } from './models/Reply';
-import { migrations } from './migrations';
 
 export const initializeDatabase = async (
     databaseConfig: DataSourceOptions,
@@ -30,9 +30,9 @@ export const initializeDatabase = async (
                 FridayAppReplyTable,
                 FridayAppReplyView,
             ],
-            synchronize: true, // 可以改回 true 了，因为表由 Migration 创建
+            synchronize: true,
             migrations: migrations,
-            migrationsRun: true, // 自动运行迁移
+            migrationsRun: true, // Run migrations automatically
             logging: false,
         };
 

@@ -1,15 +1,15 @@
 import express, { Request, Response } from 'express';
 
-import { gunzip, inflate } from 'zlib';
 import { promisify } from 'util';
-import { SpanProcessor } from '../otel/processor';
+import { gunzip, inflate } from 'zlib';
 import { SpanDao } from '../dao/Trace';
 import { SocketManager } from '../trpc/socket';
+import { opentelemetry } from './opentelemetry/proto/trace/v1/trace';
+import { SpanProcessor } from './processor';
 const gunzipAsync = promisify(gunzip);
 const inflateAsync = promisify(inflate);
 
 const otelRouter = express.Router();
-import { opentelemetry } from './opentelemetry/proto/trace/v1/trace';
 
 // Request: POST /v1/traces
 otelRouter.post('/traces', async (req: Request, res: Response) => {
@@ -118,9 +118,13 @@ otelRouter.post('/traces', async (req: Request, res: Response) => {
         return res.status(200).json({
             message: `Processed traces successfully`,
         });
-    } catch (error) {
+    } catch (error: unknown) {
         console.error('Error processing OpenTelemetry traces:', error);
-        res.status(500).json({
+        res.status(500);
+        const errorMessage =
+            error instanceof Error ? error.message : 'Unknown error occurred';
+        res.statusMessage = errorMessage;
+        res.json({
             error: 'Internal Server Error',
             message: 'Failed to process traces',
         });

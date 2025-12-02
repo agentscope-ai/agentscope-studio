@@ -7,6 +7,7 @@ export const APP_INFO = {
 export const DEFAULT_CONFIG = {
     server: {
         port: 3000,
+        grpcPort: 4317,
         host: 'localhost',
     },
 } as const;

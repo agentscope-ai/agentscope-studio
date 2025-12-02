@@ -1,30 +1,37 @@
+import NumberCounter from '@/components/numbers/NumberCounter';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import NumberCounter from '@/components/numbers/NumberCounter';
-
 interface LatencyProps {
-    latency: number | undefined;
+    latencyNs: number | undefined;
 }
 
-const MILLISECONDS_THRESHOLD = 1000;
+function nanoToMilliseconds(nanoTimestamp: string | number): number {
+    return Number(nanoTimestamp) / 1_000_000;
+}
 
-const formatLatencyValue = (latency: number) => {
-    if (latency > MILLISECONDS_THRESHOLD) {
+function nanoToSeconds(nanoTimestamp: string | number): number {
+    return Number(nanoTimestamp) / 1_000_000_000;
+}
+
+const NANOSECONDS_THRESHOLD = 1_000_000_000;
+
+const formatLatencyValue = (latencyNs: number) => {
+    if (latencyNs > NANOSECONDS_THRESHOLD) {
         return {
-            value: Number((latency / MILLISECONDS_THRESHOLD).toFixed(2)),
+            value: Number(nanoToSeconds(latencyNs).toFixed(2)),
             unit: 'unit.second',
         };
     }
     return {
-        value: Number(latency.toFixed(1)),
+        value: Number(nanoToMilliseconds(latencyNs).toFixed(1)),
         unit: 'unit.microseconds',
     };
 };
 
-const Latency = ({ latency = 0 }: LatencyProps) => {
+const Latency = ({ latencyNs = 0 }: LatencyProps) => {
     const { t } = useTranslation();
-    const { value, unit } = formatLatencyValue(latency);
+    const { value, unit } = formatLatencyValue(latencyNs);
 
     return (
         <div className="flex font-bold text-[13px] w-fit items-center">
