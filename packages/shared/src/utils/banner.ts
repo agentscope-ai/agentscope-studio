@@ -4,91 +4,75 @@
  */
 
 import figlet from 'figlet';
+import chalk from 'chalk';
 
-interface BannerOptions {
-    appName: string;
-    version: string;
-    port: number;
-    databasePath: string;
-    mode: 'development' | 'production';
-    font?: string;
-}
-
-export function displayBanner(options: BannerOptions): void {
-    const { version, port, databasePath, mode, font = 'ANSI Shadow' } = options;
+export function displayBanner(
+    appName: string,
+    version: string,
+    port: number,
+    databasePath: string,
+    mode: 'development' | 'production',
+): void {
+    // Create welcome message with border
+    const welcomeMessage = `* Welcome to ${chalk.bold('AgentScope-Studio')} v${version}! *`;
+    // Strip ANSI codes to calculate the actual display length
+    const displayLength =
+        // eslint-disable-next-line no-control-regex
+        welcomeMessage.replace(/\u001b\[[0-9;]*m/g, '').length;
+    const borderLength = displayLength + 4;
+    const topBorder = '┌' + '─'.repeat(borderLength - 2) + '┐';
+    const bottomBorder = '└' + '─'.repeat(borderLength - 2) + '┘';
+    const welcomeBanner = `${topBorder}\n│ ${welcomeMessage} │\n${bottomBorder}`;
 
     // Generate ASCII art using figlet
     let asciiText: string;
     try {
-        asciiText = figlet.textSync('AGENTEORD', {
-            font: font,
+        asciiText = figlet.textSync(appName, {
+            font: 'ANSI Shadow',
             horizontalLayout: 'default',
             verticalLayout: 'default',
         });
-    } catch (error) {
-        console.warn('Failed to generate figlet text, using fallback:', error);
-        asciiText = 'AGENTEORD';
+    } catch {
+        asciiText = appName;
     }
 
     if (!asciiText || asciiText.trim().length === 0) {
-        asciiText = 'AGENTEORD';
+        asciiText = appName;
     }
 
     // Wrap ASCII art in a border
-    const lines = asciiText.split('\n').filter(line => line.trim().length > 0);
+    const lines = asciiText
+        .split('\n')
+        .filter((line) => line.trim().length > 0);
     if (lines.length === 0) {
-        lines.push('AGENTEORD');
+        lines.push(appName);
     }
-    const maxWidth = Math.max(...lines.map((line: string) => line.length));
-    const borderWidth = maxWidth + 4; // Add padding for border
-    
-    const topBorder = '╔' + '═'.repeat(borderWidth - 2) + '╗';
-    const bottomBorder = '╚' + '═'.repeat(borderWidth - 2) + '╝';
-    const emptyLine = '║' + ' '.repeat(borderWidth - 2) + '║';
-    
-    // Center the ASCII art
-    const centeredLines = lines.map((line: string) => {
-        const padding = Math.floor((borderWidth - 2 - line.length) / 2);
-        return '║' + ' '.repeat(padding) + line + ' '.repeat(borderWidth - 2 - line.length - padding) + '║';
-    });
-    
-    // Create version line
-    const versionText = `AGENTSCOPE-STUDIO  v${version}`;
-    const versionPadding = Math.floor((borderWidth - 2 - versionText.length) / 2);
-    const versionLine = '║' + ' '.repeat(versionPadding) + versionText + ' '.repeat(borderWidth - 2 - versionText.length - versionPadding) + '║';
 
-    const appNameBanner = [
-        topBorder,
-        emptyLine,
-        ...centeredLines,
-        emptyLine,
-        versionLine,
-        emptyLine,
-        bottomBorder,
-    ].join('\n');
+    const appNameBanner = [...lines].join('\n');
 
-    // Community and documentation links
+    // Community and documentation links with colors
+    const modeColor = mode === 'production' ? chalk.green : chalk.yellow;
     const links = `
-🌍  Join our Community  🌍 
-https://github.com/agentscope-ai/agentscope-studio
+${chalk.cyan('🌍  Join our Community  🌍')} 
+${chalk.blue('https://github.com/agentscope-ai')}
 
-⭐  Leave us a Star  ⭐  
-https://github.com/agentscope-ai/agentscope-studio
+${chalk.yellow('⭐  Leave us a Star  ⭐')}  
+${chalk.blue('https://github.com/agentscope-ai/agentscope-studio')}
 
-📚  Documentation  📚  
-https://github.com/agentscope-ai/agentscope-studio
+${chalk.magenta('📚  Documentation  📚')}  
+${chalk.blue('https://github.com/agentscope-ai/agentscope-studio')}
 
-🚀  AgentScope Studio Server  🚀
-    Studio UI:      http://localhost:${port}
-    Mode:           ${mode}
-    Log traces:
-        HTTP:       http://localhost:${port}/v1/traces
-    Storage:        ${databasePath}
+${chalk.green('🚀  AgentScope Studio Server  🚀')}
+    ${chalk.bold('Studio UI:')}      ${chalk.cyan(`http://localhost:${port}`)}
+    ${chalk.bold('Mode:')}           ${modeColor(mode)}   
+    ${chalk.bold('Storage:')}        ${chalk.gray(databasePath)}
 `;
 
     // Display banner with a separator line
     console.log('');
-    console.log(appNameBanner);
+    console.log(chalk.cyan(welcomeBanner));
+    console.log('');
+    console.log(chalk.cyan(appNameBanner));
     console.log(links);
     console.log('');
 }

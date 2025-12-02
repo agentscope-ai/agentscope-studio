@@ -213,7 +213,7 @@ export const appRouter = t.router({
         )
         .mutation(async ({ input }) => {
             const runExist = await RunDao.doesRunExist(input.runId);
-            console.log('Received pushMessage:', input);
+            console.debug('Received pushMessage:', input);
             if (!runExist) {
                 throw new TRPCError({
                     code: 'BAD_REQUEST',
@@ -340,9 +340,9 @@ export const appRouter = t.router({
         .input(GetTraceListParamsSchema)
         .query(async ({ input }) => {
             try {
-                console.log('[TRPC] getTraceList called with input:', input);
+                console.debug('[TRPC] getTraceList called with input:', input);
                 const result = await SpanDao.getTraceList(input);
-                console.log('[TRPC] getTraceList result:', {
+                console.debug('[TRPC] getTraceList result:', {
                     total: result.total,
                     tracesCount: result.traces.length,
                 });

@@ -107,7 +107,6 @@ async function initializeServer() {
 
         // Initialize the database
         await initializeDatabase(config.database);
-        console.log('✔ Database initialized successfully');
 
         // Set TRPC router
         app.use(
@@ -142,7 +141,7 @@ async function initializeServer() {
         const otelGrpcServer = new OtelGrpcServer();
         try {
             await otelGrpcServer.start(finalGrpcPort);
-            console.log(`gRPC server started on port ${finalGrpcPort}`);
+            console.debug(`gRPC server started on port ${finalGrpcPort}`);
         } catch (error) {
             console.warn(
                 `[OTEL gRPC] Failed to start gRPC server on port ${finalGrpcPort}, ` +
@@ -175,13 +174,13 @@ async function initializeServer() {
                 | 'production';
 
             // Display startup banner
-            displayBanner({
-                appName: APP_INFO.name,
-                version: APP_INFO.version,
-                port: actualPort,
-                databasePath: config.database.database,
-                mode: mode,
-            });
+            displayBanner(
+                APP_INFO.name,
+                APP_INFO.version,
+                actualPort,
+                config.database.database,
+                mode,
+            );
 
             if (process.env.NODE_ENV === 'production') {
                 opener(`http://localhost:${actualPort}/home`);
@@ -201,10 +200,10 @@ initializeServer()
     .then(({ httpServer, otelGrpcServer }) => {
         // Handle graceful shutdown
         const cleanup = async () => {
-            console.log('Closing Socket.IO connections');
+            console.debug('Closing Socket.IO connections');
             SocketManager.close();
 
-            console.log('Stopping gRPC server');
+            console.debug('Stopping gRPC server');
             try {
                 await otelGrpcServer.stop();
             } catch (error) {
@@ -212,9 +211,9 @@ initializeServer()
                 otelGrpcServer.forceShutdown();
             }
 
-            console.log('Closing HTTP server');
+            console.debug('Closing HTTP server');
             httpServer.close(() => {
-                console.log('HTTP server closed');
+                console.debug('HTTP server closed');
                 process.exit(0);
             });
         };
