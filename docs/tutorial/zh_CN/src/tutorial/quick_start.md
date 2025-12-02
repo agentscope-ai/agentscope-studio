@@ -59,4 +59,5 @@ agentscope.init(
 
 ```env
 PORT=3000
+GRPC_PORT=4317
 ```

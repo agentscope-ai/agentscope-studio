@@ -4,7 +4,7 @@ Friday 是一个由 AgentScope 构建的实验性本地部署智能体，旨在�
 
 - 回答有关 AgentScope 的问题，
 - 为开发者提供快速的二次开发环境，
-- 集成 AgentScope 中所有可用的功能来构建更强大的智能体，以及
+- 集成 AgentScope 中所有可用的功能来构建更强大的智能体，
 - 测试和集成 AgentScope 中的高级功能。
 
 它的源代码也在 [AgentScope-Studio 仓库](https://github.com/agentscope-ai/agentscope-studio/tree/main/packages/app)中开源。

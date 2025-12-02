@@ -59,4 +59,5 @@ Here are some common configuration options:
 
 ```env
 PORT=3000
+GRPC_PORT=4317
 ```

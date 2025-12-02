@@ -127,7 +127,7 @@ AgentScope Studio 提供 [OpenTelemetry 协议(OTLP)](https://opentelemetry.io/d
 
 默认情况下，AgentScope Studio 启动后，会暴露以下服务端点：
 
-- **OTLP/Trace/gRPC**: `localhost:4317`，可以通过修改 `OTEL_GRPC_PORT` 环境变量来调整 gRPC 的服务端点。
+- **OTLP/Trace/gRPC**: `localhost:4317`，可以通过修改 `GRPC_PORT` 环境变量来调整 gRPC 的服务端点。
 - **OTLP/Trace/HTTP**: `localhost:3000`，可以通过修改 `PORT` 环境变量来调整 HTTP 的服务端点。
 
 > 💡 **提示**：当前 Studio 仅支持接收 Trace 类型数据。

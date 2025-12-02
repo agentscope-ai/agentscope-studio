@@ -19,7 +19,7 @@ AgentScope-Studio 提供：
 AgentScope-Studio 构建于：
 
 - 前端：Typescript、React、Vite、TailwindCSS
-- 通信：基于 HTTP 的 TRPC、websocket
+- 通信：基于 HTTP 的 TRPC、WebSocket
 - 后端：Node.js、Express
 - 数据库：TypeORM with SQLite
 
