@@ -324,62 +324,65 @@ function convertOldRecordToSpanTable(oldRecord: unknown): SpanTable {
 }
 
 /**
- * 迁移：将旧的 span_table 结构迁移到新结构
+ * Migration: Migrate old span_table structure to new structure
  *
- * 任务：
- * 1. 检查表是否存在以及是否已经迁移
- * 2. 删除相关视图
- * 3. 备份旧表
- * 4. 创建新表结构
- * 5. 迁移历史数据
- * 6. 删除备份表
+ * Tasks:
+ * 1. Check if table exists and if migration has already been completed
+ * 2. Drop related views
+ * 3. Backup old table
+ * 4. Create new table structure
+ * 5. Migrate historical data
+ * 6. Delete backup table
  */
 export class MigrateSpanTable1740000000000 implements MigrationInterface {
     name = 'MigrateSpanTable1740000000000';
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        console.log('开始迁移：迁移 SpanTable 结构...');
+        console.log('Starting migration: Migrating SpanTable structure...');
 
         const tableName = 'span_table';
         const viewName = 'model_invocation_view';
         const oldTableName = 'span_table_old_backup';
 
         // ========================================
-        // 步骤 1: 检查表是否存在
+        // Step 1: Check if table exists
         // ========================================
-        console.log('步骤 1: 检查表结构...');
+        console.log('Step 1: Checking table structure...');
 
         if (!(await queryRunner.hasTable(tableName))) {
-            console.log('span_table 不存在，跳过迁移');
+            console.log('⏭️  span_table does not exist. Skipping migration.');
             return;
         }
 
         const table = await queryRunner.getTable(tableName);
         if (!table) {
-            console.log('无法获取表结构，跳过迁移');
+            console.log('Unable to get table structure. Skipping migration.');
             return;
         }
 
-        // 检查是否已经迁移过（新结构有 spanId 和 instrumentationVersion 列）
+        // Check if migration has already been completed
+        // New structure has spanId and instrumentationVersion columns
         const hasSpanIdColumn = table.findColumnByName('spanId') !== undefined;
         const hasInstrumentationVersion =
             table.findColumnByName('instrumentationVersion') !== undefined;
 
         if (hasSpanIdColumn && hasInstrumentationVersion) {
-            console.log('表已经是新结构，跳过迁移');
+            console.log(
+                '✅ Table already has new structure. Migration already completed.',
+            );
             return;
         }
 
         // ========================================
-        // 步骤 2: 删除相关视图
+        // Step 2: Drop related views
         // ========================================
-        console.log('步骤 2: 删除相关视图...');
+        console.log('Step 2: Dropping related views...');
 
         try {
             await queryRunner.query(`DROP VIEW IF EXISTS ${viewName}`);
-            console.log(`已删除视图 ${viewName}`);
+            console.log(`Dropped view ${viewName}`);
         } catch (error) {
-            console.warn(`删除视图时出错（可能不存在）:`, error);
+            console.warn(`Error dropping view (may not exist):`, error);
         }
 
         try {
@@ -388,15 +391,15 @@ export class MigrateSpanTable1740000000000 implements MigrationInterface {
                 [viewName],
             );
         } catch {
-            // 忽略错误，表可能不存在
+            // Ignore error, table may not exist
         }
 
         // ========================================
-        // 步骤 3: 备份旧表
+        // Step 3: Backup old table
         // ========================================
-        console.log('步骤 3: 备份旧表...');
+        console.log('Step 3: Backing up old table...');
 
-        // 如果备份表已存在，先删除
+        // If backup table already exists, drop it first
         if (await queryRunner.hasTable(oldTableName)) {
             await queryRunner.dropTable(oldTableName, true);
         }
@@ -404,12 +407,12 @@ export class MigrateSpanTable1740000000000 implements MigrationInterface {
         await queryRunner.query(
             `ALTER TABLE "${tableName}" RENAME TO "${oldTableName}"`,
         );
-        console.log(`已重命名表 ${tableName} -> ${oldTableName}`);
+        console.log(`Renamed table ${tableName} -> ${oldTableName}`);
 
         // ========================================
-        // 步骤 4: 创建新表结构
+        // Step 4: Create new table structure
         // ========================================
-        console.log('步骤 4: 创建新表结构...');
+        console.log('Step 4: Creating new table structure...');
 
         await queryRunner.createTable(
             new Table({
@@ -629,25 +632,25 @@ export class MigrateSpanTable1740000000000 implements MigrationInterface {
             true,
         );
 
-        console.log('新表结构创建成功');
+        console.log('New table structure created successfully');
 
         // ========================================
-        // 步骤 5: 迁移历史数据
+        // Step 5: Migrate historical data
         // ========================================
-        console.log('步骤 5: 迁移历史数据...');
+        console.log('Step 5: Migrating historical data...');
 
         const oldRecords = await queryRunner.query(
             `SELECT * FROM ${oldTableName}`,
         );
 
         if (oldRecords.length === 0) {
-            console.log('没有需要迁移的数据，删除备份表');
+            console.log('No data to migrate. Dropping backup table');
             await queryRunner.dropTable(oldTableName, true);
-            console.log('✅ 迁移完成！');
+            console.log('✅ Migration completed!');
             return;
         }
 
-        console.log(`找到 ${oldRecords.length} 条记录需要迁移`);
+        console.log(`Found ${oldRecords.length} records to migrate`);
 
         let migratedCount = 0;
         let errorCount = 0;
@@ -663,7 +666,7 @@ export class MigrateSpanTable1740000000000 implements MigrationInterface {
                     spanTableArray.push(spanTable);
                 } catch (error) {
                     console.error(
-                        `转换记录失败 (id: ${oldRecord?.id || 'unknown'}):`,
+                        `Failed to convert record (id: ${oldRecord?.id || 'unknown'}):`,
                         error,
                     );
                     errorCount++;
@@ -672,11 +675,11 @@ export class MigrateSpanTable1740000000000 implements MigrationInterface {
 
             if (spanTableArray.length > 0) {
                 try {
-                    // 使用 queryRunner.manager 保存数据
+                    // Use queryRunner.manager to save data
                     await queryRunner.manager.save(SpanTable, spanTableArray);
                     migratedCount += spanTableArray.length;
                 } catch (error) {
-                    console.error(`批量保存失败:`, error);
+                    console.error(`Batch save failed:`, error);
                     errorCount += spanTableArray.length;
                 }
             }
@@ -686,19 +689,19 @@ export class MigrateSpanTable1740000000000 implements MigrationInterface {
                 i + batchSize >= oldRecords.length
             ) {
                 console.log(
-                    `进度：已迁移 ${Math.min(i + batchSize, oldRecords.length)}/${oldRecords.length} 条记录`,
+                    `Progress: Migrated ${Math.min(i + batchSize, oldRecords.length)}/${oldRecords.length} records`,
                 );
             }
         }
 
         console.log(
-            `数据迁移完成。成功: ${migratedCount}, 失败: ${errorCount}`,
+            `Data migration completed. Success: ${migratedCount}, Failed: ${errorCount}`,
         );
 
         // ========================================
-        // 步骤 6: 验证并删除备份表
+        // Step 6: Validate and drop backup table
         // ========================================
-        console.log('步骤 6: 验证数据并删除备份表...');
+        console.log('Step 6: Validating data and dropping backup table...');
 
         const newTableCount = await queryRunner.query(
             `SELECT COUNT(*) as count FROM ${tableName}`,
@@ -707,38 +710,38 @@ export class MigrateSpanTable1740000000000 implements MigrationInterface {
 
         if (count !== migratedCount) {
             console.warn(
-                `警告：新表记录数 (${count}) 与迁移记录数 (${migratedCount}) 不一致`,
+                `Warning: New table record count (${count}) does not match migrated count (${migratedCount})`,
             );
         }
 
         await queryRunner.dropTable(oldTableName, true);
-        console.log('备份表已删除');
+        console.log('Backup table dropped');
 
-        console.log('✅ 迁移完成！');
+        console.log('✅ Migration completed!');
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
-        console.log('开始回滚迁移...');
+        console.log('Starting migration rollback...');
 
         const tableName = 'span_table';
         const oldTableName = 'span_table_old_backup';
 
-        // 如果备份表存在，恢复它
+        // If backup table exists, restore it
         if (await queryRunner.hasTable(oldTableName)) {
-            // 删除新表
+            // Drop new table
             if (await queryRunner.hasTable(tableName)) {
                 await queryRunner.dropTable(tableName, true);
             }
 
-            // 恢复旧表
+            // Restore old table
             await queryRunner.query(
                 `ALTER TABLE "${oldTableName}" RENAME TO "${tableName}"`,
             );
-            console.log('已恢复旧表结构');
+            console.log('Restored old table structure');
         } else {
-            console.warn('备份表不存在，无法回滚');
+            console.warn('Backup table does not exist. Cannot rollback');
         }
 
-        console.log('✅ 回滚完成');
+        console.log('✅ Rollback completed');
     }
 }
