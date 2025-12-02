@@ -158,7 +158,7 @@ content_blocks = [
 以下示例展示如何集成项目管理的相关协议：
 
 ```python
-from agentscope import Msg
+from agentscope.message import Msg
 from datetime import datetime
 from queue import Queue
 from threading import Event
@@ -168,54 +168,69 @@ import requests
 import shortuuid
 import socketio
 
+
 class StudioClient:
     """用于自定义 Agent 集成的完整 Studio 客户端"""
 
     def __init__(self, studio_url: str):
         self.studio_url = studio_url
-        self.run_id = None
         self.sio = socketio.Client()
         self.input_queues = {}
         self.input_events = {}
 
-    def register_run(self, run_data: dict) -> bool:
+    def register_run(
+        self,
+        id: str,
+        project: str,
+        name: str,
+        timestamp: str,
+        pid: int,
+        status: str,
+    ) -> None:
         """注册运行实例"""
-        try:
-            response = requests.post(
-                f"{self.studio_url}/trpc/registerRun",
-                json=run_data,
-                timeout=10
-            )
-            response.raise_for_status()
-            self.run_id = run_data["id"]
+        response = requests.post(
+            f"{self.studio_url}/trpc/registerRun",
+            json={
+                "id": id,
+                "project": project,
+                "name": name,
+                "timestamp": timestamp,
+                "pid": pid,
+                "status": status,
+            },
+            timeout=10
+        )
+        response.raise_for_status()
 
-            # 连接 WebSocket 以接收用户输入
-            self.sio.connect(
-                self.studio_url,
-                namespaces=["/python"],
-                auth={"run_id": self.run_id}
-            )
+        # 连接 WebSocket 以接收用户输入
+        self.sio.connect(
+            self.studio_url,
+            namespaces=["/python"],
+            auth={"run_id": id}
+        )
 
-            # 监听用户输入
-            @self.sio.on("forwardUserInput", namespace="/python")
-            def receive_user_input(
+        # 监听用户输入
+        @self.sio.on("forwardUserInput", namespace="/python")
+        def receive_user_input(
                 request_id: str,
                 blocks_input: List[dict],
                 structured_input: dict[str, Any],
-            ) -> None:
-                if request_id in self.input_queues:
-                    self.input_queues[request_id].put({
-                        "blocks_input": blocks_input,
-                        "structured_input": structured_input,
-                    })
-                    self.input_events[request_id].set()
+        ) -> None:
+            if request_id in self.input_queues:
+                self.input_queues[request_id].put({
+                    "blocks_input": blocks_input,
+                    "structured_input": structured_input,
+                })
+                self.input_events[request_id].set()
 
-            return True
-        except Exception as e:
-            print(f"Registration failed: {e}")
-            return False
-
-    def push_message(self, run_id: str, reply_id: str, reply_name: str, reply_role: str, msg: Msg) -> None:
+    def push_message(
+        self,
+        run_id: str,
+        reply_id: str,
+        reply_name: str,
+        reply_role: str,
+        msg: Msg
+    ) -> None:
         """推送消息到 Studio"""
         payload = {
             "runId": run_id,
@@ -232,7 +247,8 @@ class StudioClient:
         )
         response.raise_for_status()
 
-    def request_user_input(self, run_id: str, agent_id: str, agent_name: str, structured_input=None):
+    def request_user_input(self, run_id: str, agent_id: str, agent_name: str,
+                           structured_input=None):
         """从 Studio 请求用户输入"""
 
         request_id = shortuuid.uuid()
@@ -266,27 +282,34 @@ class StudioClient:
             if request_id in self.input_events:
                 del self.input_events[request_id]
 
+
 # 使用示例
 client = StudioClient("http://localhost:3000")
 
 # 注册运行
-run_data = {
-    "id": "run-12345",
-    "project": "my-project",
-    "name": "custom-agent",
-    "timestamp": datetime.now().isoformat() + "Z",
-    "pid": 12345,
-    "status": "running"
-}
-client.register_run(run_data)
+client.register_run(
+    id="run-12345",
+    project="my-project",
+    name="custom-agent",
+    timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    pid=12345,
+    status="running"
+)
 
+# 创建一条提示消息
+msg = Msg("my-agent", "<system-hint>你现在应该...</system-hint>", "user")
 # 推送消息
-reply_id = "reply-1"
-msg = Msg("my-agent", "你好，我需要你的输入", "assistant")
-client.push_message(reply_id=reply_id, msg=msg)
+client.push_message(
+    run_id="run-12345",
+    reply_id="reply-1",
+    reply_name="my-agent",
+    reply_role="assistant",
+    msg=msg
+)
 
 # 请求用户输入
 user_response = client.request_user_input(
+    run_id="run-12345",
     agent_id="agent-1",
     agent_name="My Agent"
 )

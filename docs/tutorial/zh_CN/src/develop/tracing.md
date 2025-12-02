@@ -1,54 +1,39 @@
-# 可观测性与链路追踪
+# 运行追踪
 
-AgentScope Studio 为 AI 应用提供了简单易用的可观测性与链路追踪能力。它可以帮助使用者快速了解到 AI 应用中的各种重要的时间和信息，如输入、输出、工具调用情况、执行耗时、错误、成本花销等。
+在 Studio 侧边栏的 Trace 页面中可以查看运行追踪的详细信息。包括各个模块的输入、输出、工具调用情况、执行耗时等各种运行信息。
 
-AgentScope Studio 的可观测性基于 [OpenTelemetry 语义规范](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/)和 [OTLP 协议](https://opentelemetry.io/docs/specs/otlp/)构建，它不仅可以开箱即用地接收和存储 AgentScope 上报的各种可观测信息，还支持任意的基于 OpenTelemetry 或 LoongSuite 的采集工具/AI 应用框架上报的数据的集成。
+该功能基于 [OpenTelemetry 语义规范](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/)和 [OTLP 协议](https://opentelemetry.io/docs/specs/otlp/)构建，不仅可以开箱即用地接收和存储 AgentScope 上报的各种可观测信息，
+还支持任意的基于 OpenTelemetry 或 LoongSuite 的采集工具/AI 应用框架上报的数据的集成。
 
 ![Trace](./assets/tracing_detail_chat_history.png)
 
-作为 AI 应用开发者，您可以：
+## 概览页面
 
-- 通过了解上下文的产生、组织与传递来加速开发和调试过程
-- 捕获评估和微调需要的基本数据
-- 定位应用中的错误和异常
-- 识别和优化性能瓶颈
-- 追踪和管理模型调用开销
-
-作为可观测性组件开发者，您可以：
-
-- 轻松部署 AI 可观测可视化工具
-- 快速验证可观测性数据语义规范性
-- 扩展开发为生产可用的可观测服务端
-
-## 页面介绍与核心功能
-
-您可以在 Studio 左侧工具栏中找到 Trace 页面的入口。
-
-### 概览页面
-
-在本页面，您可以看到过去一段时间所有上报到 Studio 的链路数据的基本信息。调用数、总 token 消耗以及平均耗时等关键指标会被聚合并展示在概览页面。
+在本页面可以查看上报到 Studio 的链路数据的基本信息。
 
 > 💡 **提示**：将鼠标移动到链路名称后面的图标上可以查看到该条链路的基本元信息，如 Trace ID。
 
 ![Trace](./assets/tracing_overview.png)
 
-### 详情页面
+## 详情页面
 
-单击概览页面中的任意一条链路，您可以在左侧查看这条链路的调用顺序与调用关系。进一步点选不同层级的调用，您可以看到这些调用发生时详细的上下文。
+单击概览页面中的任意一条链路可以查看这条链路的调用顺序与调用关系；进一步点选不同层级的调用，可以看到这些调用发生时详细的上下文。
 
-在 Metadata 区域，您能够看到调用的输入和输出。对于 AI 相关的调用，如 LLM、Agent 等，输入输出会按照 OpenTelemetry 语义规范定义的[结构](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/#recording-content-on-attributes)进行展示。对于常规调用，如 Function、Format 等，输入输出会遵循 AgentScope 扩展[语义规范](#agentscope-扩展规范)展示。
+在 Metadata 区域可以查看调用的输入和输出。
+对于 AI 相关的调用，如 LLM、Agent 等，输入输出会按照 OpenTelemetry 语义规范定义的[结构](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/#recording-content-on-attributes)进行展示。对于常规调用，如 Function、Format 等，输入输出会遵循 AgentScope 扩展[语义规范](#agentscope-扩展规范)展示。
 
 ![Trace](./assets/tracing_detail_chat_history.png)
 
-在 All Attributes 区域，您能够看到本次调用的所有关键的元信息，命名遵循[语义规范](#语义规范)。
+在 All Attributes 区域，能够看到本次调用的所有关键的元信息，命名遵循[语义规范](#语义规范)。
 
 ![Trace](./assets/tracing_detail_attributes.png)
 
 ## 语义规范
 
-AgentScope Studio 的可观测性数据遵循基于 [OpenTelemetry](#opentelemetry-generative-ai) 的语义规范。遵循该语义规范的数据会在 Studio 中得到更加准确、清晰的处理与展示。为了您可以更便捷地使用 Studio，有必要尽可能保证您的语义规范遵循本文中的约定。
+AgentScope-Studio 的可观测性数据遵循基于 [OpenTelemetry](#opentelemetry-generative-ai) 的语义规范。遵循该语义规范的数据会在 Studio 中得到更加准确、清晰的处理
+与展示。
 
-> 💡 **提示**：AgentScope 库原生的可观测能力已经遵循该语义规范。即便您其他来源的可观测数据暂不遵循该语义规范，依然可以正常展示链路数据，但部分关键信息可能无法高亮/专门展示。
+> 💡 **提示**：AgentScope 库原生的可观测能力已经遵循该语义规范。即便其他来源的可观测数据暂不遵循该语义规范，依然可以正常展示链路数据，但部分关键信息可能无法高亮/专门展示。
 
 ### OpenTelemetry Generative AI
 
@@ -142,8 +127,8 @@ AgentScope Studio 提供 [OpenTelemetry 协议(OTLP)](https://opentelemetry.io/d
 
 默认情况下，AgentScope Studio 启动后，会暴露以下服务端点：
 
-- **OTLP/Trace/gRPC**: `localhost:4317`，您可以通过修改 `OTEL_GRPC_PORT` 环境变量来调整 gRPC 的服务端点。
-- **OTLP/Trace/HTTP**: `localhost:3000`，您可以通过修改 `PORT` 环境变量来调整 HTTP 的服务端点。
+- **OTLP/Trace/gRPC**: `localhost:4317`，可以通过修改 `OTEL_GRPC_PORT` 环境变量来调整 gRPC 的服务端点。
+- **OTLP/Trace/HTTP**: `localhost:3000`，可以通过修改 `PORT` 环境变量来调整 HTTP 的服务端点。
 
 > 💡 **提示**：当前 Studio 仅支持接收 Trace 类型数据。
 

@@ -102,9 +102,10 @@ export const appRouter = t.router({
                 project: z.string(),
                 name: z.string(),
                 timestamp: z.string(),
-                run_dir: z.string(),
                 pid: z.number(),
                 status: z.enum(Object.values(Status) as [string, ...string[]]),
+                // Deprecated
+                run_dir: z.string().optional().nullable(),
             }),
         )
         .mutation(async ({ input }) => {
@@ -113,7 +114,7 @@ export const appRouter = t.router({
                 project: input.project,
                 name: input.name,
                 timestamp: input.timestamp,
-                run_dir: input.run_dir,
+                run_dir: input.run_dir || '', // Deprecated
                 pid: input.pid,
                 status: input.status,
             } as RunData;
