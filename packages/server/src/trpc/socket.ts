@@ -1,31 +1,31 @@
-import { Server } from 'socket.io';
+import { spawn } from 'child_process';
 import { Server as HttpServer } from 'http';
-import { RunDao } from '../dao/Run';
+import { Server } from 'socket.io';
+import { ContentBlocks, Status } from '../../../shared/src/types/messageForm';
 import {
     BackendResponse,
+    FridayReply,
     InputRequestData,
     OverviewData,
     Reply,
-    FridayReply,
     RunData,
     SocketEvents,
     SocketRoomName,
 } from '../../../shared/src/types/trpc';
-import { spawn } from 'child_process';
-import { ContentBlocks, Status } from '../../../shared/src/types/messageForm';
+import { RunDao } from '../dao/Run';
 
-import { SpanData } from '../../../shared/src/types/trace';
-import { InputRequestDao } from '../dao/InputRequest';
-import { FridayAppMessageDao } from '../dao/FridayAppMessage';
 import dayjs from 'dayjs';
-import { ConfigManager, PATHS } from '../../../shared/src';
-import { ReplyingStateManager } from '../services/ReplyingStateManager';
 import * as fs from 'node:fs';
+import { ConfigManager, PATHS } from '../../../shared/src';
 import {
     FridayConfig,
     FridayConfigManager,
 } from '../../../shared/src/config/friday';
+import { SpanData } from '../../../shared/src/types/trace';
+import { FridayAppMessageDao } from '../dao/FridayAppMessage';
+import { InputRequestDao } from '../dao/InputRequest';
 import { SpanDao } from '../dao/Trace';
+import { ReplyingStateManager } from '../services/ReplyingStateManager';
 
 export class SocketManager {
     private static io: Server;
@@ -584,10 +584,10 @@ export class SocketManager {
         // Group spans by runId
         const groupedSpans: Record<string, SpanData[]> = {};
         spanDataArray.forEach((spanData) => {
-            if (!groupedSpans[spanData.runId]) {
-                groupedSpans[spanData.runId] = [];
+            if (!groupedSpans[spanData.conversationId]) {
+                groupedSpans[spanData.conversationId] = [];
             }
-            groupedSpans[spanData.runId].push(spanData);
+            groupedSpans[spanData.conversationId].push(spanData);
         });
 
         // Send grouped spans to each run room

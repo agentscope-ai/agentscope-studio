@@ -15,8 +15,7 @@ import {
  * 3. Change message_table.replyId to a non-nullable foreign key
  */
 export class AddMessageReplyForeignKey1730000000000
-    implements MigrationInterface
-{
+    implements MigrationInterface {
     name = 'AddMessageReplyForeignKey1730000000000';
 
     public async up(queryRunner: QueryRunner): Promise<void> {

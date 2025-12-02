@@ -1,11 +1,11 @@
+import { ConfigProvider } from 'antd';
+import { BrowserRouter } from 'react-router-dom';
 import './App.css';
 import { I18nProvider } from './context/I18Context.tsx';
-import { BrowserRouter } from 'react-router-dom';
-import { ConfigProvider } from 'antd';
-import HomePage from './pages/HomePage';
-import { SocketContextProvider } from './context/SocketContext.tsx';
 import { MessageApiContextProvider } from './context/MessageApiContext.tsx';
 import { NotificationContextProvider } from './context/NotificationContext.tsx';
+import { SocketContextProvider } from './context/SocketContext.tsx';
+import HomePage from './pages/HomePage';
 
 function App() {
     return (
