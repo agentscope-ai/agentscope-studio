@@ -1,24 +1,26 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import {
+    BlockType,
+    ContentBlocks,
+    GetTraceListParamsSchema,
+    GetTraceParamsSchema,
+    GetTraceStatisticParamsSchema,
     InputRequestData,
+    MessageForm,
     RegisterReplyParams,
     RegisterReplyParamsSchema,
     RunData,
-} from '../../../shared/src';
-import {
-    BlockType,
-    ContentBlocks,
-    MessageForm,
     Status,
 } from '../../../shared/src';
-import { RunDao } from '../dao/Run';
-import { InputRequestDao } from '../dao/InputRequest';
-import { MessageDao } from '../dao/Message';
-import { SocketManager } from './socket';
 import { FridayConfigManager } from '../../../shared/src/config/friday';
 import { FridayAppMessageDao } from '../dao/FridayAppMessage';
-import { ReplyDao } from '@/dao/Reply';
+import { InputRequestDao } from '../dao/InputRequest';
+import { MessageDao } from '../dao/Message';
+import { ReplyDao } from '../dao/Reply';
+import { RunDao } from '../dao/Run';
+import { SpanDao } from '../dao/Trace';
+import { SocketManager } from './socket';
 
 const textBlock = z.object({
     text: z.string(),
@@ -214,7 +216,7 @@ export const appRouter = t.router({
         )
         .mutation(async ({ input }) => {
             const runExist = await RunDao.doesRunExist(input.runId);
-            console.log('Received pushMessage:', input);
+            console.debug('Received pushMessage:', input);
             if (!runExist) {
                 throw new TRPCError({
                     code: 'BAD_REQUEST',
@@ -337,6 +339,62 @@ export const appRouter = t.router({
     clientGetFridayConfig: t.procedure.query(async () => {
         return FridayConfigManager.getInstance().getConfig();
     }),
+    getTraceList: t.procedure
+        .input(GetTraceListParamsSchema)
+        .query(async ({ input }) => {
+            try {
+                console.debug('[TRPC] getTraceList called with input:', input);
+                const result = await SpanDao.getTraceList(input);
+                console.debug('[TRPC] getTraceList result:', {
+                    total: result.total,
+                    tracesCount: result.traces.length,
+                });
+                return result;
+            } catch (error) {
+                console.error('Error in getTraceList:', error);
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : 'Failed to get trace list',
+                });
+            }
+        }),
+
+    getTrace: t.procedure
+        .input(GetTraceParamsSchema)
+        .query(async ({ input }) => {
+            try {
+                return await SpanDao.getTrace(input.traceId);
+            } catch (error) {
+                console.error('Error in getTrace:', error);
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : 'Failed to get trace',
+                });
+            }
+        }),
+
+    getTraceStatistic: t.procedure
+        .input(GetTraceStatisticParamsSchema)
+        .query(async ({ input }) => {
+            try {
+                return await SpanDao.getTraceStatistic(input);
+            } catch (error) {
+                console.error('Error in getTraceStatistic:', error);
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : 'Failed to get trace statistics',
+                });
+            }
+        }),
 });
 
 export type AppRouter = typeof appRouter;
