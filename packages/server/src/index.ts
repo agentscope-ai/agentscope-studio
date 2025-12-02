@@ -5,7 +5,7 @@ import { createServer } from 'http';
 import opener from 'opener';
 import path from 'path';
 import portfinder from 'portfinder';
-import { ConfigManager, APP_INFO } from '../../shared/src/config';
+import { APP_INFO, ConfigManager } from '../../shared/src/config';
 import { promptUser } from '../../shared/src/utils/terminal';
 import { initializeDatabase } from './database';
 import { OtelGrpcServer } from './otel/grpc-server';
@@ -175,7 +175,7 @@ async function initializeServer() {
 
             // Display startup banner
             displayBanner(
-                APP_INFO.name,
+                APP_INFO.name.replace('-', '\n'),
                 APP_INFO.version,
                 actualPort,
                 config.database.database,
