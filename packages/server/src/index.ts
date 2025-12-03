@@ -107,8 +107,13 @@ async function initializeServer() {
         app.use(
             '/v1',
             express.raw({
-                // Support various protobuf and JSON content types
-                type: ['application/x-protobuf', 'application/json'],
+                type: [
+                    'application/x-protobuf',
+                    'application/vnd.google.protobuf',
+                    'application/protobuf',
+                    'application/octet-stream',
+                    'application/json',
+                ],
                 limit: '10mb',
             }),
             otelRouter,

@@ -17,47 +17,8 @@ import {
 } from '../../../shared/src/utils/timeUtils';
 
 export class SpanProcessor {
-    /**
-     * Compare two version strings
-     * @param version1 First version string (e.g., "1.0.7", "1.0.9dev")
-     * @param version2 Second version string (e.g., "1.0.6")
-     * @returns Negative if version1 < version2, positive if version1 > version2, 0 if equal
-     */
-    private static compareVersion(version1: string, version2: string): number {
-        const parseVersionPart = (
-            part: string,
-        ): { num: number; suffix: string } => {
-            const match = part.match(/^(\d+)(.*)$/);
-            if (match) {
-                return {
-                    num: parseInt(match[1], 10),
-                    suffix: match[2] || '',
-                };
-            }
-            return { num: 0, suffix: part };
-        };
-
-        const v1Parts = version1.split('.').map(parseVersionPart);
-        const v2Parts = version2.split('.').map(parseVersionPart);
-        const maxLength = Math.max(v1Parts.length, v2Parts.length);
-
-        for (let i = 0; i < maxLength; i++) {
-            const v1Part = v1Parts[i] || { num: 0, suffix: '' };
-            const v2Part = v2Parts[i] || { num: 0, suffix: '' };
-
-            if (v1Part.num < v2Part.num) return -1;
-            if (v1Part.num > v2Part.num) return 1;
-
-            if (v1Part.num === v2Part.num && v1Part.suffix !== v2Part.suffix) {
-                if (v1Part.suffix && v2Part.suffix) {
-                    return v1Part.suffix.localeCompare(v2Part.suffix);
-                }
-                if (!v1Part.suffix) return 1;
-                if (!v2Part.suffix) return -1;
-            }
-        }
-        return 0;
-    }
+    private static warningPeriodStartTime = Date.now();
+    private static readonly WARNING_PERIOD_MS = 5 * 60 * 1000; // 5 minutes
 
     public static validateOTLPSpan(span: unknown): boolean {
         try {
@@ -106,9 +67,7 @@ export class SpanProcessor {
 
         let spanName = typeof spanObj.name === 'string' ? spanObj.name : '';
         if (scope.name.toLowerCase().includes('agentscope.tracing._trace')) {
-            console.warn(
-                '[Warning] Agentscope SDK version is too low. Please update to 1.0.9 or higher.',
-            );
+            this.logOldProtocolWarning();
 
             const newValues = this.convertOldProtocolToNew(attributes, {
                 name: spanName,
@@ -190,6 +149,21 @@ export class SpanProcessor {
         if (conversationId) return String(conversationId);
         const oldRunId = getNestedValue(attributes, 'project.run_id');
         return oldRunId ? String(oldRunId) : 'unknown';
+    }
+
+    /**
+     * Log warning about old protocol format.
+     * - Within 5 minutes: warn on each detection
+     * - After 5 minutes: stop warning
+     */
+    private static logOldProtocolWarning(): void {
+        const now = Date.now();
+        const timeSinceStart = now - this.warningPeriodStartTime;
+        if (timeSinceStart < this.WARNING_PERIOD_MS) {
+            console.warn(
+                '[Warning] Agentscope SDK version is too low. Please update to 1.0.9 or higher.',
+            );
+        }
     }
 
     /**
