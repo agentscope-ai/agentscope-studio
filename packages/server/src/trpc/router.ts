@@ -108,9 +108,10 @@ export const appRouter = t.router({
                 project: z.string(),
                 name: z.string(),
                 timestamp: z.string(),
-                run_dir: z.string(),
                 pid: z.number(),
                 status: z.enum(Object.values(Status) as [string, ...string[]]),
+                // Deprecated
+                run_dir: z.string().optional().nullable(),
             }),
         )
         .mutation(async ({ input }) => {
@@ -119,7 +120,7 @@ export const appRouter = t.router({
                 project: input.project,
                 name: input.name,
                 timestamp: input.timestamp,
-                run_dir: input.run_dir,
+                run_dir: input.run_dir || '', // Deprecated
                 pid: input.pid,
                 status: input.status,
             } as RunData;
@@ -205,8 +206,8 @@ export const appRouter = t.router({
             z.object({
                 runId: z.string(),
                 replyId: z.string().optional().nullable(),
-                name: z.string(),
-                role: z.string(),
+                replyName: z.string().optional().nullable(),
+                replyRole: z.string().optional().nullable(),
                 msg: z.object({
                     id: z.string(),
                     name: z.string(),
@@ -215,6 +216,9 @@ export const appRouter = t.router({
                     metadata: z.unknown(),
                     timestamp: z.string(),
                 }),
+                // The name and role here are deprecated, use replyName and replyRole instead
+                name: z.string().optional().nullable(),
+                role: z.string().optional().nullable(),
             }),
         )
         .mutation(async ({ input }) => {
@@ -236,8 +240,8 @@ export const appRouter = t.router({
                 await ReplyDao.saveReply({
                     runId: input.runId,
                     replyId: input.replyId,
-                    replyRole: input.role,
-                    replyName: input.name,
+                    replyRole: input.replyRole ?? input.role,
+                    replyName: input.replyName ?? input.name,
                     createdAt: input.msg.timestamp,
                 } as RegisterReplyParams);
             }
