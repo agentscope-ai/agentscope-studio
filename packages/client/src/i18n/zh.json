@@ -78,6 +78,7 @@
         "times": "次数",
         "timestamp": "时间戳",
         "trace": "跟踪",
+        "traces": "跟踪",
         "trace-details": "跟踪详情",
         "tracing": "追溯",
         "total": "总计",
@@ -194,7 +195,10 @@
             "running": "运行中",
             "status": "状态",
             "time": "用时",
-            "total": "总计"
+            "total": "总计",
+            "totalTokens": "Token 量",
+            "duration": "调用时长",
+            "startTime": "开始时间"
         }
     },
     "tooltip": {
@@ -246,6 +250,30 @@
             "send-description": "当应用运行到需要 UserAgent 实例进行输入时，该按钮将激活，点击按钮扮演对应的角色进行输入",
             "send-title": "发送消息"
         }
+    },
+    "trace": {
+        "detail": {
+            "loading": "加载中..."
+        },
+        "message": {
+            "copyFailed": "复制失败",
+            "copySuccess": "已复制到剪贴板",
+            "loadFailed": "加载 traces 失败"
+        },
+        "nodeDetails": "节点详情",
+        "selectSpan": "选择一个 span 以查看详情",
+        "spanId": "Span ID",
+        "status": {
+            "error": "错误",
+            "ok": "正常",
+            "unset": "未设置"
+        },
+        "timeRange": {
+            "all": "全部",
+            "month": "最近 30 天",
+            "week": "最近 7 天"
+        },
+        "traceId": "Trace ID"
     },
     "unit": {
         "character": "字符",

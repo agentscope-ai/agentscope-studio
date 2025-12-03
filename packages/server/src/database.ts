@@ -1,16 +1,16 @@
 import { DataSource, DataSourceOptions } from 'typeorm';
+import { InputRequestDao } from './dao/InputRequest';
+import { RunDao } from './dao/Run';
+import { migrations } from './migrations';
+import { FridayAppMessageTable, FridayAppReplyTable } from './models/FridayApp';
+import { FridayAppReplyView } from './models/FridayAppView';
+import { InputRequestTable } from './models/InputRequest';
 import { MessageTable } from './models/Message';
+import { ModelInvocationView } from './models/ModelInvocationView';
+import { ReplyTable } from './models/Reply';
 import { RunTable } from './models/Run';
 import { RunView } from './models/RunView';
 import { SpanTable } from './models/Trace';
-import { InputRequestTable } from './models/InputRequest';
-import { RunDao } from './dao/Run';
-import { InputRequestDao } from './dao/InputRequest';
-import { ModelInvocationView } from './models/ModelInvocationView';
-import { FridayAppMessageTable, FridayAppReplyTable } from './models/FridayApp';
-import { FridayAppReplyView } from './models/FridayAppView';
-import { ReplyTable } from './models/Reply';
-import { migrations } from './migrations';
 
 export const initializeDatabase = async (
     databaseConfig: DataSourceOptions,
@@ -44,13 +44,13 @@ export const initializeDatabase = async (
             entities: undefined,
             migrations: undefined,
         };
-        console.log(
+        console.debug(
             `Database initialized with options: ${JSON.stringify(printingOptions, null, 2)}`,
         );
-        console.log('Refresh the database ...');
+        console.debug('Refresh the database ...');
         await RunDao.updateRunStatusAtBeginning();
         await InputRequestDao.updateInputRequests();
-        console.log('Done');
+        console.debug('Done');
     } catch (error) {
         console.error('Error initializing database', error);
         throw error;
