@@ -1,5 +1,6 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';
+
 import {
     GetTraceListParamsSchema,
     GetTraceParamsSchema,
@@ -13,8 +14,6 @@ import {
     RegisterReplyParams,
     RegisterReplyParamsSchema,
     RunData,
-} from '../../../shared/src';
-import {
     BlockType,
     ContentBlocks,
     MessageForm,

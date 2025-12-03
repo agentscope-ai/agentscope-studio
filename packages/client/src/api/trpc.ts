@@ -39,15 +39,3 @@ export const trpcClient = trpc.createClient({
         }),
     ],
 });
-
-/**
- * tRPC React client instance
- * Use this for the trpc.Provider in your app
- */
-export const trpcReactClient = trpc.createClient({
-    links: [
-        httpLink({
-            url: '/trpc',
-        }),
-    ],
-});

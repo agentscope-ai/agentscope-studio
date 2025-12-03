@@ -5,7 +5,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import HomePage from './pages/HomePage';
 
 import { I18nProvider } from './context/I18Context.tsx';
-import { trpc, queryClient, trpcReactClient } from './api/trpc';
+import { trpc, queryClient, trpcClient } from './api/trpc';
 import { MessageApiContextProvider } from './context/MessageApiContext.tsx';
 import { NotificationContextProvider } from './context/NotificationContext.tsx';
 import { SocketContextProvider } from './context/SocketContext.tsx';
@@ -14,7 +14,7 @@ import './App.css';
 
 function App() {
     return (
-        <trpc.Provider client={trpcReactClient} queryClient={queryClient}>
+        <trpc.Provider client={trpcClient} queryClient={queryClient}>
             <QueryClientProvider client={queryClient}>
                 <ConfigProvider
                     theme={{
