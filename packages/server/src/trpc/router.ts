@@ -1,26 +1,32 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';
+
 import {
-    BlockType,
-    ContentBlocks,
     GetTraceListParamsSchema,
     GetTraceParamsSchema,
     GetTraceStatisticParamsSchema,
     InputRequestData,
-    MessageForm,
+    // RunData,
+    TableData,
+    ProjectData,
+    TableRequestParamsSchema,
+    ResponseBody,
     RegisterReplyParams,
     RegisterReplyParamsSchema,
     RunData,
+    BlockType,
+    ContentBlocks,
+    MessageForm,
     Status,
 } from '../../../shared/src';
-import { FridayConfigManager } from '../../../shared/src/config/friday';
-import { FridayAppMessageDao } from '../dao/FridayAppMessage';
+import { RunDao } from '../dao/Run';
 import { InputRequestDao } from '../dao/InputRequest';
 import { MessageDao } from '../dao/Message';
-import { ReplyDao } from '../dao/Reply';
-import { RunDao } from '../dao/Run';
-import { SpanDao } from '../dao/Trace';
 import { SocketManager } from './socket';
+import { FridayConfigManager } from '../../../shared/src/config/friday';
+import { FridayAppMessageDao } from '../dao/FridayAppMessage';
+import { ReplyDao } from '@/dao/Reply';
+import { SpanDao } from '../dao/Trace';
 
 const textBlock = z.object({
     text: z.string(),
@@ -217,7 +223,7 @@ export const appRouter = t.router({
         )
         .mutation(async ({ input }) => {
             const runExist = await RunDao.doesRunExist(input.runId);
-            console.debug('Received pushMessage:', input);
+            console.log('Received pushMessage:', input);
             if (!runExist) {
                 throw new TRPCError({
                     code: 'BAD_REQUEST',
@@ -340,6 +346,60 @@ export const appRouter = t.router({
     clientGetFridayConfig: t.procedure.query(async () => {
         return FridayConfigManager.getInstance().getConfig();
     }),
+
+    /**
+     * Get paginated projects with optional sorting and filtering
+     *
+     * @param pagination - Pagination parameters (page number and page size)
+     * @param sort - Optional sorting configuration (field name and order)
+     * @param filters - Optional filters for project search (e.g., project name)
+     * @returns ResponseBody containing TableData with project list and metadata
+     *
+     * @example
+     * Input: {
+     *   pagination: { page: 1, pageSize: 10 },
+     *   sort: { field: 'createdAt', order: 'desc' },
+     *   filters: { project: 'my-project' }
+     * }
+     *
+     * Output: {
+     *   success: true,
+     *   message: 'Projects fetched successfully',
+     *   data: {
+     *     list: [...],
+     *     total: 100,
+     *     page: 1,
+     *     pageSize: 10
+     *   }
+     * }
+     */
+    getProjects: t.procedure
+        .input(TableRequestParamsSchema)
+        .query(async ({ input }) => {
+            try {
+                const result = await RunDao.getProjects(
+                    input.pagination,
+                    input.sort,
+                    input.filters,
+                );
+
+                return {
+                    success: true,
+                    message: 'Projects fetched successfully',
+                    data: result,
+                } as ResponseBody<TableData<ProjectData>>;
+            } catch (error) {
+                console.error('Error fetching projects:', error);
+                return {
+                    success: false,
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : 'Unknown error',
+                } as ResponseBody<TableData<ProjectData>>;
+            }
+        }),
+
     getTraceList: t.procedure
         .input(GetTraceListParamsSchema)
         .query(async ({ input }) => {

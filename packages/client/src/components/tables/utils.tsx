@@ -103,7 +103,7 @@ export const StatusCell = memo(
  * Render an animated number using NumberCounter with optional selected styling.
  */
 export const NumberCell = memo(
-    ({ number, selected }: { number: number; selected: boolean }) => {
+    ({ number, selected = false }: { number: number; selected?: boolean }) => {
         return (
             <div className={selected ? 'text-primary-foreground' : undefined}>
                 <NumberCounter number={number} style={{ paddingBottom: 2 }} />
@@ -162,7 +162,7 @@ export const DurationCell = memo(
  * Render a truncated text cell with optional selected styling.
  */
 export const TextCell = memo(
-    ({ text, selected }: { text: string; selected: boolean }) => {
+    ({ text, selected = false }: { text: string; selected?: boolean }) => {
         return (
             <div
                 className={`truncate text-sm ${selected ? 'text-primary-foreground' : 'text-primary'}`}

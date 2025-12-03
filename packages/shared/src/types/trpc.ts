@@ -11,6 +11,25 @@ export const RegisterReplyParamsSchema = z.object({
 });
 export type RegisterReplyParams = z.infer<typeof RegisterReplyParamsSchema>;
 
+/**
+ * Zod schema for table request parameters.
+ * This schema validates the structure of the request parameters used for table-related operations.
+ */
+export const TableRequestParamsSchema = z.object({
+    pagination: z.object({
+        page: z.number().int().min(1),
+        pageSize: z.number().int().min(10),
+    }),
+    sort: z
+        .object({
+            field: z.string(),
+            order: z.enum(['asc', 'desc']),
+        })
+        .optional(),
+    filters: z.record(z.unknown()).optional(),
+});
+export type TableRequestParams = z.infer<typeof TableRequestParamsSchema>;
+
 export const SocketRoomName = {
     ProjectListRoom: 'ProjectListRoom',
     OverviewRoom: 'OverviewRoom',
@@ -90,6 +109,7 @@ export interface ProjectData {
     finished: number;
     total: number;
     createdAt: string;
+    [key: string]: unknown;
 }
 
 export interface MessageData {
@@ -200,10 +220,17 @@ export interface ModelInvocationData {
     };
 }
 
-export interface BackendResponse {
+export interface ResponseBody<T = unknown> {
     success: boolean;
     message: string;
-    data?: unknown;
+    data?: T;
+}
+
+export interface TableData<T> {
+    list: T[];
+    total: number;
+    page: number;
+    pageSize: number;
 }
 
 interface Metric {

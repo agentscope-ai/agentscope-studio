@@ -3,7 +3,7 @@ import { Server as HttpServer } from 'http';
 import { Server } from 'socket.io';
 import { ContentBlocks, Status } from '../../../shared/src/types/messageForm';
 import {
-    BackendResponse,
+    ResponseBody,
     FridayReply,
     InputRequestData,
     OverviewData,
@@ -306,7 +306,7 @@ export class SocketManager {
                         success: true,
                         data: fridayConfig,
                         message: 'Get Friday config successfully',
-                    } as BackendResponse);
+                    } as ResponseBody);
                 } catch (error) {
                     console.error(error);
                     callback({
@@ -336,7 +336,7 @@ export class SocketManager {
                 SocketEvents.client.installFridayRequirements,
                 async (
                     pythonEnv: string,
-                    callback: (res: BackendResponse) => void,
+                    callback: (res: ResponseBody) => void,
                 ) => {
                     const fridayConfigManager =
                         FridayConfigManager.getInstance();
@@ -377,7 +377,7 @@ export class SocketManager {
                             callback({
                                 success: false,
                                 message: `Failed to get replies: ${error}`,
-                            } as BackendResponse);
+                            } as ResponseBody);
                         });
                 },
             );
@@ -386,7 +386,7 @@ export class SocketManager {
                 SocketEvents.client.verifyFridayConfig,
                 async (
                     pythonEnv: string,
-                    callback: (response: BackendResponse) => void,
+                    callback: (response: ResponseBody) => void,
                 ) => {
                     console.debug(`${socket.id}: verifyPythonEnv:`, pythonEnv);
                     // Verify if python exists
@@ -404,7 +404,7 @@ export class SocketManager {
                     name: string,
                     role: string,
                     content: ContentBlocks,
-                    callback: (response: BackendResponse) => void,
+                    callback: (response: ResponseBody) => void,
                 ) => {
                     const replyingManager = ReplyingStateManager.getInstance();
 
@@ -433,7 +433,7 @@ export class SocketManager {
                             callback({
                                 success: false,
                                 message: `Failed to add reply: ${error}`,
-                            } as BackendResponse);
+                            } as ResponseBody);
                         });
 
                     // Send the message to the python client
@@ -452,7 +452,7 @@ export class SocketManager {
                             success: false,
                             message:
                                 'Friday config not found. Please set it up first.',
-                        } as BackendResponse);
+                        } as ResponseBody);
                         return;
                     }
 
@@ -493,7 +493,7 @@ export class SocketManager {
                                 callback({
                                     success: false,
                                     message: result.error,
-                                } as BackendResponse);
+                                } as ResponseBody);
                             }
                         })
                         .catch((error) => {
@@ -501,7 +501,7 @@ export class SocketManager {
                             callback({
                                 success: false,
                                 message: error,
-                            } as BackendResponse);
+                            } as ResponseBody);
                         })
                         .finally(() => {
                             replyingManager.setReplyingState(false);
