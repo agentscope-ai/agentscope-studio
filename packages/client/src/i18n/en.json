@@ -77,7 +77,8 @@
         "thinking": "Thinking",
         "times": "Times",
         "timestamp": "Timestamp",
-        "trace": "TRACE",
+        "trace": "Trace",
+        "traces": "Traces",
         "trace-details": "Trace Details",
         "tracing": "Tracing",
         "total": "Total",
@@ -202,7 +203,10 @@
             "running": "Running",
             "status": "Status",
             "time": "Time",
-            "total": "Total"
+            "total": "Total",
+            "totalTokens": "Tokens",
+            "duration": "Duration",
+            "startTime": "Start Time"
         }
     },
     "tooltip": {
@@ -254,6 +258,30 @@
             "send-description": "When user input is required in the application, this button will be activated. Click to send the message in the voice of the corresponding role",
             "send-title": "Send Message"
         }
+    },
+    "trace": {
+        "detail": {
+            "loading": "Loading..."
+        },
+        "message": {
+            "copyFailed": "Copy failed",
+            "copySuccess": "Copied to clipboard",
+            "loadFailed": "Failed to load traces"
+        },
+        "nodeDetails": "Node Details",
+        "selectSpan": "Select a span to view details",
+        "spanId": "Span ID",
+        "status": {
+            "error": "ERROR",
+            "ok": "OK",
+            "unset": "UNSET"
+        },
+        "timeRange": {
+            "all": "All",
+            "month": "Last 30 days",
+            "week": "Last 7 days"
+        },
+        "traceId": "Trace ID"
     },
     "unit": {
         "character": "character",
