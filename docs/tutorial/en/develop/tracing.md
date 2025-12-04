@@ -125,7 +125,7 @@ AgentScope Studio provides services that comply with the [OpenTelemetry Protocol
 
 By default, after AgentScope Studio starts, it exposes the following service endpoints:
 
-- **OTLP/Trace/gRPC**: `localhost:4317`, you can adjust the gRPC service endpoint by modifying the `GRPC_PORT` environment variable.
+- **OTLP/Trace/gRPC**: `localhost:4317`, you can adjust the gRPC service endpoint by modifying the `OTEL_GRPC_PORT` environment variable.
 - **OTLP/Trace/HTTP**: `localhost:3000`, you can adjust the HTTP service endpoint by modifying the `PORT` environment variable.
 
 > 💡 **Tip**: Studio currently only supports receiving Trace type data.

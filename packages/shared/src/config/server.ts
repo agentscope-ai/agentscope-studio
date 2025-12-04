@@ -42,8 +42,9 @@ export const PATHS = {
 
 export const ServerConfig = {
     port: parseInt(process.env.PORT || DEFAULT_CONFIG.server.port.toString()),
-    grpcPort: parseInt(
-        process.env.GRPC_PORT || DEFAULT_CONFIG.server.grpcPort.toString(),
+    otelGrpcPort: parseInt(
+        process.env.OTEL_GRPC_PORT ||
+            DEFAULT_CONFIG.server.otelGrpcPort.toString(),
     ),
     database: {
         type: 'sqlite' as const,
@@ -105,10 +106,10 @@ export class ConfigManager {
             port: port,
         };
     }
-    async setgrpcPort(grpcPort: number) {
+    async setOtelGrpcPort(otelGrpcPort: number) {
         this.config = {
             ...this.config,
-            grpcPort: grpcPort,
+            otelGrpcPort: otelGrpcPort,
         };
     }
 }
