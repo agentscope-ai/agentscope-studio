@@ -182,9 +182,26 @@ const StudioSidebar = () => {
                                             className="cursor-pointer"
                                             tooltip={subItem.title}
                                             onClick={() => {
-                                                navigate(subItem.url);
-                                                if (open) {
-                                                    setOpen(false);
+                                                // Check if it's an external URL
+                                                if (
+                                                    subItem.url.startsWith(
+                                                        'http://',
+                                                    ) ||
+                                                    subItem.url.startsWith(
+                                                        'https://',
+                                                    )
+                                                ) {
+                                                    window.open(
+                                                        subItem.url,
+                                                        '_blank',
+                                                        'noopener,noreferrer',
+                                                    );
+                                                } else {
+                                                    // Handle internal routes
+                                                    navigate(subItem.url);
+                                                    if (open) {
+                                                        setOpen(false);
+                                                    }
                                                 }
                                             }}
                                         >

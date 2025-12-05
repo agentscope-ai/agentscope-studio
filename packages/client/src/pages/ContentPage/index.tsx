@@ -485,7 +485,11 @@ const ContentPage = () => {
                 <div className="grid grid-cols-1 gap-4 w-full">
                     <div
                         className="border border-border rounded-lg p-6 cursor-pointer flex flex-col shadow-sm"
-                        onClick={() => navigate(RouterPath.FRIDAY_SETTING)}
+                        onClick={() =>
+                            navigate(
+                                `${RouterPath.FRIDAY}${RouterPath.FRIDAY_SETTING}`,
+                            )
+                        }
                     >
                         <BlockTitle
                             title="AgentScope Friday"
