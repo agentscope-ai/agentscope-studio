@@ -9,6 +9,7 @@ import TokenIcon from '@/assets/svgs/token.svg?react';
 import ApiIcon from '@/assets/svgs/api.svg?react';
 import PageTitleSpan from '@/components/spans/PageTitleSpan.tsx';
 import NumberCounter from '@/components/numbers/NumberCounter';
+import { HighlightGroup, HighlightCard } from '@/components/highlight';
 import extended from '@/pages/ContentPage/utils.ts';
 
 import { OverviewData } from '@shared/types/trpc';
@@ -60,7 +61,7 @@ interface BlockProps {
 
 const Block = ({ title, number, footer, icon }: BlockProps) => {
     return (
-        <div className="border border-border rounded-lg p-6 h-full flex flex-col gap-2 shadow-sm">
+        <HighlightCard className="p-6 h-full flex flex-col gap-2">
             <div className="flex justify-between w-full">
                 <SubTitle title={title} />
                 {icon}
@@ -85,7 +86,7 @@ const Block = ({ title, number, footer, icon }: BlockProps) => {
                     </div>
                 ) : null}
             </div>
-        </div>
+        </HighlightCard>
     );
 };
 
@@ -316,183 +317,211 @@ const ContentPage = () => {
         <div className="flex flex-1 flex-col gap-4 py-8 px-12 h-full w-full overflow-y-auto">
             <div className="flex flex-col w-full rounded-lg gap-4">
                 <PageTitleSpan title={t('common.projects')} />
-
-                {/* Stats cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-6 w-full">
-                    <Block
-                        title={t('common.projects')}
-                        number={overviewData?.totalProjects}
-                        footer={renderProjectHint(overviewData)}
-                        icon={<ProjectIcon width={16} height={16} />}
-                    />
-                    <Block
-                        title={t('common.runs')}
-                        number={overviewData?.totalRuns}
-                        footer={renderRunHint(overviewData)}
-                        icon={<RunIcon width={16} height={16} />}
-                    />
-                    <Block
-                        title={t('common.total-tokens')}
-                        number={overviewData?.totalTokens}
-                        footer={renderTokenHint(overviewData)}
-                        icon={<TokenIcon width={16} height={16} />}
-                    />
-                    <Block
-                        title={t('common.llm-invocations')}
-                        number={overviewData?.totalModelInvocations}
-                        footer={renderModelInvocation(overviewData)}
-                        icon={<ApiIcon width={16} height={16} />}
-                    />
-                </div>
-
-                {/* Chart + Recent projects */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 w-full">
-                    <div className="lg:col-span-7 border border-border rounded-lg p-6 h-[325px] flex flex-col gap-6 shadow-sm">
-                        <BlockTitle
-                            title={t('common.overview')}
-                            description={t('home.overview-description')}
+                <HighlightGroup
+                    className="flex flex-col gap-4 w-full"
+                    radius={180}
+                >
+                    {/* Stats cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-6 w-full">
+                        <Block
+                            title={t('common.projects')}
+                            number={overviewData?.totalProjects}
+                            footer={renderProjectHint(overviewData)}
+                            icon={<ProjectIcon width={16} height={16} />}
                         />
-                        <div className="flex flex-1">
-                            <ResponsiveContainer width="100%" minWidth="100%">
-                                <BarChart
-                                    layout="horizontal"
-                                    data={monthlyRuns.reverse()}
-                                    margin={{ bottom: -5, top: 0 }}
+                        <Block
+                            title={t('common.runs')}
+                            number={overviewData?.totalRuns}
+                            footer={renderRunHint(overviewData)}
+                            icon={<RunIcon width={16} height={16} />}
+                        />
+                        <Block
+                            title={t('common.total-tokens')}
+                            number={overviewData?.totalTokens}
+                            footer={renderTokenHint(overviewData)}
+                            icon={<TokenIcon width={16} height={16} />}
+                        />
+                        <Block
+                            title={t('common.llm-invocations')}
+                            number={overviewData?.totalModelInvocations}
+                            footer={renderModelInvocation(overviewData)}
+                            icon={<ApiIcon width={16} height={16} />}
+                        />
+                    </div>
+
+                    {/* Chart + Recent projects */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 w-full">
+                        <HighlightCard className="lg:col-span-7 p-6 h-[325px] flex flex-col gap-6">
+                            <BlockTitle
+                                title={t('common.overview')}
+                                description={t('home.overview-description')}
+                            />
+                            <div className="flex flex-1">
+                                <ResponsiveContainer
+                                    width="100%"
+                                    minWidth="100%"
                                 >
-                                    <CartesianGrid
-                                        strokeDasharray="1 10"
-                                        vertical={false}
-                                    />
-                                    <YAxis
-                                        type="number"
-                                        fontSize={10}
-                                        allowDecimals={false}
-                                        width={yAxisWidth}
-                                        axisLine={false}
-                                        tickLine={false}
-                                        domain={[ticks[0], ticks[-1]]}
-                                        ticks={ticks}
-                                        tickFormatter={(count: number) => {
-                                            if (count >= 10000) {
-                                                return count.toExponential(1);
-                                            } else if (count >= 1000) {
-                                                return count.toLocaleString();
-                                            } else {
-                                                return count.toLocaleString();
-                                            }
-                                        }}
-                                    />
-                                    <XAxis
-                                        dataKey="month"
-                                        type="category"
-                                        fontSize={10}
-                                        axisLine={false}
-                                        tickLine={false}
-                                        tickFormatter={(month: string) => {
-                                            const numericMonth = parseInt(
-                                                month.split('-')[1],
-                                            );
-                                            return [
-                                                'Jan',
-                                                'Feb',
-                                                'Mar',
-                                                'Apr',
-                                                'May',
-                                                'Jun',
-                                                'Jul',
-                                                'Aug',
-                                                'Sep',
-                                                'Oct',
-                                                'Nov',
-                                                'Dec',
-                                            ][numericMonth - 1];
-                                        }}
-                                    />
-                                    <Tooltip
-                                        contentStyle={{
-                                            borderRadius: 6,
-                                            border: '1px solid var(--border)',
-                                        }}
-                                        labelStyle={{ fontWeight: 500 }}
-                                        labelFormatter={(label) => {
-                                            const numericMonth = parseInt(
-                                                label.split('-')[1],
-                                            );
-                                            const year = parseInt(
-                                                label.split('-')[0],
-                                            );
-                                            const strMonth = [
-                                                'Jan',
-                                                'Feb',
-                                                'Mar',
-                                                'Apr',
-                                                'May',
-                                                'Jun',
-                                                'Jul',
-                                                'Aug',
-                                                'Sep',
-                                                'Oct',
-                                                'Nov',
-                                                'Dec',
-                                            ][numericMonth - 1];
-                                            return `${strMonth}, ${year}`;
-                                        }}
-                                        formatter={(value) => [
-                                            value,
-                                            t('home.run-number'),
-                                        ]}
-                                    />
-                                    <Bar
-                                        dataKey="count"
-                                        radius={[6, 6, 0, 0]}
-                                    />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
+                                    <BarChart
+                                        layout="horizontal"
+                                        data={monthlyRuns.reverse()}
+                                        margin={{ bottom: -5, top: 0 }}
+                                    >
+                                        <CartesianGrid
+                                            strokeDasharray="1 10"
+                                            vertical={false}
+                                        />
+                                        <YAxis
+                                            type="number"
+                                            fontSize={10}
+                                            allowDecimals={false}
+                                            width={yAxisWidth}
+                                            axisLine={false}
+                                            tickLine={false}
+                                            domain={[
+                                                ticks[0],
+                                                ticks[ticks.length - 1],
+                                            ]}
+                                            ticks={ticks}
+                                            tickFormatter={(count: number) => {
+                                                if (count >= 10000) {
+                                                    return count.toExponential(
+                                                        1,
+                                                    );
+                                                } else if (count >= 1000) {
+                                                    return count.toLocaleString();
+                                                } else {
+                                                    return count.toLocaleString();
+                                                }
+                                            }}
+                                        />
+                                        <XAxis
+                                            dataKey="month"
+                                            type="category"
+                                            fontSize={10}
+                                            axisLine={false}
+                                            tickLine={false}
+                                            tickFormatter={(month: string) => {
+                                                const numericMonth = parseInt(
+                                                    month.split('-')[1],
+                                                );
+                                                return [
+                                                    'Jan',
+                                                    'Feb',
+                                                    'Mar',
+                                                    'Apr',
+                                                    'May',
+                                                    'Jun',
+                                                    'Jul',
+                                                    'Aug',
+                                                    'Sep',
+                                                    'Oct',
+                                                    'Nov',
+                                                    'Dec',
+                                                ][numericMonth - 1];
+                                            }}
+                                        />
+                                        <Tooltip
+                                            contentStyle={{
+                                                borderRadius: 6,
+                                                border: '1px solid var(--border)',
+                                            }}
+                                            labelStyle={{ fontWeight: 500 }}
+                                            labelFormatter={(label) => {
+                                                const numericMonth = parseInt(
+                                                    label.split('-')[1],
+                                                );
+                                                const year = parseInt(
+                                                    label.split('-')[0],
+                                                );
+                                                const strMonth = [
+                                                    'Jan',
+                                                    'Feb',
+                                                    'Mar',
+                                                    'Apr',
+                                                    'May',
+                                                    'Jun',
+                                                    'Jul',
+                                                    'Aug',
+                                                    'Sep',
+                                                    'Oct',
+                                                    'Nov',
+                                                    'Dec',
+                                                ][numericMonth - 1];
+                                                return `${strMonth}, ${year}`;
+                                            }}
+                                            formatter={(value) => [
+                                                value,
+                                                t('home.run-number'),
+                                            ]}
+                                        />
+                                        <Bar
+                                            dataKey="count"
+                                            radius={[6, 6, 0, 0]}
+                                        />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </HighlightCard>
+                        <HighlightCard className="lg:col-span-5 p-6 h-[325px] flex flex-col gap-2">
+                            <BlockTitle
+                                title={t('home.recent-projects')}
+                                description={
+                                    overviewData &&
+                                    overviewData.recentProjects.length > 0
+                                        ? t('home.recent-projects-description')
+                                        : t('home.recent-projects-empty')
+                                }
+                            />
+                            <div
+                                className="flex flex-col flex-1"
+                                style={RemoveScrollBarStyle}
+                            >
+                                {overviewData
+                                    ? overviewData.recentProjects.map(
+                                          (proj) => (
+                                              <ProjectRow
+                                                  key={proj.name}
+                                                  project={proj.name}
+                                                  runCount={proj.runCount}
+                                                  lastUpdateTime={
+                                                      proj.lastUpdateTime
+                                                  }
+                                              />
+                                          ),
+                                      )
+                                    : null}
+                            </div>
+                        </HighlightCard>
                     </div>
-                    <div className="lg:col-span-5 border border-border rounded-lg p-6 h-[325px] flex flex-col gap-2 shadow-sm">
-                        <BlockTitle
-                            title={t('home.recent-projects')}
-                            description={
-                                overviewData &&
-                                overviewData.recentProjects.length > 0
-                                    ? t('home.recent-projects-description')
-                                    : t('home.recent-projects-empty')
-                            }
-                        />
-                        <div
-                            className="flex flex-col flex-1"
-                            style={RemoveScrollBarStyle}
-                        >
-                            {overviewData
-                                ? overviewData.recentProjects.map((proj) => (
-                                      <ProjectRow
-                                          key={proj.name}
-                                          project={proj.name}
-                                          runCount={proj.runCount}
-                                          lastUpdateTime={proj.lastUpdateTime}
-                                      />
-                                  ))
-                                : null}
-                        </div>
-                    </div>
-                </div>
+                </HighlightGroup>
             </div>
 
             {/* Applications */}
             <div className="flex flex-col w-full rounded-lg gap-4">
-                <PageTitleSpan title={t('common.agent')} />
-                <div className="grid grid-cols-1 gap-4 w-full">
-                    <div
-                        className="border border-border rounded-lg p-6 cursor-pointer flex flex-col shadow-sm"
+                <PageTitleSpan title={t('common.application')} />
+                <HighlightGroup
+                    className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full"
+                    radius={160}
+                >
+                    <HighlightCard
+                        className="p-6 cursor-pointer flex flex-col"
                         onClick={() => navigate(RouterPath.FRIDAY_SETTING)}
                     >
                         <BlockTitle
                             title="AgentScope Friday"
                             description={t('home.as-friday-description')}
                         />
-                    </div>
-                </div>
+                    </HighlightCard>
+                    <HighlightCard
+                        className="p-6 cursor-pointer flex flex-col"
+                        onClick={() => navigate(RouterPath.EVAL)}
+                    >
+                        <BlockTitle
+                            title="AgentScope X"
+                            description={t('home.as-x-description')}
+                        />
+                    </HighlightCard>
+                </HighlightGroup>
             </div>
         </div>
     );
