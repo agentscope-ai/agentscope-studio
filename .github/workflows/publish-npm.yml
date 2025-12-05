@@ -1,0 +1,72 @@
+name: Publish to NPM
+
+on:
+    release:
+        types: [published]
+
+jobs:
+    publish:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '20'
+                  registry-url: 'https://registry.npmjs.org'
+
+            - name: Get version from package.json
+              id: package_version
+              run: |
+                  PACKAGE_VERSION=$(node -p "require('./package.json').version")
+                  echo "version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
+                  echo "📦 Package.json version: $PACKAGE_VERSION"
+
+            - name: Get version from Release tag
+              id: release_version
+              run: |
+                  RELEASE_VERSION=${GITHUB_REF#refs/tags/v}
+                  echo "version=$RELEASE_VERSION" >> $GITHUB_OUTPUT
+                  echo "🏷️  Release tag version: $RELEASE_VERSION"
+
+            - name: Verify version consistency
+              run: |
+                  PACKAGE_V="${{ steps.package_version.outputs.version }}"
+                  RELEASE_V="${{ steps.release_version.outputs.version }}"
+
+                  echo "Comparing versions:"
+                  echo "  package.json: $PACKAGE_V"
+                  echo "  Release tag:  $RELEASE_V"
+
+                  if [ "$PACKAGE_V" != "$RELEASE_V" ]; then
+                    echo ""
+                    echo "::error::❌ Version mismatch detected!"
+                    echo "::error::package.json version: $PACKAGE_V"
+                    echo "::error::Release tag version: $RELEASE_V"
+                    echo "::error::Please ensure package.json version matches the Release tag"
+                    exit 1
+                  fi
+
+                  echo "✅ Version verification passed!"
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Build
+              run: npm run build
+
+            - name: Publish to NPM
+              run: npm publish
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+            - name: Success notification
+              if: success()
+              run: |
+                  PKG_NAME=$(node -p "require('./package.json').name")
+                  VERSION="${{ steps.package_version.outputs.version }}"
+                  echo "🎉 Successfully published $PKG_NAME@$VERSION to NPM!"
+                  echo "📦 https://www.npmjs.com/package/$PKG_NAME/v/$VERSION"
