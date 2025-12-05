@@ -113,7 +113,7 @@ export class OtelGrpcServer {
             this.server.bindAsync(
                 `0.0.0.0:${bindPort}`,
                 grpc.ServerCredentials.createInsecure(),
-                (error: Error | null, actualPort: number) => {
+                (error: Error | null) => {
                     if (error) {
                         console.error(
                             `[OTEL gRPC] Failed to start server on port ${bindPort}:`,
@@ -122,12 +122,6 @@ export class OtelGrpcServer {
                         reject(error);
                         return;
                     }
-
-                    // Note: server.start() is no longer needed in newer versions of @grpc/grpc-js
-                    // The server is automatically started after bindAsync succeeds
-                    console.debug(
-                        `[OTEL gRPC] Server started on port ${actualPort} (0.0.0.0:${bindPort})`,
-                    );
                     resolve();
                 },
             );

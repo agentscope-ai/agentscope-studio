@@ -59,5 +59,5 @@ Here are some common configuration options:
 
 ```env
 PORT=3000
-GRPC_PORT=4317
+OTEL_GRPC_PORT=4317
 ```
