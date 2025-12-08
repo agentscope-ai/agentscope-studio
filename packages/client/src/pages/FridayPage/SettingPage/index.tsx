@@ -6,12 +6,13 @@ import { CheckCircle } from 'lucide-react';
 
 import KwargsFormList from './KwargsFormList.tsx';
 import PageTitleSpan from '@/components/spans/PageTitleSpan.tsx';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 import { FridayConfig } from '@shared/config/friday.ts';
 import { useMessageApi } from '@/context/MessageApiContext.tsx';
 import { RouterPath } from '@/pages/RouterPath.ts';
 import { useFridaySettingRoom } from '@/context/FridaySettingRoomContext.tsx';
-import { llmProviderOptions } from '../config';
+import { llmProviderOptions, embeddingModelOptions } from '../config';
 
 // Form format for kwargs
 interface KwargsFormItem {
@@ -92,11 +93,11 @@ const SettingPage = () => {
     const formItemLayout = {
         labelCol: {
             xs: { span: 24 },
-            sm: { span: 8 },
+            sm: { span: 6 },
         },
         wrapperCol: {
-            xs: { span: 24 },
-            sm: { span: 8 },
+            xs: { span: 22 },
+            sm: { span: 16 },
         },
     };
     const {
@@ -138,7 +139,7 @@ const SettingPage = () => {
             },
             sm: {
                 span: 16,
-                offset: 8,
+                offset: 11,
             },
         },
     };
@@ -241,63 +242,188 @@ const SettingPage = () => {
                     validateTrigger={['onBlur']}
                     {...formItemLayout}
                 >
-                    <Form.Item
-                        name="pythonEnv"
-                        label="Python Environment"
-                        hasFeedback={true}
-                        rules={[
-                            {
-                                required: true,
-                                message: 'Input the Python env',
-                            },
-                            {
-                                validator: async (_, value) => {
-                                    if (!value) return;
-                                    const result = await verifyPythonEnv(value);
-                                    if (!result.success) {
-                                        throw new Error(result.message);
-                                    }
-                                },
-                            },
-                        ]}
-                    >
-                        <Input placeholder={t('help.friday.python-env')} />
-                    </Form.Item>
+                    {/* Run Settings */}
+                    <Card className="w-3/5 mx-auto">
+                        <CardHeader>
+                            <CardTitle>Run Settings</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <Form.Item
+                                name="pythonEnv"
+                                label="Python Environment"
+                                hasFeedback={true}
+                                rules={[
+                                    {
+                                        required: true,
+                                        message: 'Input the Python env',
+                                    },
+                                    {
+                                        validator: async (_, value) => {
+                                            if (!value) return;
+                                            const result =
+                                                await verifyPythonEnv(value);
+                                            if (!result.success) {
+                                                throw new Error(result.message);
+                                            }
+                                        },
+                                    },
+                                ]}
+                            >
+                                <Input
+                                    placeholder={t('help.friday.python-env')}
+                                />
+                            </Form.Item>
+                        </CardContent>
+                    </Card>
+                    {/* Model Settings */}
+                    <Card className="w-3/5 mx-auto">
+                        <CardHeader>
+                            <CardTitle>Model</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <Form.Item
+                                name="llmProvider"
+                                label="LLM Provider"
+                                required
+                            >
+                                <Select options={llmProviderOptions} />
+                            </Form.Item>
 
-                    <Form.Item name="llmProvider" label="LLM Provider" required>
-                        <Select options={llmProviderOptions} />
-                    </Form.Item>
+                            <Form.Item
+                                name="modelName"
+                                label="Model Name"
+                                required
+                                help={t('help.friday.model-name', {
+                                    llmProvider,
+                                })}
+                            >
+                                <Input />
+                            </Form.Item>
 
-                    <Form.Item
-                        name="modelName"
-                        label="Model Name"
-                        required
-                        help={t('help.friday.model-name', { llmProvider })}
-                    >
-                        <Input />
-                    </Form.Item>
+                            <Form.Item
+                                name="apiKey"
+                                label="API Key"
+                                required={requiredAPIKey}
+                                dependencies={['model']}
+                                help={t('help.friday.api-key', { llmProvider })}
+                            >
+                                <Input type="password" />
+                            </Form.Item>
 
-                    <Form.Item
-                        name="apiKey"
-                        label="API Key"
-                        required={requiredAPIKey}
-                        dependencies={['model']}
-                        help={t('help.friday.api-key', { llmProvider })}
-                    >
-                        <Input type="password" />
-                    </Form.Item>
+                            <KwargsFormList name="clientKwargs" />
 
-                    <KwargsFormList name="clientKwargs" />
+                            <KwargsFormList name="generateKwargs" />
+                        </CardContent>
+                    </Card>
+                    {/* Tool Settings */}
+                    <Card className="w-3/5 mx-auto">
+                        <CardHeader>
+                            <CardTitle>Tool</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <Form.Item
+                                name="enableMetaTool"
+                                label="Meta Tool"
+                                help={t('help.friday.write-permission')}
+                            >
+                                <Switch size="small" />
+                            </Form.Item>
 
-                    <KwargsFormList name="generateKwargs" />
+                            <Form.Item
+                                name="enablePlan"
+                                label="Plan Tool"
+                                help={t('help.friday.write-permission')}
+                            >
+                                <Switch size="small" />
+                            </Form.Item>
 
-                    <Form.Item
-                        name="writePermission"
-                        label="Write Permission"
-                        help={t('help.friday.write-permission')}
-                    >
-                        <Switch size="small" />
-                    </Form.Item>
+                            <Form.Item
+                                name="enableDynamicMCP"
+                                label="Dynamically add MCP"
+                                help={t('help.friday.write-permission')}
+                            >
+                                <Switch size="small" />
+                            </Form.Item>
+
+                            <Form.Item
+                                name="enableAgentScopeTool"
+                                label="Add AgentScope Tool"
+                                help={t('help.friday.write-permission')}
+                            >
+                                <Switch size="small" />
+                            </Form.Item>
+
+                            <Form.Item
+                                name="enableFileWritten"
+                                label="Write Permission"
+                                help={t('help.friday.write-permission')}
+                            >
+                                <Switch size="small" />
+                            </Form.Item>
+
+                            <Form.Item
+                                name="enableShell"
+                                label="Enable Shell"
+                                help={t('help.friday.write-permission')}
+                            >
+                                <Switch size="small" />
+                            </Form.Item>
+
+                            <Form.Item
+                                name="enablePython"
+                                label="Enable Python"
+                                help={t('help.friday.write-permission')}
+                            >
+                                <Switch size="small" />
+                            </Form.Item>
+                        </CardContent>
+                    </Card>
+                    {/* Agent Skill Settings */}
+                    <Card className="w-3/5 mx-auto">
+                        <CardHeader>
+                            <CardTitle>Agent Skill</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <Form.Item
+                                name="enableAgentSkill"
+                                label="Enable"
+                                // help={t('help.friday.write-permission')}
+                            >
+                                <Switch size="small" />
+                            </Form.Item>
+
+                            <Form.Item
+                                name="agentSkillDir"
+                                label="Storage Directory"
+                                help={t('help.friday.write-permission')}
+                            >
+                                <Input />
+                            </Form.Item>
+                        </CardContent>
+                    </Card>
+                    {/* Long-term Memory Settings */}
+                    <Card className="w-3/5 mx-auto">
+                        <CardHeader>
+                            <CardTitle>Long-term Memory</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <Form.Item
+                                name="enableLongTermMemory"
+                                label="Enable"
+                                // help={t('help.friday.write-permission')}
+                            >
+                                <Switch size="small" />
+                            </Form.Item>
+
+                            <Form.Item
+                                name="embeddingModel"
+                                label="Embedding Model"
+                                help={t('help.friday.write-permission')}
+                            >
+                                <Select options={embeddingModelOptions} />
+                            </Form.Item>
+                        </CardContent>
+                    </Card>
 
                     <Form.Item {...tailFormItemLayout}>
                         <Button

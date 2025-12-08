@@ -6,25 +6,23 @@ import OllamaLogo from '@/assets/svgs/logo-ollama.svg?react';
 import GoogleLogo from '@/assets/svgs/logo-google.svg?react';
 import AnthropicLogo from '@/assets/svgs/logo-anthropic.svg?react';
 
-interface InputTypeOption {
-    label: string;
+// General option type
+interface Option<T = string> {
+    label: T;
     value: string;
 }
 
-interface LlmProviderOption {
-    label: React.ReactNode;
-    value: string;
-}
-
+// Model Options Props
 interface ModelOptionProps {
     logo: ReactNode;
     name: string;
 }
 
-interface BooleanOption {
-    label: string;
-    value: string;
-}
+// Specific option type aliases
+type InputTypeOption = Option<string>;
+type LlmProviderOption = Option<React.ReactNode>;
+type BooleanOption = Option<string>;
+type EmbeddingModelOption = Option<React.ReactNode>;
 
 const ModelOption = ({ logo, name }: ModelOptionProps) => {
     return (
@@ -92,4 +90,12 @@ export const llmProviderOptions: LlmProviderOption[] = [
 export const booleanOptions: BooleanOption[] = [
     { label: 'True', value: 'true' },
     { label: 'False', value: 'false' },
+];
+
+export const embeddingModelOptions: EmbeddingModelOption[] = [
+    { label: 'provider', value: 'embeddingProvider' },
+    { label: 'model name', value: 'embeddingModelName' },
+    { label: 'API key', value: 'embeddingAPIKey' },
+    { label: 'client_kwargs', value: 'embeddingClientKwargs' },
+    { label: 'generate_kwargs', value: 'embeddingGenerateKwargs' },
 ];
