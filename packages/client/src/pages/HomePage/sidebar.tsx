@@ -1,3 +1,7 @@
+import DingTalkIcon from '@/assets/svgs/dingtalk.svg?react';
+import DiscordIcon from '@/assets/svgs/discord.svg?react';
+import GitHubIcon from '@/assets/svgs/github.svg?react';
+import { Button } from '@/components/ui/button.tsx';
 import {
     Sidebar,
     SidebarContent,
@@ -11,6 +15,8 @@ import {
     SidebarMenuItem,
     useSidebar,
 } from '@/components/ui/sidebar.tsx';
+import { useI18n } from '@/context/I18Context.tsx';
+import { RouterPath } from '@/pages/RouterPath.ts';
 import {
     BookOpenIcon,
     BotIcon,
@@ -21,18 +27,12 @@ import {
     EarthIcon,
     FolderGit2Icon,
     // ListChecksIcon,
-    // RouteIcon,
+    RouteIcon,
     UnplugIcon,
 } from 'lucide-react';
-import GitHubIcon from '@/assets/svgs/github.svg?react';
-import DiscordIcon from '@/assets/svgs/discord.svg?react';
-import DingTalkIcon from '@/assets/svgs/dingtalk.svg?react';
-import { Button } from '@/components/ui/button.tsx';
 import { memo, useEffect, useRef } from 'react';
-import { RouterPath } from '@/pages/RouterPath.ts';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useI18n } from '@/context/I18Context.tsx';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const StudioSidebar = () => {
     const { toggleSidebar, open, setOpen } = useSidebar();
@@ -83,11 +83,11 @@ const StudioSidebar = () => {
                     url: RouterPath.PROJECTS,
                 },
                 // TODO: activate tracing and evaluation when they are ready
-                // {
-                //     title: t('common.tracing'),
-                //     icon: RouteIcon,
-                //     url: RouterPath.TRACING,
-                // },
+                {
+                    title: t('common.traces'),
+                    icon: RouteIcon,
+                    url: RouterPath.TRACING,
+                },
                 // {
                 //     title: t('common.evaluation'),
                 //     icon: ListChecksIcon,
@@ -182,9 +182,26 @@ const StudioSidebar = () => {
                                             className="cursor-pointer"
                                             tooltip={subItem.title}
                                             onClick={() => {
-                                                navigate(subItem.url);
-                                                if (open) {
-                                                    setOpen(false);
+                                                // Check if it's an external URL
+                                                if (
+                                                    subItem.url.startsWith(
+                                                        'http://',
+                                                    ) ||
+                                                    subItem.url.startsWith(
+                                                        'https://',
+                                                    )
+                                                ) {
+                                                    window.open(
+                                                        subItem.url,
+                                                        '_blank',
+                                                        'noopener,noreferrer',
+                                                    );
+                                                } else {
+                                                    // Handle internal routes
+                                                    navigate(subItem.url);
+                                                    if (open) {
+                                                        setOpen(false);
+                                                    }
                                                 }
                                             }}
                                         >

@@ -89,7 +89,7 @@ The solution/code to the user query may already exist in the AgentScope resource
     )
 
     # get model from args
-    model = get_model(args.llmProvider, args.modelName, args.apiKey, args.baseUrl)
+    model = get_model(args.llmProvider, args.modelName, args.apiKey, args.clientKwargs, args.generateKwargs)
     formatter = get_formatter(args.llmProvider)
 
     # Create the ReAct agent
@@ -108,7 +108,6 @@ The solution/code to the user query may already exist in the AgentScope resource
 # Workflow Process
 1. Analyze user query and make a plan
 2. Carry out your plan step by step
-3. Call `{finish_function}` with your final response
 
 # Response Guidelines
 - Be concise and focused on user's specific context
@@ -129,7 +128,6 @@ The solution/code to the user query may already exist in the AgentScope resource
 - Current date and time: {current_time}""".format(
             current_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             max_turns=20,
-            finish_function="generate_response",
         ),
         model=model,
         formatter=formatter,

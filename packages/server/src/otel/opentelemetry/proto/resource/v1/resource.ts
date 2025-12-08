@@ -3,7 +3,7 @@
  * compiler version: 5.27.0
  * source: opentelemetry/proto/resource/v1/resource.proto
  * git: https://github.com/thesayyn/protoc-gen-ts */
-import * as dependency_1 from './../../common/v1/common';
+import * as dependency_1 from '../../common/v1/common';
 import * as pb_1 from 'google-protobuf';
 export namespace opentelemetry.proto.resource.v1 {
     export class Resource extends pb_1.Message {
