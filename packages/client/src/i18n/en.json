@@ -2,7 +2,9 @@
     "action": {
         "cancel": "Cancel",
         "clean-history": "Clean History",
+        "clear-data": "Clear Data",
         "compare": "Compare",
+        "confirm": "Confirm",
         "delete": "Delete",
         "focus-on-latest-run": "Focus on latest",
         "ok": "OK"
@@ -32,7 +34,6 @@
         "apps": "Apps",
         "average": "Average",
         "benchmark": "Benchmark",
-        "changeLanguage": "Change Language",
         "completion": "Completion",
         "completion-average": "Completion(Avg)",
         "contact": "Contact",
@@ -53,7 +54,7 @@
         "id": "ID",
         "input": "Input",
         "input-tokens": "Input Tokens",
-        "language": "Language",
+        "settings": "Settings",
         "latency": "Latency",
         "llm-invocation": "Invocation",
         "llm-invocations": "Invocations",
@@ -99,6 +100,7 @@
         "no-data-available": "No data available"
     },
     "description": {
+        "settings": "Manage application settings, including language preferences and data management",
         "trace": {
             "input": "The tracing span input, organized in a JSON format with \"args\" and \"kwargs\" fields",
             "metadata": "The tracing span metadata for additional information",
@@ -110,7 +112,8 @@
         "empty-input": "Input cannot be empty",
         "invalid-url": "Invalid URL: cannot get file extension",
         "project-not-found": "Project not found",
-        "run-not-found": "Run not found"
+        "run-not-found": "Run not found",
+        "socket-not-connected": "Not connected to server"
     },
     "help": {
         "friday": {
@@ -156,6 +159,17 @@
     "modal": {
         "title-input-url": "Please input the file URL"
     },
+    "message": {
+        "settings": {
+            "data-cleared": "All data has been cleared"
+        },
+        "friday": {
+            "success-install-requirements": "Requirements installed successfully.",
+            "success-save-config": "Configuration saved successfully.",
+            "info-install-requirements": "Installing Python requirements for Friday, please wait ...",
+            "info-save-config": "Save the configuration for Friday, please wait ..."
+        }
+    },
     "notification": {
         "friday-error-title": "Error when executing Friday",
         "update-version-description": "A new version ({{latestVersion}}) is available. Your current version is {{currentVersion}}. Please update to the latest version",
@@ -180,13 +194,12 @@
         "running": "Running",
         "unknown": "Unknown"
     },
-    "message": {
-        "friday": {
-            "success-install-requirements": "Requirements installed successfully.",
-            "success-save-config": "Configuration saved successfully.",
-            "info-install-requirements": "Installing Python requirements for Friday, please wait ...",
-            "info-save-config": "Save the configuration for Friday, please wait ..."
-        }
+    "settings": {
+        "language": "Language",
+        "data-management": "Data Management",
+        "clear-data-warning": "This operation will clear all Friday conversation history data. This action cannot be undone.",
+        "clear-data-confirm-title": "⚠️ Confirm Clear Data?",
+        "clear-data-confirm-description": "You are about to clear all Friday conversation history data. This action is irreversible and cannot be undone. Are you sure you want to continue?"
     },
     "table": {
         "column": {

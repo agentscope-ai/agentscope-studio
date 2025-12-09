@@ -2,7 +2,9 @@
     "action": {
         "cancel": "取消",
         "clean-history": "清除历史",
+        "clear-data": "清空数据",
         "compare": "比较",
+        "confirm": "确认",
         "delete": "删除",
         "focus-on-latest-run": "自动切换到最新运行",
         "ok": "确认"
@@ -32,7 +34,6 @@
         "apps": "应用",
         "average": "平均",
         "benchmark": "基准数据集",
-        "changeLanguage": "切换语言",
         "completion": "生成内容",
         "completion-average": "生成内容(Avg)",
         "contact": "联系",
@@ -53,7 +54,7 @@
         "input": "输入",
         "input-tokens": "输入 Token 数",
         "id": "ID",
-        "language": "语言",
+        "settings": "设置",
         "latency": "耗时",
         "llm-invocation": "模型调用",
         "llm-invocations": "模型调用",
@@ -99,6 +100,7 @@
         "no-data-available": "暂无数据"
     },
     "description": {
+        "settings": "管理应用设置，包括语言偏好和数据管理",
         "trace": {
             "input": "Span 输入，采用 JSON 格式组织并包含 \"args\" 和 \"kwargs\" 两个字段",
             "metadata": "Span 元数据，包含额外记录的信息",
@@ -110,7 +112,8 @@
         "empty-input": "输入不能为空",
         "invalid-url": "URL 无效：无法获取文件扩展名",
         "project-not-found": "项目不存在",
-        "run-not-round": "运行实例不存在"
+        "run-not-round": "运行实例不存在",
+        "socket-not-connected": "未连接到服务器"
     },
     "help": {
         "friday": {
@@ -156,6 +159,11 @@
     "modal": {
         "title-input-url": "请输入文件 URL"
     },
+    "message": {
+        "settings": {
+            "data-cleared": "数据已清空"
+        }
+    },
     "notification": {
         "friday-error-title": "Friday 运行错误",
         "update-version-description": "当前 @agentscope/studio 版本为 {{currentVersion}}, 最新版本为 {{latestVersion}}，请更新到最新版本",
@@ -179,6 +187,13 @@
         "pending": "等待中",
         "running": "运行中",
         "unknown": "未知"
+    },
+    "settings": {
+        "language": "语言",
+        "data-management": "数据管理",
+        "clear-data-warning": "此操作将清空 Friday 的所有历史对话数据，此操作不可恢复",
+        "clear-data-confirm-title": "⚠️ 确认清空数据？",
+        "clear-data-confirm-description": "您即将清空所有 Friday 历史对话数据。此操作不可撤销，请谨慎操作。确定要继续吗？"
     },
     "table": {
         "column": {

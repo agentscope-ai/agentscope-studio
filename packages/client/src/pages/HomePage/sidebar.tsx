@@ -1,6 +1,23 @@
+import { memo, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useLocation, useNavigate } from 'react-router-dom';
+import {
+    BookOpenIcon,
+    BotIcon,
+    ChartColumnStackedIcon,
+    ChevronLeftIcon,
+    ChevronRightIcon,
+    Command,
+    FolderGit2Icon,
+    // ListChecksIcon,
+    RouteIcon,
+    UnplugIcon,
+} from 'lucide-react';
+
 import DingTalkIcon from '@/assets/svgs/dingtalk.svg?react';
 import DiscordIcon from '@/assets/svgs/discord.svg?react';
 import GitHubIcon from '@/assets/svgs/github.svg?react';
+import SettingsIcon from '@/assets/svgs/setting.svg?react';
 import { Button } from '@/components/ui/button.tsx';
 import {
     Sidebar,
@@ -15,32 +32,17 @@ import {
     SidebarMenuItem,
     useSidebar,
 } from '@/components/ui/sidebar.tsx';
-import { useI18n } from '@/context/I18Context.tsx';
 import { RouterPath } from '@/pages/RouterPath.ts';
-import {
-    BookOpenIcon,
-    BotIcon,
-    ChartColumnStackedIcon,
-    ChevronLeftIcon,
-    ChevronRightIcon,
-    Command,
-    EarthIcon,
-    FolderGit2Icon,
-    // ListChecksIcon,
-    RouteIcon,
-    UnplugIcon,
-} from 'lucide-react';
-import { memo, useEffect, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useLocation, useNavigate } from 'react-router-dom';
+import SettingsDialog from './SettingsDialog.tsx';
 
 const StudioSidebar = () => {
     const { toggleSidebar, open, setOpen } = useSidebar();
     const navigate = useNavigate();
     const { t } = useTranslation();
-    const { changeLanguage } = useI18n();
     const location = useLocation();
     const isInitialMount = useRef(true);
+
+    const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
 
     // TODO: use a context to manage web storage state globally
 
@@ -216,16 +218,21 @@ const StudioSidebar = () => {
                 ))}
             </SidebarContent>
             <SidebarFooter>
-                <SidebarMenuItem>
+                <SidebarMenuItem className="list-none">
                     <SidebarMenuButton
-                        tooltip={t('common.changeLanguage')}
-                        onClick={changeLanguage}
+                        tooltip={t('common.settings')}
+                        onClick={() => setSettingsDialogOpen(true)}
                     >
-                        <EarthIcon />
-                        <span>{t('common.language')}</span>
+                        <SettingsIcon />
+                        <span>{t('common.settings')}</span>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarFooter>
+
+            <SettingsDialog
+                open={settingsDialogOpen}
+                onOpenChange={setSettingsDialogOpen}
+            />
             <Button
                 data-sidebar="trigger"
                 data-slot="sidebar-trigger"
