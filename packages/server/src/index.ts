@@ -5,13 +5,13 @@ import opener from 'opener';
 import path from 'path';
 import portfinder from 'portfinder';
 import { APP_INFO, ConfigManager } from '../../shared/src/config';
+import { displayBanner } from '../../shared/src/utils/banner';
 import { promptUser } from '../../shared/src/utils/terminal';
 import { initializeDatabase } from './database';
 import { OtelGrpcServer } from './otel/grpc-server';
 import otelRouter from './otel/router';
 import { appRouter } from './trpc/router';
 import { SocketManager } from './trpc/socket';
-import { displayBanner } from '../../shared/src/utils/banner';
 
 async function initializeServer() {
     try {
@@ -55,13 +55,15 @@ async function initializeServer() {
         }
 
         // Handle gRPC port
-        portfinder.basePort = config.grpcPort;
+        portfinder.basePort = config.otelGrpcPort;
         portfinder.highestPort = portfinder.basePort + 2000;
 
         const availableGrpcPort = await portfinder.getPortPromise();
 
-        if (availableGrpcPort !== config.grpcPort) {
-            console.log(`gRPC port ${config.grpcPort} is already in use.`);
+        if (availableGrpcPort !== config.otelGrpcPort) {
+            console.log(
+                `[OTEL gRPC] port ${config.otelGrpcPort} is already in use.`,
+            );
 
             // Check if running in interactive environment
             const isInteractive = process.stdin.isTTY && process.stdout.isTTY;
@@ -69,20 +71,20 @@ async function initializeServer() {
             let useNewPort: boolean;
             if (isInteractive) {
                 useNewPort = await promptUser(
-                    `Would you like to start the gRPC server on port ${availableGrpcPort} instead? (y/n): `,
+                    `Would you like to start the OTEL gRPC server on port ${availableGrpcPort} instead? (y/n): `,
                 );
             } else {
                 // Non-interactive mode: automatically use available port
                 console.log(
-                    `Automatically using available gRPC port ${availableGrpcPort} (non-interactive mode)`,
+                    `Automatically using available OTEL gRPC port ${availableGrpcPort} (non-interactive mode)`,
                 );
                 useNewPort = true;
             }
 
             if (useNewPort) {
-                await configManager.setgrpcPort(availableGrpcPort);
+                await configManager.setOtelGrpcPort(availableGrpcPort);
                 console.log(
-                    `gRPC server will start on port ${availableGrpcPort}`,
+                    `OTEL gRPC server will start on port ${availableGrpcPort}`,
                 );
             } else {
                 console.log('Exiting...');
@@ -123,16 +125,14 @@ async function initializeServer() {
         // Initialize SocketManager
         SocketManager.init(httpServer);
 
-        // Initialize and start gRPC server on a separate port
-        // Use environment variable if set, otherwise use config (which may have been updated after port conflict resolution)
-        const finalGrpcPort = configManager.getConfig().grpcPort;
+        // Initialize and start OTEL gRPC server on a separate port
+        const actualGrpcPort = configManager.getConfig().otelGrpcPort;
         const otelGrpcServer = new OtelGrpcServer();
         try {
-            await otelGrpcServer.start(finalGrpcPort);
-            console.debug(`gRPC server started on port ${finalGrpcPort}`);
+            await otelGrpcServer.start(actualGrpcPort);
         } catch (error) {
             console.warn(
-                `[OTEL gRPC] Failed to start gRPC server on port ${finalGrpcPort}, ` +
+                `Failed to start OTEL gRPC server on port ${actualGrpcPort}, ` +
                     'traces will be received via HTTP endpoint /v1/traces:',
                 error instanceof Error ? error.message : error,
             );
@@ -166,6 +166,7 @@ async function initializeServer() {
                 APP_INFO.name.replace('-', '\n'),
                 APP_INFO.version,
                 actualPort,
+                actualGrpcPort,
                 config.database.database,
                 mode,
             );

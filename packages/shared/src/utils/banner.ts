@@ -3,13 +3,14 @@
  * Inspired by Phoenix's banner style
  */
 
-import figlet from 'figlet';
 import chalk from 'chalk';
+import figlet from 'figlet';
 
 export function displayBanner(
     appName: string,
     version: string,
     port: number,
+    otelGrpcPort: number,
     databasePath: string,
     mode: 'development' | 'production',
 ): void {
@@ -53,18 +54,21 @@ export function displayBanner(
     // Community and documentation links with colors
     const modeColor = mode === 'production' ? chalk.green : chalk.yellow;
     const links = `
-${chalk.cyan('🌍  Join our Community  🌍')} 
+${chalk.cyan('🌍  Join our Community  🌍')}
 ${chalk.blue('https://github.com/agentscope-ai')}
 
-${chalk.yellow('⭐  Leave us a Star  ⭐')}  
+${chalk.yellow('⭐  Leave us a Star  ⭐')}
 ${chalk.blue('https://github.com/agentscope-ai/agentscope-studio')}
 
-${chalk.magenta('📚  Documentation  📚')}  
+${chalk.magenta('📚  Documentation  📚')}
 ${chalk.blue('https://github.com/agentscope-ai/agentscope-studio')}
 
 ${chalk.green('🚀  AgentScope Studio Server  🚀')}
     ${chalk.bold('Studio UI:')}      ${chalk.cyan(`http://localhost:${port}`)}
-    ${chalk.bold('Mode:')}           ${modeColor(mode)}   
+    ${chalk.bold('Traces Endpoint:')}
+    ${chalk.bold('  - HTTP:')}       ${chalk.cyan(`http://localhost:${port}/v1/traces`)}
+    ${chalk.bold('  - gRPC:')}       ${chalk.cyan(`http://localhost:${otelGrpcPort}`)}
+    ${chalk.bold('Mode:')}           ${modeColor(mode)}
     ${chalk.bold('Storage:')}        ${chalk.gray(databasePath)}
 `;
 
