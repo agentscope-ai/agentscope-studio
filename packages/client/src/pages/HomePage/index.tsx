@@ -42,6 +42,7 @@ const HomePage = () => {
                     });
                 }
                 localStorage.setItem('lastUpdateCheck', String(now));
+                console.log('test');
             }
         };
         checkUpdate();
