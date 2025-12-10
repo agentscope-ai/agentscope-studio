@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ContentBlocks, ContentType, Status } from './messageForm';
+import { AudioBlock, ContentBlocks, ContentType, Status } from './messageForm';
 import { Usage } from './usage';
 
 export const RegisterReplyParamsSchema = z.object({
@@ -34,6 +34,7 @@ export const SocketEvents = {
         pushInputRequests: 'pushInputRequests',
         clearInputRequests: 'clearInputRequests',
         pushMessages: 'pushMessages',
+        pushSpeech: 'pushSpeech',
         pushSpans: 'pushSpans',
         pushModelInvocationData: 'pushModelInvocationData',
         // Friday app room
@@ -119,6 +120,14 @@ export interface Message {
     content: ContentType;
     timestamp: string;
     metadata: object;
+    // Speech audio data (optional, for TTS playback)
+    speech?: AudioBlock[] | null;
+}
+
+// Speech data for real-time audio playback
+export interface SpeechData {
+    replyId: string;
+    speech: AudioBlock | AudioBlock[];
 }
 
 export interface FridayReply {

@@ -3,8 +3,17 @@ import { ContentType, Reply, TextBlock } from '@shared/types';
 import BubbleBlock, {
     CollapsibleBlockDiv,
 } from '@/components/chat/bubbles/BubbleBlock';
+import SpeechBar from '@/components/chat/bubbles/SpeechBar';
 import { CircleAlertIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+
+// Speech state for each reply
+interface ReplySpeechState {
+    fullAudioData: string;
+    mediaType: string;
+    isPlaying: boolean;
+    isStreaming: boolean;
+}
 
 interface Props {
     reply: Reply;
@@ -12,6 +21,9 @@ interface Props {
     markdown: boolean;
     onClick: (reply: Reply) => void;
     userAvatarRight: boolean;
+    speechState?: ReplySpeechState;
+    onPlaySpeech?: () => void;
+    onPauseSpeech?: () => void;
 }
 
 const AsBubble = ({
@@ -20,6 +32,9 @@ const AsBubble = ({
     markdown,
     onClick,
     userAvatarRight = false,
+    speechState,
+    onPlaySpeech,
+    onPauseSpeech,
 }: Props) => {
     const { t } = useTranslation();
 
@@ -44,6 +59,9 @@ const AsBubble = ({
             <BubbleBlock block={block} markdown={markdown} />
         ));
     };
+
+    const hasAudio = (speechState?.fullAudioData?.length || 0) > 0;
+    const showSpeechBar = speechState?.isStreaming || hasAudio;
 
     return (
         <div className="flex flex-col w-full max-w-full">
@@ -84,6 +102,19 @@ const AsBubble = ({
                             return renderBlock(msg.content, markdown);
                         })}
                     </div>
+
+                    {/* Speech bar - shown below the message content */}
+                    {showSpeechBar && (
+                        <div className="mt-2">
+                            <SpeechBar
+                                isPlaying={speechState?.isPlaying || false}
+                                isStreaming={speechState?.isStreaming || false}
+                                hasAudio={hasAudio}
+                                onPlay={onPlaySpeech || (() => {})}
+                                onPause={onPauseSpeech || (() => {})}
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

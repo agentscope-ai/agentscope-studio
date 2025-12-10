@@ -18,7 +18,7 @@ import { useMessageApi } from '@/context/MessageApiContext.tsx';
 const RunContentPage = () => {
     const [displayedReply, setDisplayedReply] = useState<Reply | null>(null);
     const [activateTab, setActiveTab] = useState<string>('statistics');
-    const { replies, sendUserInputToServer, inputRequests } = useRunRoom();
+    const { replies, sendUserInputToServer, inputRequests, speechStates, playSpeech, stopSpeech } = useRunRoom();
     const [currentInputRequest, setCurrentInputRequest] =
         useState<InputRequestData | null>(null);
     const { t } = useTranslation();
@@ -134,6 +134,9 @@ const RunContentPage = () => {
                         onError={async (error) => {
                             messageApi.error(error);
                         }}
+                        speechStates={speechStates}
+                        playSpeech={playSpeech}
+                        stopSpeech={stopSpeech}
                     />
                 </Splitter.Panel>
                 <Splitter.Panel

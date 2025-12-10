@@ -27,6 +27,7 @@ export class ReplyDao {
                                 content: msg.msg.content,
                                 timestamp: msg.msg.timestamp,
                                 metadata: msg.msg.metadata,
+                                speech: msg.speech,
                             }) as Message,
                     ),
                 } as Reply;

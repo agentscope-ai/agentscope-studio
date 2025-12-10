@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import { RunTable } from './Run';
 import { ReplyTable } from './Reply';
-import { ContentType } from '../../../shared/src/types/messageForm';
+import { AudioBlock, ContentType } from '../../../shared/src/types/messageForm';
 
 @Entity()
 export class MessageTable extends BaseEntity {
@@ -33,4 +33,8 @@ export class MessageTable extends BaseEntity {
         metadata: object;
         timestamp: string;
     };
+
+    // Speech audio data (optional, for TTS playback)
+    @Column('json', { nullable: true })
+    speech: AudioBlock[] | null;
 }
