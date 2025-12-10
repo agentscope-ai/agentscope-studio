@@ -190,7 +190,9 @@
     },
     "settings": {
         "language": "语言",
+        "language-description": "选择应用界面的显示语言",
         "data-management": "数据管理",
+        "data-management-description": "管理和清空应用的历史数据",
         "clear-data-warning": "此操作将清空 Friday 的所有历史对话数据，此操作不可恢复",
         "clear-data-confirm-title": "⚠️ 确认清空数据？",
         "clear-data-confirm-description": "您即将清空所有 Friday 历史对话数据。此操作不可撤销，请谨慎操作。确定要继续吗？"
