@@ -36,6 +36,25 @@ npm install
 npm run dev
 ```
 
+### Docker Deployment
+
+```bash
+# Add execute permission
+chmod +x docker/docker.sh
+
+# Build and start
+./docker/docker.sh build
+./docker/docker.sh start
+
+# View logs
+./docker/docker.sh logs
+
+# Stop
+./docker/docker.sh stop
+```
+
+For more Docker commands, see `docker/README.md` in the project root.
+
 ## Connect to AgentScope-Studio
 
 In an AgentScope project, set the `studio_url` field in the `init` function as follows:
