@@ -1,5 +1,5 @@
 import { BlockType } from '@shared/types';
-
+import dayjs from 'dayjs';
 /**
  * Copy a string to the system clipboard.
  *
@@ -52,4 +52,35 @@ export const getBlockTypeFromExtension = (extension: string | undefined) => {
     }
 
     return null;
+};
+/**
+ * Universal datetime formatter supporting multiple input types
+ * 
+ * @param time - Input time in various formats
+ * @returns Formatted datetime string or empty string
+ */
+export const formatDateTime = (
+    time: string | number | Date | bigint | null | undefined
+): string => {
+    if (!time) return '';
+    try {
+        // Handle bigint (nanoseconds to milliseconds)
+        if (typeof time === 'bigint') {
+            return dayjs(Number(time / BigInt(1_000_000))).format('YYYY-MM-DD HH:mm:ss');
+        }
+        
+        // Handle string timestamps
+        if (typeof time === 'string' && /^\d+$/.test(time)) {
+            const numTime = BigInt(time);
+            const timestamp = time.length > 13 
+                ? Number(numTime / BigInt(1_000_000)) 
+                : Number(numTime);
+            return dayjs(timestamp).format('YYYY-MM-DD HH:mm:ss');
+        }
+        
+        // Handle other types with dayjs
+        return dayjs(time).format('YYYY-MM-DD HH:mm:ss');
+    } catch {
+        return '';
+    }
 };

@@ -14,6 +14,7 @@ import {
     renderTitle,
     TextCell,
 } from '@/components/tables/utils.tsx';
+import { formatDateTime } from '@/utils/common';
 
 interface DataType {
     project: string;
@@ -67,7 +68,7 @@ const ProjectPage = () => {
             width: '20%',
             render: (value, record) => (
                 <TextCell
-                    text={value}
+                    text={formatDateTime(value)}
                     selected={selectedRowKeys.includes(record.project)}
                 />
             ),

@@ -1,5 +1,4 @@
 import { TableColumnsType } from 'antd';
-import dayjs from 'dayjs';
 import { CheckCircle2Icon, CopyIcon, InfoIcon } from 'lucide-react';
 import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -19,6 +18,7 @@ import { useTraceContext } from '@/context/TraceContext';
 import { copyToClipboard } from '@/utils/common';
 import { TraceListItem } from '@shared/types';
 import TraceDetailPage from '../TraceDetailPage';
+import { formatDateTime } from '@/utils/common';
 
 // Helper component for statistic cards
 const StatCard = ({
@@ -100,11 +100,6 @@ const TraceListPage = () => {
             return `${(seconds * 1000).toFixed(2)}ms`;
         }
         return `${seconds.toFixed(2)}s`;
-    };
-
-    const formatTime = (timeNs: string): string => {
-        const timeMs = Number(BigInt(timeNs) / BigInt(1_000_000));
-        return dayjs(timeMs).format('YYYY-MM-DD HH:mm:ss.SSS');
     };
 
     const getStatusDisplay = (status: number) => {
@@ -203,7 +198,7 @@ const TraceListPage = () => {
                 minWidth: 150,
                 render: (_, record) => (
                     <span className="text-xs sm:text-sm">
-                        {formatTime(record.startTime)}
+                        {formatDateTime(record.startTime)}
                     </span>
                 ),
             },

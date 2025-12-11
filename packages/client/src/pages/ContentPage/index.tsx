@@ -24,7 +24,7 @@ import {
     XAxis,
     YAxis,
 } from 'recharts';
-
+import { formatDateTime } from '@/utils/common';
 import './index.css';
 
 interface BlockTitleProps {
@@ -470,7 +470,7 @@ const ContentPage = () => {
                                           key={proj.name}
                                           project={proj.name}
                                           runCount={proj.runCount}
-                                          lastUpdateTime={proj.lastUpdateTime}
+                                          lastUpdateTime={formatDateTime(proj.lastUpdateTime)}
                                       />
                                   ))
                                 : null}

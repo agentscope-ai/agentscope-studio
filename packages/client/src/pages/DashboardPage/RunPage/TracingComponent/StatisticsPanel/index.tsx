@@ -15,6 +15,7 @@ import StatusSection from './StatusSection';
 import { MetaDataSection } from '../ShareComponents.tsx';
 import { useRunRoom } from '@/context/RunRoomContext.tsx';
 import { RemoveScrollBarStyle } from '@/styles.ts';
+import { formatDateTime } from '@/utils/common.ts';
 
 const StatisticsPanel = () => {
     const { runData, modelInvocationData } = useRunRoom();
@@ -23,7 +24,7 @@ const StatisticsPanel = () => {
     const metadata: Record<string, string | number | undefined> = {};
     metadata[t('common.run-name')] = runData?.name;
     metadata[t('common.project')] = runData?.project;
-    metadata[t('common.timestamp')] = runData?.timestamp;
+    metadata[t('common.timestamp')] = formatDateTime(runData?.timestamp);
 
     const invocationData: Record<string, string | number | undefined> = {};
     invocationData[t('common.total-times')] =
