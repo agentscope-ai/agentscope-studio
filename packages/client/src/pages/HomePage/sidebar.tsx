@@ -2,22 +2,12 @@ import { memo, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
-    BookOpenIcon,
-    BotIcon,
-    ChartColumnStackedIcon,
     ChevronLeftIcon,
     ChevronRightIcon,
     Command,
-    FolderGit2Icon,
-    // ListChecksIcon,
-    RouteIcon,
-    UnplugIcon,
+    SettingsIcon,
 } from 'lucide-react';
 
-import DingTalkIcon from '@/assets/svgs/dingtalk.svg?react';
-import DiscordIcon from '@/assets/svgs/discord.svg?react';
-import GitHubIcon from '@/assets/svgs/github.svg?react';
-import SettingsIcon from '@/assets/svgs/setting.svg?react';
 import { Button } from '@/components/ui/button.tsx';
 import {
     Sidebar,
@@ -34,6 +24,7 @@ import {
 } from '@/components/ui/sidebar.tsx';
 import { RouterPath } from '@/pages/RouterPath.ts';
 import SettingsDialog from './SettingsDialog.tsx';
+import { getSidebarItems } from './config';
 
 const StudioSidebar = () => {
     const { toggleSidebar, open, setOpen } = useSidebar();
@@ -70,79 +61,8 @@ const StudioSidebar = () => {
         }
     }, [open]);
 
-    const sidebarItems = [
-        {
-            title: t('common.develop'),
-            items: [
-                {
-                    title: t('common.overview'),
-                    icon: ChartColumnStackedIcon,
-                    url: RouterPath.OVERVIEW,
-                },
-                {
-                    title: t('common.projects'),
-                    icon: FolderGit2Icon,
-                    url: RouterPath.PROJECTS,
-                },
-                // TODO: activate tracing and evaluation when they are ready
-                {
-                    title: t('common.traces'),
-                    icon: RouteIcon,
-                    url: RouterPath.TRACING,
-                },
-                // {
-                //     title: t('common.evaluation'),
-                //     icon: ListChecksIcon,
-                //     url: RouterPath.EVAL,
-                // },
-            ],
-        },
-        {
-            title: t('common.agent'),
-            items: [
-                {
-                    title: t('common.friday'),
-                    icon: BotIcon,
-                    url: RouterPath.FRIDAY,
-                },
-            ],
-        },
-        {
-            title: t('common.document'),
-            items: [
-                {
-                    title: t('common.tutorial'),
-                    icon: BookOpenIcon,
-                    url: RouterPath.TUTORIAL,
-                },
-                {
-                    title: t('common.api'),
-                    icon: UnplugIcon,
-                    url: RouterPath.API,
-                },
-            ],
-        },
-        {
-            title: t('common.contact'),
-            items: [
-                {
-                    title: t('common.github'),
-                    icon: GitHubIcon,
-                    url: RouterPath.GITHUB,
-                },
-                {
-                    title: t('common.dingtalk'),
-                    icon: DingTalkIcon,
-                    url: RouterPath.DINGTALK,
-                },
-                {
-                    title: t('common.discord'),
-                    icon: DiscordIcon,
-                    url: RouterPath.DISCORD,
-                },
-            ],
-        },
-    ];
+    const sidebarItems = getSidebarItems(t);
+
     return (
         <Sidebar collapsible="icon">
             <SidebarHeader>
@@ -172,12 +92,12 @@ const StudioSidebar = () => {
             </SidebarHeader>
             <SidebarContent>
                 {sidebarItems.map((item) => (
-                    <SidebarGroup>
+                    <SidebarGroup key={item.title} className="-mt-2">
                         <SidebarGroupLabel>
                             <span>{item.title}</span>
                         </SidebarGroupLabel>
                         {item.items.map((subItem) => (
-                            <SidebarGroupContent>
+                            <SidebarGroupContent key={subItem.title}>
                                 <SidebarMenu>
                                     <SidebarMenuItem>
                                         <SidebarMenuButton
@@ -186,10 +106,10 @@ const StudioSidebar = () => {
                                             onClick={() => {
                                                 // Check if it's an external URL
                                                 if (
-                                                    subItem.url.startsWith(
+                                                    subItem.url?.startsWith(
                                                         'http://',
                                                     ) ||
-                                                    subItem.url.startsWith(
+                                                    subItem.url?.startsWith(
                                                         'https://',
                                                     )
                                                 ) {
@@ -217,6 +137,7 @@ const StudioSidebar = () => {
                     </SidebarGroup>
                 ))}
             </SidebarContent>
+            {/* Footer with version information */}
             <SidebarFooter>
                 <SidebarMenuItem className="list-none">
                     <SidebarMenuButton

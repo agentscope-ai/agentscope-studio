@@ -148,6 +148,21 @@ const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
                                                     </p>
                                                 </div>
                                             )}
+                                            {item.value === 'version' && (
+                                                <div className="flex flex-col gap-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-sm font-medium">
+                                                            {t(
+                                                                'settings.current-version',
+                                                            )}
+                                                            :
+                                                        </span>
+                                                        <span className="text-sm text-muted-foreground">
+                                                            {__APP_VERSION__}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </TabsContent>
                                 );

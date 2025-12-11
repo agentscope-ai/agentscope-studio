@@ -199,6 +199,9 @@
         "language-description": "Select the display language for the application interface",
         "data-management": "Data Management",
         "data-management-description": "Manage and clear application history data",
+        "version": "Version Information",
+        "version-description": "View the current application version number",
+        "current-version": "Current Version",
         "clear-data-warning": "This operation will clear all Friday conversation history data. This action cannot be undone.",
         "clear-data-confirm-title": "⚠️ Confirm Clear Data?",
         "clear-data-confirm-description": "You are about to clear all Friday conversation history data. This action is irreversible and cannot be undone. Are you sure you want to continue?"

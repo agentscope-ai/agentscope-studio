@@ -9,6 +9,7 @@
         /* Bundler mode */
         "moduleResolution": "bundler",
         "allowImportingTsExtensions": true,
+        "resolveJsonModule": true,
         "isolatedModules": true,
         "moduleDetection": "force",
         "noEmit": true,
@@ -28,7 +29,8 @@
     },
     "include": [
         "src",
-        "../shared/src/**/*" // 添加这行来包含 shared 目录
+        "../shared/src/**/*", // 添加这行来包含 shared 目录
+        "../../package.json" // 包含根目录的 package.json
     ],
     "exclude": ["node_modules", "../server", "../server/**/*", "dist", "build"]
 }
