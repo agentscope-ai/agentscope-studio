@@ -13,6 +13,8 @@ interface ReplySpeechState {
     mediaType: string;
     isPlaying: boolean;
     isStreaming: boolean;
+    playbackRate: number;
+    volume: number;
 }
 
 interface Props {
@@ -24,6 +26,8 @@ interface Props {
     speechState?: ReplySpeechState;
     onPlaySpeech?: () => void;
     onPauseSpeech?: () => void;
+    onPlaybackRateChange?: (rate: number) => void;
+    onVolumeChange?: (volume: number) => void;
 }
 
 const AsBubble = ({
@@ -35,6 +39,8 @@ const AsBubble = ({
     speechState,
     onPlaySpeech,
     onPauseSpeech,
+    onPlaybackRateChange,
+    onVolumeChange,
 }: Props) => {
     const { t } = useTranslation();
 
@@ -110,8 +116,12 @@ const AsBubble = ({
                                 isPlaying={speechState?.isPlaying || false}
                                 isStreaming={speechState?.isStreaming || false}
                                 hasAudio={hasAudio}
+                                playbackRate={speechState?.playbackRate ?? 1.0}
+                                volume={speechState?.volume ?? 1.0}
                                 onPlay={onPlaySpeech || (() => {})}
                                 onPause={onPauseSpeech || (() => {})}
+                                onPlaybackRateChange={onPlaybackRateChange || (() => {})}
+                                onVolumeChange={onVolumeChange || (() => {})}
                             />
                         </div>
                     )}

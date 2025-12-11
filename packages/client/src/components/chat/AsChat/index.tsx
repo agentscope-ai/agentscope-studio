@@ -98,6 +98,10 @@ interface Props {
     playSpeech?: (replyId: string) => void;
     /** Callback to stop/pause speech for a specific reply */
     stopSpeech?: (replyId: string) => void;
+    /** Callback to set playback rate for a specific reply */
+    setPlaybackRate?: (replyId: string, rate: number) => void;
+    /** Callback to set volume for a specific reply */
+    setVolume?: (replyId: string, volume: number) => void;
 }
 
 /**
@@ -137,6 +141,8 @@ const AsChat = ({
     speechStates,
     playSpeech,
     stopSpeech,
+    setPlaybackRate,
+    setVolume,
 }: Props) => {
     // TODO: use a context to manage these settings globally
 
@@ -343,6 +349,16 @@ const AsChat = ({
                                 onPauseSpeech={
                                     stopSpeech
                                         ? () => stopSpeech(lookupId)
+                                        : undefined
+                                }
+                                onPlaybackRateChange={
+                                    setPlaybackRate
+                                        ? (rate: number) => setPlaybackRate(lookupId, rate)
+                                        : undefined
+                                }
+                                onVolumeChange={
+                                    setVolume
+                                        ? (volume: number) => setVolume(lookupId, volume)
                                         : undefined
                                 }
                             />
