@@ -24,7 +24,7 @@ import {
     XAxis,
     YAxis,
 } from 'recharts';
-import { formatDateTime } from '@/utils/common';
+import { formatDateTime, formatNumber } from '@/utils/common';
 import './index.css';
 
 interface BlockTitleProps {
@@ -156,9 +156,9 @@ const ContentPage = () => {
     ) => {
         if (nPast === nTotal) {
             if (nTotal === 1) {
-                return `${nTotal.toLocaleString()} ${unit.toLowerCase()}`;
+                return `${formatNumber(nTotal)} ${unit.toLowerCase()}`;
             } else {
-                return `${nTotal.toLocaleString()} ${units.toLowerCase()}`;
+                return `${formatNumber(nTotal)} ${units.toLowerCase()}`;
             }
         }
         return `${((nPast / (nTotal - nPast)) * 100).toFixed(1)}%`;

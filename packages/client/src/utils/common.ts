@@ -84,3 +84,73 @@ export const formatDateTime = (
         return '';
     }
 };
+
+export const formatNumber = (
+    num?: number | string | bigint | null | undefined,
+    digits: number = 2
+): string => {
+    // Handle null/undefined cases
+    if (num == null) return '';
+    
+    // Convert to number
+    let number: number;
+    if (typeof num === 'bigint') {
+        number = Number(num);
+    } else if (typeof num === 'string') {
+        // Fast path for empty strings
+        if (num === '') return '';
+        number = parseFloat(num);
+    } else {
+        number = num;
+    }
+    
+    // Handle invalid numbers
+    if (!isFinite(number)) return '';
+    
+    // Helper function to remove trailing zeros
+    const removeTrailingZeros = (str: string): string => {
+        return str.replace(/\.?0+$/, '');
+    };
+    
+    // For small numbers (< 1000), show as-is
+    if (Math.abs(number) < 1000) {
+        return number.toString();
+    }
+    
+    // For medium numbers (1000-9999), add thousand separators
+    if (Math.abs(number) < 10000) {
+        return number.toLocaleString(undefined);
+    }
+    
+    // For large numbers (>= 10000), abbreviate with units
+    const units: [number, string][] = [
+        [1e12, 'T'],  // Trillion
+        [1e9, 'B'],   // Billion
+        [1e6, 'M'],   // Million
+        [1e3, 'K']    // Thousand
+    ];
+    
+    // Find appropriate unit
+    for (let i = 0; i < units.length; i++) {
+        const [value, symbol] = units[i];
+        if (Math.abs(number) >= value) {
+            const scaled = number / value;
+            
+            // For integers, don't show decimal places
+            if (Number.isInteger(scaled)) {
+                return scaled.toLocaleString(undefined) + symbol;
+            }
+            
+            // Format with specified digits and remove trailing zeros
+            const formatted = scaled.toLocaleString(undefined, {
+                minimumFractionDigits: digits,
+                maximumFractionDigits: digits
+            });
+            
+            return removeTrailingZeros(formatted) + symbol;
+        }
+    }
+    
+    // Fallback - should not normally reach here
+    return number.toString();
+};

@@ -18,7 +18,7 @@ import { useTraceContext } from '@/context/TraceContext';
 import { copyToClipboard } from '@/utils/common';
 import { TraceListItem } from '@shared/types';
 import TraceDetailPage from '../TraceDetailPage';
-import { formatDateTime } from '@/utils/common';
+import { formatDateTime, formatNumber } from '@/utils/common';
 
 // Helper component for statistic cards
 const StatCard = ({
@@ -221,7 +221,7 @@ const TraceListPage = () => {
                 render: (_, record) => (
                     <span className="text-xs sm:text-sm">
                         {record.totalTokens
-                            ? record.totalTokens.toLocaleString()
+                            ? formatNumber(record.totalTokens)
                             : '-'}
                     </span>
                 ),
