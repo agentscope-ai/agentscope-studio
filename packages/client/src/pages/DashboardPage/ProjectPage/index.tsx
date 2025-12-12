@@ -95,7 +95,6 @@ const ProjectPage = () => {
             title: 'running',
             key: 'running',
             dataIndex: 'running',
-            align: 'right',
             sorter: true,
             sortIcon: (sortOrder) => renderSortIcon(sortOrder, true),
             render: (value, record) => (
@@ -109,7 +108,6 @@ const ProjectPage = () => {
             title: 'finished',
             key: 'finished',
             dataIndex: 'finished',
-            align: 'right',
             sorter: true,
             sortIcon: (sortOrder) => renderSortIcon(sortOrder, true),
             render: (value, record) => (
@@ -123,7 +121,6 @@ const ProjectPage = () => {
             title: 'pending',
             key: 'pending',
             dataIndex: 'pending',
-            align: 'right',
             sorter: true,
             sortIcon: (sortOrder) => renderSortIcon(sortOrder, true),
             render: (value, record) => (
@@ -137,7 +134,6 @@ const ProjectPage = () => {
             title: 'total',
             key: 'total',
             dataIndex: 'total',
-            align: 'right',
             sorter: true,
             sortIcon: (sortOrder) => renderSortIcon(sortOrder, true),
             render: (value, record) => (
@@ -193,7 +189,7 @@ const ProjectPage = () => {
                 </SecondaryButton>
             </div>
 
-            <div className="h-[calc(100vh-200px)] max-h-[600px] border border-border rounded-[calc(var(--radius)-2px)] overflow-hidden flex flex-col">
+            <div className="h-[calc(100vh-200px)] border border-border rounded-[calc(var(--radius)-2px)] overflow-hidden flex flex-col">
                 <Table<ProjectData>
                     size="small"
                     columns={columns}
@@ -208,11 +204,11 @@ const ProjectPage = () => {
                         pageSize: pagination.pageSize,
                         total: pagination.total,
                         showSizeChanger: true,
-                        showQuickJumper: true,
-                        showTotal: (total) => `${total} items in total`,
+                        showTotal: (total) =>
+                            t('table.pagination.total', { total }),
                         pageSizeOptions: ['10', '20', '50', '100'],
                         hideOnSinglePage: false,
-                        className: 'mr-4',
+                        className: 'mr-4!',
                     }}
                     onChange={onTableChange}
                     onRow={(record: ProjectData) => {

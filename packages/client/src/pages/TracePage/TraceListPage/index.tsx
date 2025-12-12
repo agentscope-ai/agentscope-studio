@@ -327,6 +327,7 @@ const TraceListPage = () => {
                             setPage(newPage);
                             setPageSize(newPageSize);
                         },
+                        className: 'mr-4!',
                     }}
                     scroll={{ x: 'max-content' }}
                 />
