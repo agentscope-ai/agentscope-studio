@@ -30,7 +30,7 @@ import { ProjectNotFoundPage } from '../pages/DefaultPage';
 import { useMessageApi } from './MessageApiContext.tsx';
 
 // Speech state for each reply
-interface ReplySpeechState {
+export interface ReplySpeechState {
     // Full accumulated audio data (base64 string)
     fullAudioData: string;
     // Media type of the audio
@@ -133,8 +133,6 @@ export function RunRoomContextProvider({ children }: Props) {
     const audioElementRef = useRef<Record<string, HTMLAudioElement | null>>({});
     // Store gain nodes for volume control for each reply
     const gainNodeRef = useRef<Record<string, GainNode | null>>({});
-    // Store decoded audio buffers (for replay)
-    const audioBufferRef = useRef<Record<string, AudioBuffer | null>>({});
     // Store WAV blob URLs for replay with Audio element
     const wavBlobUrlRef = useRef<Record<string, string | null>>({});
     // Timer for detecting streaming end
@@ -428,12 +426,6 @@ export function RunRoomContextProvider({ children }: Props) {
             
             const fullData = block.source.data;
             const mediaType = block.source.media_type;
-            
-            // Store full audio buffer for replay
-            const audioBuffer = decodeAudioData(fullData);
-            if (audioBuffer) {
-                audioBufferRef.current[replyId] = audioBuffer;
-            }
 
             // Calculate incremental data (new data since last time)
             const alreadyProcessed = processedLengthRef.current[replyId] || 0;
@@ -491,7 +483,7 @@ export function RunRoomContextProvider({ children }: Props) {
                 streamingEndTimeoutRef.current[replyId] = null;
             }, 1500);
         }
-    }, [decodeAudioData, processAudioQueue]);
+    }, [processAudioQueue]);
 
     // Play audio for a reply
     const playSpeech = useCallback((replyId: string) => {
@@ -766,7 +758,7 @@ export function RunRoomContextProvider({ children }: Props) {
                 socket.emit(SocketEvents.client.leaveRoom, roomName);
             }
         };
-    }, [socket, runId, roomName, handleSpeechData, decodeAudioData]);
+    }, [socket, runId, roomName, handleSpeechData]);
 
     if (!runId) {
         return <ProjectNotFoundPage />;

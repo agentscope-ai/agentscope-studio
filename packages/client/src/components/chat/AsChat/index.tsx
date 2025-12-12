@@ -45,15 +45,7 @@ import Character3Icon from '@/assets/svgs/avatar/character/050-woman.svg?react';
 import { Avatar } from '@/components/ui/avatar.tsx';
 import { AsAvatar, AvatarSet } from '@/components/chat/AsChat/avatar.tsx';
 
-// Speech state for each reply
-interface ReplySpeechState {
-    fullAudioData: string;
-    mediaType: string;
-    isPlaying: boolean;
-    isStreaming: boolean;
-}
-
-type SpeechStatesRecord = Record<string, ReplySpeechState>;
+import { SpeechStatesRecord } from '@/context/RunRoomContext';
 
 interface Props {
     /** List of chat replies to display */

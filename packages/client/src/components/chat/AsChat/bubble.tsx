@@ -6,16 +6,7 @@ import BubbleBlock, {
 import SpeechBar from '@/components/chat/bubbles/SpeechBar';
 import { CircleAlertIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-
-// Speech state for each reply
-interface ReplySpeechState {
-    fullAudioData: string;
-    mediaType: string;
-    isPlaying: boolean;
-    isStreaming: boolean;
-    playbackRate: number;
-    volume: number;
-}
+import { ReplySpeechState } from '@/context/RunRoomContext';
 
 interface Props {
     reply: Reply;
