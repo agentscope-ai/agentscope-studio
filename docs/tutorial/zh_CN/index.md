@@ -14,8 +14,14 @@ hero:
 features:
     - title: 项目管理
       details: 可视化地管理你的 AgentScope 项目，项目详情、运行历史一目了然
+      link: /zh_CN/develop/project
+      linkText: 了解更多
     - title: 可视化追踪
       details: LLM 调用、工具使用、智能体调用过程清晰可见，轻松调试智能体应用
+      link: /zh_CN/develop/tracing
+      linkText: 了解更多
     - title: 应用评测
       details: 提供面向智能体应用的评测、分析和归因，从统计的角度评估智能体性能
+      link: /zh_CN/develop/evaluation
+      linkText: 了解更多
 ---
