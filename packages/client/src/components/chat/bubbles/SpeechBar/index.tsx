@@ -1,5 +1,11 @@
 import { memo, useEffect, useRef, useState } from 'react';
-import { PauseIcon, PlayIcon, Volume2Icon, VolumeXIcon, GaugeIcon } from 'lucide-react';
+import {
+    PauseIcon,
+    PlayIcon,
+    Volume2Icon,
+    VolumeXIcon,
+    GaugeIcon,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -45,7 +51,9 @@ const SpeechBar = ({
     onPlaybackRateChange,
     onVolumeChange,
 }: Props) => {
-    const [animationBars, setAnimationBars] = useState<number[]>([3, 5, 4, 6, 3]);
+    const [animationBars, setAnimationBars] = useState<number[]>([
+        3, 5, 4, 6, 3,
+    ]);
     const animationRef = useRef<NodeJS.Timeout | null>(null);
 
     // Animate the audio visualization bars when playing
@@ -53,7 +61,10 @@ const SpeechBar = ({
         if (isPlaying) {
             animationRef.current = setInterval(() => {
                 setAnimationBars(
-                    Array.from({ length: 5 }, () => Math.floor(Math.random() * 8) + 2)
+                    Array.from(
+                        { length: 5 },
+                        () => Math.floor(Math.random() * 8) + 2,
+                    ),
                 );
             }, 150);
         } else {
@@ -86,7 +97,7 @@ const SpeechBar = ({
                 'border border-primary-200',
                 'shadow-sm',
                 'transition-all duration-300',
-                isPlaying && 'ring-2 ring-primary-300 ring-opacity-50'
+                isPlaying && 'ring-2 ring-primary-300 ring-opacity-50',
             )}
         >
             {/* Audio visualization bars */}
@@ -96,7 +107,7 @@ const SpeechBar = ({
                         key={index}
                         className={cn(
                             'w-0.5 bg-primary-500 rounded-full transition-all duration-150',
-                            isPlaying ? 'opacity-100' : 'opacity-50'
+                            isPlaying ? 'opacity-100' : 'opacity-50',
                         )}
                         style={{ height: `${height * 2}px` }}
                     />
@@ -137,11 +148,11 @@ const SpeechBar = ({
                                         onPlaybackRateChange(rate);
                                     }}
                                     className={cn(
-                                        playbackRate === rate && 'bg-primary-50'
+                                        playbackRate === rate &&
+                                            'bg-primary-50',
                                     )}
                                 >
-                                    {rate}x
-                                    {playbackRate === rate && ' ✓'}
+                                    {rate}x{playbackRate === rate && ' ✓'}
                                 </DropdownMenuItem>
                             ))}
                         </DropdownMenuContent>
@@ -175,10 +186,13 @@ const SpeechBar = ({
                                         onVolumeChange(v);
                                     }}
                                     className={cn(
-                                        Math.abs(volume - v) < 0.01 && 'bg-primary-50'
+                                        Math.abs(volume - v) < 0.01 &&
+                                            'bg-primary-50',
                                     )}
                                 >
-                                    {v === 0 ? 'Mute' : `${Math.round(v * 100)}%`}
+                                    {v === 0
+                                        ? 'Mute'
+                                        : `${Math.round(v * 100)}%`}
                                     {Math.abs(volume - v) < 0.01 && ' ✓'}
                                 </DropdownMenuItem>
                             ))}

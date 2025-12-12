@@ -120,13 +120,18 @@ export interface Message {
     content: ContentType;
     timestamp: string;
     metadata: object;
-    // Speech audio data (optional, for TTS playback)
+    /** Speech audio data (optional, for TTS playback) */
     speech?: AudioBlock[] | null;
 }
 
-// Speech data for real-time audio playback
+/**
+ * Speech data for real-time audio playback.
+ * Sent via WebSocket when new audio data is available.
+ */
 export interface SpeechData {
+    /** The reply ID this speech data belongs to */
     replyId: string;
+    /** Audio block(s) containing the speech data */
     speech: AudioBlock | AudioBlock[];
 }
 

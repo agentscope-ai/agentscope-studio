@@ -95,6 +95,6 @@ export interface MessageForm {
         metadata: object;
         timestamp: string;
     };
-    // Speech audio data (optional, for TTS playback)
+    /** Speech audio data (optional, for TTS playback) */
     speech?: AudioBlock[] | null;
 }

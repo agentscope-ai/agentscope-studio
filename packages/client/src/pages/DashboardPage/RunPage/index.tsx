@@ -18,7 +18,16 @@ import { useMessageApi } from '@/context/MessageApiContext.tsx';
 const RunContentPage = () => {
     const [displayedReply, setDisplayedReply] = useState<Reply | null>(null);
     const [activateTab, setActiveTab] = useState<string>('statistics');
-    const { replies, sendUserInputToServer, inputRequests, speechStates, playSpeech, stopSpeech, setPlaybackRate, setVolume } = useRunRoom();
+    const {
+        replies,
+        sendUserInputToServer,
+        inputRequests,
+        speechStates,
+        playSpeech,
+        stopSpeech,
+        setPlaybackRate,
+        setVolume,
+    } = useRunRoom();
     const [currentInputRequest, setCurrentInputRequest] =
         useState<InputRequestData | null>(null);
     const { t } = useTranslation();

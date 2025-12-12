@@ -345,12 +345,14 @@ const AsChat = ({
                                 }
                                 onPlaybackRateChange={
                                     setPlaybackRate
-                                        ? (rate: number) => setPlaybackRate(lookupId, rate)
+                                        ? (rate: number) =>
+                                              setPlaybackRate(lookupId, rate)
                                         : undefined
                                 }
                                 onVolumeChange={
                                     setVolume
-                                        ? (volume: number) => setVolume(lookupId, volume)
+                                        ? (volume: number) =>
+                                              setVolume(lookupId, volume)
                                         : undefined
                                 }
                             />

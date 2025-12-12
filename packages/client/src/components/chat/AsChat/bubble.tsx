@@ -9,15 +9,25 @@ import { useTranslation } from 'react-i18next';
 import { ReplySpeechState } from '@/context/RunRoomContext';
 
 interface Props {
+    /** The reply data to display */
     reply: Reply;
+    /** Avatar component to display */
     avatar: ReactNode;
+    /** Whether to render content as markdown */
     markdown: boolean;
+    /** Callback when bubble is clicked */
     onClick: (reply: Reply) => void;
+    /** Whether to display user avatar on the right side */
     userAvatarRight: boolean;
+    /** Speech state for this reply */
     speechState?: ReplySpeechState;
+    /** Callback to play speech audio */
     onPlaySpeech?: () => void;
+    /** Callback to pause speech audio */
     onPauseSpeech?: () => void;
+    /** Callback to change playback rate */
     onPlaybackRateChange?: (rate: number) => void;
+    /** Callback to change volume */
     onVolumeChange?: (volume: number) => void;
 }
 
@@ -111,7 +121,9 @@ const AsBubble = ({
                                 volume={speechState?.volume ?? 1.0}
                                 onPlay={onPlaySpeech || (() => {})}
                                 onPause={onPauseSpeech || (() => {})}
-                                onPlaybackRateChange={onPlaybackRateChange || (() => {})}
+                                onPlaybackRateChange={
+                                    onPlaybackRateChange || (() => {})
+                                }
                                 onVolumeChange={onVolumeChange || (() => {})}
                             />
                         </div>

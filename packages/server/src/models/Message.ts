@@ -34,7 +34,7 @@ export class MessageTable extends BaseEntity {
         timestamp: string;
     };
 
-    // Speech audio data (optional, for TTS playback)
+    /** Speech audio data (optional, for TTS playback) */
     @Column('json', { nullable: true })
     speech: AudioBlock[] | null;
 }
