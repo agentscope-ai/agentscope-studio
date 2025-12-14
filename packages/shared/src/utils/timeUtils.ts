@@ -1,6 +1,38 @@
-export function decodeUnixNano(timeUnixNano: string): string {
-    const milliseconds = Number(timeUnixNano) / 1_000_000;
-    return new Date(milliseconds).toISOString();
+interface LongLike {
+    toNumber?: () => number;
+    low?: number;
+    high?: number;
+}
+
+export function decodeUnixNano(timeUnixNano: unknown): string {
+    if (timeUnixNano === null || timeUnixNano === undefined) {
+        return '0';
+    }
+
+    if (typeof timeUnixNano === 'number') {
+        return timeUnixNano.toString();
+    }
+
+    if (typeof timeUnixNano === 'string') {
+        return timeUnixNano;
+    }
+
+    // Handle Long type from protobuf
+    if (timeUnixNano && typeof timeUnixNano === 'object') {
+        const longLike = timeUnixNano as LongLike;
+        if (typeof longLike.toNumber === 'function') {
+            return longLike.toNumber().toString();
+        }
+        if (
+            typeof longLike.low === 'number' &&
+            typeof longLike.high === 'number'
+        ) {
+            const value = longLike.low + longLike.high * 0x100000000;
+            return value.toString();
+        }
+    }
+
+    return '0';
 }
 
 export function encodeUnixNano(isoTimeString: string): string {
@@ -42,4 +74,26 @@ export function getTimeDifference(
     const startTime = new Date(start).getTime();
     const endTime = new Date(end).getTime();
     return endTime - startTime;
+}
+
+export function getTimeDifferenceNano(
+    startNano: string | number,
+    endNano: string | number,
+): number {
+    const start = Number(startNano);
+    const end = Number(endNano);
+    return end - start;
+}
+
+export function nanoToISOString(nanoTimestamp: string | number): string {
+    const milliseconds = Number(nanoTimestamp) / 1_000_000;
+    return new Date(milliseconds).toISOString();
+}
+
+export function secondsToNano(seconds: number): number {
+    return Number(seconds) * 1_000_000_000;
+}
+
+export function millisecondsToNano(milliseconds: number): number {
+    return Number(milliseconds) * 1_000_000;
 }

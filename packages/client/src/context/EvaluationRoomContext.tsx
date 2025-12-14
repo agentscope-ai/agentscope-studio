@@ -4,7 +4,6 @@ import { useSocket } from '@/context/SocketContext.tsx';
 import { BackendResponse, SocketEvents, SocketRoomName } from '@shared/types';
 import { useMessageApi } from '@/context/MessageApiContext.tsx';
 
-
 interface EvaluationRoomContextType {
     benchmarks: Benchmark[];
     deleteEvaluations: (evaluationIds: string[]) => void;
@@ -22,6 +21,15 @@ interface Props {
 }
 
 export function EvaluationRoomContextProvider({ children }: Props) {
+    const initialState: EvaluationData = {
+        id: '2',
+        name: 'Evaluation 2',
+        status: 'pending',
+        benchmark: 'GAIA',
+        progress: 60,
+        createdAt: new Date().toISOString(),
+        time: 120441,
+        metrics: [
     const socket = useSocket();
     const { messageApi } = useMessageApi();
     const [benchmarks, setBenchmarks] = useState<Benchmark[]>([]);

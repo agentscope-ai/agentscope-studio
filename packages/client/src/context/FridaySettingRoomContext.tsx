@@ -1,4 +1,3 @@
-import { BackendResponse, SocketEvents } from '@shared/types';
 import {
     createContext,
     ReactNode,
@@ -6,10 +5,12 @@ import {
     useEffect,
     useState,
 } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+
+import { RouterPath } from '@/pages/RouterPath.ts';
 import { useSocket } from '@/context/SocketContext.tsx';
 import { FridayConfig } from '@shared/config/friday.ts';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { RouterPath } from '@/pages/RouterPath.ts';
+import { BackendResponse, SocketEvents } from '@shared/types';
 
 interface FridaySettingRoomContextType {
     saveFridayConfig: (config: FridayConfig) => Promise<BackendResponse>;
@@ -35,7 +36,9 @@ export function FridaySettingRoomContextProvider({ children }: Props) {
     const navigate = useNavigate();
 
     const location = useLocation();
-    const { autoNavigateToChat } = location.state;
+    const { autoNavigateToChat } = location.state || {
+        autoNavigateToChat: false,
+    };
 
     useEffect(() => {
         if (!socket) {

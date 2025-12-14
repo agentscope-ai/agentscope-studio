@@ -13,6 +13,7 @@ interface BaseUsage<T extends UsageType, U> {
     usage: U;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface ChatUsage extends BaseUsage<UsageType.CHAT, ChatTokens> {}
 
 export type Usage = ChatUsage;

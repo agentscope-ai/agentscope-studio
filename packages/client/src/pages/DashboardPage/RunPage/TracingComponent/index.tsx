@@ -1,19 +1,21 @@
+import { useEffect, useRef } from 'react';
 import { Tabs } from 'antd';
-import StatisticsPanel from './StatisticsPanel';
-import MsgPanel from './MsgPanel';
+
+import ReplyPanel from './ReplyPanel';
 import TracePanel from './TracePanel';
-import { MessageData } from '@shared/types';
+import StatisticsPanel from './StatisticsPanel';
+
 import { useTranslation } from 'react-i18next';
 import { useTour } from '@/context/TourContext.tsx';
-import { useEffect, useRef } from 'react';
+import { Reply } from '@shared/types';
 
 interface Props {
     activateTab: string;
     onTabChange: (key: string) => void;
-    msg: MessageData | null;
+    reply: Reply | null;
 }
 
-const TracingComponent = ({ activateTab, onTabChange, msg }: Props) => {
+const TracingComponent = ({ activateTab, onTabChange, reply }: Props) => {
     const { t } = useTranslation();
     const { registerRunPageTourStep } = useTour();
     const refView = useRef(null);
@@ -44,7 +46,7 @@ const TracingComponent = ({ activateTab, onTabChange, msg }: Props) => {
         {
             key: 'message',
             label: renderTabLabel(t('common.message')),
-            children: <MsgPanel msg={msg} />,
+            children: <ReplyPanel reply={reply} />,
         },
         {
             key: 'trace',
@@ -66,7 +68,7 @@ const TracingComponent = ({ activateTab, onTabChange, msg }: Props) => {
                     className="w-full h-full [&_.ant-tabs-content]:h-full"
                     activeKey={activateTab}
                     items={items}
-                    size={'small'}
+                    size="small"
                     onChange={onTabChange}
                 />
             </div>

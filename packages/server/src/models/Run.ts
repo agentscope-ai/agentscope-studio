@@ -1,8 +1,8 @@
-import { Entity, Column, BaseEntity, OneToMany, PrimaryColumn } from 'typeorm';
+import { BaseEntity, Column, Entity, OneToMany, PrimaryColumn } from 'typeorm';
 import { Status } from '../../../shared/src/types/messageForm';
-import { MessageTable } from './Message';
-import { SpanTable } from './Trace';
 import { InputRequestTable } from '../models/InputRequest';
+import { ReplyTable } from '../models/Reply';
+import { SpanTable } from './Trace';
 
 @Entity()
 export class RunTable extends BaseEntity {
@@ -27,21 +27,12 @@ export class RunTable extends BaseEntity {
     @Column({ type: 'varchar', enum: Status, default: Status.DONE })
     status: Status;
 
-    @OneToMany(() => MessageTable, (message) => message.runId, {
-        cascade: true,
-        onDelete: 'CASCADE',
-    })
-    messages: MessageTable[];
+    @OneToMany(() => ReplyTable, (reply) => reply.runId)
+    replies: ReplyTable[];
 
-    @OneToMany(() => SpanTable, (span) => span.runId, {
-        cascade: true,
-        onDelete: 'CASCADE',
-    })
+    @OneToMany(() => SpanTable, (span) => span.conversationId)
     spans: SpanTable[];
 
-    @OneToMany(() => InputRequestTable, (inputRequest) => inputRequest.runId, {
-        cascade: true,
-        onDelete: 'CASCADE',
-    })
+    @OneToMany(() => InputRequestTable, (inputRequest) => inputRequest.runId)
     inputRequests: InputRequestTable[];
 }

@@ -1,3 +1,18 @@
+import { memo, MouseEvent } from 'react';
+import { Select } from 'antd';
+import { useNavigate } from 'react-router-dom';
+import {
+    Area,
+    AreaChart,
+    Bar,
+    BarChart,
+    CartesianGrid,
+    ResponsiveContainer,
+    Tooltip,
+    XAxis,
+    YAxis,
+} from 'recharts';
+
 import { memo, MouseEvent, useEffect, useState } from 'react';
 import AsTable from '@/components/tables/AsTable';
 import { EmptyPage } from '@/pages/DefaultPage';
@@ -6,6 +21,7 @@ import {
     ProgressCell,
     TextCell,
 } from '@/components/tables/utils.tsx';
+import { EvaluationMetaData } from '@shared/types';
 import { useNavigate } from 'react-router-dom';
 import { EvaluationResult } from '@shared/types/evaluation';
 import { useEvaluationRoom } from '@/context/EvaluationRoomContext.tsx';
@@ -115,6 +131,7 @@ const EvaluationDetailPage = () => {
             <div className="max-w-5xl mx-auto px-6 py-6 space-y-6 items-center h-full">
                 <EmptyPage
                     size={200}
+                    title="No data for the given evaluation ID"
                     title={`No evaluation found for ${evaluationId} in ${benchmarkName}`}
                 />
             </div>
@@ -383,6 +400,105 @@ const EvaluationDetailPage = () => {
                 </div>
 
                 <div className="hidden sm:block">
+                    <div className="rounded-xl border shadow">
+                        <div className="flex flex-ro items-center justify-between space-y-1.5 p-6 pb-2 text-sm font-medium">
+                            Result
+                            <Select
+                                variant="filled"
+                                defaultValue="accuracy"
+                                options={[
+                                    {
+                                        label: 'Accuracy',
+                                        value: 'accuracy',
+                                    },
+                                    {
+                                        label: 'Tool Usage',
+                                        value: 'tool-usage',
+                                    },
+                                ]}
+                            />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 p-6 pt-3 w-full h-[150px]">
+                            <ResponsiveContainer height="100%" width="100%">
+                                <BarChart
+                                    data={[
+                                        {
+                                            name: 'repeat-1',
+                                            accuracy: 0.72,
+                                        },
+                                        {
+                                            name: 'repeat-2',
+                                            accuracy: 0.85,
+                                        },
+                                        {
+                                            name: 'repeat-3',
+                                            accuracy: 0.6,
+                                        },
+                                        {
+                                            name: 'repeat-4',
+                                            accuracy: 0.8,
+                                        },
+                                        {
+                                            name: 'repeat-5',
+                                            accuracy: 0.9,
+                                        },
+                                    ]}
+                                    margin={{
+                                        top: 0,
+                                        right: 0,
+                                        left: 0,
+                                        bottom: 0,
+                                    }}
+                                >
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <Bar
+                                        dataKey="accuracy"
+                                        fill="var(--muted-foreground)"
+                                        maxBarSize={20}
+                                        stackId="modelName"
+                                    />
+                                    <YAxis type="number" />
+                                    <XAxis dataKey="name" type="category" />
+                                </BarChart>
+                            </ResponsiveContainer>
+
+                            <ResponsiveContainer height="100%" width="100%">
+                                <AreaChart
+                                    data={[
+                                        {
+                                            name: 0,
+                                            uv: 0,
+                                        },
+                                        {
+                                            name: 50,
+                                            uv: 0.7,
+                                        },
+                                        {
+                                            name: 100,
+                                            uv: 0,
+                                        },
+                                    ]}
+                                    margin={{
+                                        top: 10,
+                                        right: 30,
+                                        left: 0,
+                                        bottom: 0,
+                                    }}
+                                >
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="name" type="number" />
+                                    <YAxis />
+                                    <Tooltip />
+                                    <Area
+                                        type="monotone"
+                                        dataKey="uv"
+                                        stroke="var(--primary-color)"
+                                        fill="var(--primary-color)"
+                                    />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
                     <NumericalView
                         metrics={
                             evaluationDTO ? evaluationDTO.metrics : {}

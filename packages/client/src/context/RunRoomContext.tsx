@@ -1,33 +1,33 @@
 import {
     createContext,
-    useContext,
     ReactNode,
+    useContext,
     useEffect,
     useState,
 } from 'react';
-import { useSocket } from './SocketContext';
 import {
     BackendResponse,
     InputRequestData,
-    MessageData,
     ModelInvocationData,
+    Reply,
     RunData,
     SocketEvents,
 } from '../../../shared/src/types/trpc';
+import { useSocket } from './SocketContext';
 
+import { useParams } from 'react-router-dom';
+import { ContentBlocks } from '../../../shared/src/types/messageForm';
 import {
-    TraceData,
     SpanData,
+    TraceData,
     TraceStatus,
 } from '../../../shared/src/types/trace';
-import { useParams } from 'react-router-dom';
+import { getTimeDifferenceNano } from '../../../shared/src/utils/timeUtils';
 import { ProjectNotFoundPage } from '../pages/DefaultPage';
-import { ContentBlocks } from '../../../shared/src/types/messageForm';
 import { useMessageApi } from './MessageApiContext.tsx';
-import { getTimeDifference } from '../../../shared/src/utils/timeUtils';
 
 interface RunRoomContextType {
-    messages: MessageData[];
+    replies: Reply[];
     trace: TraceData | null;
     spans: SpanData[];
     inputRequests: InputRequestData[];
@@ -50,20 +50,31 @@ interface Props {
 const calculateTraceData = (spans: SpanData[]) => {
     if (!spans.length) return null;
 
-    const startTimes = spans.map((span) => new Date(span.startTime).getTime());
-    const endTimes = spans.map((span) => new Date(span.endTime).getTime());
+    // Find earliest start time and latest end time by comparing nanosecond timestamps directly
+    const startTimes = spans.map((span) => parseInt(span.startTimeUnixNano));
+    const endTimes = spans.map((span) => parseInt(span.endTimeUnixNano));
 
-    const earliestStart = new Date(Math.min(...startTimes)).toISOString();
-    const latestEnd = new Date(Math.max(...endTimes)).toISOString();
+    const earliestStartNano = Math.min(...startTimes);
+    const latestEndNano = Math.max(...endTimes);
 
-    const status = spans.some((span) => span.status === TraceStatus.ERROR)
+    // Convert to Date objects for display
+    const earliestStart = new Date(earliestStartNano / 1000000).toISOString();
+    const latestEnd = new Date(latestEndNano / 1000000).toISOString();
+
+    const status = spans.some((span) => span.status.code === 2) // ERROR status code
         ? TraceStatus.ERROR
         : TraceStatus.OK;
+
+    // Calculate duration directly from nanosecond timestamps
+    const durationNano = getTimeDifferenceNano(
+        earliestStartNano,
+        latestEndNano,
+    );
 
     const data = {
         startTime: earliestStart,
         endTime: latestEnd,
-        duration: getTimeDifference(earliestStart, latestEnd),
+        duration: durationNano,
         status: status,
     };
     return data;
@@ -75,7 +86,7 @@ export function RunRoomContextProvider({ children }: Props) {
 
     const socket = useSocket();
     const roomName = `run-${runId}`;
-    const [messages, setMessages] = useState<MessageData[]>([]);
+    const [replies, setReplies] = useState<Reply[]>([]);
 
     const [spans, setSpans] = useState<SpanData[]>([]);
     const [trace, setTrace] = useState<TraceData | null>(null);
@@ -93,13 +104,14 @@ export function RunRoomContextProvider({ children }: Props) {
                 setTrace({
                     startTime: traceData.startTime,
                     endTime: traceData.endTime,
-                    latencyMs: traceData.duration,
+                    latencyNs: traceData.duration,
                     status: traceData.status,
                     runId: runId,
                 } as TraceData);
             }
         }
     }, [spans]);
+
     useEffect(() => {
         if (!socket) {
             // TODO: 通过message提示用户
@@ -108,7 +120,7 @@ export function RunRoomContextProvider({ children }: Props) {
 
         // Clear the data first
         setInputRequests([]);
-        setMessages([]);
+        setReplies([]);
         setSpans([]);
         setRunData(null);
         setModelInvocationData(null);
@@ -124,32 +136,32 @@ export function RunRoomContextProvider({ children }: Props) {
         );
 
         // New messages
-        socket.on(
-            SocketEvents.server.pushMessages,
-            (newMessages: MessageData[]) => {
-                setMessages((prevMessages) => {
-                    const updatedMessages = [...prevMessages];
-                    newMessages.forEach((newMessage) => {
-                        const index = updatedMessages.findIndex(
-                            (message) => message.id === newMessage.id,
-                        );
-                        if (index === -1) {
-                            updatedMessages.push(newMessage);
-                        } else {
-                            updatedMessages[index] = newMessage;
-                        }
-                    });
-                    return updatedMessages;
+        socket.on(SocketEvents.server.pushMessages, (newReplies: Reply[]) => {
+            setReplies((prev) => {
+                const updatedReplies: Reply[] = [...prev];
+                newReplies.forEach((newReply) => {
+                    const index = updatedReplies.findIndex(
+                        (reply) => reply.replyId === newReply.replyId,
+                    );
+
+                    if (index === -1) {
+                        // New reply, add it
+                        updatedReplies.push(newReply);
+                    } else {
+                        // Existing reply, update messages
+                        updatedReplies[index] = newReply;
+                    }
                 });
-            },
-        );
+                return updatedReplies;
+            });
+        });
 
         socket.on(SocketEvents.server.pushSpans, (newSpans: SpanData[]) => {
             setSpans((prevSpans) => {
                 const updatedSpans = [...prevSpans];
                 newSpans.forEach((newSpan) => {
                     const index = updatedSpans.findIndex(
-                        (span) => span.id === newSpan.id,
+                        (span) => span.spanId === newSpan.spanId,
                     );
                     if (index === -1) {
                         updatedSpans.push(newSpan);
@@ -159,7 +171,10 @@ export function RunRoomContextProvider({ children }: Props) {
                 });
 
                 return updatedSpans.sort((a, b) => {
-                    return a.startTime.localeCompare(b.startTime);
+                    return (
+                        parseInt(a.startTimeUnixNano) -
+                        parseInt(b.startTimeUnixNano)
+                    );
                 });
             });
         });
@@ -209,6 +224,13 @@ export function RunRoomContextProvider({ children }: Props) {
         return <ProjectNotFoundPage />;
     }
 
+    /**
+     * Send the user input to the server
+     *
+     * @param requestId
+     * @param blocksInput
+     * @param structuredInput
+     */
     const sendUserInputToServer = (
         requestId: string,
         blocksInput: ContentBlocks,
@@ -238,7 +260,7 @@ export function RunRoomContextProvider({ children }: Props) {
         <RunRoomContext.Provider
             value={{
                 runId,
-                messages,
+                replies,
                 trace,
                 spans,
                 inputRequests,

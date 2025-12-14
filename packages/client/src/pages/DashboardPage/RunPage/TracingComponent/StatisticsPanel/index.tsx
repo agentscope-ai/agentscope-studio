@@ -1,8 +1,6 @@
 import { memo } from 'react';
 import { Col, Flex, Row } from 'antd';
-import { MetaDataSection } from '../ShareComponents.tsx';
-import { useRunRoom } from '../../../../../context/RunRoomContext.tsx';
-import { RemoveScrollBarStyle } from '../../../../../styles.ts';
+import { useTranslation } from 'react-i18next';
 import {
     Bar,
     BarChart,
@@ -12,8 +10,11 @@ import {
     XAxis,
     YAxis,
 } from 'recharts';
+
 import StatusSection from './StatusSection';
-import { useTranslation } from 'react-i18next';
+import { MetaDataSection } from '../ShareComponents.tsx';
+import { useRunRoom } from '@/context/RunRoomContext.tsx';
+import { RemoveScrollBarStyle } from '@/styles.ts';
 
 const StatisticsPanel = () => {
     const { runData, modelInvocationData } = useRunRoom();
@@ -60,7 +61,7 @@ const StatisticsPanel = () => {
                 boxSizing: 'border-box',
                 ...RemoveScrollBarStyle,
             }}
-            gap={'large'}
+            gap="large"
         >
             <StatusSection
                 status={runData?.status}
@@ -109,14 +110,14 @@ const StatisticsPanel = () => {
                             width="100%"
                             height={80}
                             maxHeight={500}
-                            minWidth={'100%'}
+                            minWidth="100%"
                             style={{
                                 background: 'var(--muted)',
                                 borderRadius: '0 0 6px 6px',
                             }}
                         >
                             <BarChart
-                                layout={'vertical'}
+                                layout="vertical"
                                 data={
                                     modelInvocationData?.chat
                                         .modelInvocationsByModel
@@ -182,7 +183,7 @@ const StatisticsPanel = () => {
                 </Col>
             </Row>
 
-            <MetaDataSection title={'Token'} data={tokenData} />
+            <MetaDataSection title="Token" data={tokenData} />
 
             <Row gutter={0}>
                 <Col
@@ -215,14 +216,14 @@ const StatisticsPanel = () => {
                             width="100%"
                             height={80}
                             maxHeight={500}
-                            minWidth={'100%'}
+                            minWidth="100%"
                             style={{
                                 background: 'var(--muted)',
                                 borderRadius: '0 0 6px 6px',
                             }}
                         >
                             <BarChart
-                                layout={'vertical'}
+                                layout="vertical"
                                 data={
                                     modelInvocationData?.chat.avgTokensByModel
                                 }
@@ -264,13 +265,13 @@ const StatisticsPanel = () => {
                                     dataKey="promptTokens"
                                     fill="var(--muted-foreground)"
                                     maxBarSize={20}
-                                    stackId={'modelName'}
+                                    stackId="modelName"
                                 />
                                 <Bar
-                                    dataKey={'completionTokens'}
+                                    dataKey="completionTokens"
                                     fill="var（--secondary-foreground)"
                                     maxBarSize={20}
-                                    stackId={'modelName'}
+                                    stackId="modelName"
                                     radius={[0, 6, 6, 0]}
                                 />
                             </BarChart>

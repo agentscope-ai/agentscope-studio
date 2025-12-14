@@ -1,17 +1,19 @@
 import { Key, memo, MouseEvent, useEffect, useState } from 'react';
-import { Flex, Input, TableColumnsType } from 'antd';
-import { useProjectListRoom } from '../../../context/ProjectListRoomContext.tsx';
-import { useTranslation } from 'react-i18next';
-import DeleteIcon from '../../../assets/svgs/delete.svg?react';
 import { useNavigate } from 'react-router-dom';
-import PageTitleSpan from '../../../components/spans/PageTitleSpan.tsx';
-import { SecondaryButton } from '../../../components/buttons/ASButton';
+import { Flex, Input, TableColumnsType } from 'antd';
+import { useTranslation } from 'react-i18next';
+
+import AsTable from '@/components/tables/AsTable';
+import DeleteIcon from '@/assets/svgs/delete.svg?react';
+import PageTitleSpan from '@/components/spans/PageTitleSpan.tsx';
+
+import { useProjectListRoom } from '@/context/ProjectListRoomContext.tsx';
+import { SecondaryButton } from '@/components/buttons/ASButton';
 import {
     NumberCell,
     renderTitle,
     TextCell,
 } from '@/components/tables/utils.tsx';
-import AsTable from '@/components/tables/AsTable';
 
 interface DataType {
     project: string;
@@ -23,11 +25,12 @@ interface DataType {
 }
 
 const ProjectPage = () => {
-    const { projects, deleteProjects } = useProjectListRoom();
     const { t } = useTranslation();
-    const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
     const navigate = useNavigate();
+    const { projects, deleteProjects } = useProjectListRoom();
+
     const [searchText, setSearchText] = useState<string>('');
+    const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
 
     const rowSelection = {
         selectedRowKeys,
@@ -111,10 +114,10 @@ const ProjectPage = () => {
         <Flex
             style={{ width: '100%', height: '100%', padding: '32px 48px' }}
             vertical={true}
-            gap={'middle'}
+            gap="middle"
         >
             <PageTitleSpan title={t('common.projects')} />
-            <Flex vertical={false} gap={'middle'} align={'center'}>
+            <Flex vertical={false} gap="middle" align="center">
                 <Input
                     value={searchText}
                     onChange={(event) => {
@@ -124,7 +127,7 @@ const ProjectPage = () => {
                         width: 300,
                         borderRadius: 'calc(var(--radius) - 2px)',
                     }}
-                    variant={'outlined'}
+                    variant="outlined"
                     placeholder={t('placeholder.search-project')}
                 />
 
@@ -140,7 +143,7 @@ const ProjectPage = () => {
                     }
                     icon={<DeleteIcon width={13} height={13} />}
                     disabled={selectedRowKeys.length === 0}
-                    variant={'dashed'}
+                    variant="dashed"
                     onClick={() => {
                         deleteProjects(selectedRowKeys as string[]);
                     }}
@@ -159,7 +162,7 @@ const ProjectPage = () => {
                     return {
                         onClick: (event: MouseEvent) => {
                             if (event.type === 'click') {
-                                navigate(`projects/${record.project}`);
+                                navigate(`${record.project}`);
                             }
                         },
                         style: {
@@ -168,7 +171,7 @@ const ProjectPage = () => {
                     };
                 }}
                 pagination={false}
-                rowKey={'project'}
+                rowKey="project"
                 rowSelection={rowSelection}
             />
         </Flex>

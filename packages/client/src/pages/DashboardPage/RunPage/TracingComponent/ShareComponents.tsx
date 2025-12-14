@@ -1,25 +1,20 @@
 import { memo, ReactNode } from 'react';
 import { Col, Flex, Row } from 'antd';
-import NumberCounter from '../../../../components/numbers/NumberCounter';
+
+import NumberCounter from '@/components/numbers/NumberCounter';
 
 interface MetaDataSectionProps {
     title: string;
     data: Record<string, string | number | undefined | ReactNode>;
 }
 
-export const renderSectionTitle = (title: string) => {
+export const PanelTitle = memo(({ title }: { title: string }) => {
     return (
-        <span
-            style={{
-                fontWeight: 550,
-                fontSize: 12,
-                color: 'var(--muted-foreground)',
-            }}
-        >
+        <span className="font-medium text-[12px] text-muted-foreground">
             {title.toUpperCase()}
         </span>
     );
-};
+});
 
 export const MetaDataSection = memo(({ title, data }: MetaDataSectionProps) => {
     const renderRow = (
@@ -68,9 +63,8 @@ export const MetaDataSection = memo(({ title, data }: MetaDataSectionProps) => {
     };
 
     return (
-        <Flex vertical={true} gap={'small'}>
-            {renderSectionTitle(title)}
-
+        <Flex vertical={true} gap="small">
+            <PanelTitle title={title} />
             {Object.entries(data).map(([key, value]) => {
                 return renderRow(key, value);
             })}

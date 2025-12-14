@@ -1,7 +1,7 @@
 import {
     BackendResponse,
     ContentBlocks,
-    ReplyData,
+    FridayReply,
     SocketEvents,
     SocketRoomName,
 } from '@shared/types';
@@ -12,14 +12,15 @@ import {
     useEffect,
     useState,
 } from 'react';
+import stripAnsi from 'strip-ansi';
+import { useTranslation } from 'react-i18next';
+
 import { useSocket } from '@/context/SocketContext.tsx';
 import { useMessageApi } from '@/context/MessageApiContext.tsx';
 import { useNotification } from '@/context/NotificationContext.tsx';
-import { useTranslation } from 'react-i18next';
-import stripAnsi from 'strip-ansi';
 
 interface FridayAppRoomContextType {
-    replies: ReplyData[];
+    replies: FridayReply[];
     isReplying: boolean;
     handleUserInput: (
         name: string,
@@ -42,7 +43,7 @@ interface Props {
 
 export function FridayAppRoomContextProvider({ children }: Props) {
     const socket = useSocket();
-    const [replies, setReplies] = useState<ReplyData[]>([]);
+    const [replies, setReplies] = useState<FridayReply[]>([]);
     const [isReplying, setIsReplying] = useState(false);
     const { notificationApi } = useNotification();
     const { messageApi } = useMessageApi();
@@ -68,7 +69,7 @@ export function FridayAppRoomContextProvider({ children }: Props) {
         socket.on(
             SocketEvents.server.pushReplies,
             (
-                newReplies: ReplyData[],
+                newReplies: FridayReply[],
                 hasMore: boolean,
                 override: boolean = false,
             ) => {

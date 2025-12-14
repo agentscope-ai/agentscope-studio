@@ -1,35 +1,31 @@
-import { Server, Socket } from 'socket.io';
+import { spawn } from 'child_process';
 import { Server as HttpServer } from 'http';
-import { RunDao } from '../dao/Run';
+import { Server, Socket } from 'socket.io';
+import { ContentBlocks, Status } from '../../../shared/src/types/messageForm';
 import {
     BackendResponse,
+    FridayReply,
     InputRequestData,
-    MessageData,
     OverviewData,
-    ReplyData,
+    Reply,
     RunData,
     SocketEvents,
     SocketRoomName,
 } from '../../../shared/src/types/trpc';
-import { spawn } from 'child_process';
-import {
-    ContentBlocks,
-    MessageForm,
-    Status,
-} from '../../../shared/src/types/messageForm';
+import { RunDao } from '../dao/Run';
 
-import { SpanData } from '../../../shared/src/types/trace';
-import { InputRequestDao } from '../dao/InputRequest';
-import { FridayAppMessageDao } from '../dao/FridayAppMessage';
 import dayjs from 'dayjs';
-import { ConfigManager, PATHS } from '../../../shared/src';
-import { ReplyingStateManager } from '../services/ReplyingStateManager';
 import * as fs from 'node:fs';
+import { ConfigManager, PATHS } from '../../../shared/src';
 import {
     FridayConfig,
     FridayConfigManager,
 } from '../../../shared/src/config/friday';
+import { SpanData } from '../../../shared/src/types/trace';
+import { FridayAppMessageDao } from '../dao/FridayAppMessage';
+import { InputRequestDao } from '../dao/InputRequest';
 import { SpanDao } from '../dao/Trace';
+import { ReplyingStateManager } from '../services/ReplyingStateManager';
 import { EvaluationDao } from '@/dao/evaluation';
 import path from 'path';
 import { FileDao } from '@/dao/File';
@@ -244,9 +240,18 @@ export class SocketManager {
                                     SocketEvents.server.pushInputRequests,
                                     data.inputRequests,
                                 );
+                                // 对data.replies.messages按时间排序
+                                data.replies.forEach((reply) => {
+                                    reply.messages.sort((a, b) => {
+                                        return a.timestamp.localeCompare(
+                                            b.timestamp,
+                                        );
+                                    });
+                                });
+
                                 socket.emit(
                                     SocketEvents.server.pushMessages,
-                                    data.messages,
+                                    data.replies,
                                 );
                                 socket.emit(
                                     SocketEvents.server.pushSpans,
@@ -547,10 +552,14 @@ export class SocketManager {
                         '--studio_url',
                         `http://localhost:${config.port}`,
                     ];
-                    console.log(fridayConfig);
+                    console.debug(fridayConfig);
                     for (const [key, value] of Object.entries(fridayConfig)) {
                         if (key !== 'pythonEnv' && key !== 'mainScriptPath') {
-                            args.push(`--${key}`, value);
+                            if (typeof value === 'object') {
+                                args.push(`--${key}`, JSON.stringify(value));
+                            } else {
+                                args.push(`--${key}`, value);
+                            }
                         }
                     }
 
@@ -679,28 +688,21 @@ export class SocketManager {
     /*
      * Emit events to the run room.
      */
-    static broadcastMessageToRunRoom(runId: string, msgForm: MessageForm) {
+    static broadcastMessageToRunRoom(runId: string, reply: Reply) {
         this.io
             .of('/client')
             .to(`run-${runId}`)
-            .emit(SocketEvents.server.pushMessages, [
-                {
-                    id: msgForm.id,
-                    runId: msgForm.runId,
-                    replyId: msgForm.replyId,
-                    ...msgForm.msg,
-                },
-            ] as MessageData[]);
+            .emit(SocketEvents.server.pushMessages, [reply] as Reply[]);
     }
 
     static broadcastSpanDataToRunRoom(spanDataArray: SpanData[]) {
         // Group spans by runId
         const groupedSpans: Record<string, SpanData[]> = {};
         spanDataArray.forEach((spanData) => {
-            if (!groupedSpans[spanData.runId]) {
-                groupedSpans[spanData.runId] = [];
+            if (!groupedSpans[spanData.conversationId]) {
+                groupedSpans[spanData.conversationId] = [];
             }
-            groupedSpans[spanData.runId].push(spanData);
+            groupedSpans[spanData.conversationId].push(spanData);
         });
 
         // Send grouped spans to each run room
@@ -799,7 +801,7 @@ export class SocketManager {
     }
 
     static broadcastReplyToFridayAppRoom(
-        reply?: ReplyData,
+        reply?: FridayReply,
         override: boolean = false,
     ) {
         this.io

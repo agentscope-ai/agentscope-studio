@@ -8,7 +8,11 @@
         "@trpc/client": "^11.0.1",
         "@trpc/react-query": "^11.0.1"
     },
-    "version": "1.0.5",
+    "version": "1.0.7",
+    "engines": {
+        "node": ">=20.0.0",
+        "npm": ">=10.0.0"
+    },
     "bin": {
         "as_studio": "./bin/cli.js"
     },
@@ -25,21 +29,29 @@
         "build:server": "npm run build --workspace=packages/server",
         "build:python": "cp -r packages/app dist/app",
         "prepublishOnly": "npm run build",
-        "format": "prettier --write . && eslint . --ext .js,.jsx,.ts,.tsx --fix"
+        "format": "prettier --write . && eslint . --ext .js,.jsx,.ts,.tsx --fix",
+        "docs:dev": "vitepress dev docs",
+        "docs:build": "vitepress build docs",
+        "docs:preview": "vitepress preview docs"
     },
     "devDependencies": {
         "@eslint/js": "^9.25.0",
+        "@types/figlet": "^1.7.0",
         "@types/opener": "^1.4.3",
         "concurrently": "^8.2.2",
         "eslint": "^9.25.0",
         "prettier": "^3.5.3",
         "typescript": "^5.8.3",
-        "typescript-eslint": "^8.30.1"
+        "typescript-eslint": "^8.30.1",
+        "vitepress": "^2.0.0-alpha.13"
     },
     "dependencies": {
+        "@grpc/grpc-js": "^1.14.1",
+        "@opentelemetry/api": "^1.9.0",
         "@trpc/server": "^11.0.1",
         "cors": "^2.8.5",
         "express": "^5.1.0",
+        "figlet": "^1.7.0",
         "find-process": "^1.4.10",
         "google-protobuf": "^3.21.4",
         "moment": "^2.30.1",

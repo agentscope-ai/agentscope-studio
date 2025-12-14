@@ -1,13 +1,14 @@
 import { Layout } from 'antd';
 import { memo } from 'react';
 import { Route, Routes } from 'react-router-dom';
-import ComparisonPage from '@/pages/EvalPage/TaskComparisonPage';
-import OverviewPage from '@/pages/EvalPage/OverviewPage';
-import { EvaluationRoomContextProvider } from '@/context/EvaluationRoomContext';
-import { RouterPath } from '@/pages/RouterPath.ts';
-import TaskDetailPage from '@/pages/EvalPage/TaskDetailPage';
-import EvaluationDetailPage from './EvaluationDetailPage';
 
+import OverviewPage from '@/pages/EvalPage/OverviewPage';
+import TaskDetailPage from '@/pages/EvalPage/TaskDetailPage';
+import ComparisonPage from '@/pages/EvalPage/TaskComparisonPage';
+import EvaluationDetailPage from '@/pages/EvalPage/EvaluationDetailPage';
+
+import { RouterPath } from '@/pages/RouterPath.ts';
+import { EvaluationRoomContextProvider } from '@/context/EvaluationRoomContext';
 
 const EvalPage = () => {
     return (
@@ -37,5 +38,4 @@ const EvalPage = () => {
         </Layout>
     );
 };
-
 export default memo(EvalPage);

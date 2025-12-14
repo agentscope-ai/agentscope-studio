@@ -1,3 +1,7 @@
+import { memo, useEffect, useState } from 'react';
+import { Input, List } from 'antd';
+import { useTranslation } from 'react-i18next';
+
 import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input, List, Modal } from 'antd';
@@ -78,7 +82,7 @@ const Sider = ({ selectedBenchmark, onSelect, benchmarkNames }: Props) => {
 
             <Input
                 className="w-full"
-                variant={'filled'}
+                variant="filled"
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
                 placeholder={t('placeholder.search-benchmark')}
@@ -99,7 +103,7 @@ const Sider = ({ selectedBenchmark, onSelect, benchmarkNames }: Props) => {
                 <List<string>
                     locale={{
                         emptyText: (
-                            <EmptyPage size={100} title={'No benchmarks'} />
+                            <EmptyPage size={100} title="No benchmarks" />
                         ),
                     }}
                     className="h-full"

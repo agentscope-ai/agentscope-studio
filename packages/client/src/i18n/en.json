@@ -9,13 +9,24 @@
         "ok": "OK"
     },
     "chat": {
+        "avatar-set": {
+            "character": "Character",
+            "fairytale": "Fairytale",
+            "family-members": "Family Members",
+            "letter": "Letter",
+            "pokemon": "Pokemon",
+            "random": "Random",
+            "superhero": "Superhero"
+        },
         "title-attachment": "Total {{length}} URL is attached",
         "title-attachments": "Total {{length}} URLs are attached",
+        "title-hint-message": "Hint message",
         "title-using-tool": "Using tool ",
         "title-time-total": "Total time: {{totalTime}}s",
         "title-tool-result": "Tool result of"
     },
     "common": {
+        "agent": "Agent",
         "attributes": "All Attributes",
         "api": "API",
         "application": "Application",
@@ -25,22 +36,30 @@
         "changeLanguage": "Change Language",
         "completion": "Completion",
         "completion-average": "Completion(Avg)",
-        "cont": "Cont",
+        "contact": "Contact",
         "dashboard": "Dashboard",
         "data-view": "Data View",
         "data-view-description": "The statistics of the current run instance",
+        "develop": "Develop",
+        "discord": "Discord",
         "distribution": "Distribution",
-        "docs": "Docs",
+        "dingtalk": "DingTalk",
+        "document": "Document",
         "evaluation": "Evaluation",
         "evaluation-history": "Evaluation History",
+        "friday": "Friday",
+        "github": "GitHub",
+        "hint": "Hint",
         "home": "Home",
         "id": "ID",
         "input": "Input",
         "input-tokens": "Input Tokens",
+        "language": "Language",
         "latency": "Latency",
         "llm-invocation": "Invocation",
         "llm-invocations": "Invocations",
         "message": "Message",
+        "messages": "Messages",
         "metadata": "Metadata",
         "model-category": "Model Category",
         "name": "Name",
@@ -48,6 +67,7 @@
         "output-tokens": "Output Tokens",
         "overview": "Overview",
         "pid": "Pid",
+        "preview": "Preview",
         "project": "Project",
         "projects": "Projects",
         "prompt": "Prompt",
@@ -58,8 +78,10 @@
         "thinking": "Thinking",
         "times": "Times",
         "timestamp": "Timestamp",
-        "trace": "TRACE",
+        "trace": "Trace",
+        "traces": "Traces",
         "trace-details": "Trace Details",
+        "tracing": "Tracing",
         "total": "Total",
         "total-times": "Total Times",
         "total-tokens": "Tokens",
@@ -94,16 +116,27 @@
     "help": {
         "friday": {
             "api-key": "The {{llmProvider}} API key, used to access the LLM API provider",
+            "base-url": "The base URL for the LLM API provider",
+            "base-url-placeholder": "e.g. https://api.openai.com/v1,http://localhost:11434",
+            "client-kwargs": "The keyword arguments for the API client initialization, e.g. \"base_url\" for OpenAI client",
+            "generate-kwargs": "The keyword arguments passed when actually calling the LLM API, e.g. \"temperature\", \"max_tokens\", etc.",
             "llm-provider": "Select the LLM API provider",
             "model-name": "The {{llmProvider}} model used to generate response",
             "python-env": "Absolute path to your Python env (3.10+), e.g. /usr/bin/python",
             "write-permission": "Whether allow Friday to modify your local files. If allowed, Friday will equip a tool to write text files",
-            "base-url": "The base URL for the LLM API provider",
-            "base-url-placeholder": "e.g. https://api.openai.com/v1,http://localhost:11434"
+            "key-name": "Key Name",
+            "missing-key-name": "Missing key name",
+            "type-name": "Type Name",
+            "missing-type-name": "Missing type name",
+            "value-name": "Value Name",
+            "missing-value-name": "Missing value name",
+            "check-only-number": "Only numbers can be entered",
+            "add-form-list-btn": "Add keyword argument"
         }
     },
     "hint": {
         "empty-trace": "No data available",
+        "messages": "In AgentScope, a reply consists of multiple messages with different roles and names",
         "select-run": "Click on a run to view details",
         "select-message": "Click on a message to view details",
         "select-trace": "Click on a run to view trace data"
@@ -130,9 +163,11 @@
         "update-version-title": "Update Available"
     },
     "placeholder": {
-        "input-as-user": "Type your message in voice of {{name}} ({{shortcutKeys}} to send message)",
+        "input-as-user": "Type your message in voice of {{name}}",
         "input-disable": "Currently no user input is needed",
-        "input-friday-app": "{{shortcutKeys}} to send message",
+        "input-friday-afternoon": "Good afternoon, how can I help you today?",
+        "input-friday-evening": "Good evening, how can I help you today?",
+        "input-friday-morning": "Good morning, how can I help you today?",
         "input-url": "A local or web URL to the image/video/audio file (press enter to confirm)",
         "search-benchmark": "Search benchmarks",
         "search-evaluation": "Search evaluation history",
@@ -183,17 +218,25 @@
             "attachment-delete": "Delete the attached file",
             "clean-history": "Clean the current conversation history",
             "compare-evaluation": "Compare two evaluation results of the same benchmark dataset",
+            "copy-to-clipboard": "Copy to clipboard",
             "delete-selected-projects": "Delete {{number}} selected project(s)",
             "delete-selected-projects-disable": "Select projects from the table to delete",
+            "expand-textarea": "Expand",
             "focus-on-latest-run": "Focus on the latest run automatically",
+            "group-by-reply": "Group messages by reply",
             "import-evaluation": "Import evaluation result folder",
             "interrupt-reply": "Interrupt the reply",
-            "send-message": "Press {{shortcutKeys}} to send message",
+            "randomize-avatar": "Randomize avatar",
+            "render-markdown": "Render markdown",
+            "send-message": "Send your message",
             "send-message-disable": "No user input is requested",
             "scroll-to-bottom": "Scroll to the bottom"
         },
         "chart": {
             "invocation": "# of invocation"
+        },
+        "header": {
+            "hint-message": "A message that speaks in the user's voice to guide how the agent should behave"
         },
         "switch": {
             "display-raw-data": "Display raw data"
@@ -217,7 +260,33 @@
             "send-title": "Send Message"
         }
     },
+    "trace": {
+        "detail": {
+            "loading": "Loading..."
+        },
+        "message": {
+            "copyFailed": "Copy failed",
+            "copySuccess": "Copied to clipboard",
+            "loadFailed": "Failed to load traces"
+        },
+        "nodeDetails": "Node Details",
+        "selectSpan": "Select a span to view details",
+        "spanId": "Span ID",
+        "status": {
+            "error": "ERROR",
+            "ok": "OK",
+            "unset": "UNSET"
+        },
+        "timeRange": {
+            "all": "All",
+            "month": "Last 30 days",
+            "week": "Last 7 days"
+        },
+        "traceId": "Trace ID"
+    },
     "unit": {
+        "character": "character",
+        "characters": "characters",
         "run": "Run",
         "runs": "Runs",
         "time": "Time",

@@ -44,5 +44,8 @@ Desktop.ini
 logs/
 *.log
 
+dist/
 
-package-lock.json
+# Docs
+docs/.vitepress/dist
+docs/.vitepress/cache

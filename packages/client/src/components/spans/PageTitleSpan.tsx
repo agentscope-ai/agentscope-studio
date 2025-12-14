@@ -6,6 +6,9 @@ interface Props {
     description?: string
 }
 
+/**
+ * Page title text with consistent typography and truncation.
+ */
 const PageTitleSpan = ({ title, description }: Props) => {
     return (
         <div className='flex flex-col max-w-full truncate'>

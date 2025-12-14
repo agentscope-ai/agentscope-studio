@@ -1,5 +1,15 @@
+import { z } from 'zod';
 import { ContentBlocks, ContentType, Status } from './messageForm';
 import { Usage } from './usage';
+
+export const RegisterReplyParamsSchema = z.object({
+    runId: z.string(),
+    replyId: z.string(),
+    replyRole: z.string(),
+    replyName: z.string(),
+    createdAt: z.string(),
+});
+export type RegisterReplyParams = z.infer<typeof RegisterReplyParamsSchema>;
 
 export const SocketRoomName = {
     ProjectListRoom: 'ProjectListRoom',
@@ -102,7 +112,25 @@ export interface MessageData {
     timestamp: string;
 }
 
-export interface ReplyData {
+export interface Reply {
+    replyId: string;
+    replyName: string;
+    replyRole: string;
+    createdAt: string;
+    finishedAt?: string;
+    messages: Message[];
+}
+
+export interface Message {
+    id: string;
+    name: string;
+    role: string;
+    content: ContentType;
+    timestamp: string;
+    metadata: object;
+}
+
+export interface FridayReply {
     id: string;
     name: string;
     role: string;
@@ -186,3 +214,107 @@ export interface BackendResponse {
     message: string;
     data?: unknown;
 }
+
+interface Metric {
+    name: string;
+    type: 'discrete';
+    enum: (string | number)[];
+}
+
+export interface EvaluationMeta {
+    id: string;
+    benchmark: string;
+    createdAt: string;
+    time: string;
+    repeat: number;
+    dir: string;
+}
+
+export interface EvaluationResult {
+    results: Record<string, Record<string, unknown>>;
+}
+
+export interface DiscreteMetricRes {
+    name: string;
+    type: 'category' | 'number';
+    value: string | number;
+    enum: (string | number)[];
+    multipleOf?: number;
+}
+
+export interface ContinuousMetricRes {
+    name: string;
+    type: 'number';
+    minimum?: number;
+    maximum?: number;
+    multipleOf?: number;
+    exclusiveMinimum?: number;
+    exclusiveMaximum?: number;
+    description?: string;
+}
+
+export interface EvaluationMetaData {
+    id: string;
+    name: string;
+    status: string;
+    progress: number;
+    createdAt: string;
+    time: number;
+    metrics: Metric[];
+    repeat: number;
+    report_dir: string;
+}
+
+export interface Task {
+    id: string;
+    question: string;
+    ground_truth: string;
+    repeat: string;
+    status: Status;
+
+    answers: string | null;
+    result: Record<string, unknown>;
+}
+
+export interface EvaluationData {
+    // Metadata
+    id: string;
+    name: string;
+    status: string;
+    benchmark: string;
+    progress: number;
+    createdAt: string;
+    time: number;
+    metrics: Metric[];
+    repeat: number;
+    report_dir: string;
+    // Data
+    results: Record<string, unknown>;
+}
+
+// TracePage trpc schemas
+export const GetTraceListParamsSchema = z.object({
+    serviceName: z.string().optional(),
+    operationName: z.string().optional(),
+    status: z.number().optional(),
+    startTime: z.string().optional(),
+    endTime: z.string().optional(),
+    limit: z.number().optional(),
+    offset: z.number().optional(),
+});
+export type GetTraceListParams = z.infer<typeof GetTraceListParamsSchema>;
+
+export const GetTraceParamsSchema = z.object({
+    traceId: z.string(),
+});
+export type GetTraceParams = z.infer<typeof GetTraceParamsSchema>;
+
+export const GetTraceStatisticParamsSchema = z.object({
+    startTime: z.string().optional(),
+    endTime: z.string().optional(),
+    serviceName: z.string().optional(),
+    operationName: z.string().optional(),
+});
+export type GetTraceStatisticParams = z.infer<
+    typeof GetTraceStatisticParamsSchema
+>;

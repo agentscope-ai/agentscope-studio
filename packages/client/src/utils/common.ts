@@ -1,5 +1,11 @@
 import { BlockType } from '@shared/types';
 
+/**
+ * Copy a string to the system clipboard.
+ *
+ * @param text The text content to copy.
+ * @returns A promise that resolves to true if the copy succeeds; false otherwise.
+ */
 export const copyToClipboard = async (text: string): Promise<boolean> => {
     try {
         await navigator.clipboard.writeText(text);
@@ -10,6 +16,12 @@ export const copyToClipboard = async (text: string): Promise<boolean> => {
     }
 };
 
+/**
+ * Infer content block type from a file extension.
+ *
+ * @param extension File extension without leading dot (e.g. "png", "mp3").
+ * @returns Corresponding BlockType for image/audio/video; null if unknown or undefined.
+ */
 export const getBlockTypeFromExtension = (extension: string | undefined) => {
     const imagesExt = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'];
     const audioExt = ['mp3', 'wav', 'aiff', 'aac', 'ogg', 'flac'];

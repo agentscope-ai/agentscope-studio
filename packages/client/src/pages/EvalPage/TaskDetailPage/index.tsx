@@ -1,6 +1,6 @@
 import { memo } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Segmented } from 'antd';
+import { useTranslation } from 'react-i18next';
 
 const TaskDetailPage = () => {
     const { t } = useTranslation();
