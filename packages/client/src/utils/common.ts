@@ -112,16 +112,35 @@ export const formatNumber = (
         return str.replace(/\.?0+$/, '');
     };
     
-    // For small numbers (< 1000), show as-is
+    // For small numbers (< 1000), show as-is with specified decimal places if needed
     if (Math.abs(number) < 1000) {
-        return number.toString();
+        // For integers, show as-is without decimal places
+        if (Number.isInteger(number)) {
+            return number.toString();
+        }
+
+        // For non-integers, format with specified digits and remove trailing zeros
+        const formatted = number.toLocaleString(undefined, {
+            minimumFractionDigits: digits,
+            maximumFractionDigits: digits,
+        });
+
+        return removeTrailingZeros(formatted);
     }
-    
     // For medium numbers (1000-9999), add thousand separators
     if (Math.abs(number) < 10000) {
-        return number.toLocaleString(undefined);
+        // For integers, show with thousand separators but no decimal places
+        if (Number.isInteger(number)) {
+            return number.toLocaleString(undefined);
+        }
+        // For non-integers, format with specified digits and remove trailing zeros
+        const formatted = number.toLocaleString(undefined, {
+            minimumFractionDigits: digits,
+            maximumFractionDigits: digits,
+        });
+
+        return removeTrailingZeros(formatted);
     }
-    
     // For large numbers (>= 10000), abbreviate with units
     const units: [number, string][] = [
         [1e12, 'T'],  // Trillion
