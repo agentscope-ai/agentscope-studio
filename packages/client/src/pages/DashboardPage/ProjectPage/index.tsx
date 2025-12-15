@@ -1,5 +1,5 @@
 import { Key, memo, MouseEvent, useEffect, useState, useMemo } from 'react';
-import { Input, TableColumnsType, Table, Pagination } from 'antd';
+import { Input, TableColumnsType, Pagination } from 'antd';
 import type { SorterResult } from 'antd/es/table/interface';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +7,7 @@ import { debounce } from 'lodash';
 
 import DeleteIcon from '@/assets/svgs/delete.svg?react';
 import PageTitleSpan from '@/components/spans/PageTitleSpan.tsx';
+import AsTable from '@/components/tables/AsTable';
 
 import type { ProjectData } from '@shared/types';
 import { SecondaryButton } from '@/components/buttons/ASButton';
@@ -190,48 +191,54 @@ const ProjectPage = () => {
                 </SecondaryButton>
             </div>
 
-            <Table<ProjectData>
-                className="flex-1 h-full overflow-hidden border border-border"
-                size="small"
-                columns={columns}
-                dataSource={tableDataSource}
-                loading={tableLoading}
-                scroll={{
-                    y: 'calc(100vh - 250px)',
-                    x: 'max-content',
-                }}
-                pagination={false}
-                onChange={onTableChange}
-                onRow={(record: ProjectData) => {
-                    return {
-                        onClick: (event: MouseEvent) => {
-                            if (event.type === 'click') {
-                                navigate(`${record.project}`);
-                            }
-                        },
-                        className: 'cursor-pointer',
-                    };
-                }}
-                rowKey="project"
-                rowSelection={rowSelection}
-            />
+            <div className="flex-1 overflow-hidden">
+                <div className="h-full border border-border rounded-[calc(var(--radius)-2px)] overflow-hidden">
+                    <AsTable<ProjectData>
+                        columns={columns}
+                        dataSource={tableDataSource}
+                        loading={tableLoading}
+                        scroll={{
+                            y: 'calc(100vh - 250px)',
+                            x: 'max-content',
+                        }}
+                        pagination={false}
+                        onChange={onTableChange}
+                        onRow={(record: ProjectData) => {
+                            return {
+                                onClick: (event: MouseEvent) => {
+                                    if (event.type === 'click') {
+                                        navigate(`${record.project}`);
+                                    }
+                                },
+                                className: 'cursor-pointer',
+                            };
+                        }}
+                        rowKey="project"
+                        rowSelection={rowSelection}
+                    />
+                </div>
+            </div>
 
-            <Pagination
-                className="flex justify-end"
-                current={pagination.current}
-                pageSize={pagination.pageSize}
-                total={pagination.total}
-                showSizeChanger
-                showTotal={(total) => t('table.pagination.total', { total })}
-                pageSizeOptions={['10', '20', '50', '100']}
-                onChange={(page, pageSize) => {
-                    onTableChange(
-                        { current: page, pageSize },
-                        {},
-                        {} as SorterResult<ProjectData>,
-                    );
-                }}
-            />
+            <div className="absolute bottom-11 right-15">
+                <Pagination
+                    size="small"
+                    current={pagination.current}
+                    pageSize={pagination.pageSize}
+                    total={pagination.total}
+                    showSizeChanger
+                    showTotal={(total) =>
+                        t('table.pagination.total', { total })
+                    }
+                    pageSizeOptions={['10', '20', '50', '100']}
+                    onChange={(page, pageSize) => {
+                        onTableChange(
+                            { current: page, pageSize },
+                            {},
+                            {} as SorterResult<ProjectData>,
+                        );
+                    }}
+                />
+            </div>
         </div>
     );
 };
