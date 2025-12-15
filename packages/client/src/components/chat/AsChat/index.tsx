@@ -45,6 +45,8 @@ import Character3Icon from '@/assets/svgs/avatar/character/050-woman.svg?react';
 import { Avatar } from '@/components/ui/avatar.tsx';
 import { AsAvatar, AvatarSet } from '@/components/chat/AsChat/avatar.tsx';
 
+import { SpeechStatesRecord } from '@/context/RunRoomContext';
+
 interface Props {
     /** List of chat replies to display */
     replies: Reply[];
@@ -82,6 +84,16 @@ interface Props {
     attachAccept: string[];
     /** Whether to display user avatar on the right side */
     userAvatarRight?: boolean;
+    /** Speech states for each reply (keyed by replyId) */
+    speechStates?: SpeechStatesRecord;
+    /** Callback to play speech for a specific reply */
+    playSpeech?: (replyId: string) => void;
+    /** Callback to stop/pause speech for a specific reply */
+    stopSpeech?: (replyId: string) => void;
+    /** Callback to set playback rate for a specific reply */
+    setPlaybackRate?: (replyId: string, rate: number) => void;
+    /** Callback to set volume for a specific reply */
+    setVolume?: (replyId: string, volume: number) => void;
 }
 
 /**
@@ -118,6 +130,11 @@ const AsChat = ({
     attachMaxFileSize,
     onError,
     userAvatarRight = false,
+    speechStates,
+    playSpeech,
+    stopSpeech,
+    setPlaybackRate,
+    setVolume,
 }: Props) => {
     // TODO: use a context to manage these settings globally
 
@@ -170,15 +187,20 @@ const AsChat = ({
         localStorage.setItem('chat-random-seed', randomSeed.toString());
     }, [randomSeed]);
 
+    // Extended Reply type that preserves original replyId for speech lookup
+    interface ExtendedReply extends Reply {
+        originalReplyId?: string;
+    }
+
     // Organize replies based on user preference (by reply ID or flattened messages)
-    const organizedReplies = useMemo(() => {
+    const organizedReplies = useMemo((): ExtendedReply[] => {
         if (replies.length === 0) return [];
 
         if (byReplyId) {
             return replies;
         }
 
-        const flattedReplies: Reply[] = [];
+        const flattedReplies: ExtendedReply[] = [];
         replies.forEach((reply) => {
             reply.messages.forEach((msg) => {
                 flattedReplies.push({
@@ -188,7 +210,9 @@ const AsChat = ({
                     createdAt: msg.timestamp,
                     finishedAt: msg.timestamp,
                     messages: [msg],
-                } as Reply);
+                    // Preserve original replyId for speech state lookup
+                    originalReplyId: reply.replyId,
+                } as ExtendedReply);
             });
         });
         return flattedReplies;
@@ -289,23 +313,51 @@ const AsChat = ({
                     onScroll={handleScroll}
                     className="flex flex-col gap-y-5 w-full h-full overflow-auto"
                 >
-                    {organizedReplies.map((reply) => (
-                        <AsBubble
-                            avatar={
-                                <AsAvatar
-                                    name={reply.replyName}
-                                    role={reply.replyRole}
-                                    avatarSet={avatarSet}
-                                    seed={randomSeed}
-                                />
-                            }
-                            key={reply.replyId}
-                            reply={reply}
-                            markdown={renderMarkdown}
-                            onClick={onBubbleClick}
-                            userAvatarRight={userAvatarRight}
-                        />
-                    ))}
+                    {organizedReplies.map((reply) => {
+                        // Look up speechState using originalReplyId if available (for flattened mode)
+                        const lookupId = reply.originalReplyId || reply.replyId;
+                        const speechState = speechStates?.[lookupId];
+                        return (
+                            <AsBubble
+                                avatar={
+                                    <AsAvatar
+                                        name={reply.replyName}
+                                        role={reply.replyRole}
+                                        avatarSet={avatarSet}
+                                        seed={randomSeed}
+                                    />
+                                }
+                                key={reply.replyId}
+                                reply={reply}
+                                markdown={renderMarkdown}
+                                onClick={onBubbleClick}
+                                userAvatarRight={userAvatarRight}
+                                speechState={speechState}
+                                onPlaySpeech={
+                                    playSpeech
+                                        ? () => playSpeech(lookupId)
+                                        : undefined
+                                }
+                                onPauseSpeech={
+                                    stopSpeech
+                                        ? () => stopSpeech(lookupId)
+                                        : undefined
+                                }
+                                onPlaybackRateChange={
+                                    setPlaybackRate
+                                        ? (rate: number) =>
+                                              setPlaybackRate(lookupId, rate)
+                                        : undefined
+                                }
+                                onVolumeChange={
+                                    setVolume
+                                        ? (volume: number) =>
+                                              setVolume(lookupId, volume)
+                                        : undefined
+                                }
+                            />
+                        );
+                    })}
                 </div>
                 <Button
                     size="icon-sm"

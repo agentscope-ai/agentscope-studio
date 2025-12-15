@@ -3,15 +3,32 @@ import { ContentType, Reply, TextBlock } from '@shared/types';
 import BubbleBlock, {
     CollapsibleBlockDiv,
 } from '@/components/chat/bubbles/BubbleBlock';
+import SpeechBar from '@/components/chat/bubbles/SpeechBar';
 import { CircleAlertIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { ReplySpeechState } from '@/context/RunRoomContext';
 
 interface Props {
+    /** The reply data to display */
     reply: Reply;
+    /** Avatar component to display */
     avatar: ReactNode;
+    /** Whether to render content as markdown */
     markdown: boolean;
+    /** Callback when bubble is clicked */
     onClick: (reply: Reply) => void;
+    /** Whether to display user avatar on the right side */
     userAvatarRight: boolean;
+    /** Speech state for this reply */
+    speechState?: ReplySpeechState;
+    /** Callback to play speech audio */
+    onPlaySpeech?: () => void;
+    /** Callback to pause speech audio */
+    onPauseSpeech?: () => void;
+    /** Callback to change playback rate */
+    onPlaybackRateChange?: (rate: number) => void;
+    /** Callback to change volume */
+    onVolumeChange?: (volume: number) => void;
 }
 
 const AsBubble = ({
@@ -20,6 +37,11 @@ const AsBubble = ({
     markdown,
     onClick,
     userAvatarRight = false,
+    speechState,
+    onPlaySpeech,
+    onPauseSpeech,
+    onPlaybackRateChange,
+    onVolumeChange,
 }: Props) => {
     const { t } = useTranslation();
 
@@ -44,6 +66,9 @@ const AsBubble = ({
             <BubbleBlock block={block} markdown={markdown} />
         ));
     };
+
+    const hasAudio = (speechState?.fullAudioData?.length || 0) > 0;
+    const showSpeechBar = speechState?.isStreaming || hasAudio;
 
     return (
         <div className="flex flex-col w-full max-w-full">
@@ -84,6 +109,25 @@ const AsBubble = ({
                             return renderBlock(msg.content, markdown);
                         })}
                     </div>
+
+                    {/* Speech bar - shown below the message content */}
+                    {showSpeechBar && (
+                        <div className="mt-2">
+                            <SpeechBar
+                                isPlaying={speechState?.isPlaying || false}
+                                isStreaming={speechState?.isStreaming || false}
+                                hasAudio={hasAudio}
+                                playbackRate={speechState?.playbackRate ?? 1.0}
+                                volume={speechState?.volume ?? 1.0}
+                                onPlay={onPlaySpeech || (() => {})}
+                                onPause={onPauseSpeech || (() => {})}
+                                onPlaybackRateChange={
+                                    onPlaybackRateChange || (() => {})
+                                }
+                                onVolumeChange={onVolumeChange || (() => {})}
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
