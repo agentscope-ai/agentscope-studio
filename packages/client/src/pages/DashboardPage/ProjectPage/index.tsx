@@ -1,5 +1,5 @@
 import { Key, memo, MouseEvent, useEffect, useState, useMemo } from 'react';
-import { Input, TableColumnsType, Table } from 'antd';
+import { Input, TableColumnsType, Table, Pagination } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { debounce } from 'lodash';
@@ -146,7 +146,7 @@ const ProjectPage = () => {
     ];
 
     return (
-        <div className="w-full h-full py-8 px-12 flex flex-col gap-4">
+        <div className="w-full h-full py-8 px-12 flex flex-col gap-4 relative">
             <PageTitleSpan title={t('common.projects')} />
             <div className="flex gap-4 items-center">
                 <div className="w-1/4">
@@ -189,40 +189,53 @@ const ProjectPage = () => {
                 </SecondaryButton>
             </div>
 
-            <div className="h-[calc(100vh-200px)] border border-border rounded-[calc(var(--radius)-2px)] overflow-hidden flex flex-col">
-                <Table<ProjectData>
+            <div className="flex-1 overflow-hidden">
+                <div className="h-full border border-border rounded-[calc(var(--radius)-2px)] overflow-hidden">
+                    <Table<ProjectData>
+                        size="small"
+                        columns={columns}
+                        dataSource={tableDataSource}
+                        loading={tableLoading}
+                        scroll={{
+                            y: 'calc(100vh - 250px)',
+                            x: 'max-content',
+                        }}
+                        pagination={false}
+                        onChange={onTableChange}
+                        onRow={(record: ProjectData) => {
+                            return {
+                                onClick: (event: MouseEvent) => {
+                                    if (event.type === 'click') {
+                                        navigate(`${record.project}`);
+                                    }
+                                },
+                                className: 'cursor-pointer',
+                            };
+                        }}
+                        rowKey="project"
+                        rowSelection={rowSelection}
+                    />
+                </div>
+            </div>
+
+            <div className="absolute bottom-10 right-14">
+                <Pagination
                     size="small"
-                    columns={columns}
-                    dataSource={tableDataSource}
-                    loading={tableLoading}
-                    scroll={{
-                        y: 'calc(100vh - 320px)',
-                        x: 'max-content',
+                    current={pagination.current}
+                    pageSize={pagination.pageSize}
+                    total={pagination.total}
+                    showSizeChanger
+                    showTotal={(total) =>
+                        t('table.pagination.total', { total })
+                    }
+                    pageSizeOptions={['10', '20', '50', '100']}
+                    onChange={(page, pageSize) => {
+                        onTableChange(
+                            { current: page, pageSize },
+                            {},
+                            {} as any,
+                        );
                     }}
-                    pagination={{
-                        current: pagination.current,
-                        pageSize: pagination.pageSize,
-                        total: pagination.total,
-                        showSizeChanger: true,
-                        showTotal: (total) =>
-                            t('table.pagination.total', { total }),
-                        pageSizeOptions: ['10', '20', '50', '100'],
-                        hideOnSinglePage: false,
-                        className: 'mr-4!',
-                    }}
-                    onChange={onTableChange}
-                    onRow={(record: ProjectData) => {
-                        return {
-                            onClick: (event: MouseEvent) => {
-                                if (event.type === 'click') {
-                                    navigate(`${record.project}`);
-                                }
-                            },
-                            className: 'cursor-pointer',
-                        };
-                    }}
-                    rowKey="project"
-                    rowSelection={rowSelection}
                 />
             </div>
         </div>
