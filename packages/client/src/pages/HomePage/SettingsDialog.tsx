@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Radio } from 'antd';
 import { Dialog, DialogContent } from '@/components/ui/dialog.tsx';
 import { Button } from '@/components/ui/button.tsx';
+import { Badge } from '@/components/ui/badge.tsx';
 import {
     Tabs,
     TabsContent,
@@ -14,6 +15,7 @@ import { useMessageApi } from '@/context/MessageApiContext.tsx';
 import { useSocket } from '@/context/SocketContext.tsx';
 import { SocketEvents } from '@shared/types/trpc';
 import { settingsMenuItems } from './config';
+import { checkForUpdates } from '@/utils/versionCheck';
 
 interface SettingsDialogProps {
     open: boolean;
@@ -28,6 +30,16 @@ const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
 
     const [clearDataDialogOpen, setClearDataDialogOpen] = useState(false);
     const [selectedLanguage, setSelectedLanguage] = useState(currentLanguage);
+    const [hasUpdate, setHasUpdate] = useState(false);
+
+    // Check for updates when dialog opens
+    useEffect(() => {
+        if (open) {
+            checkForUpdates().then((updateInfo) => {
+                setHasUpdate(updateInfo.hasUpdate);
+            });
+        }
+    }, [open]);
 
     // Update selected language when current language changes
     useEffect(() => {
@@ -157,9 +169,19 @@ const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
                                                             )}
                                                             :
                                                         </span>
-                                                        <span className="text-sm text-muted-foreground">
-                                                            {__APP_VERSION__}
-                                                        </span>
+                                                        <div className="relative inline-flex items-center">
+                                                            <span className="text-sm text-muted-foreground">
+                                                                {
+                                                                    __APP_VERSION__
+                                                                }
+                                                            </span>
+                                                            {hasUpdate && (
+                                                                <Badge
+                                                                    variant="destructive"
+                                                                    className="ml-2 -mt-3 h-2 w-2 p-0 animate-pulse"
+                                                                />
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             )}
