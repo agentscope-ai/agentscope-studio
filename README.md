@@ -17,7 +17,7 @@
     </a>
     <a href="https://www.npmjs.com/package/@agentscope/studio">
         <img
-            src="https://img.shields.io/badge/npm-v1.0.7-blue?logo=npm"
+            src="https://img.shields.io/badge/dynamic/json?url=https://registry.npmjs.org/%40agentscope%2Fstudio&query=$.%27dist-tags%27.latest&prefix=v&logo=npm&label=version"
             alt="npm"
         />
     </a>
