@@ -1,5 +1,6 @@
 import { Key, memo, MouseEvent, useEffect, useState, useMemo } from 'react';
 import { Input, TableColumnsType, Table, Pagination } from 'antd';
+import type { SorterResult } from 'antd/es/table/interface';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { debounce } from 'lodash';
@@ -233,7 +234,7 @@ const ProjectPage = () => {
                         onTableChange(
                             { current: page, pageSize },
                             {},
-                            {} as any,
+                            {} as SorterResult<ProjectData>,
                         );
                     }}
                 />
