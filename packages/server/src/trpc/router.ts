@@ -233,7 +233,7 @@ export const appRouter = t.router({
                 // Create a reply record if it does not exist
                 await ReplyDao.saveReply({
                     runId: input.runId,
-                    replyId: input.replyId,
+                    replyId: replyId,
                     replyRole: input.replyRole ?? input.role,
                     replyName: input.replyName ?? input.name,
                     createdAt: input.msg.timestamp,
