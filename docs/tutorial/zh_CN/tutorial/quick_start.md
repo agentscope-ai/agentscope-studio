@@ -36,6 +36,25 @@ npm install
 npm run dev
 ```
 
+### Docker 部署
+
+```bash
+# 添加执行权限
+chmod +x docker/docker.sh
+
+# 构建并启动
+./docker/docker.sh build
+./docker/docker.sh start
+
+# 查看日志
+./docker/docker.sh logs
+
+# 停止
+./docker/docker.sh stop
+```
+
+更多 Docker 命令，请参阅项目根目录的 `docker/README.md`。
+
 ## 连接到 AgentScope-Studio
 
 在 AgentScope 项目中，在 `init` 函数中设置 `studio_url` 字段，如下所示：

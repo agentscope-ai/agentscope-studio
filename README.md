@@ -58,22 +58,22 @@ rapid secondary development, and 3) integration of advanced features in
     <img
         src="./assets/home.gif"
         width="49%"
-        alt="home"  
+        alt="home"
     />
-    <img 
+    <img
         src="./assets/projects.gif"
         width="49%"
-        alt="projects" 
-    />    
+        alt="projects"
+    />
     <img
         src="./assets/runtime.gif"
         width="49%"
         alt="runtime"
     />
-    <img 
+    <img
         src="./assets/friday.gif"
         width="49%"
-        alt="friday" 
+        alt="friday"
     />
 </p>
 
@@ -113,6 +113,25 @@ npm install -g @agentscope/studio  # or npm install @agentscope/studio
 
 as_studio
 ```
+
+### Docker Deployment
+
+```bash
+# Add execute permission
+chmod +x docker/docker.sh
+
+# Build and start
+./docker/docker.sh build
+./docker/docker.sh start
+
+# View logs
+./docker/docker.sh logs
+
+# Stop
+./docker/docker.sh stop
+```
+
+For more details, see [docker/README.md](docker/README.md).
 
 ## 🚀 QuickStart
 

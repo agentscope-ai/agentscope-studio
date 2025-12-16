@@ -1,0 +1,16 @@
+# Build artifacts (will be created in container)
+node_modules
+dist
+
+# Git
+.git
+
+# Docker (avoid recursive copy, except entrypoint)
+docker
+!docker/entrypoint.sh
+
+# User data
+data
+
+# Database
+*.sqlite

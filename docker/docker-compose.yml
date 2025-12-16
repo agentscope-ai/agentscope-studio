@@ -1,0 +1,19 @@
+services:
+    agentscope-studio:
+        image: agentscope-studio:latest
+        ports:
+            - '3000:3000'
+            - '4317:4317'
+        volumes:
+            - ../data:/app/data
+        environment:
+            - LOG_LEVEL=warn
+            - PORT=3000
+            - HOME=/app/data
+        restart: unless-stopped
+        healthcheck:
+            test: ['CMD', 'curl', '-f', 'http://localhost:3000/trpc']
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 40s
