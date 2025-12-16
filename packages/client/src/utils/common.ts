@@ -72,9 +72,24 @@ export const formatDateTime = (
         // Handle string timestamps
         if (typeof time === 'string' && /^\d+$/.test(time)) {
             const numTime = BigInt(time);
-            const timestamp = time.length > 13 
-                ? Number(numTime / BigInt(1_000_000)) 
-                : Number(numTime);
+            let timestamp: number;
+            // Convert to milliseconds based on the length of the timestamp string
+            if (time.length <= 10) {
+                // Seconds (10 digits or less)
+                timestamp = Number(numTime) * 1000;
+            } else if (time.length <= 13) {
+                // Milliseconds (11-13 digits)
+                timestamp = Number(numTime);
+            } else if (time.length <= 16) {
+                // Microseconds (14-16 digits)
+                timestamp = Number(numTime / BigInt(1000));
+            } else if (time.length <= 19) {
+                // Nanoseconds (17-19 digits)
+                timestamp = Number(numTime / BigInt(1000000));
+            } else {
+                // Too long, assume it's nanoseconds and convert accordingly
+                timestamp = Number(numTime / BigInt(1000000));
+            }
             return dayjs(timestamp).format('YYYY-MM-DD HH:mm:ss');
         }
         
@@ -85,6 +100,13 @@ export const formatDateTime = (
     }
 };
 
+/**
+ * Format a number into a human-readable string with appropriate formatting
+ * 
+ * @param num - The number to format (can be number, string, bigint, null, or undefined)
+ * @param digits - The number of decimal places to show (default: 2)
+ * @returns Formatted string representation of the number
+ */
 export const formatNumber = (
     num?: number | string | bigint | null | undefined,
     digits: number = 2
@@ -111,7 +133,6 @@ export const formatNumber = (
     const removeTrailingZeros = (str: string): string => {
         return str.replace(/\.?0+$/, '');
     };
-    
     // For small numbers (< 1000), show as-is with specified decimal places if needed
     if (Math.abs(number) < 1000) {
         // For integers, show as-is without decimal places
@@ -121,7 +142,7 @@ export const formatNumber = (
 
         // For non-integers, format with specified digits and remove trailing zeros
         const formatted = number.toLocaleString(undefined, {
-            minimumFractionDigits: digits,
+            minimumFractionDigits: 0,
             maximumFractionDigits: digits,
         });
 
@@ -135,7 +156,7 @@ export const formatNumber = (
         }
         // For non-integers, format with specified digits and remove trailing zeros
         const formatted = number.toLocaleString(undefined, {
-            minimumFractionDigits: digits,
+            minimumFractionDigits: 0,
             maximumFractionDigits: digits,
         });
 

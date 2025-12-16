@@ -18,7 +18,7 @@ interface Props {
  */
 const NumberCounter = ({ number, style = {} }: Props) => {
     const formattedNumber = formatNumber(number);
-    const match = formattedNumber.match(/^([0-9,.]+)([KMBT]?)$/);
+    const match = /([0-9.,\s\u00A0]*)([KMBT]?)$/.exec(formattedNumber);
     const numericPart = match ? match[1] : formattedNumber;
     const unitPart = match ? match[2] : '';
     return (
