@@ -271,6 +271,7 @@ const SettingPage = () => {
                             <Form.Item
                                 name="enableMetaTool"
                                 label="Meta Tool"
+                                valuePropName="checked"
                                 help={t('help.friday.write-permission')}
                             >
                                 <Switch size="small" />
@@ -279,6 +280,7 @@ const SettingPage = () => {
                             <Form.Item
                                 name="enablePlan"
                                 label="Plan Tool"
+                                valuePropName="checked"
                                 help={t('help.friday.write-permission')}
                             >
                                 <Switch size="small" />
@@ -287,6 +289,7 @@ const SettingPage = () => {
                             <Form.Item
                                 name="enableDynamicMCP"
                                 label="Dynamically add MCP"
+                                valuePropName="checked"
                                 help={t('help.friday.write-permission')}
                             >
                                 <Switch size="small" />
@@ -295,6 +298,7 @@ const SettingPage = () => {
                             <Form.Item
                                 name="enableAgentScopeTool"
                                 label="Add AgentScope Tool"
+                                valuePropName="checked"
                                 help={t('help.friday.write-permission')}
                             >
                                 <Switch size="small" />
@@ -303,6 +307,7 @@ const SettingPage = () => {
                             <Form.Item
                                 name="enableFileWritten"
                                 label="Write Permission"
+                                valuePropName="checked"
                                 help={t('help.friday.write-permission')}
                             >
                                 <Switch size="small" />
@@ -311,6 +316,7 @@ const SettingPage = () => {
                             <Form.Item
                                 name="enableShell"
                                 label="Enable Shell"
+                                valuePropName="checked"
                                 help={t('help.friday.write-permission')}
                             >
                                 <Switch size="small" />
@@ -319,6 +325,7 @@ const SettingPage = () => {
                             <Form.Item
                                 name="enablePython"
                                 label="Enable Python"
+                                valuePropName="checked"
                                 help={t('help.friday.write-permission')}
                             >
                                 <Switch size="small" />
@@ -334,17 +341,32 @@ const SettingPage = () => {
                             <Form.Item
                                 name="enableAgentSkill"
                                 label="Enable"
+                                valuePropName="checked"
                                 // help={t('help.friday.write-permission')}
                             >
                                 <Switch size="small" />
                             </Form.Item>
 
-                            <Form.Item
-                                name="agentSkillDir"
-                                label="Storage Directory"
-                                help={t('help.friday.write-permission')}
-                            >
-                                <Input />
+                            <Form.Item shouldUpdate noStyle>
+                                {({ getFieldValue }) => {
+                                    const enableAgentSkill =
+                                        getFieldValue('enableAgentSkill');
+                                    return (
+                                        <>
+                                            {enableAgentSkill ? (
+                                                <Form.Item
+                                                    name="agentSkillDir"
+                                                    label="Storage Directory"
+                                                    help={t(
+                                                        'help.friday.write-permission',
+                                                    )}
+                                                >
+                                                    <Input />
+                                                </Form.Item>
+                                            ) : null}
+                                        </>
+                                    );
+                                }}
                             </Form.Item>
                         </CardContent>
                     </Card>
@@ -357,17 +379,37 @@ const SettingPage = () => {
                             <Form.Item
                                 name="enableLongTermMemory"
                                 label="Enable"
+                                valuePropName="checked"
                                 // help={t('help.friday.write-permission')}
                             >
                                 <Switch size="small" />
                             </Form.Item>
 
-                            <Form.Item
-                                name="embeddingModel"
-                                label="Embedding Model"
-                                help={t('help.friday.write-permission')}
-                            >
-                                <Select options={embeddingModelOptions} />
+                            <Form.Item shouldUpdate noStyle>
+                                {({ getFieldValue }) => {
+                                    const enableLongTermMemory = getFieldValue(
+                                        'enableLongTermMemory',
+                                    );
+                                    return (
+                                        <>
+                                            {enableLongTermMemory ? (
+                                                <Form.Item
+                                                    name="embeddingModel"
+                                                    label="Embedding Model"
+                                                    help={t(
+                                                        'help.friday.write-permission',
+                                                    )}
+                                                >
+                                                    <Select
+                                                        options={
+                                                            embeddingModelOptions
+                                                        }
+                                                    />
+                                                </Form.Item>
+                                            ) : null}
+                                        </>
+                                    );
+                                }}
                             </Form.Item>
                         </CardContent>
                     </Card>
