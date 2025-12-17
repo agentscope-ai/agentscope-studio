@@ -52,7 +52,7 @@ const Sider = ({ selectedBenchmark, onSelect }: Props) => {
                         const isSelected = selectedBenchmark === benchmark;
                         return (
                             <div
-                                className={`group ml-1 border-l border-l-zinc-200 active:text-primary-foreground p-2 pl-0 pr-3 text-[14px]`}
+                                className="group ml-1 border-l border-l-zinc-200 active:text-primary-foreground p-2 pl-0 pr-3 text-[14px]"
                                 onClick={() => onSelect(benchmark)}
                             >
                                 <div
