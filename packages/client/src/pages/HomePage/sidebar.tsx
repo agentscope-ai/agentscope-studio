@@ -26,7 +26,7 @@ import {
     Command,
     EarthIcon,
     FolderGit2Icon,
-    // ListChecksIcon,
+    ListChecksIcon,
     RouteIcon,
     UnplugIcon,
 } from 'lucide-react';
@@ -88,11 +88,11 @@ const StudioSidebar = () => {
                     icon: RouteIcon,
                     url: RouterPath.TRACING,
                 },
-                // {
-                //     title: t('common.evaluation'),
-                //     icon: ListChecksIcon,
-                //     url: RouterPath.EVAL,
-                // },
+                {
+                    title: t('common.evaluation'),
+                    icon: ListChecksIcon,
+                    url: RouterPath.EVAL,
+                },
             ],
         },
         {

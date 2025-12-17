@@ -19,7 +19,11 @@ interface Props {
 
 export function BenchmarkListRoomContextProvider({ children }: Props) {
     // Holds the list of available benchmarks in the current room/scope.
-    const [benchmarkList] = useState<string[]>(['GAIA', 'ACEBench evaluation 2 jitetfdfdfdf', 'GAIA2']);
+    const [benchmarkList] = useState<string[]>([
+        'GAIA',
+        'ACEBench evaluation 2 jitetfdfdfdf',
+        'GAIA2',
+    ]);
 
     return (
         <BenchmarkListRoomContext.Provider value={{ benchmarkList }}>

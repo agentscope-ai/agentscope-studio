@@ -9,7 +9,6 @@ interface Props {
     onSelect: (path: string | null) => void;
 }
 
-
 interface CustomTreeDataNode extends TreeDataNode {
     isDirectory: boolean;
     loaded?: boolean;
@@ -26,9 +25,9 @@ const getInitialPath = () => {
         return '/Users/';
     }
     return '/home';
-}
+};
 
-const LocalFilePicker = ({type, onSelect, ...resetProps}: Props) => {
+const LocalFilePicker = ({ type, onSelect, ...resetProps }: Props) => {
     const [currentPath, setCurrentPath] = useState<string>(getInitialPath());
     const [treeData, setTreeData] = useState<CustomTreeDataNode[]>([]);
 
@@ -36,37 +35,40 @@ const LocalFilePicker = ({type, onSelect, ...resetProps}: Props) => {
     const fetchDirData = useCallback(
         async (path: string): Promise<CustomTreeDataNode[]> => {
             try {
-                const response = await fetch(
-                    '/trpc/listDir',
-                    {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ path })
-                    }
-                );
+                const response = await fetch('/trpc/listDir', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path }),
+                });
 
                 const data = await response.json();
-                if (data.result.data.success && Array.isArray(data.result.data.data)) {
-                    return data.result.data.data.map(
-                        (item: FileItem) => {
-                            return {
-                                title: item.name,
-                                key: item.path,
-                                children: item.isDirectory ? [] : undefined,
-                                isLeaf: !item.isDirectory,
-                                icon: item.isDirectory ? <FolderOutlined /> : <FileOutlined />,
-                                selectable: item.isDirectory,
-                                isDirectory: item.isDirectory
-                            } as CustomTreeDataNode;
-                        }
-                    );
+                if (
+                    data.result.data.success &&
+                    Array.isArray(data.result.data.data)
+                ) {
+                    return data.result.data.data.map((item: FileItem) => {
+                        return {
+                            title: item.name,
+                            key: item.path,
+                            children: item.isDirectory ? [] : undefined,
+                            isLeaf: !item.isDirectory,
+                            icon: item.isDirectory ? (
+                                <FolderOutlined />
+                            ) : (
+                                <FileOutlined />
+                            ),
+                            selectable: item.isDirectory,
+                            isDirectory: item.isDirectory,
+                        } as CustomTreeDataNode;
+                    });
                 }
                 return [];
             } catch (error) {
                 console.error('Failed to fetch directory data:', error);
                 return [];
             }
-        }, []
+        },
+        [],
     );
 
     // 初始化根目录
@@ -79,42 +81,43 @@ const LocalFilePicker = ({type, onSelect, ...resetProps}: Props) => {
         initializeTree();
     }, [currentPath, fetchDirData]);
 
-    const updateNodeChildren = (nodes: CustomTreeDataNode[], key: Key, children: CustomTreeDataNode[]): CustomTreeDataNode[] => {
-        return nodes.map(
-            node => {
-                if (node.key === key) {
-                    return {
-                        ...node,
-                        children,
-                    };
-                }
-                if (node.children) {
-                    return {
-                        ...node,
-                        children: updateNodeChildren(node.children, key, children)
-                    }
-                }
-                return node;
+    const updateNodeChildren = (
+        nodes: CustomTreeDataNode[],
+        key: Key,
+        children: CustomTreeDataNode[],
+    ): CustomTreeDataNode[] => {
+        return nodes.map((node) => {
+            if (node.key === key) {
+                return {
+                    ...node,
+                    children,
+                };
             }
-        );
-    }
-
+            if (node.children) {
+                return {
+                    ...node,
+                    children: updateNodeChildren(node.children, key, children),
+                };
+            }
+            return node;
+        });
+    };
 
     const onLoadData = async (node: CustomTreeDataNode) => {
-        console.info("Loading data for node:", node.key);
+        console.info('Loading data for node:', node.key);
         if (!node.isDirectory) {
             return;
         }
 
         const newNodes = await fetchDirData(node.key.toString());
-        setTreeData(
-            origin => updateNodeChildren(origin, node.key, newNodes)
-        );
-
+        setTreeData((origin) => updateNodeChildren(origin, node.key, newNodes));
     };
 
     return (
-        <div className="flex flex-col h-[100%] max-h-[100%] gap-y-2" {...resetProps}>
+        <div
+            className="flex flex-col h-[100%] max-h-[100%] gap-y-2"
+            {...resetProps}
+        >
             <Input
                 variant={'filled'}
                 value={currentPath}
@@ -127,17 +130,15 @@ const LocalFilePicker = ({type, onSelect, ...resetProps}: Props) => {
                 showLine={true}
                 showIcon={true}
                 defaultExpandAll={true}
-                onSelect={
-                    (selectedKey) => {
-                        if (selectedKey.length === 0) {
-                            onSelect(null);
-                        } else {
-                            for (const key of selectedKey) {
-                                onSelect(key.toString());
-                            }
+                onSelect={(selectedKey) => {
+                    if (selectedKey.length === 0) {
+                        onSelect(null);
+                    } else {
+                        for (const key of selectedKey) {
+                            onSelect(key.toString());
                         }
                     }
-                }
+                }}
                 treeData={treeData}
                 loadData={onLoadData}
             />

@@ -1,5 +1,3 @@
-
-
 export const verifyMetadataByVersion = (metadata: object) => {
     if (!('schema_version' in metadata)) {
         throw new Error('Missing schema_version in metadata');
@@ -10,7 +8,7 @@ export const verifyMetadataByVersion = (metadata: object) => {
     } else {
         throw new Error(`Unsupported metadata version: ${version}`);
     }
-}
+};
 
 /**
  * Verify metadata for version 1
@@ -49,7 +47,10 @@ const _verifyMetadataV1 = (metadata: Record<string, unknown>) => {
     ];
 
     // First check if benchmark is an object
-    if (typeof metadata['benchmark'] !== 'object' || metadata['benchmark'] === null) {
+    if (
+        typeof metadata['benchmark'] !== 'object' ||
+        metadata['benchmark'] === null
+    ) {
         throw new Error('Benchmark field must be a non-null object');
     }
     // Check benchmark fields
@@ -58,4 +59,4 @@ const _verifyMetadataV1 = (metadata: Record<string, unknown>) => {
             throw new Error(`Missing required benchmark field: ${field}`);
         }
     }
-}
+};

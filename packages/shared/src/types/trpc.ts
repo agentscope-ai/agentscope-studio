@@ -209,10 +209,10 @@ export interface ModelInvocationData {
     };
 }
 
-export interface BackendResponse {
+export interface BackendResponse<T = unknown> {
     success: boolean;
     message: string;
-    data?: unknown;
+    data?: T;
 }
 
 interface Metric {
@@ -317,4 +317,12 @@ export const GetTraceStatisticParamsSchema = z.object({
 });
 export type GetTraceStatisticParams = z.infer<
     typeof GetTraceStatisticParamsSchema
+>;
+
+// GetEvaluationResultParamsSchema
+export const GetEvaluationResultParamsSchema = z.object({
+    evaluationDir: z.string(),
+});
+export type GetEvaluationResultParams = z.infer<
+    typeof GetEvaluationResultParamsSchema
 >;

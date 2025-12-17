@@ -1,18 +1,3 @@
-import { memo, MouseEvent } from 'react';
-import { Select } from 'antd';
-import { useNavigate } from 'react-router-dom';
-import {
-    Area,
-    AreaChart,
-    Bar,
-    BarChart,
-    CartesianGrid,
-    ResponsiveContainer,
-    Tooltip,
-    XAxis,
-    YAxis,
-} from 'recharts';
-
 import { memo, MouseEvent, useEffect, useState } from 'react';
 import AsTable from '@/components/tables/AsTable';
 import { EmptyPage } from '@/pages/DefaultPage';
@@ -21,22 +6,26 @@ import {
     ProgressCell,
     TextCell,
 } from '@/components/tables/utils.tsx';
-import { EvaluationMetaData } from '@shared/types';
 import { useNavigate } from 'react-router-dom';
-import { EvaluationResult } from '@shared/types/evaluation';
 import { useEvaluationRoom } from '@/context/EvaluationRoomContext.tsx';
 import { useMessageApi } from '@/context/MessageApiContext.tsx';
 import NumericalView from './MetricView/NumericalView.tsx';
 import { EvaluationDTO, convertToDTO, EvaluationTaskDTO } from './utils.ts';
-import { Select, TableColumnsType } from 'antd';
-
-
+import { TableColumnsType } from 'antd';
+import { useTranslation } from 'react-i18next';
+import {
+    ModelCard,
+    ToolCard,
+} from '@/pages/EvalPage/EvaluationDetailPage/DataCard';
 
 const EvaluationDetailPage = () => {
+    const { t } = useTranslation();
     const { benchmarks, getEvaluationResult } = useEvaluationRoom();
     const [loading, setLoading] = useState(false);
-    const [evaluationDTO, setEvaluationDTO] = useState<EvaluationDTO | null>(null);
-    const {messageApi} = useMessageApi();
+    const [evaluationDTO, setEvaluationDTO] = useState<EvaluationDTO | null>(
+        null,
+    );
+    const { messageApi } = useMessageApi();
     const navigate = useNavigate();
     const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
 
@@ -45,93 +34,59 @@ const EvaluationDetailPage = () => {
     const benchmarkName = decodeURIComponent(urlParts[2]);
     const evaluationId = decodeURIComponent(urlParts[3]);
 
-    const benchmark = benchmarks.find(
-        bench => bench.name === benchmarkName
-    );
-    const evaluation = benchmark ? benchmark.evaluations.find(
-        evalItem => evalItem.id === evaluationId
-    ) : null;
+    const benchmark = benchmarks.find((bench) => bench.name === benchmarkName);
+    const evaluation = benchmark
+        ? benchmark.evaluations.find((evalItem) => evalItem.id === evaluationId)
+        : null;
 
     const initialColumns: TableColumnsType<EvaluationTaskDTO> = [
         {
             key: 'id',
             title: 'Task ID',
-            render: (value) => (
-                <TextCell
-                    text={value}
-                    selected={false}
-                />
-            ),
+            render: (value) => <TextCell text={value} selected={false} />,
         },
         {
-            key: 'nRepeats',
-            render: (value) => (
-                <ProgressCell
-                    progress={value/evaluationDTO?.nRepeats}
-                    selected={false}
-                />
-            ),
+            key: 'status',
+            render: (value) => <TextCell text={value} selected={false} />,
+        },
+        {
+            key: 'nFinished',
+            render: (value) => <NumberCell number={value} selected={false} />,
         },
     ];
 
-    const [columns, setColumns] = useState<TableColumnsType<EvaluationTaskDTO>>(
-        initialColumns
-    );
+    const [columns, setColumns] =
+        useState<TableColumnsType<EvaluationTaskDTO>>(initialColumns);
 
-    useEffect(
-        () => {
-            if (evaluation) {
-                setLoading(true);
-                getEvaluationResult(evaluation.evaluationDir)
-                    .then(
-                        res => {
-                            console.log(res);
-                            if (res.success) {
-                                setEvaluationDTO(
-                                    _prev => {
-                                        const data = convertToDTO(
-                                            res.data as EvaluationResult
-                                        );
-                                        if (data) {
-                                            setSelectedMetric(Object.keys(data.metrics)[0]);
-                                            const newColumns = Object.keys(data.metrics).map(
-                                                metricName => (
-                                                    {
-                                                        key: metricName,
-                                                        render: value => (
-                                                            JSON.stringify(value)
-                                                        )
-                                                    }
-                                                )
-                                            );
-                                            setColumns(
-                                                prev => (
-                                                    [...prev]
-                                                )
-                                            )
-                                        }
-                                        return data;
-                                    }
+    useEffect(() => {
+        if (evaluation) {
+            setLoading(true);
+            getEvaluationResult(evaluation.evaluationDir)
+                .then((res) => {
+                    if (res) {
+                        // Set default selected metric
+                        if (Object.keys(res.repeats).length > 0) {
+                            if (
+                                Object.keys(res.repeats[0].metrics).length > 0
+                            ) {
+                                setSelectedMetric(
+                                    Object.keys(res.repeats[0].metrics)[0],
                                 );
-                                setLoading(false);
-                            } else {
-                                messageApi.error(res.message);
                             }
                         }
-                    )
-                    .catch(
-                        err => messageApi.error(err.message)
-                    )
-            }
-        }, [evaluation]
-    );
+                        // Set evaluation DTO for table display
+                        setEvaluationDTO(convertToDTO(res));
+                    }
+                })
+                .catch((err) => messageApi.error(err.message));
+        }
+    }, [evaluation]);
 
     if (!benchmarks || !benchmark || !evaluation) {
         return (
             <div className="max-w-5xl mx-auto px-6 py-6 space-y-6 items-center h-full">
                 <EmptyPage
                     size={200}
-                    title="No data for the given evaluation ID"
                     title={`No evaluation found for ${evaluationId} in ${benchmarkName}`}
                 />
             </div>
@@ -150,14 +105,12 @@ const EvaluationDetailPage = () => {
                     </div>
                 </div>
 
-                {/*{JSON.stringify(columns, null, 2)}*/}
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                     <div className="sm:col-span-2 lg:col-span-2">
                         <div className="rounded-xl border shadow">
                             <div className="p-6 flex flex-row items-center justify-between space-y-0 pb-1">
                                 <h3 className="tracking-tight text-sm font-medium">
-                                    Evaluation
+                                    {t('common.evaluation')}
                                 </h3>
                                 <div className="text-muted-foreground h-4 w-4">
                                     <svg
@@ -184,7 +137,7 @@ const EvaluationDetailPage = () => {
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div className="flex items-center justify-between col-span-2">
                                             <span className="text-sm text-muted-foreground">
-                                                Name
+                                                {t('common.name')}
                                             </span>
                                             <span className="text-sm font-medium truncate">
                                                 {evaluation.evaluationName}
@@ -192,7 +145,7 @@ const EvaluationDetailPage = () => {
                                         </div>
                                         <div className="flex items-center justify-between col-span-2">
                                             <span className="text-sm text-muted-foreground">
-                                                Created At
+                                                {t('table.column.createdAt')}
                                             </span>
                                             <span className="text-sm font-medium truncate">
                                                 {evaluation.createdAt}
@@ -200,7 +153,7 @@ const EvaluationDetailPage = () => {
                                         </div>
                                         <div className="flex items-center justify-between">
                                             <span className="text-sm text-muted-foreground">
-                                                %Repeat
+                                                %{t('common.repeat')}
                                             </span>
                                             <span className="text-sm font-medium">
                                                 {evaluation.totalRepeats}
@@ -208,10 +161,12 @@ const EvaluationDetailPage = () => {
                                         </div>
                                         <div className="flex items-center justify-between">
                                             <span className="text-sm text-muted-foreground">
-                                                Progress
+                                                {t('table.column.progress')}
                                             </span>
                                             <span className="text-sm font-medium">
-                                                {evaluationDTO ? `${evaluationDTO.progress}%` : null}
+                                                {evaluationDTO
+                                                    ? `${evaluationDTO.progress}%`
+                                                    : null}
                                             </span>
                                         </div>
                                     </div>
@@ -222,7 +177,7 @@ const EvaluationDetailPage = () => {
                     <div className="rounded-xl border shadow">
                         <div className="p-6 flex flex-row items-center justify-between space-y-0 pb-1">
                             <h3 className="tracking-tight text-sm font-medium">
-                                Task
+                                {t('common.task')}
                             </h3>
                             <div className="text-muted-foreground h-4 w-4">
                                 <svg
@@ -243,8 +198,11 @@ const EvaluationDetailPage = () => {
                         </div>
 
                         <div className="p-6 min-h-[5.5rem] pt-2">
-                            <div className="text-2xl font-bold flex items-center gap-2">
+                            <div className="text-2xl font-bold flex gap-2">
                                 {benchmark.totalTasks}
+                                <div className="text-sm font-medium flex items-end mb-1">
+                                    × {evaluation.totalRepeats}
+                                </div>
                             </div>
                             <div className="flex items-center justify-between mt-2">
                                 <div className="flex flex-col">
@@ -252,15 +210,15 @@ const EvaluationDetailPage = () => {
                                         Finished
                                     </span>
                                     <span className="text-sm font-medium">
-                                        5
+                                        {evaluationDTO?.nCompletedTask}
                                     </span>
                                 </div>
                                 <div className="flex flex-col items-end">
                                     <span className="text-muted-foreground text-xs">
-                                        Target
+                                        Incomplete
                                     </span>
                                     <span className="text-sm font-medium">
-                                        5
+                                        {evaluationDTO?.nIncompleteTask}
                                     </span>
                                 </div>
                             </div>
@@ -294,25 +252,16 @@ const EvaluationDetailPage = () => {
 
                         <div className="p-6 min-h-[5.5rem] pt-2">
                             <div className="text-2xl font-bold">
-                                {evaluationDTO ? evaluationDTO.nMetrics : '-'}
+                                {evaluationDTO?.nMetric}
                             </div>
-                            <div className="flex items-center justify-between mt-2">
-                                <div className="flex flex-col">
-                                    <span className="text-muted-foreground text-xs">
-                                        $/Instance
-                                    </span>
-                                    <span className="text-sm font-medium">
-                                        7.64¢
-                                    </span>
-                                </div>
-                                <div className="flex flex-col items-end">
-                                    <span className="text-muted-foreground text-xs">
-                                        Resolved/$
-                                    </span>
-                                    <span className="text-sm font-medium">
-                                        6.54
-                                    </span>
-                                </div>
+                            <div className="flex flex-col mt-2">
+                                <span className="text-muted-foreground text-xs">
+                                    Numerical/Categorical
+                                </span>
+                                <span className="text-sm font-medium">
+                                    {evaluationDTO?.nNumericalMetric}/
+                                    {evaluationDTO?.nCategoricalMetric}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -320,7 +269,7 @@ const EvaluationDetailPage = () => {
                     <div className="rounded-xl border shadow">
                         <div className="p-6 flex flex-row items-center justify-between space-y-0 pb-1">
                             <h3 className="tracking-tight text-sm font-medium">
-                                Token Usage
+                                {t('common.token-usage')}
                             </h3>
                             <div className="text-muted-foreground h-4 w-4">
                                 <svg
@@ -371,27 +320,27 @@ const EvaluationDetailPage = () => {
                         </div>
 
                         <div className="p-6 min-h-[5.5rem] pt-2">
-                            <div className="text-2xl font-bold">7.0M</div>
+                            <div className="text-2xl font-bold">
+                                {evaluationDTO
+                                    ? evaluationDTO.nPromptTokens +
+                                      evaluationDTO.nCompletionTokens
+                                    : 'N/A'}
+                            </div>
                             <div className="flex items-center justify-between mt-2">
                                 <div className="flex flex-col">
                                     <span className="text-muted-foreground text-xs">
-                                        Prompt
+                                        {t('common.prompt')}
                                     </span>
-                                    <div className="flex items-baseline gap-0.5">
-                                        <span className="text-sm font-medium">
-                                            5.9M
-                                        </span>
-                                        <span className="text-xs text-muted-foreground/75">
-                                            (4.5M)
-                                        </span>
-                                    </div>
+                                    <span className="text-sm font-medium">
+                                        {evaluationDTO?.nPromptTokens}
+                                    </span>
                                 </div>
                                 <div className="flex flex-col items-end">
                                     <span className="text-muted-foreground text-xs">
-                                        Completion
+                                        {t('common.completion')}
                                     </span>
                                     <span className="text-sm font-medium">
-                                        1.1M
+                                        {evaluationDTO?.nCompletionTokens}
                                     </span>
                                 </div>
                             </div>
@@ -399,113 +348,17 @@ const EvaluationDetailPage = () => {
                     </div>
                 </div>
 
-                <div className="hidden sm:block">
-                    <div className="rounded-xl border shadow">
-                        <div className="flex flex-ro items-center justify-between space-y-1.5 p-6 pb-2 text-sm font-medium">
-                            Result
-                            <Select
-                                variant="filled"
-                                defaultValue="accuracy"
-                                options={[
-                                    {
-                                        label: 'Accuracy',
-                                        value: 'accuracy',
-                                    },
-                                    {
-                                        label: 'Tool Usage',
-                                        value: 'tool-usage',
-                                    },
-                                ]}
-                            />
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 p-6 pt-3 w-full h-[150px]">
-                            <ResponsiveContainer height="100%" width="100%">
-                                <BarChart
-                                    data={[
-                                        {
-                                            name: 'repeat-1',
-                                            accuracy: 0.72,
-                                        },
-                                        {
-                                            name: 'repeat-2',
-                                            accuracy: 0.85,
-                                        },
-                                        {
-                                            name: 'repeat-3',
-                                            accuracy: 0.6,
-                                        },
-                                        {
-                                            name: 'repeat-4',
-                                            accuracy: 0.8,
-                                        },
-                                        {
-                                            name: 'repeat-5',
-                                            accuracy: 0.9,
-                                        },
-                                    ]}
-                                    margin={{
-                                        top: 0,
-                                        right: 0,
-                                        left: 0,
-                                        bottom: 0,
-                                    }}
-                                >
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <Bar
-                                        dataKey="accuracy"
-                                        fill="var(--muted-foreground)"
-                                        maxBarSize={20}
-                                        stackId="modelName"
-                                    />
-                                    <YAxis type="number" />
-                                    <XAxis dataKey="name" type="category" />
-                                </BarChart>
-                            </ResponsiveContainer>
-
-                            <ResponsiveContainer height="100%" width="100%">
-                                <AreaChart
-                                    data={[
-                                        {
-                                            name: 0,
-                                            uv: 0,
-                                        },
-                                        {
-                                            name: 50,
-                                            uv: 0.7,
-                                        },
-                                        {
-                                            name: 100,
-                                            uv: 0,
-                                        },
-                                    ]}
-                                    margin={{
-                                        top: 10,
-                                        right: 30,
-                                        left: 0,
-                                        bottom: 0,
-                                    }}
-                                >
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="name" type="number" />
-                                    <YAxis />
-                                    <Tooltip />
-                                    <Area
-                                        type="monotone"
-                                        dataKey="uv"
-                                        stroke="var(--primary-color)"
-                                        fill="var(--primary-color)"
-                                    />
-                                </AreaChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
-                    <NumericalView
-                        metrics={
-                            evaluationDTO ? evaluationDTO.metrics : {}
-                        }
-                    />
-
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <ModelCard models={evaluationDTO?.llm ?? {}} />
+                    <ToolCard tools={evaluationDTO?.tool ?? {}} />
                 </div>
+
+                <div className="hidden sm:block">
+                    <NumericalView
+                        metrics={evaluationDTO ? evaluationDTO.metrics : {}}
+                    />
+                </div>
+
                 <div className="block">
                     <div className="rounded-xl border shadow">
                         <div className="flex flex-ro items-center justify-between space-y-1.5 p-6 pb-2 text-sm font-medium">
@@ -515,24 +368,24 @@ const EvaluationDetailPage = () => {
                             <AsTable<EvaluationTaskDTO>
                                 columns={columns}
                                 dataSource={
-                                    evaluationDTO ? evaluationDTO.dataSource : []
+                                    evaluationDTO
+                                        ? evaluationDTO.dataSource
+                                        : []
                                 }
-                                onRow={
-                                    (record: EvaluationTaskDTO) => {
-                                        return {
-                                            onClick: (event: MouseEvent) => {
-                                                if (event.type === 'click') {
-                                                    navigate(
-                                                        `/eval/${record.id}/instance/${record.id}`,
-                                                    );
-                                                }
-                                            },
-                                            style: {
-                                                cursor: 'pointer',
-                                            },
-                                        };
-                                    }
-                                }
+                                onRow={(record: EvaluationTaskDTO) => {
+                                    return {
+                                        onClick: (event: MouseEvent) => {
+                                            if (event.type === 'click') {
+                                                navigate(
+                                                    `/eval/${record.id}/instance/${record.id}`,
+                                                );
+                                            }
+                                        },
+                                        style: {
+                                            cursor: 'pointer',
+                                        },
+                                    };
+                                }}
                             />
                         </div>
                     </div>

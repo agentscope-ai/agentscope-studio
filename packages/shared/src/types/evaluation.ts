@@ -1,4 +1,3 @@
-
 export interface Benchmark {
     name: string;
     description: string;
@@ -22,7 +21,7 @@ export interface EvaluationForm extends Evaluation {
     benchmark: Benchmark;
 }
 
-interface NumericalResult {
+interface EvalNumericalMetricResult {
     type: 'numerical';
     involved_tasks: number;
     completed_tasks: number;
@@ -31,27 +30,63 @@ interface NumericalResult {
         mean: number;
         max: number;
         min: number;
-    },
+    };
     distribution: {
         [taskId: string]: number;
-    }
+    };
 }
 
-interface RepeatResult {
-    completed_tasks: number
-    incomplete_tasks: number
+interface EvalCategoricalMetricResult {
+    type: 'category';
+    involved_tasks: number;
+    completed_tasks: number;
+    incomplete_tasks: number;
+    aggregation: {
+        [category: string]: number;
+    };
+    distribution: {
+        [taskId: string]: string;
+    };
+}
+
+interface EvalStats {
+    llm: {
+        [key: string]: number;
+    };
+    agent: number;
+    tool: {
+        [key: string]: number;
+    };
+    embedding: {
+        [key: string]: number;
+    };
+    chat_usage: {
+        [key: string]: {
+            input_tokens: number;
+            output_tokens: number;
+        };
+    };
+}
+
+interface EvalRepeatResult {
+    completed_tasks: number;
+    incomplete_tasks: number;
     metrics: {
-        [metricName: string]: NumericalResult
-    }
-    completed_ids: string[]
-    incomplete_ids: string[]
+        [metricName: string]:
+            | EvalNumericalMetricResult
+            | EvalCategoricalMetricResult;
+    };
+    completed_ids: string[];
+    incomplete_ids: string[];
+    stats: EvalStats;
 }
 
-export interface EvaluationResult {
-    total_tasks: number
-    total_repeats: number
+export interface EvalResult {
+    total_tasks: number;
+    total_repeats: number;
+    total_stats: EvalStats;
     repeats: {
-        [repeatId: string]: RepeatResult
-    }
-    schema_version: number
+        [repeatId: string]: EvalRepeatResult;
+    };
+    schema_version: number;
 }

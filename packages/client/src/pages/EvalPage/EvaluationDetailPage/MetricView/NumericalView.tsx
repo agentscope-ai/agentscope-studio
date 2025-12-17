@@ -12,81 +12,104 @@ import {
     Label,
 } from 'recharts';
 import { arrayToPDF, MetricsDTO } from '../utils.ts';
-import { Select } from 'antd';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select.tsx';
 
 interface Props {
-    metrics: MetricsDTO;
+    metrics: Record<string, MetricsDTO>;
 }
 
-const NumericalView = ({ metrics }: Props) => {
-    const metricNames =  Object.keys(metrics);
-
-    const metricOptions = metricNames.map(
-        (metricName) => ({label: metricName, value: metricName})
+const NumericalMetricView = ({ metrics }: Props) => {
+    const [selectedMetric, setSelectedMetric] = useState<string | undefined>(
+        undefined,
     );
-    const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
 
-    useEffect(
-        () => {
-            if (metricNames.length > 0) {
-                setSelectedMetric(
-                    prev => {
-                        if (prev === null) {
-                            return metricNames[0];
-                        }
-                        return prev;
-                    }
-                );
-            }
-        },
-        [metricNames]
-    )
+    useEffect(() => {
+        if (Object.keys(metrics).length > 0) {
+            setSelectedMetric(Object.keys(metrics)[0]);
+        }
+    }, [metrics]);
 
-    const pdfData = selectedMetric ? arrayToPDF(
-        metrics[selectedMetric].scores.map(score => score.value)
-    ) : [];
+    const pdfData = selectedMetric
+        ? arrayToPDF(Array.from(Object.values(metrics[selectedMetric].scores)))
+        : [];
 
     return (
         <div className="rounded-xl border shadow">
             <div className="flex flex-ro items-center justify-between p-6 pb-0 text-sm font-medium">
                 Analysis
-                <Select
-                    className='w-[180px]'
-                    variant={'filled'}
-                    options={metricOptions}
-                    value={selectedMetric}
-                    onChange={setSelectedMetric}
-                />
+                <Select value={selectedMetric}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Select a metric" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {Object.keys(metrics).map((metricName) => (
+                            <SelectItem className="truncate" value={metricName}>
+                                {metricName}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 w-full h-fit text-muted-foreground pt-2 pr-6 pl-6 truncate">
-                <div className='flex justify-center'>Metric Values by Repeat ID</div>
-                <div className='flex justify-center'>Probability Density Function</div>
+                <div className="flex justify-center">
+                    Metric Values by Repeat ID
+                </div>
+                <div className="flex justify-center">
+                    Probability Density Function
+                </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 p-6 pb-3 pt-0 w-full h-[200px]">
-                <ResponsiveContainer height={'100%'} width={'100%'} className={''}>
+                <ResponsiveContainer height="100%" width="100%" className="">
                     <BarChart
-                        data={selectedMetric ? metrics[selectedMetric].scores : []}
-                        margin={
-                            {
-                                top: 10,
-                                right: 10,
-                                left: 10,
-                                bottom: 10,
-                            }
+                        data={
+                            selectedMetric
+                                ? Object.entries(
+                                      metrics[selectedMetric].scores,
+                                  ).map(([repeatId, value]) => {
+                                      return {
+                                          name: repeatId,
+                                          value: value,
+                                      };
+                                  })
+                                : []
                         }
+                        margin={{
+                            top: 10,
+                            right: 10,
+                            left: 10,
+                            bottom: 10,
+                        }}
                     >
                         <CartesianGrid strokeDasharray="3 3" />
                         <Bar
                             dataKey="value"
                             fill="var(--muted-foreground)"
                             maxBarSize={20}
-                            stackId={'modelName'}
+                            stackId="modelName"
                         />
-                        <YAxis type="number" label={{ value: 'Value', angle: -90, position: 'center', dx: -20 }} />
-                        <XAxis dataKey="name" type="category" >
-                            <Label value={'Repeat ID'} position={'insideBottomRight'} offset={0}/>
+                        <YAxis
+                            type="number"
+                            label={{
+                                value: selectedMetric,
+                                angle: -90,
+                                position: 'center',
+                                dx: -20,
+                            }}
+                        />
+                        <XAxis dataKey="name" type="category">
+                            <Label
+                                value="Repeat ID"
+                                position="insideBottomRight"
+                                offset={0}
+                            />
                         </XAxis>
                         <Tooltip
                             contentStyle={{
@@ -96,17 +119,15 @@ const NumericalView = ({ metrics }: Props) => {
                             labelStyle={{
                                 fontWeight: 500,
                             }}
-                            cursor={{fill: 'transparent'}}
-                            labelFormatter={
-                                label => {
-                                    return `RepeatID: ${label}`;
-                                }
-                            }
+                            cursor={{ fill: 'transparent' }}
+                            labelFormatter={(label) => {
+                                return `RepeatID: ${label}`;
+                            }}
                         />
                     </BarChart>
                 </ResponsiveContainer>
 
-                <ResponsiveContainer height={'100%'} width={'100%'}>
+                <ResponsiveContainer height="100%" width="100%">
                     <AreaChart
                         data={pdfData}
                         margin={{
@@ -117,10 +138,21 @@ const NumericalView = ({ metrics }: Props) => {
                         }}
                     >
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="x" type={'number'} >
-                            <Label value={'Value'} position={'insideBottomRight'} offset={0}/>
+                        <XAxis dataKey="x" type="number">
+                            <Label
+                                value="Value"
+                                position="insideBottomRight"
+                                offset={0}
+                            />
                         </XAxis>
-                        <YAxis label={{ value: 'Density', angle: -90, position: 'center', dx: -20 }} />
+                        <YAxis
+                            label={{
+                                value: 'Density',
+                                angle: -90,
+                                position: 'center',
+                                dx: -20,
+                            }}
+                        />
                         <Tooltip
                             contentStyle={{
                                 borderRadius: 6,
@@ -129,17 +161,13 @@ const NumericalView = ({ metrics }: Props) => {
                             labelStyle={{
                                 fontWeight: 500,
                             }}
-                            cursor={{fill: 'transparent'}}
-                            labelFormatter={
-                                label => {
-                                    return `Value: ${label}`;
-                                }
-                            }
-                            formatter={
-                                (value) => {
-                                    return [value, `Density`];
-                                }
-                            }
+                            cursor={{ fill: 'transparent' }}
+                            labelFormatter={(label) => {
+                                return `Value: ${label}`;
+                            }}
+                            formatter={(value) => {
+                                return [value, 'Density'];
+                            }}
                         />
                         <Area
                             type="monotone"
@@ -154,4 +182,4 @@ const NumericalView = ({ metrics }: Props) => {
     );
 };
 
-export default memo(NumericalView);
+export default memo(NumericalMetricView);

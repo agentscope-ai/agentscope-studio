@@ -1,7 +1,3 @@
-import { memo, useEffect, useState } from 'react';
-import { Input, List } from 'antd';
-import { useTranslation } from 'react-i18next';
-
 import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input, List, Modal } from 'antd';
@@ -23,57 +19,43 @@ const Sider = ({ selectedBenchmark, onSelect, benchmarkNames }: Props) => {
     const [searchText, setSearchText] = useState<string>('');
     const { importBenchmark } = useEvaluationRoom();
     const [open, setOpen] = useState<boolean>(false);
-    const [importDir, setImportDir] = useState<string|null>(null);
+    const [importDir, setImportDir] = useState<string | null>(null);
     const [importing, setImporting] = useState<boolean>(false);
     const { messageApi } = useMessageApi();
 
     const onImport = useCallback(async () => {
         if (importDir === null) {
             messageApi.error('Please select a directory first');
-
         } else {
             setImporting(true);
             importBenchmark(importDir)
-                .then(
-                    (success) => {
-                        if (success) {
-                            setOpen(false);
-                        }
+                .then((success) => {
+                    if (success) {
+                        setOpen(false);
                     }
-                )
-                .catch(
-                    (error) => messageApi.error(`Error: ${error.message}`)
-                )
-                .finally(
-                    () => {
-                        setImporting(false);
-                    }
-                )
+                })
+                .catch((error) => messageApi.error(`Error: ${error.message}`))
+                .finally(() => {
+                    setImporting(false);
+                });
         }
-
     }, [importDir]);
 
     return (
         <div className="flex flex-col min-w-[240px] h-full border-r border-r-border p-8 pl-4 pr-4">
-
             <Modal
-                className={'h-[calc(100vh-200px)]'}
-                classNames={
-                    {
-                        content: 'max-h-[calc(100vh-200px)] overflow-hidden',
-                        body: 'max-h-[calc(100vh-40px-200px-76px)] h-[calc(100vh-40px-200px-76px)]',
-                    }
-                }
-                title={'Select a directory to import evaluation'}
+                className="h-[calc(100vh-200px)]"
+                classNames={{
+                    content: 'max-h-[calc(100vh-200px)] overflow-hidden',
+                    body: 'max-h-[calc(100vh-40px-200px-76px)] h-[calc(100vh-40px-200px-76px)]',
+                }}
+                title="Select a directory to import evaluation"
                 open={open}
                 onOk={onImport}
                 loading={importing}
                 onCancel={() => setOpen(false)}
             >
-                <LocalFilePicker
-                    type={'directory'}
-                    onSelect={setImportDir}
-                />
+                <LocalFilePicker type="directory" onSelect={setImportDir} />
             </Modal>
 
             <div className="font-bold text-xl truncate mb-6 h-fit">
@@ -89,11 +71,11 @@ const Sider = ({ selectedBenchmark, onSelect, benchmarkNames }: Props) => {
             />
 
             <SecondaryButton
-                className={'mt-2'}
+                className="mt-2"
                 tooltip={t('tooltip.button.import-evaluation')}
-                icon={<ImportIcon width={13} height={13} className='mb-1' />}
-                variant={'outlined'}
-                placement={'right'}
+                icon={<ImportIcon width={13} height={13} className="mb-1" />}
+                variant="outlined"
+                placement="right"
                 onClick={() => setOpen(true)}
             >
                 {t('action.import-evaluation')}
@@ -107,17 +89,14 @@ const Sider = ({ selectedBenchmark, onSelect, benchmarkNames }: Props) => {
                         ),
                     }}
                     className="h-full"
-                    dataSource={
-                        benchmarkNames.filter(
-                        (name) =>
-                            name.toLowerCase().includes(searchText.toLowerCase()),
-                        )
-                    }
+                    dataSource={benchmarkNames.filter((name) =>
+                        name.toLowerCase().includes(searchText.toLowerCase()),
+                    )}
                     renderItem={(benchmark) => {
                         const isSelected = selectedBenchmark === benchmark;
                         return (
                             <div
-                                className={`group ml-1 border-l border-l-zinc-200 active:text-primary-foreground p-2 pl-0 pr-3 text-[14px]`}
+                                className="group ml-1 border-l border-l-zinc-200 active:text-primary-foreground p-2 pl-0 pr-3 text-[14px]"
                                 onClick={() => onSelect(benchmark)}
                             >
                                 <div

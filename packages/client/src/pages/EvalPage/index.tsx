@@ -17,10 +17,7 @@ const EvalPage = () => {
 
             <EvaluationRoomContextProvider>
                 <Routes>
-                    <Route
-                        index
-                        element={<OverviewPage />}
-                    />
+                    <Route index element={<OverviewPage />} />
                     <Route
                         path={RouterPath.EVAL_EVALUATION}
                         element={<EvaluationDetailPage />}

@@ -11,7 +11,7 @@ import {
     BackendResponse,
     ProjectData,
     SocketEvents,
-    SocketRoomName
+    SocketRoomName,
 } from '../../../shared/src/types/trpc';
 import { useMessageApi } from './MessageApiContext.tsx';
 

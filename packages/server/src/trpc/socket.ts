@@ -29,8 +29,7 @@ import { ReplyingStateManager } from '../services/ReplyingStateManager';
 import { EvaluationDao } from '@/dao/evaluation';
 import path from 'path';
 import { FileDao } from '@/dao/File';
-import { EvaluationResult } from '../../../shared/src/types/evaluation';
-
+import { EvalResult } from '../../../shared/src/types/evaluation';
 
 export class SocketManager {
     private static io: Server;
@@ -105,82 +104,71 @@ export class SocketManager {
             socket.on(
                 SocketEvents.client.listDir,
                 async (dirPath: string, callback) => {
-                    console.debug(
-                        `${socket.id}: listDir: ${dirPath}`,
-                    );
+                    console.debug(`${socket.id}: listDir: ${dirPath}`);
 
                     try {
                         if (fs.existsSync(dirPath)) {
                             // 获取该目录下所有的文件和文件夹，只获取他们的名字，是否是文件夹，修改时间
-                            const fileNames = fs.readdirSync(dirPath).map(
-                                fileName => {
-                                    const filePath = path.join(dirPath, fileName);
+                            const fileNames = fs
+                                .readdirSync(dirPath)
+                                .map((fileName) => {
+                                    const filePath = path.join(
+                                        dirPath,
+                                        fileName,
+                                    );
                                     const stats = fs.statSync(filePath);
 
-                                    callback(
-                                        {
-                                            success: true,
-                                            message: 'Directory listed successfully',
-                                            data: {
-                                                title: fileName,
-                                                isDirectory: stats.isDirectory(),
-                                                modifiedTime: stats.mtime,
-                                            }
-                                        } as BackendResponse
-                                    );
-                                }
-                            );
-                            callback(
-                                {
-                                    success: true,
-                                    message: 'Directory listed successfully',
-                                    data: fileNames,
-                                } as BackendResponse
-                            );
+                                    callback({
+                                        success: true,
+                                        message:
+                                            'Directory listed successfully',
+                                        data: {
+                                            title: fileName,
+                                            isDirectory: stats.isDirectory(),
+                                            modifiedTime: stats.mtime,
+                                        },
+                                    } as BackendResponse);
+                                });
+                            callback({
+                                success: true,
+                                message: 'Directory listed successfully',
+                                data: fileNames,
+                            } as BackendResponse);
                         } else {
-                            callback(
-                                { success: false, message: "Directory not exists" } as BackendResponse
-                            );
+                            callback({
+                                success: false,
+                                message: 'Directory not exists',
+                            } as BackendResponse);
                         }
-
-
                     } catch (error) {
                         console.error(error);
-                        callback(
-                            { success: false, message: `Error: ${error}` } as BackendResponse
-                        );
+                        callback({
+                            success: false,
+                            message: `Error: ${error}`,
+                        } as BackendResponse);
                     }
-
-
-                }
-            )
-
-            socket.on(
-                SocketEvents.client.joinEvaluationRoom,
-                async () => {
-                    console.debug(
-                        `${socket.id}: joined room: ${SocketRoomName.EvaluationRoom}`,
-                    );
-                    socket.join(SocketRoomName.EvaluationRoom);
-
-                    // Broadcast evaluations to this new joined client
-                    EvaluationDao.getAllBenchmarks()
-                        .then(
-                            (benchmarks) => {
-                                socket.emit(
-                                    SocketEvents.server.pushEvaluations,
-                                    benchmarks,
-                                );
-                            }
-                        )
-                        .catch(
-                            (error) => {
-                                console.error(error);
-                                throw error;
-                            }
-                        )
-                }
+                },
             );
+
+            socket.on(SocketEvents.client.joinEvaluationRoom, async () => {
+                console.debug(
+                    `${socket.id}: joined room: ${SocketRoomName.EvaluationRoom}`,
+                );
+                socket.join(SocketRoomName.EvaluationRoom);
+
+                // Broadcast evaluations to this new joined client
+                EvaluationDao.getAllBenchmarks()
+                    .then((benchmarks) => {
+                        socket.emit(
+                            SocketEvents.server.pushEvaluations,
+                            benchmarks,
+                        );
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                        throw error;
+                    });
+            });
 
             socket.on(
                 SocketEvents.client.joinProjectRoom,
@@ -621,29 +609,25 @@ export class SocketManager {
                 SocketEvents.client.getEvaluationResult,
                 async (
                     evaluationDir: string,
-                    callback: (res: BackendResponse) => void
+                    callback: (res: BackendResponse) => void,
                 ) => {
                     try {
-                        const data = await FileDao.getJSONFile<EvaluationResult>(
+                        const data = await FileDao.getJSONFile<EvalResult>(
                             path.join(evaluationDir, 'evaluation_result.json'),
                         );
-                        callback(
-                            {
-                                success: true,
-                                message: 'Get evaluation result successfully',
-                                data: data,
-                            } as BackendResponse,
-                        )
+                        callback({
+                            success: true,
+                            message: 'Get evaluation result successfully',
+                            data: data,
+                        } as BackendResponse);
                     } catch (error) {
                         console.error(error);
-                        callback(
-                            {
-                                success: false,
-                                message: `Error: ${error}`,
-                            } as BackendResponse,
-                        )
+                        callback({
+                            success: false,
+                            message: `Error: ${error}`,
+                        } as BackendResponse);
                     }
-                }
+                },
             );
 
             socket.on('disconnect', () => {
@@ -827,20 +811,13 @@ export class SocketManager {
     }
 
     static async broadcastEvaluationsToEvaluationRoom() {
-
-        EvaluationDao.getAllBenchmarks()
-            .then(
-                (benchmarks) => {
-                    console.log("Push evaluations to evaluation room", benchmarks);
-                    this.io
-                        .of('/client')
-                        .to(SocketRoomName.EvaluationRoom)
-                        .emit(
-                            SocketEvents.server.pushEvaluations,
-                            benchmarks
-                        );
-                }
-            )
+        EvaluationDao.getAllBenchmarks().then((benchmarks) => {
+            console.log('Push evaluations to evaluation room', benchmarks);
+            this.io
+                .of('/client')
+                .to(SocketRoomName.EvaluationRoom)
+                .emit(SocketEvents.server.pushEvaluations, benchmarks);
+        });
     }
 }
 

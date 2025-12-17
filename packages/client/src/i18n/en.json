@@ -45,6 +45,7 @@
         "distribution": "Distribution",
         "dingtalk": "DingTalk",
         "document": "Document",
+        "count": "Count",
         "evaluation": "Evaluation",
         "evaluation-history": "Evaluation History",
         "friday": "Friday",
@@ -56,6 +57,7 @@
         "input-tokens": "Input Tokens",
         "language": "Language",
         "latency": "Latency",
+        "llm": "LLM",
         "llm-invocation": "Invocation",
         "llm-invocations": "Invocations",
         "message": "Message",
@@ -72,9 +74,11 @@
         "projects": "Projects",
         "prompt": "Prompt",
         "prompt-average": "Prompt(Avg)",
+        "repeat": "Repeat",
         "run": "Run",
         "runs": "Runs",
         "run-name": "Name",
+        "task": "Task",
         "thinking": "Thinking",
         "times": "Times",
         "timestamp": "Timestamp",
@@ -82,6 +86,8 @@
         "traces": "Traces",
         "trace-details": "Trace Details",
         "tracing": "Tracing",
+        "token-usage": "Token Usage",
+        "tool": "Tool",
         "total": "Total",
         "total-times": "Total Times",
         "total-tokens": "Tokens",
@@ -100,6 +106,12 @@
         "no-data-available": "No data available"
     },
     "description": {
+        "eval": {
+            "llm": "The distribution of the LLM invocations",
+            "llm-footer": "{{kind}} different LLM(s) were invoked for {{count}} time(s) in total",
+            "tool": "The Top-10 tools used in your solution",
+            "tool-footer": "{{kind}} different tool(s) were used for {{count}} time(s) in total"
+        },
         "trace": {
             "input": "The tracing span input, organized in a JSON format with \"args\" and \"kwargs\" fields",
             "metadata": "The tracing span metadata for additional information",

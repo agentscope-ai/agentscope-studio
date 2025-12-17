@@ -2,14 +2,15 @@ import {
     BaseEntity,
     Entity,
     Column,
-    PrimaryColumn, ManyToOne, JoinColumn
+    PrimaryColumn,
+    ManyToOne,
+    JoinColumn,
 } from 'typeorm';
 import { BenchmarkTable } from '@/models/evaluation/benchmark';
 
-
 @Entity()
 export class EvaluationTable extends BaseEntity {
-    @PrimaryColumn({ nullable: false})
+    @PrimaryColumn({ nullable: false })
     id: string;
 
     @Column()

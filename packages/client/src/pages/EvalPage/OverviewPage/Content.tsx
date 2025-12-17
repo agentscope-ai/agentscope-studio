@@ -13,13 +13,11 @@ import { EmptyPage } from '@/pages/DefaultPage';
 import { SecondaryButton } from '@/components/buttons/ASButton';
 import { Benchmark, Evaluation } from '@shared/types/evaluation.ts';
 
-
 interface Props {
     benchmark: Benchmark | null;
 }
 
-
-const Context = ({benchmark}: Props) => {
+const Context = ({ benchmark }: Props) => {
     const { t } = useTranslation();
     const [searchText, setSearchText] = useState<string>('');
     const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
@@ -61,8 +59,8 @@ const Context = ({benchmark}: Props) => {
                     text={value}
                     selected={selectedRowKeys.includes(record.id)}
                 />
-            )
-        }
+            ),
+        },
     ];
 
     const rowSelection = {
@@ -72,11 +70,12 @@ const Context = ({benchmark}: Props) => {
         },
     };
 
-    const title = t('common.evaluation-history') + (benchmark ? ` of ${benchmark.name}` : '');
+    const title =
+        t('common.evaluation-history') +
+        (benchmark ? ` of ${benchmark.name}` : '');
 
     return (
         <div className="flex flex-col flex-1 space-y-6 p-8 pl-12 pr-12">
-
             <PageTitleSpan
                 title={title}
                 description={benchmark ? benchmark.description : undefined}
@@ -138,7 +137,9 @@ const Context = ({benchmark}: Props) => {
                             return {
                                 onClick: (event: MouseEvent) => {
                                     if (event.type === 'click' && benchmark) {
-                                        navigate(`/eval/${benchmark.name}/${record.id}`);
+                                        navigate(
+                                            `/eval/${benchmark.name}/${record.id}`,
+                                        );
                                     }
                                 },
                                 style: {

@@ -1,15 +1,22 @@
-import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
-import { Benchmark } from '@shared/types/evaluation.ts';
+import {
+    createContext,
+    ReactNode,
+    useContext,
+    useEffect,
+    useState,
+} from 'react';
+import { Benchmark, EvalResult } from '@shared/types/evaluation.ts';
 import { useSocket } from '@/context/SocketContext.tsx';
 import { BackendResponse, SocketEvents, SocketRoomName } from '@shared/types';
 import { useMessageApi } from '@/context/MessageApiContext.tsx';
+import { trpcClient } from '@/api/trpc.ts';
 
 interface EvaluationRoomContextType {
     benchmarks: Benchmark[];
     deleteEvaluations: (evaluationIds: string[]) => void;
     deleteBenchmark: (benchmarkName: string) => void;
     importBenchmark: (evaluationDir: string) => Promise<boolean>;
-    getEvaluationResult: (evaluationDir: string) => Promise<BackendResponse>;
+    getEvaluationResult: (evaluationDir: string) => Promise<EvalResult | null>;
 }
 
 const EvaluationRoomContext = createContext<EvaluationRoomContextType | null>(
@@ -21,15 +28,6 @@ interface Props {
 }
 
 export function EvaluationRoomContextProvider({ children }: Props) {
-    const initialState: EvaluationData = {
-        id: '2',
-        name: 'Evaluation 2',
-        status: 'pending',
-        benchmark: 'GAIA',
-        progress: 60,
-        createdAt: new Date().toISOString(),
-        time: 120441,
-        metrics: [
     const socket = useSocket();
     const { messageApi } = useMessageApi();
     const [benchmarks, setBenchmarks] = useState<Benchmark[]>([]);
@@ -43,12 +41,9 @@ export function EvaluationRoomContextProvider({ children }: Props) {
         socket.emit(SocketEvents.client.joinEvaluationRoom);
 
         // handle data update
-        socket.on(
-            SocketEvents.server.pushEvaluations,
-            (data: Benchmark[]) => {
-                setBenchmarks(data);
-            }
-        );
+        socket.on(SocketEvents.server.pushEvaluations, (data: Benchmark[]) => {
+            setBenchmarks(data);
+        });
 
         return () => {
             socket.off(SocketEvents.server.pushEvaluations);
@@ -63,7 +58,7 @@ export function EvaluationRoomContextProvider({ children }: Props) {
         if (!socket) {
             messageApi.error(
                 'Socket is not connected. Please refresh the page and try again.',
-            )
+            );
         } else {
             socket.emit(
                 SocketEvents.client.deleteEvaluations,
@@ -71,7 +66,7 @@ export function EvaluationRoomContextProvider({ children }: Props) {
                 (response: BackendResponse) => {
                     if (response.success) {
                         messageApi.success(
-                            `${evaluationIds.length} evaluations deleted successfully.`
+                            `${evaluationIds.length} evaluations deleted successfully.`,
                         );
                     } else {
                         messageApi.error(
@@ -79,40 +74,35 @@ export function EvaluationRoomContextProvider({ children }: Props) {
                         );
                     }
                 },
-            )
+            );
         }
-    }
+    };
 
     const deleteBenchmark = (benchmarkName: string) => {
         if (!socket) {
             messageApi.error(
                 'Socket is not connected. Please refresh the page and try again.',
-            )
+            );
         }
-    }
+    };
 
     const importBenchmark = async (evaluationDir: string) => {
         if (!socket) {
             messageApi.error(
                 'Socket is not connected. Please refresh the page and try again.',
-            )
+            );
         }
 
         // Send a POST request to the server
-        const response = await fetch(
-            '/trpc/importEvaluation',
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(
-                    {
-                        evaluationDir: evaluationDir
-                    }
-                )
-            }
-        );
+        const response = await fetch('/trpc/importEvaluation', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                evaluationDir: evaluationDir,
+            }),
+        });
 
         // Handle the response
         const jsonData = await response.json();
@@ -124,42 +114,43 @@ export function EvaluationRoomContextProvider({ children }: Props) {
             messageApi.error(backendResponse.message);
             return false;
         }
-    }
+    };
 
     /*
      * Obtain one evaluation result by its evaluation dir
      */
-    const getEvaluationResult = (evaluationDir: string) => {
-        return new Promise<BackendResponse>(
-            (resolve) => {
-                if (!socket) {
-                    resolve(
-                        {
-                            success: false,
-                            message: 'Socket is not connected. Please refresh the page and try again.',
-                        } as BackendResponse
-                    )
-                } else {
-                    socket.emit(
-                        SocketEvents.client.getEvaluationResult,
-                        evaluationDir,
-                        (response: BackendResponse) => {
-                            resolve(response);
-                        }
-                    )
-                }
+    const getEvaluationResult = async (evaluationDir: string) => {
+        try {
+            const res = await trpcClient.getEvaluationResult.mutate({
+                evaluationDir,
+            });
+            if (res.success) {
+                return res.data as EvalResult;
+            } else {
+                messageApi.error(
+                    res.message || 'Failed to get evaluation result.',
+                );
             }
-        );
-    }
+        } catch (error) {
+            messageApi.error(
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to get evaluation result.',
+            );
+        }
+        return null;
+    };
 
     return (
-        <EvaluationRoomContext.Provider value={{
-            benchmarks,
-            deleteEvaluations,
-            deleteBenchmark,
-            importBenchmark,
-            getEvaluationResult,
-        }}>
+        <EvaluationRoomContext.Provider
+            value={{
+                benchmarks,
+                deleteEvaluations,
+                deleteBenchmark,
+                importBenchmark,
+                getEvaluationResult,
+            }}
+        >
             {children}
         </EvaluationRoomContext.Provider>
     );

@@ -49,15 +49,15 @@
 
 AgentScope Studio is a powerful **local visualization toolkit** for the development of agent applications, supporting
 
-- project **management**, 
-- **chatbot-style** visualization, 
-- **tracing**, and 
+- project **management**,
+- **chatbot-style** visualization,
+- **tracing**, and
 - **agent evaluation**.
 
-In addition, AgentScope Studio built-in a Copilot named **Friday** as 
+In addition, AgentScope Studio built-in a Copilot named **Friday** as
 
-- a development assistant, 
-- playground for rapid secondary development, and 
+- a development assistant,
+- playground for rapid secondary development, and
 - integration of advanced features in [AgentScope](https://github.com/agentscope-ai/agentscope).
 
 <p align="center">
@@ -141,6 +141,7 @@ agentscope.init(
 Friday is implemented based on [AgentScope](https://github.com/agentscope-ai/agentscope).
 
 We are keeping integrating more advanced features into Friday, such as:
+
 - [x] Meta tool
 - [ ] Long-term memory
 - [ ] Dynamic Add MCP

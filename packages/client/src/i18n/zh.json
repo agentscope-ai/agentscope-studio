@@ -45,6 +45,7 @@
         "distribution": "分布",
         "dingtalk": "钉钉",
         "document": "文档",
+        "count": "计数",
         "evaluation": "评测",
         "evaluation-history": "评测历史",
         "friday": "Friday",
@@ -56,6 +57,7 @@
         "id": "ID",
         "language": "语言",
         "latency": "耗时",
+        "llm": "大模型",
         "llm-invocation": "模型调用",
         "llm-invocations": "模型调用",
         "message": "消息",
@@ -72,9 +74,11 @@
         "projects": "项目",
         "prompt": "提示词",
         "prompt-average": "提示词(Avg)",
+        "repeat": "重复次数",
         "run": "运行",
         "runs": "运行",
         "run-name": "名称",
+        "task": "任务",
         "thinking": "思考",
         "times": "次数",
         "timestamp": "时间戳",
@@ -82,6 +86,8 @@
         "traces": "跟踪",
         "trace-details": "跟踪详情",
         "tracing": "追溯",
+        "token-usage": "Token 用量",
+        "tool": "工具",
         "total": "总计",
         "total-times": "总次数",
         "total-tokens": "总 Token 数",
@@ -100,6 +106,12 @@
         "no-data-available": "暂无数据"
     },
     "description": {
+        "eval": {
+            "llm": "评测中 LLM 的使用分布情况",
+            "llm-footer": "总计调用 {{kind}} 种不同的 LLM 模型 {{count}} 次",
+            "tool": "评测中使用频率 Top-10 的工具函数分布情况",
+            "tool-footer": "总计调用 {{kind}} 种不同的工具函数 {{count}} 次"
+        },
         "trace": {
             "input": "Span 输入，采用 JSON 格式组织并包含 \"args\" 和 \"kwargs\" 两个字段",
             "metadata": "Span 元数据，包含额外记录的信息",
