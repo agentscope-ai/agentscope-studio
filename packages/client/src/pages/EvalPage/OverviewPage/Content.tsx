@@ -175,9 +175,6 @@ const Context = () => {
                         rowSelection={rowSelection}
                         pagination={false}
                     />
-                    <div>df</div>
-                    <div>df</div>
-                    <div>df</div>
                 </div>
             </div>
         </div>

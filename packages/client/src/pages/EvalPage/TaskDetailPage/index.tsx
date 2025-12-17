@@ -46,9 +46,7 @@ const TaskDetailPage = () => {
                                     </svg>
                                 </div>
                             </div>
-                            <div
-                                className={'p-6 min-h-[5.5rem] pt-2 space-y-4'}
-                            >
+                            <div className="p-6 min-h-[5.5rem] pt-2 space-y-4">
                                 <div>Unkown</div>
                                 <div>progress: 12%</div>
                             </div>
@@ -60,9 +58,7 @@ const TaskDetailPage = () => {
                                 Input
                             </h3>
                         </div>
-                        <div
-                            className={'p-6 min-h-[5.5rem] pt-2 space-y-4'}
-                        ></div>
+                        <div className="p-6 min-h-[5.5rem] pt-2 space-y-4"></div>
                     </div>
 
                     <div className="col-span-full rounded-xl border shadow">
@@ -71,13 +67,11 @@ const TaskDetailPage = () => {
                                 Ground Truth
                             </h3>
                         </div>
-                        <div
-                            className={'p-6 min-h-[5.5rem] pt-2 space-y-4'}
-                        ></div>
+                        <div className="p-6 min-h-[5.5rem] pt-2 space-y-4"></div>
                     </div>
 
                     <Segmented
-                        className={'col-span-full'}
+                        className="col-span-full"
                         // block={true}
                         options={[
                             'Overview',
@@ -93,9 +87,7 @@ const TaskDetailPage = () => {
                                 Output
                             </h3>
                         </div>
-                        <div
-                            className={'p-6 min-h-[5.5rem] pt-2 space-y-4'}
-                        ></div>
+                        <div className="p-6 min-h-[5.5rem] pt-2 space-y-4"></div>
                     </div>
 
                     <div className="col-span-full rounded-xl border shadow">
@@ -104,9 +96,7 @@ const TaskDetailPage = () => {
                                 Trajectory
                             </h3>
                         </div>
-                        <div
-                            className={'p-6 min-h-[5.5rem] pt-2 space-y-4'}
-                        ></div>
+                        <div className="p-6 min-h-[5.5rem] pt-2 space-y-4"></div>
                     </div>
                 </div>
             </div>
