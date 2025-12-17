@@ -218,7 +218,13 @@
             "status": "Status",
             "time": "Time",
             "total": "Total",
-            "totalRepeats": "Total Repeats"
+            "totalRepeats": "Total Repeats",
+            "totalTokens": "Tokens",
+            "duration": "Duration",
+            "startTime": "Start Time"
+        },
+        "pagination": {
+          "total": "{{total}} items in total"
         }
     },
     "tooltip": {
