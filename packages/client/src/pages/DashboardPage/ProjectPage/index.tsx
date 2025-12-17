@@ -73,14 +73,31 @@ const ProjectPage = () => {
         }));
     };
 
-    const handlePaginationChange = (page: number, pageSize: number) => {
-        setTableRequestParams((prevParams) => ({
-            ...prevParams,
-            pagination: {
-                page,
-                pageSize,
-            },
-        }));
+    const handlePaginationChange = (
+        page: number,
+        pageSize: number,
+        sortField: string | undefined,
+        sortOrder: 'asc' | 'desc' | undefined,
+    ) => {
+        setTableRequestParams((prevParams) => {
+            const newParams = {
+                ...prevParams,
+                pagination: {
+                    page,
+                    pageSize,
+                },
+            };
+            if (sortField && sortOrder) {
+                return {
+                    ...newParams,
+                    sort: {
+                        field: sortField,
+                        order: sortOrder,
+                    },
+                };
+            }
+            return newParams;
+        });
     };
 
     const columns: TableColumnsType<ProjectData> = [
@@ -214,10 +231,21 @@ const ProjectPage = () => {
                         y: 'calc(100vh - 250px)',
                         x: 'max-content',
                     }}
-                    onChange={(pagination) => {
+                    onChange={(pagination, _filters, sorter) => {
+                        const page = pagination.current || 1;
+                        const pageSize = pagination.pageSize || 50;
+                        const sortField = sorter.field;
+                        const sortOrder = sorter.order
+                            ? sorter.order === 'ascend'
+                                ? 'asc'
+                                : 'desc'
+                            : undefined;
+
                         handlePaginationChange(
-                            pagination.current || 1,
-                            pagination.pageSize || 50,
+                            page,
+                            pageSize,
+                            sortField,
+                            sortOrder,
                         );
                     }}
                     onRow={(record: ProjectData) => {

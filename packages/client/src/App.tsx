@@ -1,23 +1,17 @@
-import { BrowserRouter } from 'react-router-dom';
 import { ConfigProvider } from 'antd';
+import { BrowserRouter } from 'react-router-dom';
+import './App.css';
 import { QueryClientProvider } from '@tanstack/react-query';
-
-import HomePage from './pages/HomePage';
-
-import { I18nProvider, useI18n } from './context/I18Context.tsx';
+import { I18nProvider } from './context/I18Context.tsx';
 import { trpc, queryClient, trpcClient } from './api/trpc';
 import { MessageApiContextProvider } from './context/MessageApiContext.tsx';
 import { NotificationContextProvider } from './context/NotificationContext.tsx';
 import { SocketContextProvider } from './context/SocketContext.tsx';
+import HomePage from './pages/HomePage';
 
-import './App.css';
-
-function AppContent() {
-    const { antdLocale } = useI18n();
-
+function App() {
     return (
         <ConfigProvider
-            locale={antdLocale}
             theme={{
                 token: {
                     colorText: 'var(--foreground)',
@@ -114,25 +108,22 @@ function AppContent() {
             <MessageApiContextProvider>
                 <NotificationContextProvider>
                     <SocketContextProvider>
-                        <BrowserRouter>
-                            <HomePage />
-                        </BrowserRouter>
+                        <trpc.Provider
+                            client={trpcClient}
+                            queryClient={queryClient}
+                        >
+                            <QueryClientProvider client={queryClient}>
+                                <I18nProvider>
+                                    <BrowserRouter>
+                                        <HomePage />
+                                    </BrowserRouter>
+                                </I18nProvider>
+                            </QueryClientProvider>
+                        </trpc.Provider>
                     </SocketContextProvider>
                 </NotificationContextProvider>
             </MessageApiContextProvider>
         </ConfigProvider>
-    );
-}
-
-function App() {
-    return (
-        <trpc.Provider client={trpcClient} queryClient={queryClient}>
-            <QueryClientProvider client={queryClient}>
-                <I18nProvider>
-                    <AppContent />
-                </I18nProvider>
-            </QueryClientProvider>
-        </trpc.Provider>
     );
 }
 
