@@ -1,7 +1,7 @@
 import { Input, Modal, Tree } from 'antd';
 import type { DataNode } from 'antd/es/tree';
-import moment from 'moment';
-import { Key, memo, useMemo, useState } from 'react';
+import dayjs from 'dayjs';
+import { Key, memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import Latency from '@/pages/DashboardPage/RunPage/TracingComponent/TracePanel/latency.tsx';
@@ -12,76 +12,53 @@ interface TraceSpanNode extends SpanData {
     children: TraceSpanNode[];
 }
 
-interface SpanNodeTitleProps {
-    name: string;
-    startTimeUnixNano: string;
-    latencyNs: number;
-    attributes: Record<string, unknown>;
-}
+// Helper function to get display kind - extracted to avoid recalculation
+const getDisplayKind = (attributes: Record<string, unknown>): string => {
+    const genAi = attributes.gen_ai as Record<string, unknown> | undefined;
+    const agentscope = attributes.agentscope as
+        | Record<string, unknown>
+        | undefined;
 
-const SpanNodeTitle = ({
-    name,
-    startTimeUnixNano,
-    latencyNs,
-    attributes,
-}: SpanNodeTitleProps) => {
-    const operationName = attributes.gen_ai?.operation?.name as string;
-    const agent_name = (attributes.gen_ai?.agent?.name as string) || undefined;
-    const model_name =
-        (attributes.gen_ai?.request?.model as string) || undefined;
-    const tool_name = (attributes.gen_ai?.tool?.name as string) || undefined;
-    const format_target =
-        (attributes.agentscope?.format?.target as string) || undefined;
+    const operationName = (genAi?.operation as Record<string, unknown>)
+        ?.name as string;
+    const agent_name = (genAi?.agent as Record<string, unknown>)?.name as
+        | string
+        | undefined;
+    const model_name = (genAi?.request as Record<string, unknown>)?.model as
+        | string
+        | undefined;
+    const tool_name = (genAi?.tool as Record<string, unknown>)?.name as
+        | string
+        | undefined;
+    const format_target = (agentscope?.format as Record<string, unknown>)
+        ?.target as string | undefined;
 
-    let displayKind: string;
     if (operationName === 'invoke_agent' && agent_name) {
-        displayKind = operationName + ': ' + String(agent_name);
+        return operationName + ': ' + String(agent_name);
     } else if (operationName === 'execute_tool' && tool_name) {
-        displayKind = operationName + ': ' + String(tool_name);
+        return operationName + ': ' + String(tool_name);
     } else if (
         (operationName === 'chat' ||
             operationName === 'chat_model' ||
             operationName === 'embeddings') &&
         model_name
     ) {
-        displayKind = operationName + ': ' + String(model_name);
+        return operationName + ': ' + String(model_name);
     } else if (operationName === 'format' && format_target) {
-        displayKind = operationName + ': ' + String(format_target);
+        return operationName + ': ' + String(format_target);
     } else if (operationName) {
-        displayKind = operationName;
-    } else {
-        displayKind = 'Unknown';
+        return operationName;
     }
-    return (
-        <div className="flex flex-col w-full py-1 rounded-md">
-            <div className="flex justify-between">
-                <div className="font-[500] truncate break-all max-w-fit">
-                    {name}
-                </div>
-                <Latency latencyNs={latencyNs} />
-            </div>
-            <div className="flex flex-row items-center justify-between text-muted-foreground">
-                <div
-                    className={`
-                    flex flex-row gap-x-1 items-center
-                    border border-currentColor
-                    text-[10px] font-bold
-                    pl-1 pr-1 rounded-md px-1 leading-4
-                    w-fit h-fit
-                `}
-                >
-                    {displayKind}
-                </div>
-
-                <div className="col-span-1 truncate break-all text-[13px]">
-                    {moment(parseInt(startTimeUnixNano) / 1000000).format(
-                        'HH:mm:ss',
-                    )}
-                </div>
-            </div>
-        </div>
-    );
+    return 'Unknown';
 };
+
+// Store for span data lookup by key
+interface SpanTitleData {
+    name: string;
+    startTimeUnixNano: string;
+    latencyNs: number;
+    displayKind: string;
+}
 
 interface Props {
     spans: SpanData[];
@@ -92,6 +69,25 @@ export const TraceTree = ({ spans }: Props) => {
     const [searchText, setSearchText] = useState('');
     const [currentSpan, setCurrentSpan] = useState<SpanData | null>(null);
     const [open, setOpen] = useState(false);
+
+    // Pre-compute title data for all spans - lightweight objects, no React elements
+    const spanTitleDataMap = useMemo(() => {
+        const map = new Map<string, SpanTitleData>();
+        spans.forEach((span) => {
+            const agentscope = span.attributes.agentscope as
+                | Record<string, unknown>
+                | undefined;
+            const funcName = (agentscope?.function as Record<string, unknown>)
+                ?.name as string | undefined;
+            map.set(span.spanId, {
+                name: funcName || span.name,
+                startTimeUnixNano: span.startTimeUnixNano,
+                latencyNs: span.latencyNs,
+                displayKind: getDisplayKind(span.attributes),
+            });
+        });
+        return map;
+    }, [spans]);
 
     const traceHierarchy = useMemo(() => {
         if (spans.length === 0) return [];
@@ -122,14 +118,25 @@ export const TraceTree = ({ spans }: Props) => {
             return rootSpans;
         }
 
-        // Filter the tree based on search text
+        const searchLower = searchText.toLowerCase();
+
+        // Filter the tree based on search text (searches all levels)
         const filterNodes = (nodes: TraceSpanNode[]): TraceSpanNode[] => {
             return nodes
                 .map((node) => {
                     const filteredChildren = filterNodes(node.children);
-                    const nodeMatches = node.name
-                        .toLowerCase()
-                        .includes(searchText.toLowerCase());
+
+                    // Get display name and displayKind for searching
+                    const titleData = spanTitleDataMap.get(node.spanId);
+                    const displayName = titleData?.name || node.name;
+                    const displayKind = titleData?.displayKind || '';
+
+                    // Search in: display name, original name, and displayKind
+                    const nodeMatches =
+                        displayName.toLowerCase().includes(searchLower) ||
+                        node.name.toLowerCase().includes(searchLower) ||
+                        displayKind.toLowerCase().includes(searchLower);
+
                     const hasMatchingChildren = filteredChildren.length > 0;
 
                     // Include the node if it matches or has matching children
@@ -142,41 +149,97 @@ export const TraceTree = ({ spans }: Props) => {
         };
 
         return filterNodes(rootSpans);
-    }, [spans, searchText]);
+    }, [spans, searchText, spanTitleDataMap]);
 
-    const convertToAntdTreeNodes = (nodes: TraceSpanNode[]): DataNode[] => {
-        return nodes.map((node) => {
-            return {
+    // Convert to tree data with only keys and structure - NO React elements
+    const treeData = useMemo(() => {
+        const convertToAntdTreeNodes = (nodes: TraceSpanNode[]): DataNode[] => {
+            return nodes.map((node) => ({
                 key: node.spanId,
-                title: (
-                    <SpanNodeTitle
-                        name={
-                            (node.attributes.agentscope?.function
-                                ?.name as unknown as string) ||
-                            (node.name as string)
-                        }
-                        startTimeUnixNano={node.startTimeUnixNano}
-                        latencyNs={node.latencyNs}
-                        attributes={node.attributes}
-                    />
-                ),
-                children: node.children
-                    ? convertToAntdTreeNodes(node.children)
-                    : undefined,
-            };
-        });
-    };
+                title: node.spanId, // Just use key as placeholder, titleRender will handle display
+                children:
+                    node.children.length > 0
+                        ? convertToAntdTreeNodes(node.children)
+                        : undefined,
+            }));
+        };
+        return convertToAntdTreeNodes(traceHierarchy);
+    }, [traceHierarchy]);
+
+    // Only expand root nodes by default for faster initial render
+    const defaultExpandedKeys = useMemo(() => {
+        return traceHierarchy.map((node) => node.spanId);
+    }, [traceHierarchy]);
+
+    // titleRender - renders only when node is visible (lazy rendering)
+    const titleRender = useCallback(
+        (nodeData: DataNode) => {
+            const spanId = nodeData.key as string;
+            const data = spanTitleDataMap.get(spanId);
+            if (!data) return null;
+
+            return (
+                <div className="flex flex-col w-full py-1 rounded-md">
+                    <div className="flex justify-between">
+                        <div className="font-[500] truncate break-all max-w-fit">
+                            {data.name}
+                        </div>
+                        <Latency latencyNs={data.latencyNs} />
+                    </div>
+                    <div className="flex flex-row items-center justify-between text-muted-foreground">
+                        <div
+                            className={`
+                            flex flex-row gap-x-1 items-center
+                            border border-currentColor
+                            text-[10px] font-bold
+                            pl-1 pr-1 rounded-md px-1 leading-4
+                            w-fit h-fit
+                        `}
+                        >
+                            {data.displayKind}
+                        </div>
+                        <div className="col-span-1 truncate break-all text-[13px]">
+                            {dayjs(
+                                parseInt(data.startTimeUnixNano) / 1000000,
+                            ).format('HH:mm:ss')}
+                        </div>
+                    </div>
+                </div>
+            );
+        },
+        [spanTitleDataMap],
+    );
+
+    const handleSelect = useCallback(
+        (selectedKeys: Key[]) => {
+            const spanId = selectedKeys[0] as string;
+            const span = spans.find((span) => span.spanId === spanId) || null;
+            setCurrentSpan(span);
+            setOpen(true);
+        },
+        [spans],
+    );
+
+    const handleModalClose = useCallback(() => setOpen(false), []);
+
+    const handleSearchChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => {
+            setSearchText(e.target.value);
+        },
+        [],
+    );
 
     return (
         <div className="flex flex-col flex-1 w-full h-full overflow-x-hidden gap-y-4">
             <Modal
                 open={open}
                 title="Span"
-                onCancel={() => setOpen(false)}
+                onCancel={handleModalClose}
                 width="calc(100% - 100px)"
                 height="calc(100vh - 100px)"
                 footer={null}
                 centered={true}
+                destroyOnClose
             >
                 <SpanPanel span={currentSpan} />
             </Modal>
@@ -184,9 +247,7 @@ export const TraceTree = ({ spans }: Props) => {
                 variant="filled"
                 placeholder={t('placeholder.search-span')}
                 value={searchText}
-                onChange={(e) => {
-                    setSearchText(e.target.value);
-                }}
+                onChange={handleSearchChange}
             />
             <Tree
                 className={`
@@ -199,17 +260,11 @@ export const TraceTree = ({ spans }: Props) => {
                     `}
                 blockNode
                 showLine
-                defaultExpandAll={true}
-                autoExpandParent={true}
-                treeData={convertToAntdTreeNodes(traceHierarchy)}
+                defaultExpandedKeys={defaultExpandedKeys}
+                treeData={treeData}
+                titleRender={titleRender}
                 selectedKeys={[]}
-                onSelect={(selectedKeys: Key[]) => {
-                    const spanId = selectedKeys[0] as string;
-                    const span =
-                        spans.find((span) => span.spanId === spanId) || null;
-                    setCurrentSpan(span);
-                    setOpen(true);
-                }}
+                onSelect={handleSelect}
             />
         </div>
     );
