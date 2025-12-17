@@ -41,6 +41,9 @@ jobs:
             - name: Build with VitePress
               run: npm run docs:build
 
+            - name: Add CNAME
+              run: echo "studio.agentscope.io" > docs/.vitepress/dist/CNAME
+
             - name: Upload artifact
               uses: actions/upload-pages-artifact@v3
               with:
