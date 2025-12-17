@@ -1,5 +1,7 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 import {
     BlockType,
     ContentBlocks,
@@ -21,6 +23,8 @@ import { ReplyDao } from '../dao/Reply';
 import { RunDao } from '../dao/Run';
 import { SpanDao } from '../dao/Trace';
 import { SocketManager } from './socket';
+
+const execAsync = promisify(exec);
 
 const textBlock = z.object({
     text: z.string(),
@@ -393,6 +397,52 @@ export const appRouter = t.router({
                         error instanceof Error
                             ? error.message
                             : 'Failed to get trace statistics',
+                });
+            }
+        }),
+
+    updateStudio: t.procedure
+        .input(
+            z.object({
+                version: z.string(),
+            }),
+        )
+        .mutation(async ({ input }) => {
+            try {
+                // Execute the npm global update command
+                const command = `npm install -g @agentscope/studio@${input.version}`;
+                console.log(`Executing: ${command}`);
+
+                const { stdout, stderr } = await execAsync(command);
+
+                // Only throw an error if stderr contains a real error (ERR!)
+                // npm warnings and deprecated messages should not be considered errors.
+                if (stderr && stderr.includes('npm ERR!')) {
+                    console.error('Update error:', stderr);
+                    throw new Error('npm install failed');
+                }
+
+                // Log warnings but do not interrupt the process
+                if (stderr) {
+                    console.warn('Update warnings:', stderr);
+                }
+
+                console.log('Update stdout:', stdout);
+
+                return {
+                    success: true,
+                    message:
+                        'Studio updated successfully. Please restart the application.',
+                    version: input.version,
+                };
+            } catch (error) {
+                console.error('Error updating studio:', error);
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : 'Failed to update studio',
                 });
             }
         }),

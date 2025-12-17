@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button.tsx';
+import { Badge } from '@/components/ui/badge.tsx';
 import {
     Sidebar,
     SidebarContent,
@@ -25,6 +26,8 @@ import {
 import { RouterPath } from '@/pages/RouterPath.ts';
 import SettingsDialog from './SettingsDialog.tsx';
 import { getSidebarItems } from './config';
+import { checkForUpdates } from '@/utils/versionCheck';
+import { TrpcProvider } from '@/api/TrpcProvider';
 
 const StudioSidebar = () => {
     const { toggleSidebar, open, setOpen } = useSidebar();
@@ -34,8 +37,16 @@ const StudioSidebar = () => {
     const isInitialMount = useRef(true);
 
     const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+    const [hasUpdate, setHasUpdate] = useState(false);
 
     // TODO: use a context to manage web storage state globally
+
+    // Check for version updates on mount
+    useEffect(() => {
+        checkForUpdates().then((updateInfo) => {
+            setHasUpdate(updateInfo.hasUpdate);
+        });
+    }, []);
 
     // Load sidebar state from localStorage on mount
     useEffect(() => {
@@ -140,20 +151,31 @@ const StudioSidebar = () => {
             {/* Footer with version information */}
             <SidebarFooter>
                 <SidebarMenuItem className="list-none">
-                    <SidebarMenuButton
-                        tooltip={t('common.settings')}
-                        onClick={() => setSettingsDialogOpen(true)}
-                    >
-                        <SettingsIcon />
-                        <span>{t('common.settings')}</span>
-                    </SidebarMenuButton>
+                    <div className="relative inline-flex">
+                        <SidebarMenuButton
+                            tooltip={t('common.settings')}
+                            onClick={() => setSettingsDialogOpen(true)}
+                        >
+                            <SettingsIcon />
+                            <span>{t('common.settings')}</span>
+                        </SidebarMenuButton>
+                        {hasUpdate && (
+                            <Badge
+                                variant="destructive"
+                                className="absolute top-1.6 -right-1 h-1.5 w-1.5 p-0 z-10"
+                            />
+                        )}
+                    </div>
                 </SidebarMenuItem>
             </SidebarFooter>
 
-            <SettingsDialog
-                open={settingsDialogOpen}
-                onOpenChange={setSettingsDialogOpen}
-            />
+            <TrpcProvider>
+                <SettingsDialog
+                    hasUpdate={hasUpdate}
+                    open={settingsDialogOpen}
+                    onOpenChange={setSettingsDialogOpen}
+                />
+            </TrpcProvider>
             <Button
                 data-sidebar="trigger"
                 data-slot="sidebar-trigger"

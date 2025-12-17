@@ -7,7 +7,9 @@
         "confirm": "确认",
         "delete": "删除",
         "focus-on-latest-run": "自动切换到最新运行",
-        "ok": "确认"
+        "ok": "确认",
+        "update-now": "立即更新",
+        "updating": "更新中..."
     },
     "chat": {
         "avatar-set": {
@@ -161,7 +163,12 @@
     },
     "message": {
         "settings": {
-            "data-cleared": "数据已清空"
+            "data-cleared": "数据已清空",
+            "update-instruction": "请使用 npm install -g @agentscope/studio@{{version}} 更新到最新版本",
+            "updating": "正在更新到 {{version}}，请稍候...",
+            "update-success": "更新成功！已安装版本 {{version}}",
+            "update-failed": "更新失败：{{error}}",
+            "restart-required": "请重启应用以使用新版本"
         }
     },
     "notification": {
@@ -196,6 +203,8 @@
         "version": "版本信息",
         "version-description": "查看当前应用的版本号",
         "current-version": "当前版本",
+        "new-update-available": "发现新版本",
+        "new-version-available": "发现新版本 {{version}}",
         "clear-data-warning": "此操作将清空 Friday 的所有历史对话数据，此操作不可恢复",
         "clear-data-confirm-title": "⚠️ 确认清空数据？",
         "clear-data-confirm-description": "您即将清空所有 Friday 历史对话数据。此操作不可撤销，请谨慎操作。确定要继续吗？"
