@@ -94,35 +94,15 @@ const AsTable = <T extends object>({ columns, ...rest }: AsTableProps<T>) => {
         [t, rest.locale],
     );
 
-    /**
-     * Default pagination configuration.
-     */
-    const defaultPagination = useMemo(
-        () =>
-            rest.pagination !== false
-                ? {
-                      showSizeChanger: true,
-                      showQuickJumper: true,
-                      showTotal: (total: number) =>
-                          t('table.pagination.total', { total }),
-                      pageSizeOptions: ['10', '20', '50', '100'],
-                      className: 'mr-4!',
-                      ...rest.pagination,
-                  }
-                : false,
-        [t, rest.pagination],
-    );
-
     return (
         <Table<T>
-            {...rest}
-            className="h-full w-full border border-border rounded-md"
+            className="h-full w-full rounded-md [&_.ant-table]:border"
             columns={updatedColumns}
             locale={tableLocale}
-            pagination={defaultPagination}
             size="small"
             sticky
             showSorterTooltip={{ target: 'full-header' }}
+            {...rest}
         />
     );
 };
