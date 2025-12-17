@@ -27,7 +27,6 @@ import { RouterPath } from '@/pages/RouterPath.ts';
 import SettingsDialog from './SettingsDialog.tsx';
 import { getSidebarItems } from './config';
 import { checkForUpdates } from '@/utils/versionCheck';
-import { TrpcProvider } from '@/api/TrpcProvider';
 
 const StudioSidebar = () => {
     const { toggleSidebar, open, setOpen } = useSidebar();
@@ -169,19 +168,17 @@ const StudioSidebar = () => {
                 </SidebarMenuItem>
             </SidebarFooter>
 
-            <TrpcProvider>
-                <SettingsDialog
-                    hasUpdate={hasUpdate}
-                    open={settingsDialogOpen}
-                    onOpenChange={setSettingsDialogOpen}
-                />
-            </TrpcProvider>
+            <SettingsDialog
+                hasUpdate={hasUpdate}
+                open={settingsDialogOpen}
+                onOpenChange={setSettingsDialogOpen}
+            />
             <Button
                 data-sidebar="trigger"
                 data-slot="sidebar-trigger"
                 variant="outline"
                 size="icon"
-                className={`group-hover:flex hidden h-10 w-4 border border-border rounded-[4px] -ml-1 absolute right-0 top-1/2 transform ${open ? 'translate-x-1/2' : 'translate-x-2/3'} -translate-y-1/2`}
+                className={`group-hover:flex hidden h-10 w-4 border border-border rounded-lg -ml-1 absolute right-0 top-1/2 transform ${open ? 'translate-x-1/2' : 'translate-x-2/3'} -translate-y-1/2`}
                 onClick={toggleSidebar}
             >
                 {open ? <ChevronLeftIcon /> : <ChevronRightIcon />}
