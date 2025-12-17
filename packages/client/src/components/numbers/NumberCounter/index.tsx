@@ -22,7 +22,7 @@ const NumberCounter = ({ number, style = {} }: Props) => {
     const numericPart = match ? match[1] : formattedNumber;
     const unitPart = match ? match[2] : '';
     return (
-        <Flex style={{ ...style }} align={'center'}>
+        <Flex style={{ ...style }} align="center">
             <SlotCounter
                 startValue={0}
                 startValueOnce

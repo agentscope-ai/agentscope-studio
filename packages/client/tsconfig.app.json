@@ -19,16 +19,12 @@
         "noUnusedParameters": true,
         "noFallthroughCasesInSwitch": true,
         "noUncheckedSideEffectImports": true,
-        "baseUrl": ".", // 确保这个存在
+        "baseUrl": ".",
         "paths": {
-            // 复制 paths 配置到这里
             "@/*": ["./src/*"],
             "@shared/*": ["../shared/src/*"]
         }
     },
-    "include": [
-        "src",
-        "../shared/src/**/*" // 添加这行来包含 shared 目录
-    ],
+    "include": ["src", "../shared/src/**/*"],
     "exclude": ["node_modules", "../server", "../server/**/*", "dist", "build"]
 }
