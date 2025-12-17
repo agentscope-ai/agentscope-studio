@@ -22,20 +22,12 @@ import { useTraceContext } from '@/context/TraceContext';
 import { copyToClipboard } from '@/utils/common';
 import { SpanData } from '@shared/types/trace';
 import { getNestedValue } from '@shared/utils/objectUtils';
-import { formatDateTime } from '@/utils/common';
+import { formatDateTime, formatDuration } from '@/utils/common';
 
 interface SpanTreeNode {
     span: SpanData;
     children?: SpanTreeNode[];
 }
-
-// Helper functions defined outside component to avoid hoisting issues
-const formatDuration = (seconds: number): string => {
-    if (seconds < 1) {
-        return `${(seconds * 1000).toFixed(2)}ms`;
-    }
-    return `${seconds.toFixed(2)}s`;
-};
 
 const getStatusIcon = (statusCode: number) => {
     if (statusCode === 2) {

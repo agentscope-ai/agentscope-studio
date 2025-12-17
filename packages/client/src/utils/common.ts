@@ -194,3 +194,44 @@ export const formatNumber = (
     // Fallback - should not normally reach here
     return number.toString();
 };
+
+/**
+ * Format a duration in seconds into a human-readable string with appropriate units.
+ * 
+ * @param seconds - The duration in seconds to format
+ * @returns A formatted string representing the duration with proper units (e.g. "1.23s", "5m 30s", "2h 15m")
+ */
+export const formatDuration = (seconds: number): string => {
+    // Handle negative or invalid values
+    if (seconds <= 0) return '0s';
+    
+    // Millisecond level (less than 1 second)
+    if (seconds < 1) {
+        return `${(seconds * 1000).toFixed(2)}ms`;
+    }
+    
+    // Second level (less than 1 minute)
+    if (seconds < 60) {
+        return `${seconds.toFixed(2)}s`;
+    }
+    
+    // Minute level (less than 1 hour)
+    if (seconds < 3600) {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        return remainingSeconds > 0 
+            ? `${minutes}min ${remainingSeconds.toFixed(0)}s` 
+            : `${minutes}min`;
+    }
+    
+    // Hour level (greater than or equal to 1 hour)
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    
+    let result = `${hours}h`;
+    if (minutes > 0) result += ` ${minutes}min`;
+    if (remainingSeconds > 0) result += ` ${remainingSeconds}s`;
+    
+    return result;
+};

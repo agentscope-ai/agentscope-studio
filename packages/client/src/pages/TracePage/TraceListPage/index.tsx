@@ -18,7 +18,7 @@ import { useTraceContext } from '@/context/TraceContext';
 import { copyToClipboard } from '@/utils/common';
 import { TraceListItem } from '@shared/types';
 import TraceDetailPage from '../TraceDetailPage';
-import { formatDateTime, formatNumber } from '@/utils/common';
+import { formatDateTime, formatNumber, formatDuration } from '@/utils/common';
 
 // Helper component for statistic cards
 const StatCard = ({
@@ -94,13 +94,6 @@ const TraceListPage = () => {
         drawerOpen,
         setDrawerOpen,
     } = useTraceContext();
-
-    const formatDuration = (seconds: number): string => {
-        if (seconds < 1) {
-            return `${(seconds * 1000).toFixed(2)}ms`;
-        }
-        return `${seconds.toFixed(2)}s`;
-    };
 
     const getStatusDisplay = (status: number) => {
         if (status === 2) {
