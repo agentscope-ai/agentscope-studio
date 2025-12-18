@@ -1,6 +1,6 @@
+import { z } from 'zod';
 import { ContentBlocks, ContentType, Status } from './messageForm';
 import { Usage } from './usage';
-import { z } from 'zod';
 
 export const RegisterReplyParamsSchema = z.object({
     runId: z.string(),
@@ -10,6 +10,25 @@ export const RegisterReplyParamsSchema = z.object({
     createdAt: z.string(),
 });
 export type RegisterReplyParams = z.infer<typeof RegisterReplyParamsSchema>;
+
+/**
+ * Zod schema for table request parameters.
+ * This schema validates the structure of the request parameters used for table-related operations.
+ */
+export const TableRequestParamsSchema = z.object({
+    pagination: z.object({
+        page: z.number().int().min(1),
+        pageSize: z.number().int().min(10),
+    }),
+    sort: z
+        .object({
+            field: z.string(),
+            order: z.enum(['asc', 'desc']),
+        })
+        .optional(),
+    filters: z.record(z.unknown()).optional(),
+});
+export type TableRequestParams = z.infer<typeof TableRequestParamsSchema>;
 
 export const SocketRoomName = {
     ProjectListRoom: 'ProjectListRoom',
@@ -90,6 +109,7 @@ export interface ProjectData {
     finished: number;
     total: number;
     createdAt: string;
+    [key: string]: unknown;
 }
 
 export interface MessageData {
@@ -200,10 +220,17 @@ export interface ModelInvocationData {
     };
 }
 
-export interface BackendResponse {
+export interface ResponseBody<T = unknown> {
     success: boolean;
     message: string;
-    data?: unknown;
+    data?: T;
+}
+
+export interface TableData<T> {
+    list: T[];
+    total: number;
+    page: number;
+    pageSize: number;
 }
 
 interface Metric {
@@ -282,3 +309,30 @@ export interface EvaluationData {
     // Data
     results: Record<string, unknown>;
 }
+
+// TracePage trpc schemas
+export const GetTraceListParamsSchema = z.object({
+    serviceName: z.string().optional(),
+    operationName: z.string().optional(),
+    status: z.number().optional(),
+    startTime: z.string().optional(),
+    endTime: z.string().optional(),
+    limit: z.number().optional(),
+    offset: z.number().optional(),
+});
+export type GetTraceListParams = z.infer<typeof GetTraceListParamsSchema>;
+
+export const GetTraceParamsSchema = z.object({
+    traceId: z.string(),
+});
+export type GetTraceParams = z.infer<typeof GetTraceParamsSchema>;
+
+export const GetTraceStatisticParamsSchema = z.object({
+    startTime: z.string().optional(),
+    endTime: z.string().optional(),
+    serviceName: z.string().optional(),
+    operationName: z.string().optional(),
+});
+export type GetTraceStatisticParams = z.infer<
+    typeof GetTraceStatisticParamsSchema
+>;

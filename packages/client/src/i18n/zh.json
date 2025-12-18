@@ -78,6 +78,7 @@
         "times": "次数",
         "timestamp": "时间戳",
         "trace": "跟踪",
+        "traces": "跟踪",
         "trace-details": "跟踪详情",
         "tracing": "追溯",
         "total": "总计",
@@ -114,12 +115,22 @@
     "help": {
         "friday": {
             "api-key": "用于访问 {{llmProvider}} LLM API 的密钥",
+            "base-url": "LLM API 提供商的基础 URL",
+            "base-url-placeholder": "例如 https://api.openai.com/v1,http://localhost:11434",
+            "client-kwargs": "API client 初始化的关键字参数，例如 OpenAI 客户端的 \"base_url\" 字段",
+            "generate-kwargs": "实际调用 LLM API 时传入的关键字参数，例如 \"temperature\"、\"max_tokens\" 等",
             "llm-provider": "选择 LLM API 提供商",
             "model-name": "用于生成回复的{{llmProvider}}模型",
             "python-env": "Python 环境的绝对路径（3.10+），例如 /usr/bin/python",
             "write-permission": "是否允许 Friday 修改你的本地文件，如果允许，Friday 将会装备一个写文件的工具",
-            "base-url": "LLM API 提供商的基础 URL",
-            "base-url-placeholder": "例如 https://api.openai.com/v1,http://localhost:11434"
+            "key-name": "Key 名称",
+            "missing-key-name": "缺少 Key 名称",
+            "type-name": "类型名称",
+            "missing-type-name": "缺少类型",
+            "value-name": "值名称",
+            "missing-value-name": "缺少值名称",
+            "check-only-number": "只能输入数字",
+            "add-form-list-btn": "添加关键字参数"
         }
     },
     "hint": {
@@ -184,7 +195,13 @@
             "running": "运行中",
             "status": "状态",
             "time": "用时",
-            "total": "总计"
+            "total": "总计",
+            "totalTokens": "Token 量",
+            "duration": "调用时长",
+            "startTime": "开始时间"
+        },
+        "pagination": {
+            "total": "共 {{total}} 项"
         }
     },
     "tooltip": {
@@ -236,6 +253,30 @@
             "send-description": "当应用运行到需要 UserAgent 实例进行输入时，该按钮将激活，点击按钮扮演对应的角色进行输入",
             "send-title": "发送消息"
         }
+    },
+    "trace": {
+        "detail": {
+            "loading": "加载中..."
+        },
+        "message": {
+            "copyFailed": "复制失败",
+            "copySuccess": "已复制到剪贴板",
+            "loadFailed": "加载 traces 失败"
+        },
+        "nodeDetails": "节点详情",
+        "selectSpan": "选择一个 span 以查看详情",
+        "spanId": "Span ID",
+        "status": {
+            "error": "错误",
+            "ok": "正常",
+            "unset": "未设置"
+        },
+        "timeRange": {
+            "all": "全部",
+            "month": "最近 30 天",
+            "week": "最近 7 天"
+        },
+        "traceId": "Trace ID"
     },
     "unit": {
         "character": "字符",

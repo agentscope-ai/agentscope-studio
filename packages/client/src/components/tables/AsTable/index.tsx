@@ -1,16 +1,16 @@
 import { memo, useMemo, useCallback } from 'react';
-import { Table, TableColumnsType, TableColumnType } from 'antd';
 import { useTranslation } from 'react-i18next';
+import { Table, TableColumnsType, TableColumnType } from 'antd';
 import { TableProps } from 'antd/es/table/InternalTable';
 
 import EmptyData from '@/components/tables/EmptyData.tsx';
 import { renderSortIcon, renderTitle } from '@/components/tables/utils.tsx';
 
-/**
- * Generic table component with built-in sorting, internationalization, and styling.
- * Provides consistent table behavior across the application.
- */
-const AsTable = <T extends object>({ columns, ...rest }: TableProps<T>) => {
+interface AsTableProps<T> extends Omit<TableProps<T>, 'columns'> {
+    columns: TableColumnsType<T>;
+}
+
+const AsTable = <T extends object>({ columns, ...rest }: AsTableProps<T>) => {
     const { t } = useTranslation();
 
     /**
@@ -68,10 +68,8 @@ const AsTable = <T extends object>({ columns, ...rest }: TableProps<T>) => {
                 sortIcon: (sortOrder) => renderSortIcon(sortOrder, true),
             };
 
-            // First column gets special treatment
             if (index === 0) {
                 baseProps.fixed = 'left';
-                baseProps.defaultSortOrder = 'ascend';
             }
 
             return {
@@ -98,7 +96,7 @@ const AsTable = <T extends object>({ columns, ...rest }: TableProps<T>) => {
 
     return (
         <Table<T>
-            className="h-full w-full border border-border rounded-md"
+            className="h-full w-full rounded-md [&_.ant-table]:border"
             columns={updatedColumns}
             locale={tableLocale}
             size="small"

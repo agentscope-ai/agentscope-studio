@@ -1,12 +1,19 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';
+
 import {
+    GetTraceListParamsSchema,
+    GetTraceParamsSchema,
+    GetTraceStatisticParamsSchema,
     InputRequestData,
+    // RunData,
+    TableData,
+    ProjectData,
+    TableRequestParamsSchema,
+    ResponseBody,
     RegisterReplyParams,
     RegisterReplyParamsSchema,
     RunData,
-} from '../../../shared/src';
-import {
     BlockType,
     ContentBlocks,
     MessageForm,
@@ -19,6 +26,7 @@ import { SocketManager } from './socket';
 import { FridayConfigManager } from '../../../shared/src/config/friday';
 import { FridayAppMessageDao } from '../dao/FridayAppMessage';
 import { ReplyDao } from '@/dao/Reply';
+import { SpanDao } from '../dao/Trace';
 
 const textBlock = z.object({
     text: z.string(),
@@ -100,9 +108,10 @@ export const appRouter = t.router({
                 project: z.string(),
                 name: z.string(),
                 timestamp: z.string(),
-                run_dir: z.string(),
                 pid: z.number(),
                 status: z.enum(Object.values(Status) as [string, ...string[]]),
+                // Deprecated
+                run_dir: z.string().optional().nullable(),
             }),
         )
         .mutation(async ({ input }) => {
@@ -111,7 +120,7 @@ export const appRouter = t.router({
                 project: input.project,
                 name: input.name,
                 timestamp: input.timestamp,
-                run_dir: input.run_dir,
+                run_dir: input.run_dir || '', // Deprecated
                 pid: input.pid,
                 status: input.status,
             } as RunData;
@@ -197,8 +206,8 @@ export const appRouter = t.router({
             z.object({
                 runId: z.string(),
                 replyId: z.string().optional().nullable(),
-                name: z.string(),
-                role: z.string(),
+                replyName: z.string().optional().nullable(),
+                replyRole: z.string().optional().nullable(),
                 msg: z.object({
                     id: z.string(),
                     name: z.string(),
@@ -207,6 +216,9 @@ export const appRouter = t.router({
                     metadata: z.unknown(),
                     timestamp: z.string(),
                 }),
+                // The name and role here are deprecated, use replyName and replyRole instead
+                name: z.string().optional().nullable(),
+                role: z.string().optional().nullable(),
             }),
         )
         .mutation(async ({ input }) => {
@@ -227,9 +239,9 @@ export const appRouter = t.router({
                 // Create a reply record if it does not exist
                 await ReplyDao.saveReply({
                     runId: input.runId,
-                    replyId: input.replyId,
-                    replyRole: input.role,
-                    replyName: input.name,
+                    replyId: replyId,
+                    replyRole: input.replyRole ?? input.role,
+                    replyName: input.replyName ?? input.name,
                     createdAt: input.msg.timestamp,
                 } as RegisterReplyParams);
             }
@@ -334,6 +346,116 @@ export const appRouter = t.router({
     clientGetFridayConfig: t.procedure.query(async () => {
         return FridayConfigManager.getInstance().getConfig();
     }),
+
+    /**
+     * Get paginated projects with optional sorting and filtering
+     *
+     * @param pagination - Pagination parameters (page number and page size)
+     * @param sort - Optional sorting configuration (field name and order)
+     * @param filters - Optional filters for project search (e.g., project name)
+     * @returns ResponseBody containing TableData with project list and metadata
+     *
+     * @example
+     * Input: {
+     *   pagination: { page: 1, pageSize: 10 },
+     *   sort: { field: 'createdAt', order: 'desc' },
+     *   filters: { project: 'my-project' }
+     * }
+     *
+     * Output: {
+     *   success: true,
+     *   message: 'Projects fetched successfully',
+     *   data: {
+     *     list: [...],
+     *     total: 100,
+     *     page: 1,
+     *     pageSize: 10
+     *   }
+     * }
+     */
+    getProjects: t.procedure
+        .input(TableRequestParamsSchema)
+        .query(async ({ input }) => {
+            try {
+                const result = await RunDao.getProjects(
+                    input.pagination,
+                    input.sort,
+                    input.filters,
+                );
+
+                return {
+                    success: true,
+                    message: 'Projects fetched successfully',
+                    data: result,
+                } as ResponseBody<TableData<ProjectData>>;
+            } catch (error) {
+                console.error('Error fetching projects:', error);
+                return {
+                    success: false,
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : 'Unknown error',
+                } as ResponseBody<TableData<ProjectData>>;
+            }
+        }),
+
+    getTraceList: t.procedure
+        .input(GetTraceListParamsSchema)
+        .query(async ({ input }) => {
+            try {
+                console.debug('[TRPC] getTraceList called with input:', input);
+                const result = await SpanDao.getTraceList(input);
+                console.debug('[TRPC] getTraceList result:', {
+                    total: result.total,
+                    tracesCount: result.traces.length,
+                });
+                return result;
+            } catch (error) {
+                console.error('Error in getTraceList:', error);
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : 'Failed to get trace list',
+                });
+            }
+        }),
+
+    getTrace: t.procedure
+        .input(GetTraceParamsSchema)
+        .query(async ({ input }) => {
+            try {
+                return await SpanDao.getTrace(input.traceId);
+            } catch (error) {
+                console.error('Error in getTrace:', error);
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : 'Failed to get trace',
+                });
+            }
+        }),
+
+    getTraceStatistic: t.procedure
+        .input(GetTraceStatisticParamsSchema)
+        .query(async ({ input }) => {
+            try {
+                return await SpanDao.getTraceStatistic(input);
+            } catch (error) {
+                console.error('Error in getTraceStatistic:', error);
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : 'Failed to get trace statistics',
+                });
+            }
+        }),
 });
 
 export type AppRouter = typeof appRouter;

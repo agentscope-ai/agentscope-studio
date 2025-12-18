@@ -14,8 +14,8 @@ const EmptyData = () => {
         <Flex
             vertical={true}
             style={{ height: '100%', width: '100%', background: 'transparent' }}
-            align={'center'}
-            justify={'center'}
+            align="center"
+            justify="center"
         >
             <PageEmptyIcon width={250} height={250} />
             <span style={{ marginTop: -10 }}>

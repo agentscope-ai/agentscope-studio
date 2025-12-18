@@ -1,31 +1,31 @@
-import { Server } from 'socket.io';
+import { spawn } from 'child_process';
 import { Server as HttpServer } from 'http';
-import { RunDao } from '../dao/Run';
+import { Server } from 'socket.io';
+import { ContentBlocks, Status } from '../../../shared/src/types/messageForm';
 import {
-    BackendResponse,
+    ResponseBody,
+    FridayReply,
     InputRequestData,
     OverviewData,
     Reply,
-    FridayReply,
     RunData,
     SocketEvents,
     SocketRoomName,
 } from '../../../shared/src/types/trpc';
-import { spawn } from 'child_process';
-import { ContentBlocks, Status } from '../../../shared/src/types/messageForm';
+import { RunDao } from '../dao/Run';
 
-import { SpanData } from '../../../shared/src/types/trace';
-import { InputRequestDao } from '../dao/InputRequest';
-import { FridayAppMessageDao } from '../dao/FridayAppMessage';
 import dayjs from 'dayjs';
-import { ConfigManager, PATHS } from '../../../shared/src';
-import { ReplyingStateManager } from '../services/ReplyingStateManager';
 import * as fs from 'node:fs';
+import { ConfigManager, PATHS } from '../../../shared/src';
 import {
     FridayConfig,
     FridayConfigManager,
 } from '../../../shared/src/config/friday';
+import { SpanData } from '../../../shared/src/types/trace';
+import { FridayAppMessageDao } from '../dao/FridayAppMessage';
+import { InputRequestDao } from '../dao/InputRequest';
 import { SpanDao } from '../dao/Trace';
+import { ReplyingStateManager } from '../services/ReplyingStateManager';
 
 export class SocketManager {
     private static io: Server;
@@ -306,7 +306,7 @@ export class SocketManager {
                         success: true,
                         data: fridayConfig,
                         message: 'Get Friday config successfully',
-                    } as BackendResponse);
+                    } as ResponseBody);
                 } catch (error) {
                     console.error(error);
                     callback({
@@ -336,7 +336,7 @@ export class SocketManager {
                 SocketEvents.client.installFridayRequirements,
                 async (
                     pythonEnv: string,
-                    callback: (res: BackendResponse) => void,
+                    callback: (res: ResponseBody) => void,
                 ) => {
                     const fridayConfigManager =
                         FridayConfigManager.getInstance();
@@ -377,7 +377,7 @@ export class SocketManager {
                             callback({
                                 success: false,
                                 message: `Failed to get replies: ${error}`,
-                            } as BackendResponse);
+                            } as ResponseBody);
                         });
                 },
             );
@@ -386,7 +386,7 @@ export class SocketManager {
                 SocketEvents.client.verifyFridayConfig,
                 async (
                     pythonEnv: string,
-                    callback: (response: BackendResponse) => void,
+                    callback: (response: ResponseBody) => void,
                 ) => {
                     console.debug(`${socket.id}: verifyPythonEnv:`, pythonEnv);
                     // Verify if python exists
@@ -404,7 +404,7 @@ export class SocketManager {
                     name: string,
                     role: string,
                     content: ContentBlocks,
-                    callback: (response: BackendResponse) => void,
+                    callback: (response: ResponseBody) => void,
                 ) => {
                     const replyingManager = ReplyingStateManager.getInstance();
 
@@ -433,7 +433,7 @@ export class SocketManager {
                             callback({
                                 success: false,
                                 message: `Failed to add reply: ${error}`,
-                            } as BackendResponse);
+                            } as ResponseBody);
                         });
 
                     // Send the message to the python client
@@ -452,7 +452,7 @@ export class SocketManager {
                             success: false,
                             message:
                                 'Friday config not found. Please set it up first.',
-                        } as BackendResponse);
+                        } as ResponseBody);
                         return;
                     }
 
@@ -467,10 +467,14 @@ export class SocketManager {
                         '--studio_url',
                         `http://localhost:${config.port}`,
                     ];
-                    console.log(fridayConfig);
+                    console.debug(fridayConfig);
                     for (const [key, value] of Object.entries(fridayConfig)) {
                         if (key !== 'pythonEnv' && key !== 'mainScriptPath') {
-                            args.push(`--${key}`, value);
+                            if (typeof value === 'object') {
+                                args.push(`--${key}`, JSON.stringify(value));
+                            } else {
+                                args.push(`--${key}`, value);
+                            }
                         }
                     }
 
@@ -489,7 +493,7 @@ export class SocketManager {
                                 callback({
                                     success: false,
                                     message: result.error,
-                                } as BackendResponse);
+                                } as ResponseBody);
                             }
                         })
                         .catch((error) => {
@@ -497,7 +501,7 @@ export class SocketManager {
                             callback({
                                 success: false,
                                 message: error,
-                            } as BackendResponse);
+                            } as ResponseBody);
                         })
                         .finally(() => {
                             replyingManager.setReplyingState(false);
@@ -580,10 +584,10 @@ export class SocketManager {
         // Group spans by runId
         const groupedSpans: Record<string, SpanData[]> = {};
         spanDataArray.forEach((spanData) => {
-            if (!groupedSpans[spanData.runId]) {
-                groupedSpans[spanData.runId] = [];
+            if (!groupedSpans[spanData.conversationId]) {
+                groupedSpans[spanData.conversationId] = [];
             }
-            groupedSpans[spanData.runId].push(spanData);
+            groupedSpans[spanData.conversationId].push(spanData);
         });
 
         // Send grouped spans to each run room

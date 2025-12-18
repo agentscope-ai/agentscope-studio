@@ -1,11 +1,13 @@
-import './App.css';
-import { I18nProvider } from './context/I18Context.tsx';
-import { BrowserRouter } from 'react-router-dom';
 import { ConfigProvider } from 'antd';
-import HomePage from './pages/HomePage';
-import { SocketContextProvider } from './context/SocketContext.tsx';
+import { BrowserRouter } from 'react-router-dom';
+import './App.css';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { I18nProvider } from './context/I18Context.tsx';
+import { trpc, queryClient, trpcClient } from './api/trpc';
 import { MessageApiContextProvider } from './context/MessageApiContext.tsx';
 import { NotificationContextProvider } from './context/NotificationContext.tsx';
+import { SocketContextProvider } from './context/SocketContext.tsx';
+import HomePage from './pages/HomePage';
 
 function App() {
     return (
@@ -20,7 +22,6 @@ function App() {
                     colorPrimaryHover: 'var(--primary)',
                     fontFamily:
                         'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFon, Segoe UI, Roboto, Helvetica Neue, Arial, Noto Sans, sans-serif',
-
                     // For Button
                     colorBgSolidActive: 'var(--primary-700)',
                     colorBgSolidHover: 'var(--primary-800)',
@@ -107,11 +108,18 @@ function App() {
             <MessageApiContextProvider>
                 <NotificationContextProvider>
                     <SocketContextProvider>
-                        <I18nProvider>
-                            <BrowserRouter>
-                                <HomePage />
-                            </BrowserRouter>
-                        </I18nProvider>
+                        <trpc.Provider
+                            client={trpcClient}
+                            queryClient={queryClient}
+                        >
+                            <QueryClientProvider client={queryClient}>
+                                <I18nProvider>
+                                    <BrowserRouter>
+                                        <HomePage />
+                                    </BrowserRouter>
+                                </I18nProvider>
+                            </QueryClientProvider>
+                        </trpc.Provider>
                     </SocketContextProvider>
                 </NotificationContextProvider>
             </MessageApiContextProvider>
