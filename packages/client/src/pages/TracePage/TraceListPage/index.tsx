@@ -94,7 +94,14 @@ const TraceListPage = () => {
         drawerOpen,
         setDrawerOpen,
     } = useTraceContext();
-
+    
+    const formatDurationTime = (seconds: number): number => {
+        if (seconds < 1) {
+            return parseFloat((seconds * 1000).toFixed(2));
+        }
+        return parseFloat(seconds.toFixed(2));
+    };
+    
     const getStatusDisplay = (status: number) => {
         if (status === 2) {
             return (
@@ -278,9 +285,10 @@ const TraceListPage = () => {
                     title={`${t('common.average')} ${t('common.latency')}`}
                     value={
                         statistics?.avgDuration
-                            ? formatDuration(statistics.avgDuration)
+                            ? formatDurationTime(statistics.avgDuration)
                             : '-'
                     }
+                    unit={statistics?.avgDuration !== undefined && statistics.avgDuration < 1 ? 'ms' : 's'}
                 />
             </div>
 
