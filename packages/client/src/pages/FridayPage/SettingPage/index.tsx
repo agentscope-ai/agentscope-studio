@@ -8,13 +8,69 @@ import KwargsFormList from './KwargsFormList.tsx';
 import PageTitleSpan from '@/components/spans/PageTitleSpan.tsx';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
+// Switch Form Item Configuration Type
+interface SwitchFormItemConfig {
+    name: string;
+    label: string;
+    helpKey: string;
+}
+
+// Switch Form Item Component
+const SwitchFormItem = ({ name, label, helpKey }: SwitchFormItemConfig) => {
+    const { t } = useTranslation();
+    return (
+        <Form.Item
+            name={name}
+            label={label}
+            valuePropName="checked"
+            help={t(helpKey)}
+        >
+            <Switch size="small" />
+        </Form.Item>
+    );
+};
+
+// Conditional Enable Switch component
+interface EnableSwitchSectionProps {
+    enableFieldName: string;
+    label?: string;
+    helpKey?: string;
+    children: ReactNode;
+}
+
+const EnableSwitchSection = ({
+    enableFieldName,
+    label = 'Enable',
+    helpKey,
+    children,
+}: EnableSwitchSectionProps) => {
+    return (
+        <>
+            <Form.Item
+                name={enableFieldName}
+                label={label}
+                valuePropName="checked"
+                help={helpKey}
+            >
+                <Switch size="small" />
+            </Form.Item>
+
+            <Form.Item shouldUpdate noStyle>
+                {({ getFieldValue }) => {
+                    const isEnabled = getFieldValue(enableFieldName);
+                    return isEnabled ? <>{children}</> : null;
+                }}
+            </Form.Item>
+        </>
+    );
+};
+
 import { FridayConfig } from '@shared/config/friday.ts';
 import { useMessageApi } from '@/context/MessageApiContext.tsx';
 import { RouterPath } from '@/pages/RouterPath.ts';
 import { useFridaySettingRoom } from '@/context/FridaySettingRoomContext.tsx';
 import {
     llmProviderOptions,
-    embeddingModelOptions,
     KwargsFormItem,
     KwargsBackendItem,
     convertKwargsToBackendFormat,
@@ -268,68 +324,45 @@ const SettingPage = () => {
                             <CardTitle>Tool</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <Form.Item
-                                name="enableMetaTool"
-                                label="Meta Tool"
-                                valuePropName="checked"
-                                help={t('help.friday.write-permission')}
-                            >
-                                <Switch size="small" />
-                            </Form.Item>
-
-                            <Form.Item
-                                name="enablePlan"
-                                label="Plan Tool"
-                                valuePropName="checked"
-                                help={t('help.friday.write-permission')}
-                            >
-                                <Switch size="small" />
-                            </Form.Item>
-
-                            <Form.Item
-                                name="enableDynamicMCP"
-                                label="Dynamically add MCP"
-                                valuePropName="checked"
-                                help={t('help.friday.write-permission')}
-                            >
-                                <Switch size="small" />
-                            </Form.Item>
-
-                            <Form.Item
-                                name="enableAgentScopeTool"
-                                label="Add AgentScope Tool"
-                                valuePropName="checked"
-                                help={t('help.friday.write-permission')}
-                            >
-                                <Switch size="small" />
-                            </Form.Item>
-
-                            <Form.Item
-                                name="enableFileWritten"
-                                label="Write Permission"
-                                valuePropName="checked"
-                                help={t('help.friday.write-permission')}
-                            >
-                                <Switch size="small" />
-                            </Form.Item>
-
-                            <Form.Item
-                                name="enableShell"
-                                label="Enable Shell"
-                                valuePropName="checked"
-                                help={t('help.friday.write-permission')}
-                            >
-                                <Switch size="small" />
-                            </Form.Item>
-
-                            <Form.Item
-                                name="enablePython"
-                                label="Enable Python"
-                                valuePropName="checked"
-                                help={t('help.friday.write-permission')}
-                            >
-                                <Switch size="small" />
-                            </Form.Item>
+                            {[
+                                {
+                                    name: 'enableMetaTool',
+                                    label: 'Meta Tool',
+                                    helpKey: 'help.friday.meta-tool',
+                                },
+                                {
+                                    name: 'enablePlan',
+                                    label: 'Plan Tool',
+                                    helpKey: 'help.friday.plan-tool',
+                                },
+                                {
+                                    name: 'enableDynamicMCP',
+                                    label: 'Dynamically add MCP',
+                                    helpKey: 'help.friday.dynamic-mcp',
+                                },
+                                {
+                                    name: 'enableAgentScopeTool',
+                                    label: 'Add AgentScope Tool',
+                                    helpKey: 'help.friday.agentscope-tool',
+                                },
+                                {
+                                    name: 'enableFileWritten',
+                                    label: 'Write Permission',
+                                    helpKey: 'help.friday.write-permission',
+                                },
+                                {
+                                    name: 'enableShell',
+                                    label: 'Enable Shell',
+                                    helpKey: 'help.friday.enable-shell',
+                                },
+                                {
+                                    name: 'enablePython',
+                                    label: 'Enable Python',
+                                    helpKey: 'help.friday.enable-python',
+                                },
+                            ].map((config) => (
+                                <SwitchFormItem key={config.name} {...config} />
+                            ))}
                         </CardContent>
                     </Card>
                     {/* Agent Skill Settings */}
@@ -338,36 +371,15 @@ const SettingPage = () => {
                             <CardTitle>Agent Skill</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <Form.Item
-                                name="enableAgentSkill"
-                                label="Enable"
-                                valuePropName="checked"
-                                // help={t('help.friday.write-permission')}
-                            >
-                                <Switch size="small" />
-                            </Form.Item>
-
-                            <Form.Item shouldUpdate noStyle>
-                                {({ getFieldValue }) => {
-                                    const enableAgentSkill =
-                                        getFieldValue('enableAgentSkill');
-                                    return (
-                                        <>
-                                            {enableAgentSkill ? (
-                                                <Form.Item
-                                                    name="agentSkillDir"
-                                                    label="Storage Directory"
-                                                    help={t(
-                                                        'help.friday.write-permission',
-                                                    )}
-                                                >
-                                                    <Input />
-                                                </Form.Item>
-                                            ) : null}
-                                        </>
-                                    );
-                                }}
-                            </Form.Item>
+                            <EnableSwitchSection enableFieldName="enableAgentSkill">
+                                <Form.Item
+                                    name="agentSkillDir"
+                                    label="Storage Directory"
+                                    help={t('help.friday.agent-skill-dir')}
+                                >
+                                    <Input />
+                                </Form.Item>
+                            </EnableSwitchSection>
                         </CardContent>
                     </Card>
                     {/* Long-term Memory Settings */}
@@ -376,41 +388,42 @@ const SettingPage = () => {
                             <CardTitle>Long-term Memory</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <Form.Item
-                                name="enableLongTermMemory"
-                                label="Enable"
-                                valuePropName="checked"
-                                // help={t('help.friday.write-permission')}
-                            >
-                                <Switch size="small" />
-                            </Form.Item>
+                            <EnableSwitchSection enableFieldName="enableLongTermMemory">
+                                <Form.Item
+                                    name="embeddingProvider"
+                                    label="Embedding Provider"
+                                    required
+                                >
+                                    <Select options={llmProviderOptions} />
+                                </Form.Item>
 
-                            <Form.Item shouldUpdate noStyle>
-                                {({ getFieldValue }) => {
-                                    const enableLongTermMemory = getFieldValue(
-                                        'enableLongTermMemory',
-                                    );
-                                    return (
-                                        <>
-                                            {enableLongTermMemory ? (
-                                                <Form.Item
-                                                    name="embeddingModel"
-                                                    label="Embedding Model"
-                                                    help={t(
-                                                        'help.friday.write-permission',
-                                                    )}
-                                                >
-                                                    <Select
-                                                        options={
-                                                            embeddingModelOptions
-                                                        }
-                                                    />
-                                                </Form.Item>
-                                            ) : null}
-                                        </>
-                                    );
-                                }}
-                            </Form.Item>
+                                <Form.Item
+                                    name="embeddingModelName"
+                                    label="Model Name"
+                                    required
+                                    help={t('help.friday.model-name', {
+                                        llmProvider,
+                                    })}
+                                >
+                                    <Input />
+                                </Form.Item>
+
+                                <Form.Item
+                                    name="embeddingAPIKey"
+                                    label="API Key"
+                                    required={requiredAPIKey}
+                                    dependencies={['model']}
+                                    help={t('help.friday.api-key', {
+                                        llmProvider,
+                                    })}
+                                >
+                                    <Input type="password" />
+                                </Form.Item>
+
+                                <KwargsFormList name="embeddingClientKwargs" />
+
+                                <KwargsFormList name="embeddingGenerateKwargs" />
+                            </EnableSwitchSection>
                         </CardContent>
                     </Card>
 

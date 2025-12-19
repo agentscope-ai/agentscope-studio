@@ -11,11 +11,12 @@ const KwargsFormList = ({ name }: { name: string }) => {
     const form = Form.useFormInstance();
     const newlyAddedRef = useRef<Set<number>>(new Set());
 
-    const label = name === 'clientKwargs' ? 'Client Kwargs' : 'Generate Kwargs';
-    const help =
-        name === 'clientKwargs'
-            ? t('help.friday.client-kwargs')
-            : t('help.friday.generate-kwargs');
+    const label = ['clientKwargs', 'embeddingClientKwargs'].includes(name)
+        ? 'Client Kwargs'
+        : 'Generate Kwargs';
+    const help = ['clientKwargs', 'embeddingClientKwargs'].includes(name)
+        ? t('help.friday.client-kwargs')
+        : t('help.friday.generate-kwargs');
 
     return (
         <Form.Item label={label} shouldUpdate help={help}>

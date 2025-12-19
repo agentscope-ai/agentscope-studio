@@ -22,7 +22,6 @@ interface ModelOptionProps {
 type InputTypeOption = Option<string>;
 type LlmProviderOption = Option<React.ReactNode>;
 type BooleanOption = Option<string>;
-type EmbeddingModelOption = Option<React.ReactNode>;
 
 const ModelOption = ({ logo, name }: ModelOptionProps) => {
     return (
@@ -90,14 +89,6 @@ export const llmProviderOptions: LlmProviderOption[] = [
 export const booleanOptions: BooleanOption[] = [
     { label: 'True', value: 'true' },
     { label: 'False', value: 'false' },
-];
-
-export const embeddingModelOptions: EmbeddingModelOption[] = [
-    { label: 'provider', value: 'embeddingProvider' },
-    { label: 'model name', value: 'embeddingModelName' },
-    { label: 'API key', value: 'embeddingAPIKey' },
-    { label: 'client_kwargs', value: 'embeddingClientKwargs' },
-    { label: 'generate_kwargs', value: 'embeddingGenerateKwargs' },
 ];
 
 // Form format for kwargs
