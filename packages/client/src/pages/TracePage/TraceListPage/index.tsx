@@ -18,7 +18,7 @@ import { useTraceContext } from '@/context/TraceContext';
 import { copyToClipboard } from '@/utils/common';
 import { TraceListItem } from '@shared/types';
 import TraceDetailPage from '../TraceDetailPage';
-import { formatDateTime, formatNumber, formatDuration } from '@/utils/common';
+import { formatDateTime, formatNumber, formatDuration, formatDurationWithUnit } from '@/utils/common';
 
 // Helper component for statistic cards
 const StatCard = ({
@@ -94,13 +94,6 @@ const TraceListPage = () => {
         drawerOpen,
         setDrawerOpen,
     } = useTraceContext();
-    
-    const formatDurationTime = (seconds: number): number => {
-        if (seconds < 1) {
-            return parseFloat((seconds * 1000).toFixed(2));
-        }
-        return parseFloat(seconds.toFixed(2));
-    };
     
     const getStatusDisplay = (status: number) => {
         if (status === 2) {
@@ -210,7 +203,7 @@ const TraceListPage = () => {
                     <span
                         className={`text-xs sm:text-sm ${getLatencyColor(record.duration)}`}
                     >
-                        {formatDuration(record.duration)}
+                        {formatDurationWithUnit(record.duration)}
                     </span>
                 ),
             },
@@ -285,7 +278,7 @@ const TraceListPage = () => {
                     title={`${t('common.average')} ${t('common.latency')}`}
                     value={
                         statistics?.avgDuration
-                            ? formatDurationTime(statistics.avgDuration)
+                            ? formatDuration(statistics.avgDuration)
                             : '-'
                     }
                     unit={statistics?.avgDuration !== undefined && statistics.avgDuration < 1 ? 'ms' : 's'}

@@ -22,7 +22,7 @@ import { useTraceContext } from '@/context/TraceContext';
 import { copyToClipboard } from '@/utils/common';
 import { SpanData } from '@shared/types/trace';
 import { getNestedValue } from '@shared/utils/objectUtils';
-import { formatDateTime, formatDuration } from '@/utils/common';
+import { formatDateTime, formatDurationWithUnit } from '@/utils/common';
 
 interface SpanTreeNode {
     span: SpanData;
@@ -245,7 +245,7 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                     {!hasChildren && <div className="w-4" />}
                     <span className="flex-1 text-sm">{node.span.name}</span>
                     <span className="text-xs text-muted-foreground">
-                        {formatDuration(duration)}
+                        {formatDurationWithUnit(duration)}
                     </span>
                     {getStatusIcon(node.span.status?.code || 0)}
                 </div>
@@ -283,7 +283,7 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                                     {t('table.column.duration')}:
                                 </span>
                                 <span className="text-xs">
-                                    {formatDuration(traceDuration)}
+                                    {formatDurationWithUnit(traceDuration)}
                                 </span>
                             </div>
                             <div>
@@ -378,7 +378,7 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                                     {t('table.column.duration')}
                                 </div>
                                 <div className="text-sm font-medium">
-                                    {formatDuration(
+                                    {formatDurationWithUnit(
                                         Number(
                                             BigInt(
                                                 displaySpan.endTimeUnixNano,
