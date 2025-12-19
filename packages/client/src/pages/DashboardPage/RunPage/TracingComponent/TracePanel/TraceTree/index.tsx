@@ -1,15 +1,7 @@
 import { Input, Modal, Tree } from 'antd';
 import type { DataNode } from 'antd/es/tree';
 import dayjs from 'dayjs';
-import {
-    Key,
-    memo,
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from 'react';
+import { Key, memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import SpanPanel from '@/pages/DashboardPage/RunPage/TracingComponent/TracePanel/SpanPanel';
@@ -87,28 +79,6 @@ export const TraceTree = ({ spans }: Props) => {
     const [currentSpan, setCurrentSpan] = useState<SpanData | null>(null);
     const [open, setOpen] = useState(false);
     const [expandedKeys, setExpandedKeys] = useState<Key[]>([]);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const [treeHeight, setTreeHeight] = useState(0);
-
-    // Use ResizeObserver to track container height - more accurate than window resize
-    useEffect(() => {
-        const container = containerRef.current;
-        if (!container) return;
-
-        const observer = new ResizeObserver((entries) => {
-            const entry = entries[0];
-            if (entry) {
-                // Use the actual container height
-                const height = Math.floor(entry.contentRect.height);
-                if (height > 0) {
-                    setTreeHeight(height);
-                }
-            }
-        });
-
-        observer.observe(container);
-        return () => observer.disconnect();
-    }, []);
 
     // Pre-compute title data for all spans - lightweight objects, no React elements
     const spanTitleDataMap = useMemo(() => {
@@ -272,7 +242,7 @@ export const TraceTree = ({ spans }: Props) => {
     }, []);
 
     return (
-        <div className="flex flex-col flex-1 w-full h-full overflow-hidden gap-y-4">
+        <div className="flex flex-col flex-1 w-full h-full overflow-x-hidden gap-y-4">
             <Modal
                 open={open}
                 title="Span"
@@ -281,7 +251,6 @@ export const TraceTree = ({ spans }: Props) => {
                 height="calc(100vh - 100px)"
                 footer={null}
                 centered={true}
-                destroyOnClose
             >
                 <SpanPanel span={currentSpan} />
             </Modal>
@@ -291,30 +260,24 @@ export const TraceTree = ({ spans }: Props) => {
                 value={searchText}
                 onChange={handleSearchChange}
             />
-            <div ref={containerRef} className="flex-1 min-h-0 overflow-hidden">
-                {treeHeight > 0 ? (
-                    <Tree
-                        className={`
-                            px-0 w-full
-                            [&_.ant-tree-node-content-wrapper]:flex-1
-                            [&_.ant-tree-node-content-wrapper]:w-0
-                            [&_.ant-tree-node-content-wrapper]:border!
-                            [&_.ant-tree-node-content-wrapper]:border-border
-                            [&_.ant-tree-node-content-wrapper:active]:bg-primary/10!
-                        `}
-                        blockNode
-                        showLine
-                        virtual
-                        height={treeHeight}
-                        expandedKeys={expandedKeys}
-                        onExpand={handleExpand}
-                        treeData={treeData}
-                        titleRender={titleRender}
-                        selectedKeys={[]}
-                        onSelect={handleSelect}
-                    />
-                ) : null}
-            </div>
+            <Tree
+                className={`
+                    px-0 w-full
+                    [&_.ant-tree-node-content-wrapper]:flex-1
+                    [&_.ant-tree-node-content-wrapper]:w-0
+                    [&_.ant-tree-node-content-wrapper]:border!
+                    [&_.ant-tree-node-content-wrapper]:border-border
+                    [&_.ant-tree-node-content-wrapper:active]:bg-primary/10!
+                `}
+                blockNode
+                showLine
+                expandedKeys={expandedKeys}
+                onExpand={handleExpand}
+                treeData={treeData}
+                titleRender={titleRender}
+                selectedKeys={[]}
+                onSelect={handleSelect}
+            />
         </div>
     );
 };
