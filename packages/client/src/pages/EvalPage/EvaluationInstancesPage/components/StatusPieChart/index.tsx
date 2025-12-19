@@ -149,4 +149,3 @@ const StatusPieChart = ({ data }: StatusPieChartProps) => {
 };
 
 export default memo(StatusPieChart);
-

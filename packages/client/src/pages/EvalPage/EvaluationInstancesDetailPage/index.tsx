@@ -8,60 +8,6 @@ import Trajectory from './components/Trajectory';
 const EvaluationInstancesDetailPage = () => {
     const { evaluationData } = useEvaluationRoom();
 
-    const trajectoryData: Array<any> = [
-        {
-            type: 'tool_use',
-            name: 'login_food_platform',
-            input: {
-                username: 'Eve',
-                password: 'password123',
-            },
-            id: 'call_0a4d76575b934c6dbdc620',
-        },
-        {
-            type: 'tool_use',
-            name: 'get_products',
-            input: {
-                merchant_name: '达美乐',
-            },
-            id: 'call_68f10e6846644d2086a4a5',
-        },
-        {
-            type: 'tool_use',
-            name: 'add_food_delivery_order',
-            input: {
-                username: 'Eve',
-                merchant_name: '达美乐',
-                items: [
-                    {
-                        product: '超级至尊披萨',
-                        quantity: 1,
-                    },
-                ],
-            },
-            id: 'call_557bb09af3e54072a51714',
-        },
-        {
-            type: 'tool_use',
-            name: 'add_reminder',
-            input: {
-                title: '今日花费',
-                description: '今日花费 88.0 元',
-                time: '2024-07-15 09:30',
-            },
-            id: 'call_5200cdd4be924a66b6be41',
-        },
-        {
-            id: 'fS5t2pyHre5PmTcCe5zkZs',
-            type: 'tool_use',
-            name: 'generate_response',
-            input: {
-                response:
-                    '您已经成功在达美乐订购了一个超级至尊披萨，总金额为88.0元。同时，我也为您添加了一个提醒“今日花费”，内容是“今日花费 88.0 元”，提醒时间设定在2024年7月15日的上午9点30分。',
-            },
-        },
-    ];
-
     if (evaluationData === null) {
         return (
             <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-6 items-center h-full">
@@ -75,15 +21,15 @@ const EvaluationInstancesDetailPage = () => {
 
     return (
         <div className="flex-1 h-full overflow-y-auto">
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 h-full">
-                <div className="flex flex-col gap-1.5">
+            <div className="max-w-5xl mx-auto sm:space-y-6 h-full">
+                {/* <div className="flex flex-col gap-1.5">
                     <div className="font-bold text-lg sm:text-xl truncate">
                         claude-3-5-sonnet-20241022
                     </div>
                     <div className="text-xs sm:text-sm text-muted-foreground mb-3 break-words">
                         20250113_claude_3_5_sonnet_20241022_temp_0_0_iter_20_fmt_tool_call_hist_messages_lite
                     </div>
-                </div>
+                </div> */}
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                     <StatCard

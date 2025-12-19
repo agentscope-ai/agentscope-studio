@@ -76,4 +76,3 @@ const StatCard = ({
 };
 
 export default memo(StatCard);
-

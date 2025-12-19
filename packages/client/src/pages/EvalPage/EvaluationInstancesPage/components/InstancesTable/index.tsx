@@ -101,19 +101,26 @@ const InstancesTable = ({ data = [] }: InstancesTableProps) => {
                                 key: 'id',
                                 title: 'instance ID',
                                 render: (value) => (
-                                    <a href={`/eval/${value}/instances/${value}/detail/${value}`}>{value}</a>
+                                    <a
+                                        href={`/eval/${value}/instances/${value}/detail/${value}`}
+                                    >
+                                        {value}
+                                    </a>
                                 ),
                             },
                             {
                                 key: 'status',
                                 title: 'Status',
-                                filters: [{
-                                    text: 'Success',
-                                    value: 'success',
-                                }, {
-                                    text: 'Failed',
-                                    value: 'failed',
-                                }],
+                                filters: [
+                                    {
+                                        text: 'Success',
+                                        value: 'success',
+                                    },
+                                    {
+                                        text: 'Failed',
+                                        value: 'failed',
+                                    },
+                                ],
                                 render: (value) => (
                                     <StatusCell
                                         status={value}
@@ -126,7 +133,11 @@ const InstancesTable = ({ data = [] }: InstancesTableProps) => {
                                 title: 'Res %',
                                 render: (value) => (
                                     <NumberCell
-                                        number={typeof value === 'number' ? value : Number(value) || 0}
+                                        number={
+                                            typeof value === 'number'
+                                                ? value
+                                                : Number(value) || 0
+                                        }
                                         selected={false}
                                     />
                                 ),
@@ -136,7 +147,11 @@ const InstancesTable = ({ data = [] }: InstancesTableProps) => {
                                 title: 'Steps',
                                 render: (value) => (
                                     <NumberCell
-                                        number={typeof value === 'number' ? value : Number(value) || 0}
+                                        number={
+                                            typeof value === 'number'
+                                                ? value
+                                                : Number(value) || 0
+                                        }
                                         selected={false}
                                     />
                                 ),
@@ -146,7 +161,11 @@ const InstancesTable = ({ data = [] }: InstancesTableProps) => {
                                 title: 'Cost',
                                 render: (value) => (
                                     <NumberCell
-                                        number={typeof value === 'number' ? value : Number(value) || 0}
+                                        number={
+                                            typeof value === 'number'
+                                                ? value
+                                                : Number(value) || 0
+                                        }
                                         selected={false}
                                     />
                                 ),
@@ -166,7 +185,11 @@ const InstancesTable = ({ data = [] }: InstancesTableProps) => {
                                 title: 'Tokens',
                                 render: (value) => (
                                     <NumberCell
-                                        number={typeof value === 'number' ? value : Number(value) || 0}
+                                        number={
+                                            typeof value === 'number'
+                                                ? value
+                                                : Number(value) || 0
+                                        }
                                         selected={false}
                                     />
                                 ),
@@ -194,4 +217,3 @@ const InstancesTable = ({ data = [] }: InstancesTableProps) => {
 };
 
 export default memo(InstancesTable);
-

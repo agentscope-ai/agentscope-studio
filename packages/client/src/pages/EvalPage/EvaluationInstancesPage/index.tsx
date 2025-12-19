@@ -136,7 +136,9 @@ const EvaluationInstancesPage = () => {
                         leftLabel="Prompt"
                         leftValue={
                             <>
-                                <span className="text-sm font-medium">5.9M</span>
+                                <span className="text-sm font-medium">
+                                    5.9M
+                                </span>
                                 <span className="text-xs text-muted-foreground/75">
                                     (4.5M)
                                 </span>

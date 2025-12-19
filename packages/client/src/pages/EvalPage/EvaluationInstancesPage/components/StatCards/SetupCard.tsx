@@ -93,4 +93,3 @@ const SetupCard = ({
 };
 
 export default memo(SetupCard);
-

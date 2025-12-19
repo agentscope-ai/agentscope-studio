@@ -173,7 +173,8 @@ const Trajectory = ({ steps = [] }: TrajectoryProps) => {
                             <line x1="12" x2="20" y1="19" y2="19"></line>
                         </svg>
                         <span className="text-xs ml-2 text-gray-800">
-                            {step.name}
+                            {step.name} (query=FILE_UPLOAD_PERMISSI,
+                            category=implementation)
                         </span>
                     </div>
                     <div className="text-sm font-medium mb-1 flex">

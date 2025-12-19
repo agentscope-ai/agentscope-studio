@@ -21,7 +21,6 @@ import {
     StatusCell,
     TextCell,
 } from '@/components/tables/utils.tsx';
-import { EvaluationMetaData } from '@shared/types';
 
 const EvaluationDetailPage = () => {
     const { evaluationData } = useEvaluationRoom();
@@ -37,6 +36,27 @@ const EvaluationDetailPage = () => {
             </div>
         );
     }
+
+    interface EvaluationInstancesData {
+        id: string;
+        question: string;
+        status: string;
+        ground_truth: number;
+        repeat: number;
+        skip: number;
+    }
+
+    // mock data
+    const dataSource: EvaluationInstancesData[] = [
+        {
+            id: '1',
+            question: 'Total',
+            status: 'Done',
+            ground_truth: 80,
+            repeat: 10,
+            skip: 10,
+        },
+    ];
 
     return (
         <div className="flex-1 h-full overflow-y-auto">
@@ -408,10 +428,13 @@ const EvaluationDetailPage = () => {
                     <div className="rounded-xl border shadow">
                         <div className="flex flex-ro items-center justify-between space-y-1.5 p-6 pb-2 text-sm font-medium">
                             Instances
-                            <a href={`/eval/${evaluationData.id}/instances/3`}>查看</a>
+                            <a href={`/eval/${evaluationData.id}/instances/3`}>
+                                查看
+                            </a>
                         </div>
                         <div className="p-6">
                             <AsTable
+                                dataSource={dataSource}
                                 columns={[
                                     {
                                         key: 'id',
@@ -453,12 +476,12 @@ const EvaluationDetailPage = () => {
                                         ),
                                     },
                                 ]}
-                                onRow={(record: EvaluationMetaData) => {
+                                onRow={(record: EvaluationInstancesData) => {
                                     return {
                                         onClick: (event: MouseEvent) => {
                                             if (event.type === 'click') {
                                                 navigate(
-                                                    `/eval/${record.id}/instance/${record.id}`,
+                                                    `/eval/${record.id}/task/${record.id}`,
                                                 );
                                             }
                                         },
