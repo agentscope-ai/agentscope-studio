@@ -1,97 +1,49 @@
-import { memo, MouseEvent, useEffect, useState } from 'react';
+import { memo, MouseEvent, useState } from 'react';
 import AsTable from '@/components/tables/AsTable';
-import { EmptyPage } from '@/pages/DefaultPage';
-import {
-    NumberCell,
-    ProgressCell,
-    TextCell,
-} from '@/components/tables/utils.tsx';
+import { NumberCell, TextCell } from '@/components/tables/utils.tsx';
 import { useNavigate } from 'react-router-dom';
-import { useEvaluationRoom } from '@/context/EvaluationRoomContext.tsx';
-import { useMessageApi } from '@/context/MessageApiContext.tsx';
 import NumericalView from './MetricView/NumericalView.tsx';
-import { EvaluationDTO, convertToDTO, EvaluationTaskDTO } from './utils.ts';
+import { convertToDTO, EvaluationDTO } from './utils.ts';
 import { TableColumnsType } from 'antd';
 import { useTranslation } from 'react-i18next';
-import {
-    ModelCard,
-    ToolCard,
-} from '@/pages/EvalPage/EvaluationDetailPage/DataCard';
+import { ModelCard, ToolCard } from '@/pages/EvalPage/EvaluationPage/DataCard';
+import { useEvaluationContext } from '@/context/EvaluationContext.tsx';
+import { EvalTaskMeta } from '@shared/types/evaluation.ts';
 
-const EvaluationDetailPage = () => {
+
+const EvaluationPage = () => {
     const { t } = useTranslation();
-    const { benchmarks, getEvaluationResult } = useEvaluationRoom();
-    const [loading, setLoading] = useState(false);
-    const [evaluationDTO, setEvaluationDTO] = useState<EvaluationDTO | null>(
-        null,
-    );
-    const { messageApi } = useMessageApi();
+
+    const {
+        evaluation,
+        evalResult,
+        tableDataSource,
+        tableLoading,
+        tableRequestParams,
+        setTableRequestParams,
+        total,
+    } = useEvaluationContext();
+    const evaluationDTO = convertToDTO(evalResult);
     const navigate = useNavigate();
-    const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
 
-    // URL format: /eval/:benchmarkName/:evaluationId
-    const urlParts = window.location.pathname.split('/');
-    const benchmarkName = decodeURIComponent(urlParts[2]);
-    const evaluationId = decodeURIComponent(urlParts[3]);
-
-    const benchmark = benchmarks.find((bench) => bench.name === benchmarkName);
-    const evaluation = benchmark
-        ? benchmark.evaluations.find((evalItem) => evalItem.id === evaluationId)
-        : null;
-
-    const initialColumns: TableColumnsType<EvaluationTaskDTO> = [
+    const columns: TableColumnsType<EvalTaskMeta> = [
         {
             key: 'id',
             title: 'Task ID',
             render: (value) => <TextCell text={value} selected={false} />,
         },
         {
-            key: 'status',
+            key: 'input',
             render: (value) => <TextCell text={value} selected={false} />,
         },
         {
-            key: 'nFinished',
+            key: 'metrics',
             render: (value) => <NumberCell number={value} selected={false} />,
         },
+        {
+            key: 'tags',
+        },
     ];
-
-    const [columns, setColumns] =
-        useState<TableColumnsType<EvaluationTaskDTO>>(initialColumns);
-
-    useEffect(() => {
-        if (evaluation) {
-            setLoading(true);
-            getEvaluationResult(evaluation.evaluationDir)
-                .then((res) => {
-                    if (res) {
-                        // Set default selected metric
-                        if (Object.keys(res.repeats).length > 0) {
-                            if (
-                                Object.keys(res.repeats[0].metrics).length > 0
-                            ) {
-                                setSelectedMetric(
-                                    Object.keys(res.repeats[0].metrics)[0],
-                                );
-                            }
-                        }
-                        // Set evaluation DTO for table display
-                        setEvaluationDTO(convertToDTO(res));
-                    }
-                })
-                .catch((err) => messageApi.error(err.message));
-        }
-    }, [evaluation]);
-
-    if (!benchmarks || !benchmark || !evaluation) {
-        return (
-            <div className="max-w-5xl mx-auto px-6 py-6 space-y-6 items-center h-full">
-                <EmptyPage
-                    size={200}
-                    title={`No evaluation found for ${evaluationId} in ${benchmarkName}`}
-                />
-            </div>
-        );
-    }
 
     return (
         <div className="flex-1 h-full overflow-y-auto">
@@ -101,7 +53,7 @@ const EvaluationDetailPage = () => {
                         {evaluation.evaluationName}
                     </div>
                     <div className="text-sm text-muted-foreground mb-3">
-                        Evaluation on Benchmark {benchmarkName}
+                        Evaluation on Benchmark {evaluation.benchmarkName}
                     </div>
                 </div>
 
@@ -199,7 +151,7 @@ const EvaluationDetailPage = () => {
 
                         <div className="p-6 min-h-[5.5rem] pt-2">
                             <div className="text-2xl font-bold flex gap-2">
-                                {benchmark.totalTasks}
+                                {evaluation.benchmarkTotalTasks}
                                 <div className="text-sm font-medium flex items-end mb-1">
                                     × {evaluation.totalRepeats}
                                 </div>
@@ -365,14 +317,11 @@ const EvaluationDetailPage = () => {
                             Tasks
                         </div>
                         <div className="p-6">
-                            <AsTable<EvaluationTaskDTO>
+                            <AsTable<EvalTaskMeta>
                                 columns={columns}
-                                dataSource={
-                                    evaluationDTO
-                                        ? evaluationDTO.dataSource
-                                        : []
-                                }
-                                onRow={(record: EvaluationTaskDTO) => {
+                                loading={tableLoading}
+                                dataSource={tableDataSource}
+                                onRow={(record: EvalTaskMeta) => {
                                     return {
                                         onClick: (event: MouseEvent) => {
                                             if (event.type === 'click') {
@@ -386,6 +335,17 @@ const EvaluationDetailPage = () => {
                                         },
                                     };
                                 }}
+                                pagination={{
+                                    size: 'default',
+                                    current: tableRequestParams.pagination.page,
+                                    pageSize:
+                                        tableRequestParams.pagination.pageSize,
+                                    total: total,
+                                    showSizeChanger: true,
+                                    showTotal: (total: number) =>
+                                        t('table.pagination.total', { total }),
+                                    pageSizeOptions: ['10', '20', '50', '100'],
+                                }}
                             />
                         </div>
                     </div>
@@ -395,4 +355,4 @@ const EvaluationDetailPage = () => {
     );
 };
 
-export default memo(EvaluationDetailPage);
+export default memo(EvaluationPage);

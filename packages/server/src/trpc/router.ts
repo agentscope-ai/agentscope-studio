@@ -19,6 +19,9 @@ import {
     ContentBlocks,
     MessageForm,
     Status,
+    DeleteEvaluationsParamsSchema,
+    GetEvaluationTasksParamsSchema,
+    TableRequestParams,
 } from '../../../shared/src';
 import { RunDao } from '../dao/Run';
 import { InputRequestDao } from '../dao/InputRequest';
@@ -31,11 +34,7 @@ import { SpanDao } from '../dao/Trace';
 import { verifyMetadataByVersion } from '@/trpc/utils-evaluation';
 import path from 'path';
 import { EvaluationDao } from '@/dao/evaluation';
-import {
-    Benchmark,
-    EvaluationForm,
-    EvalResult,
-} from '../../../shared/src/types/evaluation';
+import { Evaluation, EvalResult } from '../../../shared/src/types/evaluation';
 import { FileDao } from '@/dao/File';
 
 const textBlock = z.object({
@@ -493,22 +492,20 @@ export const appRouter = t.router({
                             verifyMetadataByVersion(metaData);
 
                             // 从metadata的下划线转成驼峰，并且添加evaluationDir字段记录地址
-                            EvaluationDao.saveEvaluation({
+                            await EvaluationDao.saveEvaluation({
                                 id: `${metaData.benchmark.name}-${metaData.createdAt}`,
                                 evaluationName: metaData.evaluation_name,
                                 createdAt: metaData.created_at,
                                 totalRepeats: metaData.total_repeats,
                                 schemaVersion: metaData.schema_version,
                                 evaluationDir: input.evaluationDir,
-                                benchmark: {
-                                    name: metaData.benchmark.name,
-                                    description: metaData.benchmark.description,
-                                    totalTasks: metaData.benchmark.total_tasks,
-                                } as Benchmark,
-                            } as EvaluationForm).then(async () => {
-                                // Broadcast the new evaluation to all clients
-                                await SocketManager.broadcastEvaluationsToEvaluationRoom();
-                            });
+                                benchmarkName: metaData.benchmark.name,
+                                benchmarkDescription:
+                                    metaData.benchmark.description,
+                                benchmarkTotalTasks:
+                                    metaData.benchmark.total_tasks,
+                            } as Evaluation);
+
                             return {
                                 success: true,
                                 message: 'Import evaluation successfully!',
@@ -567,12 +564,14 @@ export const appRouter = t.router({
                                 isDirectory: stats.isDirectory(),
                             };
                         });
+                    console.log('success: ', fileNames);
                     return {
                         success: true,
                         message: 'Directory listed successfully',
                         data: fileNames,
                     };
                 }
+                console.log('Directory not exists: ', input.path);
                 return { success: false, message: 'Directory not exists' };
             } catch (error) {
                 console.error(error);
@@ -581,27 +580,153 @@ export const appRouter = t.router({
         }),
 
     /**
-     * Get the evaluation result by reading the evaluation_result.json file from
+     * Get the evaluation data by reading the corresponding file from
      * the evaluation directory.
      */
-    getEvaluationResult: t.procedure
+    getEvaluationData: t.procedure
         .input(GetEvaluationResultParamsSchema)
-        .mutation(async ({ input }) => {
+        .query(async ({ input }) => {
             try {
-                const data = await FileDao.getJSONFile<EvalResult>(
-                    path.join(input.evaluationDir, 'evaluation_result.json'),
+                const evaluation = await EvaluationDao.getEvaluation(
+                    input.evaluationId,
                 );
+
+                if (!evaluation) {
+                    throw new TRPCError({
+                        code: 'BAD_REQUEST',
+                        message: `Evaluation with id ${input.evaluationId} does not exist`,
+                    });
+                }
+
+                const result = await FileDao.getJSONFile<EvalResult>(
+                    path.join(
+                        evaluation.evaluationDir,
+                        'evaluation_result.json',
+                    ),
+                );
+
                 return {
                     success: true,
                     message: 'Get evaluation result successfully',
-                    data: data,
-                } as ResponseBody<EvalResult>;
+                    data: {
+                        evaluation: evaluation,
+                        result: result,
+                    },
+                } as ResponseBody<{evaluation:Evaluation, result: EvalResult}>;
             } catch (error) {
                 console.error(error);
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message: `Failed to get evaluation result: ${error}`,
+                });
+            }
+        }),
+
+    /**
+     * Get paginated evaluations with optional sorting and filtering
+     */
+    getEvaluations: t.procedure
+        .input(TableRequestParamsSchema)
+        .query(async ({ input }) => {
+            try {
+                const result = await EvaluationDao.getEvaluations(input);
                 return {
-                    success: false,
-                    message: `Error: ${error}`,
+                    success: true,
+                    message: 'Evaluations fetched successfully',
+                    data: result,
+                } as ResponseBody<TableData<Evaluation>>;
+            } catch (error) {
+                console.error('Error fetching evaluations:', error);
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message: `Failed to register reply for error: ${error}`,
+                });
+            }
+        }),
+
+    /**
+     * Delete evaluations by their evaluation IDs
+     */
+    deleteEvaluations: t.procedure
+        .input(DeleteEvaluationsParamsSchema)
+        .mutation(async ({ input }) => {
+            try {
+                // Validate input
+                if (input.evaluationIds.length === 0) {
+                    throw new TRPCError({
+                        code: 'BAD_REQUEST',
+                        message: 'No evaluation IDs provided',
+                    });
+                }
+
+                const affected = await EvaluationDao.deleteEvaluations(
+                    input.evaluationIds,
+                );
+
+                return {
+                    success: true,
+                    message: `Successfully deleted ${affected} evaluation(s)`,
                 } as ResponseBody;
+            } catch (error) {
+                console.error('Error deleting evaluations:', error);
+
+                // If it's already a TRPCError, re-throw it
+                if (error instanceof TRPCError) {
+                    throw error;
+                }
+
+                // For other errors, throw a detailed TRPCError
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message:
+                        error instanceof Error
+                            ? `Failed to delete evaluations: ${error.message}`
+                            : 'Failed to delete evaluations',
+                });
+            }
+        }),
+
+    /**
+     * Get the evaluations tasks with pagination
+     */
+    getEvaluationTasks: t.procedure
+        .input(GetEvaluationTasksParamsSchema)
+        .query(async ({ input }) => {
+            // First validate the evaluationId and get the evaluationDir
+            try {
+                const evaluation = await EvaluationDao.getEvaluation(
+                    input.evaluationId,
+                );
+                if (!evaluation) {
+                    throw new TRPCError({
+                        code: 'BAD_REQUEST',
+                        message: `Evaluation with id ${input.evaluationId} does not exist`,
+                    });
+                }
+
+                // Read the tasks from the evaluationDir
+                return await FileDao.getEvaluationTasks(
+                    evaluation.evaluationDir,
+                    {
+                        pagination: input.pagination,
+                        sort: input.sort,
+                        filters: input.filters,
+                    } as TableRequestParams,
+                );
+            } catch (error) {
+                console.error('Error in getEvaluationTasks:', error);
+
+                if (error instanceof TRPCError) {
+                    throw error;
+                }
+
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : 'Failed to get evaluation tasks',
+                });
             }
         }),
 });

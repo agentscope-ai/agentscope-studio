@@ -1,62 +1,87 @@
-import { EvaluationForm } from '../../../shared/src/types/evaluation';
-import { BenchmarkTable } from '@/models/evaluation/benchmark';
-import { EvaluationTable } from '@/models/evaluation/evaluation';
-import { FindOptionsWhere, In } from 'typeorm';
-import { RunTable } from '@/models/Run';
+import { EvaluationTable } from '@/models/evaluation';
+import { FindOptionsWhere, In, Like } from 'typeorm';
+import { Evaluation } from '../../../shared/src/types/evaluation';
+import { TableRequestParams, TableData } from '../../../shared/src';
 
 export class EvaluationDao {
-    static async saveEvaluation(data: EvaluationForm) {
-        // Save the benchmark data first
-        // If the benchmark already exists, it will not create a new one
-        const benchmarkExist = await BenchmarkTable.exists({
-            where: { name: data.benchmark.name },
-        });
-        if (!benchmarkExist) {
-            console.error(data);
-            const benchmark = BenchmarkTable.create({
-                name: data.benchmark.name,
-                description: data.benchmark.description,
-                totalTasks: data.benchmark.totalTasks,
-            });
-            await benchmark.save();
-        }
-        console.error(`${data.benchmark.name}-${data.evaluationName}`);
-        const newEval = EvaluationTable.create({
-            id: `${data.benchmark.name}-${data.evaluationName}`,
-            evaluationName: data.evaluationName,
-            benchmarkName: data.benchmark.name,
-            createdAt: data.createdAt,
-            totalRepeats: data.totalRepeats,
-            schemaVersion: data.schemaVersion,
-            evaluationDir: data.evaluationDir,
-        });
+    static async saveEvaluation(data: Evaluation) {
+        const newEval = EvaluationTable.create({ ...data });
         await newEval.save();
     }
 
-    static async getAllBenchmarks() {
-        return await BenchmarkTable.find({
-            relations: ['evaluations'],
-        });
-    }
-
-    static async getEvaluationsByBenchmark(benchmarkName: string) {
-        return await EvaluationTable.find({
-            where: {
-                benchmarkName,
-            },
-        });
-    }
-
-    static async deleteEvaluation(evaluationIds: string[]) {
+    static async deleteEvaluations(evaluationIds: string[]) {
         const conditions: FindOptionsWhere<EvaluationTable> = {
             id: In(evaluationIds),
         };
-        const result = await RunTable.delete(conditions);
+        const result = await EvaluationTable.delete(conditions);
         return result.affected;
     }
 
-    static async deleteBenchmark(benchmarkName: string) {
-        const result = await BenchmarkTable.delete({ name: benchmarkName });
-        return result.affected;
+    static async getEvaluation(evaluationId: string) {
+        return await EvaluationTable.findOne({
+            where: { id: evaluationId },
+            relations: ['benchmark'],
+        });
+    }
+
+    static async getEvaluations(
+        params: TableRequestParams,
+    ): Promise<TableData<Evaluation>> {
+        try {
+            const { pagination, sort, filters } = params;
+
+            // Build find options with filters
+            const where: FindOptionsWhere<EvaluationTable> = {};
+
+            if (filters) {
+                if (filters.evaluationName) {
+                    where.evaluationName = Like(`%${filters.evaluationName}%`);
+                }
+                if (filters.benchmarkName) {
+                    where.benchmarkName = Like(`%${filters.benchmarkName}%`);
+                }
+            }
+
+            // Apply sorting
+            const sortField = sort?.field || 'createdAt';
+            const sortOrder =
+                sort?.order?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
+            // Map sort field to actual column names
+            const orderBy: { [key: string]: 'ASC' | 'DESC' } = {};
+            switch (sortField) {
+                case 'evaluationName':
+                case 'benchmarkName':
+                case 'createdAt':
+                case 'totalRepeats':
+                case 'benchmarkTotalTasks':
+                    orderBy[sortField] = sortOrder;
+                    break;
+                default:
+                    orderBy.createdAt = 'DESC';
+            }
+
+            // Get total count
+            const total = await EvaluationTable.count({ where });
+
+            // Apply pagination and get results
+            const skip = (pagination.page - 1) * pagination.pageSize;
+            const list = await EvaluationTable.find({
+                where,
+                order: orderBy,
+                skip,
+                take: pagination.pageSize,
+            });
+
+            return {
+                list,
+                total,
+                page: pagination.page,
+                pageSize: pagination.pageSize,
+            } as TableData<Evaluation>;
+        } catch (error) {
+            console.error('Error in getEvaluations:', error);
+            throw error;
+        }
     }
 }

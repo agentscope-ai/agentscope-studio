@@ -184,7 +184,7 @@ const ProjectPage = () => {
     ];
 
     return (
-        <div className="flex flex-col w-full h-full py-8 px-12 gap-4 relative">
+        <div className="flex flex-col w-full h-full py-8 px-12 gap-4">
             <PageTitleSpan title={t('common.projects')} />
             <div className="flex gap-4 items-center">
                 <div className="w-1/4">
@@ -222,7 +222,7 @@ const ProjectPage = () => {
                 </SecondaryButton>
             </div>
 
-            <div className="flex-1 h-full overflow-hidden">
+            <div className="flex border-red-600 border flex-1 overflow-hidden">
                 <AsTable<ProjectData>
                     columns={columns}
                     dataSource={tableDataSource}
@@ -234,9 +234,16 @@ const ProjectPage = () => {
                     onChange={(pagination, _filters, sorter) => {
                         const page = pagination.current || 1;
                         const pageSize = pagination.pageSize || 50;
-                        const sortField = sorter.field;
-                        const sortOrder = sorter.order
-                            ? sorter.order === 'ascend'
+
+                        // Handle sorter - it can be an array or a single object
+                        const actualSorter = Array.isArray(sorter)
+                            ? sorter[0]
+                            : sorter;
+                        const sortField = actualSorter?.field as
+                            | string
+                            | undefined;
+                        const sortOrder = actualSorter?.order
+                            ? actualSorter.order === 'ascend'
                                 ? 'asc'
                                 : 'desc'
                             : undefined;

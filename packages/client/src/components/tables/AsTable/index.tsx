@@ -96,7 +96,7 @@ const AsTable = <T extends object>({ columns, ...rest }: AsTableProps<T>) => {
 
     return (
         <Table<T>
-            className="h-full w-full rounded-md [&_.ant-table]:border"
+            className="max-h-full h-full w-full rounded-md [&_.ant-table]:border"
             columns={updatedColumns}
             locale={tableLocale}
             size="small"

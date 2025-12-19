@@ -31,7 +31,7 @@ const LocalFilePicker = ({ type, onSelect, ...resetProps }: Props) => {
     const [currentPath, setCurrentPath] = useState<string>(getInitialPath());
     const [treeData, setTreeData] = useState<CustomTreeDataNode[]>([]);
 
-    // 获取目录内容的函数
+    // Obtain directory from local file system
     const fetchDirData = useCallback(
         async (path: string): Promise<CustomTreeDataNode[]> => {
             try {
@@ -40,7 +40,7 @@ const LocalFilePicker = ({ type, onSelect, ...resetProps }: Props) => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ path }),
                 });
-
+                console.log(response);
                 const data = await response.json();
                 if (
                     data.result.data.success &&

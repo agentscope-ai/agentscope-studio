@@ -216,7 +216,7 @@
             "totalTokens": "Token 量"
         },
         "pagination": {
-          "total": "共 {{total}} 项"
+            "total": "共 {{total}} 项"
         }
     },
     "tooltip": {

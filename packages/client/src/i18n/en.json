@@ -224,7 +224,7 @@
             "startTime": "Start Time"
         },
         "pagination": {
-          "total": "{{total}} items in total"
+            "total": "{{total}} items in total"
         }
     },
     "tooltip": {

@@ -23,12 +23,6 @@ export interface MetricsRecord {
     };
 }
 
-export type EvaluationTaskDTO = {
-    id: string;
-    status: 'incomplete' | 'completed';
-    nFinished: number;
-} & MetricsRecord;
-
 /**
  * The DTO (Data Transfer Object) for the evaluation overview page. Used in the
  * card view to show the summary of an evaluation.
@@ -36,10 +30,8 @@ export type EvaluationTaskDTO = {
 export interface EvaluationDTO {
     // Used in the card view
     progress: number;
-    nTask: number;
     nCompletedTask: number;
     nIncompleteTask: number;
-    nRepeat: number;
     nMetric: number;
     nNumericalMetric: number;
     nCategoricalMetric: number;
@@ -53,16 +45,16 @@ export interface EvaluationDTO {
     llm: Record<string, number>;
 }
 
-export const convertToDTO = (data: EvalResult) => {
-    // Convert EvaluationResult to EvaluationDTO
+export const convertToDTO = (data: EvalResult | undefined) => {
+    if (!data) {
+        return
+    }
 
+    // Convert EvaluationResult to EvaluationDTO
     // Progress
     const progress = Math.round(
         (Object.keys(data.repeats).length / data.total_repeats) * 100,
     );
-
-    // Total number of tasks
-    const nTask = data.total_tasks;
 
     // Total repeats
     const nRepeat = data.total_repeats;
@@ -149,13 +141,11 @@ export const convertToDTO = (data: EvalResult) => {
     return {
         // Card view data
         progress,
-        nTask,
         nCompletedTask,
         nIncompleteTask,
         nMetric,
         nNumericalMetric,
         nCategoricalMetric,
-        nRepeat,
         nPromptTokens,
         nCompletionTokens,
 

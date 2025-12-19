@@ -1,10 +1,8 @@
-export interface Benchmark {
-    name: string;
-    description: string;
-    totalTasks: number;
-    evaluations: Evaluation[];
-}
+/**
+ * Types related to Evaluations
+ */
 
+// The evaluation data structure
 export interface Evaluation {
     id: string;
     evaluationName: string;
@@ -12,15 +10,12 @@ export interface Evaluation {
     totalRepeats: number;
     schemaVersion: number;
     evaluationDir: string;
+    benchmarkName: string;
+    benchmarkDescription: string;
+    benchmarkTotalTasks: number;
 }
 
-/*
- * The RESTFul API form for creating a new evaluation
- */
-export interface EvaluationForm extends Evaluation {
-    benchmark: Benchmark;
-}
-
+// The numerical metric result
 interface EvalNumericalMetricResult {
     type: 'numerical';
     involved_tasks: number;
@@ -36,6 +31,7 @@ interface EvalNumericalMetricResult {
     };
 }
 
+// Categorical metric result
 interface EvalCategoricalMetricResult {
     type: 'category';
     involved_tasks: number;
@@ -49,6 +45,7 @@ interface EvalCategoricalMetricResult {
     };
 }
 
+// The evaluation statistics
 interface EvalStats {
     llm: {
         [key: string]: number;
@@ -68,6 +65,7 @@ interface EvalStats {
     };
 }
 
+// The evaluation result for a single repeat
 interface EvalRepeatResult {
     completed_tasks: number;
     incomplete_tasks: number;
@@ -81,6 +79,7 @@ interface EvalRepeatResult {
     stats: EvalStats;
 }
 
+// The overall evaluation result
 export interface EvalResult {
     total_tasks: number;
     total_repeats: number;
@@ -89,4 +88,12 @@ export interface EvalResult {
         [repeatId: string]: EvalRepeatResult;
     };
     schema_version: number;
+}
+
+// The metadata for an evaluation task
+export interface EvalTaskMeta {
+    id: string;
+    input: string;
+    metrics: string[];
+    tags: Record<string, string>;
 }

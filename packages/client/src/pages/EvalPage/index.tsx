@@ -4,34 +4,39 @@ import { Route, Routes } from 'react-router-dom';
 
 import OverviewPage from '@/pages/EvalPage/OverviewPage';
 import TaskDetailPage from '@/pages/EvalPage/TaskDetailPage';
-import ComparisonPage from '@/pages/EvalPage/TaskComparisonPage';
-import EvaluationDetailPage from '@/pages/EvalPage/EvaluationDetailPage';
+import EvaluationPage from '@/pages/EvalPage/EvaluationPage';
 
 import { RouterPath } from '@/pages/RouterPath.ts';
-import { EvaluationRoomContextProvider } from '@/context/EvaluationRoomContext';
+import { EvaluationListContextProvider } from '@/context/EvaluationListContext.tsx';
+import { EvaluationContextProvider } from '@/context/EvaluationContext.tsx';
 
 const EvalPage = () => {
     return (
         <Layout className="w-full h-full">
             {/*<TitleBar title={t('common.evaluation')} />*/}
 
-            <EvaluationRoomContextProvider>
-                <Routes>
-                    <Route index element={<OverviewPage />} />
-                    <Route
-                        path={RouterPath.EVAL_EVALUATION}
-                        element={<EvaluationDetailPage />}
-                    />
-                    <Route
-                        path={RouterPath.EVAL_TASK}
-                        element={<TaskDetailPage />}
-                    />
-                    {/*<Route*/}
-                    {/*    path={'/eval/:evalId/compare/'}*/}
-                    {/*    element={<ComparisonPage />}*/}
-                    {/*/>*/}
-                </Routes>
-            </EvaluationRoomContextProvider>
+            <Routes>
+                <Route
+                    index
+                    element={
+                        <EvaluationListContextProvider>
+                            <OverviewPage />
+                        </EvaluationListContextProvider>
+                    }
+                />
+                <Route
+                    path={RouterPath.EVAL_EVALUATION}
+                    element={
+                        <EvaluationContextProvider>
+                            <EvaluationPage />
+                        </EvaluationContextProvider>
+                    }
+                />
+                <Route
+                    path={RouterPath.EVAL_TASK}
+                    element={<TaskDetailPage />}
+                />
+            </Routes>
         </Layout>
     );
 };

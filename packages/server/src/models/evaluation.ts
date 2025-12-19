@@ -1,12 +1,4 @@
-import {
-    BaseEntity,
-    Entity,
-    Column,
-    PrimaryColumn,
-    ManyToOne,
-    JoinColumn,
-} from 'typeorm';
-import { BenchmarkTable } from '@/models/evaluation/benchmark';
+import { BaseEntity, Entity, Column, PrimaryColumn } from 'typeorm';
 
 @Entity()
 export class EvaluationTable extends BaseEntity {
@@ -15,10 +7,6 @@ export class EvaluationTable extends BaseEntity {
 
     @Column()
     evaluationName: string;
-
-    @ManyToOne(() => BenchmarkTable, { nullable: false, onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'name' })
-    benchmarkName: string;
 
     @Column()
     createdAt: string;
@@ -31,4 +19,14 @@ export class EvaluationTable extends BaseEntity {
 
     @Column()
     evaluationDir: string;
+
+    // Benchmark related fields
+    @Column()
+    benchmarkName: string;
+
+    @Column()
+    benchmarkDescription: string;
+
+    @Column()
+    benchmarkTotalTasks: number;
 }

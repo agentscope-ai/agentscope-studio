@@ -2,6 +2,41 @@ import { z } from 'zod';
 import { ContentBlocks, ContentType, Status } from './messageForm';
 import { Usage } from './usage';
 
+const BasicTableParamsSchema = {
+    pagination: z.object({
+        page: z.number().int().min(1),
+        pageSize: z.number().int().min(10),
+    }),
+    sort: z
+        .object({
+            field: z.string(),
+            order: z.enum(['asc', 'desc']),
+        })
+        .optional(),
+    filters: z.record(z.string()).optional(),
+};
+
+/**
+ * Zod schema for get evaluation tasks parameters.
+ */
+export const GetEvaluationTasksParamsSchema = z.object({
+    evaluationId: z.string(),
+    ...BasicTableParamsSchema,
+});
+export type GetEvaluationTasksParams = z.infer<
+    typeof GetEvaluationTasksParamsSchema
+>;
+
+/**
+ * Zod schema for delete evaluations parameters.
+ */
+export const DeleteEvaluationsParamsSchema = z.object({
+    evaluationIds: z.array(z.string()),
+});
+export type DeleteEvaluationsParams = z.infer<
+    typeof DeleteEvaluationsParamsSchema
+>;
+
 export const RegisterReplyParamsSchema = z.object({
     runId: z.string(),
     replyId: z.string(),
@@ -15,26 +50,13 @@ export type RegisterReplyParams = z.infer<typeof RegisterReplyParamsSchema>;
  * Zod schema for table request parameters.
  * This schema validates the structure of the request parameters used for table-related operations.
  */
-export const TableRequestParamsSchema = z.object({
-    pagination: z.object({
-        page: z.number().int().min(1),
-        pageSize: z.number().int().min(10),
-    }),
-    sort: z
-        .object({
-            field: z.string(),
-            order: z.enum(['asc', 'desc']),
-        })
-        .optional(),
-    filters: z.record(z.unknown()).optional(),
-});
+export const TableRequestParamsSchema = z.object(BasicTableParamsSchema);
 export type TableRequestParams = z.infer<typeof TableRequestParamsSchema>;
 
 export const SocketRoomName = {
     ProjectListRoom: 'ProjectListRoom',
     OverviewRoom: 'OverviewRoom',
     FridayAppRoom: 'FridayAppRoom',
-    EvaluationRoom: 'EvaluationRoom',
 };
 
 export const SocketEvents = {
@@ -60,8 +82,6 @@ export const SocketEvents = {
         pushReplies: 'pushReplies',
         pushReplyingState: 'pushReplyingState',
         interruptReply: 'interrupt',
-        // Evaluation room
-        pushEvaluations: 'pushEvaluations',
         // To python:
         //  send the user input
         forwardUserInput: 'forwardUserInput',
@@ -72,7 +92,6 @@ export const SocketEvents = {
         joinProjectListRoom: 'joinProjectListRoom',
         joinProjectRoom: 'joinProjectRoom',
         joinRunRoom: 'joinRunRoom',
-        joinEvaluationRoom: 'joinEvaluationRoom',
         getFridayConfig: 'getFridayConfig',
         saveFridayConfig: 'saveFridayConfig',
         installFridayRequirements: 'installFridayRequirements',
@@ -84,7 +103,6 @@ export const SocketEvents = {
         interruptReplyOfFridayApp: 'interruptReplyOfFridayApp',
         deleteProjects: 'deleteProjects',
         deleteRuns: 'deleteRuns',
-        deleteBenchmark: 'deleteBenchmark',
         deleteEvaluations: 'deleteEvaluations',
         getEvaluationResult: 'getEvaluationResult',
         getSolutionResult: 'getSolutionResult',
@@ -242,83 +260,6 @@ export interface TableData<T> {
     pageSize: number;
 }
 
-interface Metric {
-    name: string;
-    type: 'discrete';
-    enum: (string | number)[];
-}
-
-export interface EvaluationMeta {
-    id: string;
-    benchmark: string;
-    createdAt: string;
-    time: string;
-    repeat: number;
-    dir: string;
-}
-
-export interface EvaluationResult {
-    results: Record<string, Record<string, unknown>>;
-}
-
-export interface DiscreteMetricRes {
-    name: string;
-    type: 'category' | 'number';
-    value: string | number;
-    enum: (string | number)[];
-    multipleOf?: number;
-}
-
-export interface ContinuousMetricRes {
-    name: string;
-    type: 'number';
-    minimum?: number;
-    maximum?: number;
-    multipleOf?: number;
-    exclusiveMinimum?: number;
-    exclusiveMaximum?: number;
-    description?: string;
-}
-
-export interface EvaluationMetaData {
-    id: string;
-    name: string;
-    status: string;
-    progress: number;
-    createdAt: string;
-    time: number;
-    metrics: Metric[];
-    repeat: number;
-    report_dir: string;
-}
-
-export interface Task {
-    id: string;
-    question: string;
-    ground_truth: string;
-    repeat: string;
-    status: Status;
-
-    answers: string | null;
-    result: Record<string, unknown>;
-}
-
-export interface EvaluationData {
-    // Metadata
-    id: string;
-    name: string;
-    status: string;
-    benchmark: string;
-    progress: number;
-    createdAt: string;
-    time: number;
-    metrics: Metric[];
-    repeat: number;
-    report_dir: string;
-    // Data
-    results: Record<string, unknown>;
-}
-
 // TracePage trpc schemas
 export const GetTraceListParamsSchema = z.object({
     serviceName: z.string().optional(),
@@ -348,7 +289,7 @@ export type GetTraceStatisticParams = z.infer<
 
 // GetEvaluationResultParamsSchema
 export const GetEvaluationResultParamsSchema = z.object({
-    evaluationDir: z.string(),
+    evaluationId: z.string(),
 });
 export type GetEvaluationResultParams = z.infer<
     typeof GetEvaluationResultParamsSchema

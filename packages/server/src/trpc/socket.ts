@@ -1,6 +1,6 @@
 import { spawn } from 'child_process';
 import { Server as HttpServer } from 'http';
-import { Server, Socket } from 'socket.io';
+import { Server } from 'socket.io';
 import { ContentBlocks, Status } from '../../../shared/src/types/messageForm';
 import {
     ResponseBody,
@@ -26,7 +26,6 @@ import { FridayAppMessageDao } from '../dao/FridayAppMessage';
 import { InputRequestDao } from '../dao/InputRequest';
 import { SpanDao } from '../dao/Trace';
 import { ReplyingStateManager } from '../services/ReplyingStateManager';
-import { EvaluationDao } from '@/dao/evaluation';
 import path from 'path';
 import { FileDao } from '@/dao/File';
 import { EvalResult } from '../../../shared/src/types/evaluation';
@@ -127,48 +126,28 @@ export class SocketManager {
                                             isDirectory: stats.isDirectory(),
                                             modifiedTime: stats.mtime,
                                         },
-                                    } as BackendResponse);
+                                    } as ResponseBody);
                                 });
                             callback({
                                 success: true,
                                 message: 'Directory listed successfully',
                                 data: fileNames,
-                            } as BackendResponse);
+                            } as ResponseBody);
                         } else {
                             callback({
                                 success: false,
                                 message: 'Directory not exists',
-                            } as BackendResponse);
+                            } as ResponseBody);
                         }
                     } catch (error) {
                         console.error(error);
                         callback({
                             success: false,
                             message: `Error: ${error}`,
-                        } as BackendResponse);
+                        } as ResponseBody);
                     }
                 },
             );
-
-            socket.on(SocketEvents.client.joinEvaluationRoom, async () => {
-                console.debug(
-                    `${socket.id}: joined room: ${SocketRoomName.EvaluationRoom}`,
-                );
-                socket.join(SocketRoomName.EvaluationRoom);
-
-                // Broadcast evaluations to this new joined client
-                EvaluationDao.getAllBenchmarks()
-                    .then((benchmarks) => {
-                        socket.emit(
-                            SocketEvents.server.pushEvaluations,
-                            benchmarks,
-                        );
-                    })
-                    .catch((error) => {
-                        console.error(error);
-                        throw error;
-                    });
-            });
 
             socket.on(
                 SocketEvents.client.joinProjectRoom,
@@ -609,7 +588,7 @@ export class SocketManager {
                 SocketEvents.client.getEvaluationResult,
                 async (
                     evaluationDir: string,
-                    callback: (res: BackendResponse) => void,
+                    callback: (res: ResponseBody) => void,
                 ) => {
                     try {
                         const data = await FileDao.getJSONFile<EvalResult>(
@@ -619,13 +598,13 @@ export class SocketManager {
                             success: true,
                             message: 'Get evaluation result successfully',
                             data: data,
-                        } as BackendResponse);
+                        } as ResponseBody);
                     } catch (error) {
                         console.error(error);
                         callback({
                             success: false,
                             message: `Error: ${error}`,
-                        } as BackendResponse);
+                        } as ResponseBody);
                     }
                 },
             );
@@ -808,16 +787,6 @@ export class SocketManager {
                 SocketEvents.server.pushReplyingState,
                 replyingManager.getReplyingState(),
             );
-    }
-
-    static async broadcastEvaluationsToEvaluationRoom() {
-        EvaluationDao.getAllBenchmarks().then((benchmarks) => {
-            console.log('Push evaluations to evaluation room', benchmarks);
-            this.io
-                .of('/client')
-                .to(SocketRoomName.EvaluationRoom)
-                .emit(SocketEvents.server.pushEvaluations, benchmarks);
-        });
     }
 }
 
