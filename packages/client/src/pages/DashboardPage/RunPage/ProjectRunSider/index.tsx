@@ -268,14 +268,10 @@ const ProjectRunSider = ({ onRunClick }: Props) => {
                             ),
                         },
                     ]}
-                    dataSource={runs.filter(
-                        (run) =>
-                            run.name
-                                .toLowerCase()
-                                .includes(searchText.toLowerCase()) ||
-                            run.id
-                                .toLowerCase()
-                                .includes(searchText.toLowerCase()),
+                    dataSource={runs.filter((run) =>
+                        run.name
+                            .toLowerCase()
+                            .includes(searchText.toLowerCase()),
                     )}
                     onRow={(record) => {
                         const styleProps: Record<string, unknown> = {};
