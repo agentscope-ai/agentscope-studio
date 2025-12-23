@@ -470,7 +470,9 @@ const ContentPage = () => {
                                           key={proj.name}
                                           project={proj.name}
                                           runCount={proj.runCount}
-                                          lastUpdateTime={formatDateTime(proj.lastUpdateTime)}
+                                          lastUpdateTime={formatDateTime(
+                                              proj.lastUpdateTime,
+                                          )}
                                       />
                                   ))
                                 : null}

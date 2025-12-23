@@ -55,20 +55,22 @@ export const getBlockTypeFromExtension = (extension: string | undefined) => {
 };
 /**
  * Universal datetime formatter supporting multiple input types
- * 
+ *
  * @param time - Input time in various formats
  * @returns Formatted datetime string or empty string
  */
 export const formatDateTime = (
-    time: string | number | Date | bigint | null | undefined
+    time: string | number | Date | bigint | null | undefined,
 ): string => {
     if (!time) return '';
     try {
         // Handle bigint (nanoseconds to milliseconds)
         if (typeof time === 'bigint') {
-            return dayjs(Number(time / BigInt(1_000_000))).format('YYYY-MM-DD HH:mm:ss');
+            return dayjs(Number(time / BigInt(1_000_000))).format(
+                'YYYY-MM-DD HH:mm:ss',
+            );
         }
-        
+
         // Handle string timestamps
         if (typeof time === 'string' && /^\d+$/.test(time)) {
             const numTime = BigInt(time);
@@ -92,7 +94,7 @@ export const formatDateTime = (
             }
             return dayjs(timestamp).format('YYYY-MM-DD HH:mm:ss');
         }
-        
+
         // Handle other types with dayjs
         return dayjs(time).format('YYYY-MM-DD HH:mm:ss');
     } catch {
@@ -102,18 +104,18 @@ export const formatDateTime = (
 
 /**
  * Format a number into a human-readable string with appropriate formatting
- * 
+ *
  * @param num - The number to format (can be number, string, bigint, null, or undefined)
  * @param digits - The number of decimal places to show (default: 2)
  * @returns Formatted string representation of the number
  */
 export const formatNumber = (
     num?: number | string | bigint | null | undefined,
-    digits: number = 2
+    digits: number = 2,
 ): string => {
     // Handle null/undefined cases
     if (num == null) return '';
-    
+
     // Convert to number
     let number: number;
     if (typeof num === 'bigint') {
@@ -125,10 +127,10 @@ export const formatNumber = (
     } else {
         number = num;
     }
-    
+
     // Handle invalid numbers
     if (!isFinite(number)) return '';
-    
+
     // Helper function to remove trailing zeros
     const removeTrailingZeros = (str: string): string => {
         return str.replace(/\.?0+$/, '');
@@ -164,33 +166,33 @@ export const formatNumber = (
     }
     // For large numbers (>= 10000), abbreviate with units
     const units: [number, string][] = [
-        [1e12, 'T'],  // Trillion
-        [1e9, 'B'],   // Billion
-        [1e6, 'M'],   // Million
-        [1e3, 'K']    // Thousand
+        [1e12, 'T'], // Trillion
+        [1e9, 'B'], // Billion
+        [1e6, 'M'], // Million
+        [1e3, 'K'], // Thousand
     ];
-    
+
     // Find appropriate unit
     for (let i = 0; i < units.length; i++) {
         const [value, symbol] = units[i];
         if (Math.abs(number) >= value) {
             const scaled = number / value;
-            
+
             // For integers, don't show decimal places
             if (Number.isInteger(scaled)) {
                 return scaled.toLocaleString(undefined) + symbol;
             }
-            
+
             // Format with specified digits and remove trailing zeros
             const formatted = scaled.toLocaleString(undefined, {
                 minimumFractionDigits: digits,
-                maximumFractionDigits: digits
+                maximumFractionDigits: digits,
             });
-            
+
             return removeTrailingZeros(formatted) + symbol;
         }
     }
-    
+
     // Fallback - should not normally reach here
     return number.toString();
 };
@@ -198,7 +200,7 @@ export const formatNumber = (
 /**
  * Format a duration in seconds into a human-readable string with appropriate units.
  * Converts seconds to milliseconds for values less than 1 second.
- * 
+ *
  * @param seconds - The duration in seconds to format
  * @returns Formatted string with unit (e.g., "500.00ms" or "2.50s")
  */
@@ -212,7 +214,7 @@ export const formatDurationWithUnit = (seconds: number): string => {
 /**
  * Format a duration in seconds into a numeric value with appropriate scaling.
  * Converts seconds to milliseconds for values less than 1 second.
- * 
+ *
  * @param seconds - The duration in seconds to format
  * @returns Formatted number (in milliseconds if < 1 second, otherwise in seconds)
  */
