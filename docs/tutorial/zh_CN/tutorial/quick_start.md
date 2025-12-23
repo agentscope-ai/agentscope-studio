@@ -35,6 +35,12 @@ npm install
 # 然后运行以下命令启动 AgentScope-Studio：
 npm run dev
 ```
+### 部署到阿里云上
+
+如果您计划在云上使用AgentScope-Studio ，推荐直接在阿里云实现一键部署。
+
+[在阿里云一键部署AgentScope-Studio](https://help.aliyun.com/zh/compute-nest/use-cases/agent-scope-studio-community-edition-service-instance-deployment-document)
+
 
 ## 连接到 AgentScope-Studio
 

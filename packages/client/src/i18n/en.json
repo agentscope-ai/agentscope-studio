@@ -207,6 +207,9 @@
             "totalTokens": "Tokens",
             "duration": "Duration",
             "startTime": "Start Time"
+        },
+        "pagination": {
+            "total": "{{total}} items in total"
         }
     },
     "tooltip": {
