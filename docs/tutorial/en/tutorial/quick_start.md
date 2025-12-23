@@ -40,7 +40,7 @@ npm run dev
 
 If you plan to use AgentScope-Studio on the cloud, it is recommended that you directly implement one-click deployment on Alibaba Cloud.
 
-[Deploy AgentScope-Studio on Alibaba Cloud](https://help.aliyun.com/zh/compute-nest/use-cases/agent-scope-studio-community-edition-service-instance-deployment-docume)
+[Deploy AgentScope-Studio on Alibaba Cloud](https://help.aliyun.com/zh/compute-nest/use-cases/agent-scope-studio-community-edition-service-instance-deployment-document)
 
 
 ## Connect to AgentScope-Studio

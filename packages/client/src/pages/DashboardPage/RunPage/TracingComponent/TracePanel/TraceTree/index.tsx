@@ -3,6 +3,7 @@ import type { DataNode } from 'antd/es/tree';
 import dayjs from 'dayjs';
 import { Key, memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { formatDurationWithUnit } from '@/utils/common';
 
 import SpanPanel from '@/pages/DashboardPage/RunPage/TracingComponent/TracePanel/SpanPanel';
 import { SpanData } from '@shared/types/trace.ts';
@@ -49,16 +50,6 @@ const getDisplayKind = (attributes: Record<string, unknown>): string => {
         return operationName;
     }
     return 'Unknown';
-};
-
-// Helper function to format latency - simple text, no animation overhead
-const formatLatency = (latencyNs: number): string => {
-    const seconds = latencyNs / 1_000_000_000;
-    if (seconds >= 1) {
-        return `${seconds.toFixed(2)}s`;
-    }
-    const ms = latencyNs / 1_000_000;
-    return `${ms.toFixed(1)}ms`;
 };
 
 // Store for span data lookup by key
@@ -190,7 +181,7 @@ export const TraceTree = ({ spans }: Props) => {
                             {data.name}
                         </div>
                         <span className="text-xs text-muted-foreground shrink-0">
-                            {formatLatency(data.latencyNs)}
+                            {formatDurationWithUnit(data.latencyNs / 1e9)}
                         </span>
                     </div>
                     <div className="flex flex-row items-center justify-between text-muted-foreground">
