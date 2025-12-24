@@ -621,7 +621,9 @@ export function RunRoomContextProvider({ children }: Props) {
                     state.fullAudioData,
                 );
             }
-
+            if (audioContextRef.current) {
+                audioContextRef.current.suspend();
+            }
             playAudio(replyId, state.fullAudioData);
         },
         [speechStates, playAudio, createWavBlobUrl],

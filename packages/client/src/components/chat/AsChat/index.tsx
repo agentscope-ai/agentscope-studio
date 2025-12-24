@@ -1,5 +1,13 @@
 import { ContentBlocks, Reply } from '@shared/types';
-import { memo, ReactNode, useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import {
+    memo,
+    ReactNode,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+    useCallback,
+} from 'react';
 import {
     ArrowDownToLineIcon,
     MoreHorizontalIcon,
@@ -166,7 +174,9 @@ const AsChat = ({
     const { t } = useTranslation();
 
     const bubbleListRef = useRef<HTMLDivElement>(null);
-    const [currentPlayingReplyId, setCurrentPlayingReplyId] = useState<string | null>(null);
+    const [currentPlayingReplyId, setCurrentPlayingReplyId] = useState<
+        string | null
+    >(null);
     // Save renderMarkdown to localStorage when it changes
     useEffect(() => {
         localStorage.setItem('chat-render-markdown', renderMarkdown.toString());
@@ -303,27 +313,39 @@ const AsChat = ({
             key: AvatarSet.LETTER,
         },
     ];
-    const handleStopOtherSpeech = useCallback((currentReplyId: string) => {
-        if (currentPlayingReplyId && currentPlayingReplyId !== currentReplyId) {
-            stopSpeech?.(currentPlayingReplyId);
-        }
-    }, [currentPlayingReplyId, stopSpeech]);
+    const handleStopOtherSpeech = useCallback(
+        (currentReplyId: string) => {
+            if (
+                currentPlayingReplyId &&
+                currentPlayingReplyId !== currentReplyId
+            ) {
+                stopSpeech?.(currentPlayingReplyId);
+            }
+        },
+        [currentPlayingReplyId, stopSpeech],
+    );
 
-    const handlePlaySpeech = useCallback((replyId: string) => {
-        // 停止其他正在播放的语音
-        handleStopOtherSpeech(replyId);
-        // 更新当前播放的回复ID
-        setCurrentPlayingReplyId(replyId);
-        // 播放指定的语音
-        playSpeech?.(replyId);
-    }, [handleStopOtherSpeech, playSpeech]);
+    const handlePlaySpeech = useCallback(
+        (replyId: string) => {
+            // 停止其他正在播放的语音
+            handleStopOtherSpeech(replyId);
+            // 更新当前播放的回复ID
+            setCurrentPlayingReplyId(replyId);
+            // 播放指定的语音
+            playSpeech?.(replyId);
+        },
+        [handleStopOtherSpeech, playSpeech],
+    );
 
-    const handlePauseSpeech = useCallback((replyId: string) => {
-        stopSpeech?.(replyId);
-        if (currentPlayingReplyId === replyId) {
-            setCurrentPlayingReplyId(null);
-        }
-    }, [currentPlayingReplyId, stopSpeech]);
+    const handlePauseSpeech = useCallback(
+        (replyId: string) => {
+            stopSpeech?.(replyId);
+            if (currentPlayingReplyId === replyId) {
+                setCurrentPlayingReplyId(null);
+            }
+        },
+        [currentPlayingReplyId, stopSpeech],
+    );
     return (
         <div className="flex flex-col w-full max-w-[800px] h-full p-4 pt-2">
             {/*The bubble list*/}
