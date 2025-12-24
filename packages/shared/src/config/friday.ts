@@ -1,6 +1,6 @@
 import { PATHS } from './server';
 import fs from 'fs';
-import { BackendResponse } from '../types';
+import { ResponseBody } from '../types';
 import path from 'path';
 import { runPythonScript } from '../../../server/src/trpc/socket';
 import { execSync } from 'child_process';
@@ -79,7 +79,7 @@ export class FridayConfigManager {
             return {
                 success: false,
                 message: 'The Python environment path does not exist.',
-            } as BackendResponse;
+            } as ResponseBody;
         }
 
         // Check if the path is a file
@@ -89,13 +89,13 @@ export class FridayConfigManager {
                 return {
                     success: false,
                     message: 'Not a valid Python environment path.',
-                } as BackendResponse;
+                } as ResponseBody;
             }
         } catch (error) {
             return {
                 success: false,
                 message: `Error accessing Python environment path: ${error}`,
-            } as BackendResponse;
+            } as ResponseBody;
         }
 
         // Check if the python version is 3.10 or higher
@@ -113,7 +113,7 @@ export class FridayConfigManager {
                 return {
                     success: false,
                     message: 'Failed to get Python version.',
-                } as BackendResponse;
+                } as ResponseBody;
             }
             const major = parseInt(versionMatch[1], 10);
             const minor = parseInt(versionMatch[2], 10);
@@ -121,17 +121,17 @@ export class FridayConfigManager {
                 return {
                     success: false,
                     message: 'Python version must be 3.10 or higher.',
-                } as BackendResponse;
+                } as ResponseBody;
             }
             return {
                 success: true,
                 message: 'Configuration is valid.',
-            } as BackendResponse;
+            } as ResponseBody;
         } catch {
             return {
                 success: false,
                 message: 'Not a valid Python environment.',
-            } as BackendResponse;
+            } as ResponseBody;
         }
     }
 
@@ -147,12 +147,12 @@ export class FridayConfigManager {
             return {
                 success: true,
                 message: 'Successfully installed requirements',
-            } as BackendResponse;
+            } as ResponseBody;
         } else {
             return {
                 success: false,
                 message: `Failed to install requirements: ${res.error}`,
-            } as BackendResponse;
+            } as ResponseBody;
         }
     }
 

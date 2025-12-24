@@ -199,6 +199,9 @@
             "totalTokens": "Token 量",
             "duration": "调用时长",
             "startTime": "开始时间"
+        },
+        "pagination": {
+            "total": "共 {{total}} 项"
         }
     },
     "tooltip": {

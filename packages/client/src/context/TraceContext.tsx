@@ -1,7 +1,6 @@
 import { TraceListItem, TraceStatistics } from '@shared/types';
 import dayjs from 'dayjs';
 import { createContext, ReactNode, useContext, useMemo, useState } from 'react';
-import { TrpcProvider } from '../api/TrpcProvider';
 import { trpc } from '../api/trpc';
 
 export interface TraceContextType {
@@ -226,14 +225,12 @@ export function TraceContextProvider({
     pollingEnabled = true,
 }: TraceContextProviderProps) {
     return (
-        <TrpcProvider>
-            <TraceContextProviderInner
-                pollingInterval={pollingInterval}
-                pollingEnabled={pollingEnabled}
-            >
-                {children}
-            </TraceContextProviderInner>
-        </TrpcProvider>
+        <TraceContextProviderInner
+            pollingInterval={pollingInterval}
+            pollingEnabled={pollingEnabled}
+        >
+            {children}
+        </TraceContextProviderInner>
     );
 }
 
