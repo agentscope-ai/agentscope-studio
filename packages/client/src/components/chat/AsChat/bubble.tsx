@@ -1,4 +1,4 @@
-import { memo, ReactNode } from 'react';
+import { memo, ReactNode, useMemo } from 'react';
 import { ContentType, Reply, TextBlock } from '@shared/types';
 import BubbleBlock, {
     CollapsibleBlockDiv,
@@ -25,6 +25,8 @@ interface Props {
     onPlaySpeech?: () => void;
     /** Callback to pause speech audio */
     onPauseSpeech?: () => void;
+    /** Callback to stop other speech audio */
+    onStopOtherSpeech?: () => void;
     /** Callback to change playback rate */
     onPlaybackRateChange?: (rate: number) => void;
     /** Callback to change volume */
@@ -40,6 +42,7 @@ const AsBubble = ({
     speechState,
     onPlaySpeech,
     onPauseSpeech,
+    onStopOtherSpeech,
     onPlaybackRateChange,
     onVolumeChange,
 }: Props) => {
@@ -66,9 +69,18 @@ const AsBubble = ({
             <BubbleBlock block={block} markdown={markdown} />
         ));
     };
-
-    const hasAudio = (speechState?.fullAudioData?.length || 0) > 0;
-    const showSpeechBar = speechState?.isStreaming || hasAudio;
+    const onPlay = () => {
+        onStopOtherSpeech?.();
+        onPlaySpeech?.();
+    };
+    const hasAudio = useMemo(
+        () => (speechState?.fullAudioData?.length || 0) > 0,
+        [speechState?.fullAudioData],
+    );
+    const showSpeechBar = useMemo(
+        () => speechState?.isStreaming || hasAudio,
+        [speechState?.isStreaming, hasAudio],
+    );
 
     return (
         <div className="flex flex-col w-full max-w-full">
@@ -119,7 +131,7 @@ const AsBubble = ({
                                 hasAudio={hasAudio}
                                 playbackRate={speechState?.playbackRate ?? 1.0}
                                 volume={speechState?.volume ?? 1.0}
-                                onPlay={onPlaySpeech || (() => {})}
+                                onPlay={onPlay}
                                 onPause={onPauseSpeech || (() => {})}
                                 onPlaybackRateChange={
                                     onPlaybackRateChange || (() => {})

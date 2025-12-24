@@ -18,7 +18,7 @@ import {
 } from '../../../shared/src/types/trpc';
 import { useSocket } from './SocketContext';
 
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import {
     AudioBlock,
     ContentBlocks,
@@ -124,7 +124,7 @@ const calculateTraceData = (spans: SpanData[]) => {
 export function RunRoomContextProvider({ children }: Props) {
     const { runId } = useParams<{ runId: string }>();
     const { messageApi } = useMessageApi();
-
+    const location = useLocation();
     const socket = useSocket();
     const roomName = `run-${runId}`;
     const [replies, setReplies] = useState<Reply[]>([]);
@@ -164,7 +164,48 @@ export function RunRoomContextProvider({ children }: Props) {
     const playbackSettingsRef = useRef<
         Record<string, { playbackRate: number; volume: number }>
     >({});
+    // Cleanup effect - stops all playing audio when component unmounts or route changes
+    useEffect(() => {
+        return () => {
+            // Stop all playing audio
+            Object.keys(speechStates).forEach((replyId) => {
+                stopSpeech(replyId);
+            });
 
+            // Clean up all audio resources
+            Object.keys(audioElementRef.current).forEach((replyId) => {
+                if (audioElementRef.current[replyId]) {
+                    audioElementRef.current[replyId]!.pause();
+                    audioElementRef.current[replyId] = null;
+                }
+            });
+
+            // Stop all audio sources
+            Object.keys(currentSourceRef.current).forEach((replyId) => {
+                if (currentSourceRef.current[replyId]) {
+                    try {
+                        currentSourceRef.current[replyId]!.stop();
+                    } catch {
+                        // Ignore errors if already stopped
+                    }
+                    currentSourceRef.current[replyId] = null;
+                }
+            });
+
+            // Clean up WAV blob URLs
+            Object.keys(wavBlobUrlRef.current).forEach((replyId) => {
+                if (wavBlobUrlRef.current[replyId]) {
+                    URL.revokeObjectURL(wavBlobUrlRef.current[replyId]!);
+                    wavBlobUrlRef.current[replyId] = null;
+                }
+            });
+
+            // Suspend AudioContext
+            if (audioContextRef.current) {
+                audioContextRef.current.suspend();
+            }
+        };
+    }, [location.pathname]); // Trigger cleanup when path changes
     // Initialize AudioContext on first user interaction
     const ensureAudioContext = useCallback(() => {
         if (!audioContextRef.current) {
@@ -350,7 +391,11 @@ export function RunRoomContextProvider({ children }: Props) {
                 if (state) {
                     return {
                         ...prev,
-                        [replyId]: { ...state, isPlaying: true },
+                        [replyId]: {
+                            ...state,
+                            isPlaying: true,
+                            isStreaming: true,
+                        },
                     };
                 }
                 return prev;
@@ -366,9 +411,15 @@ export function RunRoomContextProvider({ children }: Props) {
             setSpeechStates((prev) => {
                 const state = prev[replyId];
                 if (state) {
+                    const isStillStreaming =
+                        speechStates[replyId]?.isStreaming || false;
                     return {
                         ...prev,
-                        [replyId]: { ...state, isPlaying: false },
+                        [replyId]: {
+                            ...state,
+                            isPlaying: false,
+                            isStreaming: isStillStreaming,
+                        },
                     };
                 }
                 return prev;
@@ -540,16 +591,16 @@ export function RunRoomContextProvider({ children }: Props) {
                     clearTimeout(streamingEndTimeoutRef.current[replyId]!);
                 }
                 streamingEndTimeoutRef.current[replyId] = setTimeout(() => {
-                    setSpeechStates((prev) => {
-                        const state = prev[replyId];
-                        if (state) {
-                            return {
-                                ...prev,
-                                [replyId]: { ...state, isStreaming: false },
-                            };
-                        }
-                        return prev;
-                    });
+                    // setSpeechStates((prev) => {
+                    //     const state = prev[replyId];
+                    //     if (state) {
+                    //         return {
+                    //             ...prev,
+                    //             [replyId]: { ...state, isStreaming: false },
+                    //         };
+                    //     }
+                    //     return prev;
+                    // });
                     streamingEndTimeoutRef.current[replyId] = null;
                 }, 1500);
             }
@@ -766,13 +817,15 @@ export function RunRoomContextProvider({ children }: Props) {
                             setSpeechStates((prev) => {
                                 const settings =
                                     playbackSettingsRef.current[reply.replyId];
+                                const currentState = prev[reply.replyId];
                                 return {
                                     ...prev,
                                     [reply.replyId]: {
                                         fullAudioData: fullData,
                                         mediaType: mediaType,
                                         isPlaying: false,
-                                        isStreaming: false,
+                                        isStreaming:
+                                            currentState?.isStreaming || false,
                                         playbackRate:
                                             prev[reply.replyId]?.playbackRate ??
                                             settings?.playbackRate ??
@@ -881,6 +934,11 @@ export function RunRoomContextProvider({ children }: Props) {
                 'Server is not connected, please refresh the page.',
             );
         } else {
+            setTimeout(() => {
+                Object.keys(speechStates).forEach((replyId) => {
+                    stopSpeech(replyId);
+                });
+            }, 1000);
             socket.emit(
                 SocketEvents.client.sendUserInputToServer,
                 requestId,
