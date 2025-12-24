@@ -649,6 +649,9 @@ export function RunRoomContextProvider({ children }: Props) {
             currentSourceRef.current[replyId] = null;
         }
 
+        if (audioContextRef.current) {
+            audioContextRef.current.resume();
+        }
         // Update state
         setSpeechStates((prev) => {
             const state = prev[replyId];
