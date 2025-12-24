@@ -6,6 +6,8 @@ import OverviewPage from '@/pages/EvalPage/OverviewPage';
 import TaskDetailPage from '@/pages/EvalPage/TaskDetailPage';
 import ComparisonPage from '@/pages/EvalPage/TaskComparisonPage';
 import EvaluationDetailPage from '@/pages/EvalPage/EvaluationDetailPage';
+import EvaluationInstancesPage from '@/pages/EvalPage/EvaluationInstancesPage';
+import EvaluationInstancesDetailPage from '@/pages/EvalPage/EvaluationInstancesDetailPage';
 
 import { RouterPath } from '@/pages/RouterPath.ts';
 import { EvaluationRoomContextProvider } from '@/context/EvaluationRoomContext';
@@ -30,8 +32,24 @@ const EvalPage = () => {
                     element={<TaskDetailPage />}
                 />
                 <Route
-                    path="/eval/:evalId/compare/"
+                    path={RouterPath.EVAL_COMPARE}
                     element={<ComparisonPage />}
+                />
+                <Route
+                    path={RouterPath.EVAL_TASK_INSTANCES}
+                    element={
+                        <EvaluationRoomContextProvider>
+                            <EvaluationInstancesPage />
+                        </EvaluationRoomContextProvider>
+                    }
+                />
+                <Route
+                    path={RouterPath.EVAL_TASK_INSTANCE_DETAIL}
+                    element={
+                        <EvaluationRoomContextProvider>
+                            <EvaluationInstancesDetailPage />
+                        </EvaluationRoomContextProvider>
+                    }
                 />
             </Routes>
         </Layout>

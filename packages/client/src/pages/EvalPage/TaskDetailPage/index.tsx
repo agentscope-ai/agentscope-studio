@@ -1,9 +1,22 @@
-import { memo } from 'react';
-import { Segmented } from 'antd';
+import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+
+import ChatPage from './ChartPage';
+import EvaluationInstancesDetailPage from '../EvaluationInstancesDetailPage';
+
+import { EvaluationRoomContextProvider } from '@/context/EvaluationRoomContext';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 const TaskDetailPage = () => {
     const { t } = useTranslation();
+    const [selectedTab, setSelectedTab] = useState('Overview');
+
+    const ToggleGroupItemOptions: { value: string; label: string }[] = [
+        { value: 'Overview', label: 'Overview' },
+        { value: 'Repeat-1', label: 'Repeat-1' },
+        { value: 'Repeat-2', label: 'Repeat-2' },
+        { value: 'Repeat-3', label: 'Repeat-3' },
+    ];
 
     return (
         <div className="flex-1 h-full overflow-y-auto">
@@ -16,7 +29,8 @@ const TaskDetailPage = () => {
                         Task xggwgeg_1
                     </div>
                     <div className="truncate text-sm text-muted-foreground mb-3">
-                        Evaluation: xxxf
+                        Evaluation:
+                        20250111_deepseek_chat_v3_temp_0_0_iter_20_fmt_react_hist_react
                     </div>
                 </div>
 
@@ -70,34 +84,38 @@ const TaskDetailPage = () => {
                         <div className="p-6 min-h-[5.5rem] pt-2 space-y-4"></div>
                     </div>
 
-                    <Segmented
-                        className="col-span-full"
-                        // block={true}
-                        options={[
-                            'Overview',
-                            'Repeat-1',
-                            'Repeat-2',
-                            'Repeat-3',
-                        ]}
-                    />
-
-                    <div className="col-span-full rounded-xl border shadow">
-                        <div className="p-6 flex flex-col justify-between space-y-0 pb-1">
-                            <h3 className="tracking-tight text-sm font-medium">
-                                Output
-                            </h3>
+                    <ToggleGroup
+                        type="single"
+                        defaultValue="Overview"
+                        className="col-span-full w-full justify-start"
+                        variant="outline"
+                        onValueChange={(value) => setSelectedTab(value)}
+                    >
+                        {ToggleGroupItemOptions?.map((option) => (
+                            <ToggleGroupItem
+                                key={option.value}
+                                value={option.value}
+                            >
+                                {option.label}
+                            </ToggleGroupItem>
+                        ))}
+                    </ToggleGroup>
+                    {['Overview'].includes(selectedTab) && (
+                        <div className="col-span-full">
+                            <EvaluationRoomContextProvider>
+                                <ChatPage />
+                            </EvaluationRoomContextProvider>
                         </div>
-                        <div className="p-6 min-h-[5.5rem] pt-2 space-y-4"></div>
-                    </div>
-
-                    <div className="col-span-full rounded-xl border shadow">
-                        <div className="p-6 flex flex-col justify-between space-y-0 pb-1">
-                            <h3 className="tracking-tight text-sm font-medium">
-                                Trajectory
-                            </h3>
+                    )}
+                    {['Repeat-1', 'Repeat-2', 'Repeat-3'].includes(
+                        selectedTab,
+                    ) && (
+                        <div className="col-span-full">
+                            <EvaluationRoomContextProvider>
+                                <EvaluationInstancesDetailPage />
+                            </EvaluationRoomContextProvider>
                         </div>
-                        <div className="p-6 min-h-[5.5rem] pt-2 space-y-4"></div>
-                    </div>
+                    )}
                 </div>
             </div>
         </div>
