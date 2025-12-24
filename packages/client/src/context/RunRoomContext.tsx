@@ -651,7 +651,14 @@ export function RunRoomContextProvider({ children }: Props) {
         setSpeechStates((prev) => {
             const state = prev[replyId];
             if (state) {
-                return { ...prev, [replyId]: { ...state, isPlaying: false } };
+                return {
+                    ...prev,
+                    [replyId]: {
+                        ...state,
+                        isPlaying: false,
+                        isStreaming: false,
+                    },
+                };
             }
             return prev;
         });
@@ -812,7 +819,6 @@ export function RunRoomContextProvider({ children }: Props) {
                                     volume: 1.0,
                                 };
                             }
-
                             // Only save the data, decode later when user clicks play
                             setSpeechStates((prev) => {
                                 const settings =
