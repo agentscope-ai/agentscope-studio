@@ -329,7 +329,11 @@ const TraceListPage = () => {
                         },
                         className: 'mr-4!',
                     }}
-                    scroll={{ x: 'max-content' }}
+                    total={total}
+                    // tableRequestParams={}
+                    // setTableRequestParams={}
+                    // selectedRowKeys={}
+                    // setSelectedRowKeys={}
                 />
             </div>
 

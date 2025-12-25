@@ -20,7 +20,6 @@ export class EvaluationDao {
     static async getEvaluation(evaluationId: string) {
         return await EvaluationTable.findOne({
             where: { id: evaluationId },
-            relations: ['benchmark'],
         });
     }
 

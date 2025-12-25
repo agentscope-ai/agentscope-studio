@@ -5,8 +5,9 @@
         "compare": "Compare",
         "delete": "Delete",
         "focus-on-latest-run": "Focus on latest",
-        "import-evaluation": "Import Evaluation Dir",
-        "ok": "OK"
+        "import-evaluation": "Import Evaluation",
+        "ok": "OK",
+        "search": "Search"
     },
     "chat": {
         "avatar-set": {
@@ -107,6 +108,7 @@
     },
     "description": {
         "eval": {
+            "title": "The evaluation records from different benchmarks",
             "llm": "The distribution of the LLM invocations",
             "llm-footer": "{{kind}} different LLM(s) were invoked for {{count}} time(s) in total",
             "tool": "The Top-10 tools used in your solution",
@@ -183,6 +185,7 @@
         "input-url": "A local or web URL to the image/video/audio file (press enter to confirm)",
         "search-benchmark": "Search benchmarks",
         "search-evaluation": "Search evaluation history",
+        "search-evaluation-task": "Search evaluation tasks",
         "search-project": "Search projects in the table",
         "search-run": "Search runs in the table",
         "search-span": "Search spans in the trace"
@@ -204,11 +207,14 @@
     "table": {
         "column": {
             "benchmark": "Benchmark",
+            "benchmarkName": "Benchmark",
             "createdAt": "Created At",
             "evaluationDir": "Evaluation Dir",
             "finished": "Finished",
             "ground-truth": "Ground Truth",
             "id": "ID",
+            "input": "Input",
+            "metrics": "% Metrics",
             "name": "Name",
             "pending": "Pending",
             "progress": "Progress",
@@ -216,6 +222,7 @@
             "repeat": "Repeat",
             "running": "Running",
             "status": "Status",
+            "tags": "Tags",
             "time": "Time",
             "total": "Total",
             "totalRepeats": "Total Repeats",

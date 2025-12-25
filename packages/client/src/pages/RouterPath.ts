@@ -13,6 +13,6 @@ export enum RouterPath {
     FRIDAY_CHAT = '/chat',
     FRIDAY_SETTING = '/setting',
 
-    EVAL_EVALUATION = ':benchmarkName/:evalId',
-    EVAL_TASK = ':benchmarkName/:evalId/task/:taskId',
+    EVAL_EVALUATION = ':evalId',
+    EVAL_TASK = ':evalId/:taskId',
 }

@@ -5,8 +5,9 @@
         "compare": "比较",
         "delete": "删除",
         "focus-on-latest-run": "自动切换到最新运行",
-        "import-evaluation": "导入评测结果目录",
-        "ok": "确认"
+        "import-evaluation": "导入评测",
+        "ok": "确认",
+        "search": "搜索"
     },
     "chat": {
         "avatar-set": {
@@ -107,6 +108,7 @@
     },
     "description": {
         "eval": {
+            "title": "智能体应用的评测记录",
             "llm": "评测中 LLM 的使用分布情况",
             "llm-footer": "总计调用 {{kind}} 种不同的 LLM 模型 {{count}} 次",
             "tool": "评测中使用频率 Top-10 的工具函数分布情况",
@@ -183,6 +185,7 @@
         "input-url": "指向图片/视频/音频的本地或网络 URL（回车键确认）",
         "search-benchmark": "搜索基准数据集",
         "search-evaluation": "搜索评测历史",
+        "search-evaluation-task": "搜索评测任务",
         "search-project": "搜索项目",
         "search-run": "搜索运行实例",
         "search-span": "搜索跟踪数据"
@@ -196,12 +199,15 @@
     "table": {
         "column": {
             "benchmark": "基准",
+            "benchmarkName": "Benchmark",
             "createdAt": "创建时间",
             "duration": "调用时长",
             "evaluationDir": "评测目录",
             "finished": "已结束",
             "ground-truth": "正确答案",
             "id": "ID",
+            "input": "输入",
+            "metrics": "%评测指标",
             "name": "名称",
             "pending": "等待中",
             "progress": "进度",
@@ -210,6 +216,7 @@
             "running": "运行中",
             "startTime": "开始时间",
             "status": "状态",
+            "tags": "标签",
             "time": "用时",
             "total": "总计",
             "totalRepeats": "重复次数",

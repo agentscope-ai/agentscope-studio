@@ -13,7 +13,6 @@ import { RunView } from './models/RunView';
 import { SpanTable } from './models/Trace';
 import { EvaluationTable } from '@/models/evaluation';
 
-
 export const initializeDatabase = async (
     databaseConfig: DataSourceOptions,
 ): Promise<void> => {

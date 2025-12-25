@@ -1,8 +1,10 @@
 import { memo } from 'react';
 import { Segmented } from 'antd';
 import { useTranslation } from 'react-i18next';
+import { useEvaluationTaskContext } from '@/context/EvaluationTaskContext';
 
-const TaskDetailPage = () => {
+const TaskPage = () => {
+    const { task } = useEvaluationTaskContext();
     const { t } = useTranslation();
 
     return (
@@ -13,10 +15,10 @@ const TaskDetailPage = () => {
                 </div>
                 <div className="flex flex-col gap-1.5">
                     <div className="truncate font-bold text-xl">
-                        Task xggwgeg_1
+                        {t('common.task')} {task.meta.id}
                     </div>
                     <div className="truncate text-sm text-muted-foreground mb-3">
-                        Evaluation: xxxf
+                        {t('common.evaluation')}: {task.meta.id}
                     </div>
                 </div>
 
@@ -58,7 +60,9 @@ const TaskDetailPage = () => {
                                 Input
                             </h3>
                         </div>
-                        <div className="p-6 min-h-[5.5rem] pt-2 space-y-4"></div>
+                        <div className="p-6 min-h-[5.5rem] pt-2 space-y-4">
+                            {task.meta.input}
+                        </div>
                     </div>
 
                     <div className="col-span-full rounded-xl border shadow">
@@ -67,17 +71,18 @@ const TaskDetailPage = () => {
                                 Ground Truth
                             </h3>
                         </div>
-                        <div className="p-6 min-h-[5.5rem] pt-2 space-y-4"></div>
+                        <div className="p-6 min-h-[5.5rem] pt-2 space-y-4">
+                            {JSON.stringify(task.meta.ground_truth, null, 2)}
+                        </div>
                     </div>
 
                     <Segmented
                         className="col-span-full"
-                        // block={true}
                         options={[
-                            'Overview',
-                            'Repeat-1',
-                            'Repeat-2',
-                            'Repeat-3',
+                            'overview',
+                            ...Object.keys(task.repeats).map(
+                                (repeatId) => `repeatId: ${repeatId}`,
+                            ),
                         ]}
                     />
 
@@ -104,4 +109,4 @@ const TaskDetailPage = () => {
     );
 };
 
-export default memo(TaskDetailPage);
+export default memo(TaskPage);

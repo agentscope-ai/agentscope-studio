@@ -1,40 +1,67 @@
-import { memo, MouseEvent, useState } from 'react';
+import { Key, memo, MouseEvent, useState } from 'react';
 import AsTable from '@/components/tables/AsTable';
-import { NumberCell, TextCell } from '@/components/tables/utils.tsx';
+import { NumberCell, TagsCell, TextCell } from '@/components/tables/utils.tsx';
 import { useNavigate } from 'react-router-dom';
 import NumericalView from './MetricView/NumericalView.tsx';
-import { convertToDTO, EvaluationDTO } from './utils.ts';
+import { convertToDTO } from './utils.ts';
 import { TableColumnsType } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { ModelCard, ToolCard } from '@/pages/EvalPage/EvaluationPage/DataCard';
 import { useEvaluationContext } from '@/context/EvaluationContext.tsx';
+import {
+    useEvaluationTasksContext,
+    EvaluationTasksContextProvider,
+} from '@/context/EvaluationTasksContext.tsx';
 import { EvalTaskMeta } from '@shared/types/evaluation.ts';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuShortcut,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu.tsx';
+import { Button } from '@/components/ui/button.tsx';
+import { CirclePlusIcon, SearchIcon } from 'lucide-react';
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupInput,
+} from '@/components/ui/input-group.tsx';
+import { Checkbox } from '@/components/ui/checkbox.tsx';
+import { ArrayFilterOperator } from '@shared/types';
+import { EmptyPage } from '@/pages/DefaultPage/index.tsx';
 
-
-const EvaluationPage = () => {
+const TasksTable = memo(({ evaluationId }: { evaluationId: string }) => {
+    const navigate = useNavigate();
     const { t } = useTranslation();
-
     const {
-        evaluation,
-        evalResult,
         tableDataSource,
         tableLoading,
         tableRequestParams,
         setTableRequestParams,
         total,
-    } = useEvaluationContext();
-    const evaluationDTO = convertToDTO(evalResult);
-    const navigate = useNavigate();
+    } = useEvaluationTasksContext();
+    const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
+    const { tags } = useEvaluationTasksContext();
 
     const columns: TableColumnsType<EvalTaskMeta> = [
         {
             key: 'id',
             title: 'Task ID',
-            render: (value) => <TextCell text={value} selected={false} />,
+            render: (value) => <TextCell text={value || ''} selected={false} />,
         },
         {
             key: 'input',
-            render: (value) => <TextCell text={value} selected={false} />,
+            render: (value) => (
+                <TextCell
+                    text={value || ''}
+                    selected={false}
+                    className="max-w-[200px]"
+                />
+            ),
         },
         {
             key: 'metrics',
@@ -42,8 +69,202 @@ const EvaluationPage = () => {
         },
         {
             key: 'tags',
+            render: (value) => <TagsCell tags={value} selected={false} />,
         },
     ];
+
+    const handleTagFilterChange = (tag: string) => {
+        setTableRequestParams((prev) => {
+            if (
+                (
+                    (tableRequestParams.filters?.tags?.value as string[]) || []
+                ).includes(tag)
+            ) {
+                // Our target is to remove the tag from the filter
+
+                if (
+                    prev.filters &&
+                    prev.filters['tags'] &&
+                    prev.filters['tags'].operator === ArrayFilterOperator.IN
+                ) {
+                    // If the tag filter exists, remove the tag from the filter
+                    const newTags = prev.filters['tags'].value.filter(
+                        (thisTag) => thisTag !== tag,
+                    );
+
+                    if (newTags.length === 0) {
+                        // Remove the entire tags filter
+                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                        const { tags, ...restFilters } = prev.filters;
+                        return {
+                            ...prev,
+                            pagination: {
+                                ...prev.pagination,
+                                page: 1,
+                            },
+                            filters: restFilters || undefined,
+                        };
+                    } else {
+                        // Update the tags filter with the new tags
+                        return {
+                            ...prev,
+                            pagination: {
+                                ...prev.pagination,
+                                page: 1,
+                            },
+                            filters: {
+                                ...prev.filters,
+                                tags: {
+                                    operator: ArrayFilterOperator.IN,
+                                    value: newTags,
+                                },
+                            },
+                        };
+                    }
+                }
+
+                // Update: No tag filter exists, nothing to remove
+                const lastTags = tags
+                    .map((tagRecord) => tagRecord.tag)
+                    .filter((t) => t !== tag);
+                return {
+                    ...prev,
+                    pagination: {
+                        ...prev.pagination,
+                        page: 1,
+                    },
+                    filters: {
+                        ...prev.filters,
+                        tags: {
+                            operator: ArrayFilterOperator.IN,
+                            value: lastTags,
+                        },
+                    },
+                };
+            }
+
+            // Our target is to add the tag to the filter
+            const prevTagsValues =
+                (prev.filters?.tags?.value as string[]) || [];
+            return {
+                ...prev,
+                pagination: {
+                    ...prev.pagination,
+                    page: 1,
+                },
+                filters: {
+                    tags: {
+                        operator: ArrayFilterOperator.IN,
+                        value: [...prevTagsValues, tag],
+                    },
+                },
+            };
+        });
+    };
+
+    return (
+        <div className="block pb-8">
+            <div className="rounded-xl border shadow">
+                <div className="flex flex-ro items-center justify-between space-y-1.5 p-6 pb-2 text-sm font-medium">
+                    {t('common.task')}
+                </div>
+                <div className="flex flex-col gap-3 p-6">
+                    <AsTable<EvalTaskMeta>
+                        columns={columns}
+                        searchableColumns={['id', 'input']}
+                        loading={tableLoading}
+                        dataSource={tableDataSource}
+                        onRow={(record: EvalTaskMeta) => {
+                            return {
+                                onClick: (event: MouseEvent) => {
+                                    if (event.type === 'click') {
+                                        navigate(
+                                            `/eval/${evaluationId}/${record.id}`,
+                                        );
+                                    }
+                                },
+                                style: {
+                                    cursor: 'pointer',
+                                },
+                            };
+                        }}
+                        tableRequestParams={tableRequestParams}
+                        setTableRequestParams={setTableRequestParams}
+                        total={total}
+                        selectedRowKeys={selectedRowKeys}
+                        setSelectedRowKeys={setSelectedRowKeys}
+                        actions={
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="border-dashed"
+                                    >
+                                        <CirclePlusIcon />
+                                        {t('table.column.tags')}
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                    <DropdownMenuGroup>
+                                        <DropdownMenuLabel className="p-0">
+                                            <InputGroup className="h-8 border-none shadow-none focus:border-none! focus-within:!border-0 focus-within:!ring-0 focus-within:!shadow-none has-[*:focus-visible]:!border-0 has-[*:focus-visible]:!ring-0">
+                                                <InputGroupInput
+                                                    placeholder={t(
+                                                        'table.column.tags',
+                                                    )}
+                                                />
+                                                <InputGroupAddon>
+                                                    <SearchIcon />
+                                                </InputGroupAddon>
+                                            </InputGroup>
+                                        </DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        {tags.map((tagRecord) => (
+                                            <DropdownMenuItem
+                                                onClick={() =>
+                                                    handleTagFilterChange(
+                                                        tagRecord.tag,
+                                                    )
+                                                }
+                                            >
+                                                <Checkbox
+                                                    // checked={isChecked(tagRecord.tag, tableRequestParams)}
+                                                    checked={(
+                                                        (tableRequestParams
+                                                            .filters?.tags
+                                                            ?.value as string[]) ||
+                                                        []
+                                                    ).includes(tagRecord.tag)}
+                                                    className="flex items-center justify-center rounded-[4px] size-[14px] [&_svg]:stroke-primary-foreground"
+                                                />
+                                                <TagsCell
+                                                    tags={[tagRecord.tag]}
+                                                />
+                                                <DropdownMenuShortcut className="tracking-tight">
+                                                    {tagRecord.cnt}
+                                                </DropdownMenuShortcut>
+                                            </DropdownMenuItem>
+                                        ))}
+                                        {tags.length === 0 ? (
+                                            <EmptyPage title="" size={80} />
+                                        ) : null}
+                                    </DropdownMenuGroup>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        }
+                    />
+                </div>
+            </div>
+        </div>
+    );
+});
+
+const EvaluationPage = () => {
+    const { t } = useTranslation();
+
+    const { evaluationId, evaluation, evalResult } = useEvaluationContext();
+    const evaluationDTO = convertToDTO(evalResult);
 
     return (
         <div className="flex-1 h-full overflow-y-auto">
@@ -311,45 +532,9 @@ const EvaluationPage = () => {
                     />
                 </div>
 
-                <div className="block">
-                    <div className="rounded-xl border shadow">
-                        <div className="flex flex-ro items-center justify-between space-y-1.5 p-6 pb-2 text-sm font-medium">
-                            Tasks
-                        </div>
-                        <div className="p-6">
-                            <AsTable<EvalTaskMeta>
-                                columns={columns}
-                                loading={tableLoading}
-                                dataSource={tableDataSource}
-                                onRow={(record: EvalTaskMeta) => {
-                                    return {
-                                        onClick: (event: MouseEvent) => {
-                                            if (event.type === 'click') {
-                                                navigate(
-                                                    `/eval/${record.id}/instance/${record.id}`,
-                                                );
-                                            }
-                                        },
-                                        style: {
-                                            cursor: 'pointer',
-                                        },
-                                    };
-                                }}
-                                pagination={{
-                                    size: 'default',
-                                    current: tableRequestParams.pagination.page,
-                                    pageSize:
-                                        tableRequestParams.pagination.pageSize,
-                                    total: total,
-                                    showSizeChanger: true,
-                                    showTotal: (total: number) =>
-                                        t('table.pagination.total', { total }),
-                                    pageSizeOptions: ['10', '20', '50', '100'],
-                                }}
-                            />
-                        </div>
-                    </div>
-                </div>
+                <EvaluationTasksContextProvider evaluationId={evaluationId}>
+                    <TasksTable evaluationId={evaluationId} />
+                </EvaluationTasksContextProvider>
             </div>
         </div>
     );

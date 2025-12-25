@@ -1,17 +1,57 @@
-import { memo, useMemo, useCallback } from 'react';
+import { memo, useMemo, useCallback, Key, useState, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Table, TableColumnsType, TableColumnType } from 'antd';
 import { TableProps } from 'antd/es/table/InternalTable';
 
 import EmptyData from '@/components/tables/EmptyData.tsx';
 import { renderSortIcon, renderTitle } from '@/components/tables/utils.tsx';
+import { AsPagination } from '@/components/tables/pagination.tsx';
+import { StringFilterOperator, TableRequestParams } from '@shared/types';
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupButton,
+    InputGroupInput,
+} from '@/components/ui/input-group.tsx';
+import {
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu.tsx';
+import { ChevronDownIcon } from 'lucide-react';
 
 interface AsTableProps<T> extends Omit<TableProps<T>, 'columns'> {
     columns: TableColumnsType<T>;
+    tableRequestParams: TableRequestParams;
+    setTableRequestParams: (
+        updateFn: (params: TableRequestParams) => TableRequestParams,
+    ) => void;
+    total: number;
+    selectedRowKeys: Key[];
+    setSelectedRowKeys: (keys: Key[]) => void;
+    actions?: ReactNode;
+    searchableColumns: Key[];
 }
 
-const AsTable = <T extends object>({ columns, ...rest }: AsTableProps<T>) => {
+const AsTable = <T extends object>({
+    columns,
+    tableRequestParams,
+    setTableRequestParams,
+    total,
+    selectedRowKeys,
+    setSelectedRowKeys,
+    actions,
+    searchableColumns = [],
+    ...rest
+}: AsTableProps<T>) => {
     const { t } = useTranslation();
+    const defaultSearchField =
+        columns.length > 0 ? columns[0].key?.toString() : undefined;
+    const [searchField, setSearchField] = useState<string | undefined>(
+        defaultSearchField,
+    );
+    const [searchText, setSearchText] = useState<string>('');
 
     /**
      * Generic sorter function that handles number and string comparisons.
@@ -94,16 +134,163 @@ const AsTable = <T extends object>({ columns, ...rest }: AsTableProps<T>) => {
         [t, rest.locale],
     );
 
+    const handlePageChange = (page: number) => {
+        setTableRequestParams((prevParams) => {
+            if (page == prevParams.pagination.page) {
+                return prevParams;
+            }
+            return {
+                ...prevParams,
+                pagination: {
+                    page,
+                    pageSize: prevParams.pagination.pageSize,
+                },
+            };
+        });
+    };
+
+    const handleSearch = (searchText: string) => {
+        setTableRequestParams((prevParams) => {
+            if (searchField && searchText.length > 0) {
+                const newFilters = {
+                    [searchField]: {
+                        operator: StringFilterOperator.CONTAINS,
+                        value: searchText,
+                    },
+                };
+                // Check if the filter value has actually changed
+                const hasChanged =
+                    !prevParams.filters ||
+                    !prevParams.filters[searchField] ||
+                    prevParams.filters[searchField].value !== searchText;
+
+                if (hasChanged) {
+                    return {
+                        ...prevParams,
+                        pagination: {
+                            page: 1,
+                            pageSize: prevParams.pagination.pageSize,
+                        },
+                        filters: newFilters,
+                    };
+                }
+            }
+            return prevParams;
+        });
+    };
+
+    const handlePageSizeChange = (pageSize: number) => {
+        setTableRequestParams((prevParams) => {
+            if (pageSize == prevParams.pagination.pageSize) {
+                return prevParams;
+            }
+            return {
+                ...prevParams,
+                pagination: {
+                    page: prevParams.pagination.page,
+                    pageSize: pageSize,
+                },
+            };
+        });
+    };
+
+    const rowSelection = {
+        selectedRowKeys,
+        onChange: (newSelectedRowKeys: Key[]) => {
+            setSelectedRowKeys(newSelectedRowKeys);
+        },
+    };
+
     return (
-        <Table<T>
-            className="max-h-full h-full w-full rounded-md [&_.ant-table]:border"
-            columns={updatedColumns}
-            locale={tableLocale}
-            size="small"
-            sticky
-            showSorterTooltip={{ target: 'full-header' }}
-            {...rest}
-        />
+        <div className="flex flex-col gap-4 w-full max-w-full">
+            <div className="flex flex-row gap-2 items-center">
+                <InputGroup className="max-w-96 h-8">
+                    <InputGroupInput
+                        placeholder={t('placeholder.search-evaluation-task')}
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                        onKeyUp={(e) => {
+                            if (e.key === 'Enter') {
+                                handleSearch(searchText);
+                            }
+                        }}
+                    />
+                    <InputGroupAddon align="inline-end">
+                        <InputGroupButton variant="secondary" size="icon-xs">
+                            ⏎
+                        </InputGroupButton>
+                    </InputGroupAddon>
+                    <InputGroupAddon>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <InputGroupButton
+                                    variant="ghost"
+                                    className="!pr-1.5 text-xs"
+                                >
+                                    {t('action.search')}{' '}
+                                    <ChevronDownIcon className="size-3" />
+                                </InputGroupButton>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start">
+                                {searchableColumns.map((column) => {
+                                    if (column !== undefined) {
+                                        return (
+                                            <DropdownMenuCheckboxItem
+                                                checked={
+                                                    searchField ===
+                                                    column.toString()
+                                                }
+                                                onCheckedChange={(checked) => {
+                                                    if (checked) {
+                                                        setSearchField(
+                                                            column.toString(),
+                                                        );
+                                                    }
+                                                }}
+                                            >
+                                                {t(
+                                                    `table.column.${column.toString()}`,
+                                                )}
+                                            </DropdownMenuCheckboxItem>
+                                        );
+                                    }
+                                    return null;
+                                })}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </InputGroupAddon>
+                </InputGroup>
+
+                {actions}
+            </div>
+
+            <div className="w-full overflow-auto rounded-md border">
+                <Table<T>
+                    className="w-full"
+                    columns={updatedColumns}
+                    locale={tableLocale}
+                    size="small"
+                    sticky={{ offsetHeader: 0 }}
+                    showSorterTooltip={{ target: 'full-header' }}
+                    pagination={false}
+                    rowSelection={rowSelection}
+                    scroll={{
+                        x: 'max-content',
+                        ...rest.scroll,
+                    }}
+                    {...rest}
+                />
+            </div>
+            <AsPagination
+                total={total}
+                pageTotal={rest.dataSource ? rest.dataSource.length : 0}
+                nSelectedRows={selectedRowKeys.length}
+                page={tableRequestParams.pagination.page}
+                pageSize={tableRequestParams.pagination.pageSize}
+                onPageChange={handlePageChange}
+                onPageSizeChange={handlePageSizeChange}
+            />
+        </div>
     );
 };
 

@@ -612,7 +612,10 @@ export const appRouter = t.router({
                         evaluation: evaluation,
                         result: result,
                     },
-                } as ResponseBody<{evaluation:Evaluation, result: EvalResult}>;
+                } as ResponseBody<{
+                    evaluation: Evaluation;
+                    result: EvalResult;
+                }>;
             } catch (error) {
                 console.error(error);
                 throw new TRPCError({
@@ -692,6 +695,7 @@ export const appRouter = t.router({
     getEvaluationTasks: t.procedure
         .input(GetEvaluationTasksParamsSchema)
         .query(async ({ input }) => {
+            console.log(JSON.stringify(input, null, 2));
             // First validate the evaluationId and get the evaluationDir
             try {
                 const evaluation = await EvaluationDao.getEvaluation(
@@ -715,6 +719,70 @@ export const appRouter = t.router({
                 );
             } catch (error) {
                 console.error('Error in getEvaluationTasks:', error);
+
+                if (error instanceof TRPCError) {
+                    throw error;
+                }
+
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : 'Failed to get evaluation tasks',
+                });
+            }
+        }),
+
+    getEvaluationTask: t.procedure
+        .input(z.object({ evaluationId: z.string(), taskId: z.string() }))
+        .query(async ({ input }) => {
+            try {
+                // First get the evaluationDir by evaluationId
+                const evaluation = await EvaluationDao.getEvaluation(
+                    input.evaluationId,
+                );
+                if (!evaluation) {
+                    throw new TRPCError({
+                        code: 'BAD_REQUEST',
+                        message: `Evaluation with id ${input.evaluationId} does not exist`,
+                    });
+                }
+
+                // Then read the task from the evaluationDir
+                return await FileDao.getEvaluationTask(
+                    evaluation.evaluationDir,
+                    input.taskId,
+                );
+            } catch (error) {
+                console.error('Error in getEvaluationTask:', error);
+            }
+        }),
+
+    /**
+     * Get the tags used in an evaluation
+     *
+     * @param evaluationId - The ID of the evaluation
+     * @returns Array of tags used in the evaluation
+     */
+    getEvaluationTags: t.procedure
+        .input(z.object({ evaluationId: z.string() }))
+        .query(async ({ input }) => {
+            try {
+                const evaluation = await EvaluationDao.getEvaluation(
+                    input.evaluationId,
+                );
+                if (!evaluation) {
+                    throw new TRPCError({
+                        code: 'BAD_REQUEST',
+                        message: `Evaluation with id ${input.evaluationId} does not exist`,
+                    });
+                }
+                return await FileDao.getAllEvaluationTags(
+                    evaluation.evaluationDir,
+                );
+            } catch (error) {
+                console.error('Error in getEvaluationTags:', error);
 
                 if (error instanceof TRPCError) {
                     throw error;

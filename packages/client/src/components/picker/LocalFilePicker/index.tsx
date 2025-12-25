@@ -27,7 +27,7 @@ const getInitialPath = () => {
     return '/home';
 };
 
-const LocalFilePicker = ({ type, onSelect, ...resetProps }: Props) => {
+const LocalFilePicker = ({ onSelect, ...resetProps }: Props) => {
     const [currentPath, setCurrentPath] = useState<string>(getInitialPath());
     const [treeData, setTreeData] = useState<CustomTreeDataNode[]>([]);
 
@@ -119,14 +119,14 @@ const LocalFilePicker = ({ type, onSelect, ...resetProps }: Props) => {
             {...resetProps}
         >
             <Input
-                variant={'filled'}
+                variant="filled"
                 value={currentPath}
                 onChange={(e) => setCurrentPath(e.target.value)}
                 placeholder="输入目录路径"
             />
 
             <Tree
-                className={'flex flex-1 overflow-auto'}
+                className="flex flex-1 overflow-auto"
                 showLine={true}
                 showIcon={true}
                 defaultExpandAll={true}

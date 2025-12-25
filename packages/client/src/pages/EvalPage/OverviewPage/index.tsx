@@ -1,20 +1,19 @@
 import { Key, memo, MouseEvent, useCallback, useEffect, useState } from 'react';
 
-import CompareIcon from '@/assets/svgs/compare.svg?react';
 import { useEvaluationList } from '@/context/EvaluationListContext.tsx';
 import { Evaluation } from '@shared/types/evaluation.ts';
 import PageTitleSpan from '@/components/spans/PageTitleSpan.tsx';
-import { Input, Modal, TableColumnsType } from 'antd';
-import { SecondaryButton } from '@/components/buttons/ASButton';
+import { Modal, TableColumnsType } from 'antd';
 import AsTable from '@/components/tables/AsTable';
 import { EmptyPage } from '@/pages/DefaultPage';
 import { useTranslation } from 'react-i18next';
-import { DeleteIcon, PlusIcon } from 'lucide-react';
+import { Trash2Icon } from 'lucide-react';
 import { NumberCell, TextCell } from '@/components/tables/utils.tsx';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button.tsx';
 import LocalFilePicker from '@/components/picker/LocalFilePicker';
 import { useMessageApi } from '@/context/MessageApiContext.tsx';
+import { Input } from '@/components/ui/input.tsx';
 
 const OverviewPage = () => {
     const {
@@ -47,13 +46,6 @@ const OverviewPage = () => {
             );
         });
     }, [tableDataSource]);
-
-    const rowSelection = {
-        selectedRowKeys,
-        onChange: (newSelectedRowKeys: Key[]) => {
-            setSelectedRowKeys(newSelectedRowKeys);
-        },
-    };
 
     const columns: TableColumnsType<Evaluation> = [
         {
@@ -156,7 +148,7 @@ const OverviewPage = () => {
     };
 
     return (
-        <div className="flex flex-col w-full h-full">
+        <div className="flex flex-col w-full h-full py-8 px-12 gap-4">
             <Modal
                 className="h-[calc(100vh-200px)]"
                 classNames={{
@@ -173,8 +165,8 @@ const OverviewPage = () => {
             </Modal>
 
             <PageTitleSpan
-                title={t('common.evaluations')}
-                description={t('description.evaluation')}
+                title={t('common.evaluation')}
+                description={t('description.eval.title')}
             />
 
             <div className="flex flex-col flex-1 space-y-3">
@@ -185,19 +177,8 @@ const OverviewPage = () => {
                         onChange={(event) => {
                             setSearchText(event.target.value);
                         }}
-                        variant="filled"
                         placeholder={t('placeholder.search-evaluation')}
                     />
-
-                    <SecondaryButton
-                        tooltip={t('tooltip.button.compare-evaluation')}
-                        icon={<CompareIcon width={12} height={12} />}
-                        variant="dashed"
-                        disabled={selectedRowKeys.length !== 2}
-                        onClick={() => {}}
-                    >
-                        {t('action.compare')}
-                    </SecondaryButton>
 
                     <Button
                         disabled={selectedRowKeys.length === 0}
@@ -206,17 +187,17 @@ const OverviewPage = () => {
                             handleDelete(selectedRowKeys as string[])
                         }
                     >
-                        <DeleteIcon />
+                        <Trash2Icon className="size-3.5" />
                         {t('action.delete')}
                     </Button>
 
                     <Button variant="default" onClick={() => setOpen(true)}>
-                        <PlusIcon />
+                        {/*<PlusIcon className="size-3.5"/>*/}
                         {t('action.import-evaluation')}
                     </Button>
                 </div>
 
-                <div className="flex-1 border-red-600 border">
+                <div className="flex-1">
                     <AsTable<Evaluation>
                         locale={{
                             emptyText: (
@@ -267,17 +248,11 @@ const OverviewPage = () => {
                         columns={columns}
                         showSorterTooltip={{ target: 'full-header' }}
                         rowKey="id"
-                        rowSelection={rowSelection}
-                        pagination={{
-                            size: 'default',
-                            current: tableRequestParams.pagination.page,
-                            pageSize: tableRequestParams.pagination.pageSize,
-                            total: total,
-                            showSizeChanger: true,
-                            showTotal: (total: number) =>
-                                t('table.pagination.total', { total }),
-                            pageSizeOptions: ['10', '20', '50', '100'],
-                        }}
+                        total={total}
+                        tableRequestParams={tableRequestParams}
+                        setTableRequestParams={setTableRequestParams}
+                        selectedRowKeys={selectedRowKeys}
+                        setSelectedRowKeys={setSelectedRowKeys}
                     />
                 </div>
             </div>

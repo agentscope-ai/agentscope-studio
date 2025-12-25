@@ -39,7 +39,6 @@ export interface EvaluationDTO {
     nCompletionTokens: number;
     // Used in the graph analysis view
     metrics: Record<string, MetricsDTO>;
-    dataSource: EvaluationTaskDTO[];
     // Used in the card view
     tool: Record<string, number>;
     llm: Record<string, number>;
@@ -47,7 +46,7 @@ export interface EvaluationDTO {
 
 export const convertToDTO = (data: EvalResult | undefined) => {
     if (!data) {
-        return
+        return;
     }
 
     // Convert EvaluationResult to EvaluationDTO
@@ -56,24 +55,17 @@ export const convertToDTO = (data: EvalResult | undefined) => {
         (Object.keys(data.repeats).length / data.total_repeats) * 100,
     );
 
-    // Total repeats
-    const nRepeat = data.total_repeats;
-
     // Metrics, used for card view
     const metrics: Record<string, MetricsDTO> = {};
 
     // Number of tokens
     let nPromptTokens = 0;
     let nCompletionTokens = 0;
+
     Object.values(data.total_stats.chat_usage).forEach((usage) => {
         nPromptTokens += usage.input_tokens;
         nCompletionTokens += usage.output_tokens;
     });
-
-    // Table data source
-    const dataSource: {
-        [taskId: string]: EvaluationTaskDTO;
-    } = {};
 
     // Completed and incomplete tasks
     let nCompletedTask = 0;
@@ -84,23 +76,6 @@ export const convertToDTO = (data: EvalResult | undefined) => {
         // The number of the completed/incomplete tasks
         nCompletedTask += repeatResult.completed_tasks;
         nIncompleteTask += repeatResult.incomplete_tasks;
-
-        // TODO: we need to use a single request here
-        repeatResult.completed_ids.forEach((id) => {
-            if (!(id in dataSource)) {
-                dataSource[id] = {
-                    id,
-                    status: nRepeat === 1 ? 'completed' : 'incomplete',
-                    nFinished: 1,
-                } as EvaluationTaskDTO;
-            } else {
-                dataSource[id].nFinished += 1;
-                dataSource[id].status =
-                    nRepeat === dataSource[id].nFinished
-                        ? 'completed'
-                        : 'incomplete';
-            }
-        });
 
         // Across different metrics
         Object.entries(repeatResult.metrics).forEach(
@@ -150,25 +125,42 @@ export const convertToDTO = (data: EvalResult | undefined) => {
         nCompletionTokens,
 
         metrics,
-        dataSource: Object.values(dataSource),
 
-        llm: data.total_stats.llm,
-        tool: data.total_stats.tool,
+        llm: data.total_stats?.llm,
+        tool: data.total_stats?.tool,
     } as EvaluationDTO;
 };
 
-// 一个函数，从一个number的Array，代表取样点，转换成PDF
-// 采用的算法是bootstrap
-export const arrayToPDF = (data: number[]) => {
+const formatNumber = (num: number, decimals: number = 6): number => {
+    return parseFloat(num.toFixed(decimals));
+};
+
+// Calculate the cumulative distribution function (CDF) from an array of numbers
+export const arrayToCDF = (data: number[]) => {
     if (data.length === 0) {
         return [];
     }
 
     const n = data.length;
     const sortedData = [...data].sort((a, b) => a - b);
-    const pdf = sortedData.map((value, index) => ({
-        x: value,
-        y: (index + 1) / n,
+    const minX = sortedData[0];
+    const maxX = sortedData[sortedData.length - 1];
+
+    // Calculate appropriate offset based on data range
+    const range = maxX - minX;
+    const offset =
+        range > 0
+            ? range * 0.1 // 10% of the range
+            : Math.abs(minX) * 0.1 || 0.1; // 10% of the value or 0.1 if value is 0
+
+    const cdfPoints = sortedData.map((value, index) => ({
+        x: formatNumber(value),
+        cdf: formatNumber((index + 1) / n),
     }));
-    return pdf;
+
+    return [
+        { x: formatNumber(minX - offset), cdf: 0 },
+        ...cdfPoints,
+        { x: formatNumber(maxX + offset), cdf: 1 },
+    ];
 };

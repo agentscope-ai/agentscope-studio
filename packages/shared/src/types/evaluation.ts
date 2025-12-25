@@ -1,6 +1,7 @@
 /**
  * Types related to Evaluations
  */
+import { TextBlock, ToolResultBlock, ToolUseBlock } from './messageForm';
 
 // The evaluation data structure
 export interface Evaluation {
@@ -46,7 +47,7 @@ interface EvalCategoricalMetricResult {
 }
 
 // The evaluation statistics
-interface EvalStats {
+export interface EvalStats {
     llm: {
         [key: string]: number;
     };
@@ -95,5 +96,43 @@ export interface EvalTaskMeta {
     id: string;
     input: string;
     metrics: string[];
-    tags: Record<string, string>;
+    tags: string[];
+}
+
+// The detailed evaluation task with results
+export interface EvalTask {
+    meta: {
+        id: string;
+        input: string;
+        ground_truth: unknown;
+        metrics: {
+            name: string;
+            metric_type: 'numerical' | 'category';
+            description: string;
+            categories?: string[];
+        }[];
+        tags: Record<string, string>;
+    };
+    repeats: {
+        [repeatId: string]: {
+            solution?: {
+                success: boolean;
+                output: unknown;
+                trajectory: (TextBlock | ToolUseBlock | ToolResultBlock)[];
+                meta?: unknown;
+            };
+            stats?: EvalStats;
+            result?: {
+                [metricName: string]: EvalMetricResult;
+            };
+        };
+    };
+}
+
+export interface EvalMetricResult {
+    name: string;
+    result: string | number;
+    created_at: string;
+    message?: string;
+    metadata?: Record<string, unknown>;
 }

@@ -7,7 +7,7 @@ import SlotCounter from 'react-slot-counter';
  * `number` is displayed with thousand separators; optional `style` applies to wrapper.
  */
 interface Props {
-    number: number;
+    number: number | undefined | null;
     style?: CSSProperties;
 }
 
@@ -16,12 +16,16 @@ interface Props {
  * Starts from 0 once and animates to the given number.
  */
 const NumberCounter = ({ number, style = {} }: Props) => {
+    // Ensure we have a valid number, default to 0 if undefined/null/NaN
+    const validNumber =
+        typeof number === 'number' && !isNaN(number) ? number : 0;
+
     return (
         <Flex style={{ ...style }} align="center">
             <SlotCounter
                 startValue={0}
                 startValueOnce
-                value={number.toLocaleString()}
+                value={validNumber.toLocaleString()}
                 sequentialAnimationMode
                 // useMonospaceWidth
             />

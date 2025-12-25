@@ -32,13 +32,6 @@ const ProjectPage = () => {
     const navigate = useNavigate();
     const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
 
-    const rowSelection = {
-        selectedRowKeys,
-        onChange: (newSelectedRowKeys: Key[]) => {
-            setSelectedRowKeys(newSelectedRowKeys);
-        },
-    };
-
     // Filter the selected rows when table data source changes
     useEffect(() => {
         const existedProjects = tableDataSource.map((proj) => proj.project);
@@ -222,15 +215,11 @@ const ProjectPage = () => {
                 </SecondaryButton>
             </div>
 
-            <div className="flex border-red-600 border flex-1 overflow-hidden">
+            <div className="flex flex-1 min-h-0 overflow-hidden w-full">
                 <AsTable<ProjectData>
                     columns={columns}
                     dataSource={tableDataSource}
                     loading={tableLoading}
-                    scroll={{
-                        y: 'calc(100vh - 250px)',
-                        x: 'max-content',
-                    }}
                     onChange={(pagination, _filters, sorter) => {
                         const page = pagination.current || 1;
                         const pageSize = pagination.pageSize || 50;
@@ -266,17 +255,11 @@ const ProjectPage = () => {
                         };
                     }}
                     rowKey="project"
-                    rowSelection={rowSelection}
-                    pagination={{
-                        size: 'default',
-                        current: tableRequestParams.pagination.page,
-                        pageSize: tableRequestParams.pagination.pageSize,
-                        total: total,
-                        showSizeChanger: true,
-                        showTotal: (total: number) =>
-                            t('table.pagination.total', { total }),
-                        pageSizeOptions: ['10', '20', '50', '100'],
-                    }}
+                    total={total}
+                    tableRequestParams={tableRequestParams}
+                    setTableRequestParams={setTableRequestParams}
+                    selectedRowKeys={selectedRowKeys}
+                    setSelectedRowKeys={setSelectedRowKeys}
                 />
             </div>
         </div>

@@ -29,6 +29,7 @@ import {
 interface Props {
     models: Record<string, number>;
 }
+
 export const ModelCard = ({ models }: Props) => {
     const { t } = useTranslation();
     const chartConfig = {} satisfies ChartConfig;
@@ -202,6 +203,7 @@ export const ToolCard = ({ tools }: ToolCardProps) => {
                             layout="vertical"
                             radius={4}
                             fill="var(--primary)"
+                            maxBarSize={40}
                         >
                             <LabelList
                                 dataKey="tool"
