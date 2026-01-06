@@ -12,6 +12,9 @@ import {
     ArrowDownToLineIcon,
     MoreHorizontalIcon,
     UsersIcon,
+    GaugeIcon,
+    Volume2Icon,
+    VolumeXIcon,
 } from 'lucide-react';
 import {
     DropdownMenu,
@@ -24,6 +27,7 @@ import {
     DropdownMenuSubContent,
     DropdownMenuSubTrigger,
     DropdownMenuTrigger,
+    DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button.tsx';
 import AsBubble from '@/components/chat/AsChat/bubble.tsx';
@@ -35,6 +39,7 @@ import AsLottieButton from '@/components/buttons/AsLottieButton';
 import AsToggleButton from '@/components/buttons/AsToggleButton';
 import MarkdownIcon from '@/assets/svgs/markdown.svg?react';
 import MessagesIcon from '@/assets/svgs/messages.svg?react';
+import VoiceautoPlayIcon from '@/assets/svgs/voiceautoPlay.svg?react';
 import FrogIcon from '@/assets/svgs/avatar/fairytale/001-frog.svg?react';
 import FairyIcon from '@/assets/svgs/avatar/fairytale/008-fairy.svg?react';
 import OgreIcon from '@/assets/svgs/avatar/fairytale/017-ogre.svg?react';
@@ -52,12 +57,12 @@ import Character2Icon from '@/assets/svgs/avatar/character/035-daughter.svg?reac
 import Character3Icon from '@/assets/svgs/avatar/character/050-woman.svg?react';
 import { Avatar } from '@/components/ui/avatar.tsx';
 import { AsAvatar, AvatarSet } from '@/components/chat/AsChat/avatar.tsx';
-
-import { SpeechStatesRecord } from '@/context/RunRoomContext';
+import { cn } from '@/lib/utils';
+import { useRunRoom } from '@/context/RunRoomContext';
 
 interface Props {
     /** List of chat replies to display */
-    replies: Reply[];
+    // replies: Reply[];
     /** Whether the agent is currently replying */
     isReplying: boolean;
     /** Callback function when user sends a message */
@@ -93,17 +98,9 @@ interface Props {
     /** Whether to display user avatar on the right side */
     userAvatarRight?: boolean;
     /** Speech states for each reply (keyed by replyId) */
-    speechStates?: SpeechStatesRecord;
-    /** Callback to play speech for a specific reply */
-    playSpeech?: (replyId: string) => void;
-    /** Callback to stop/pause speech for a specific reply */
-    stopSpeech?: (replyId: string) => void;
-    /** Callback to set playback rate for a specific reply */
-    setPlaybackRate?: (replyId: string, rate: number) => void;
-    /** Callback to set volume for a specific reply */
-    setVolume?: (replyId: string, volume: number) => void;
 }
-
+const playbackRateOptions = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+const volumeOptions = [0, 0.25, 0.5, 0.75, 1.0];
 /**
  * Chat interface component for interacting in AgentScope, supporting multimodal
  * messages and interrupting.
@@ -124,7 +121,6 @@ interface Props {
  * @constructor
  */
 const AsChat = ({
-    replies,
     isReplying,
     onSendClick,
     disableSendBtn,
@@ -138,14 +134,18 @@ const AsChat = ({
     attachMaxFileSize,
     onError,
     userAvatarRight = false,
-    speechStates,
-    playSpeech,
-    stopSpeech,
-    setPlaybackRate,
-    setVolume,
 }: Props) => {
     // TODO: use a context to manage these settings globally
-
+    const {
+        replies,
+        speechStates,
+        playSpeech,
+        stopSpeech,
+        setPlaybackRate,
+        setVolume,
+        globalPlaybackRate,
+        globalVolume,
+    } = useRunRoom();
     // Load renderMarkdown from localStorage or use default
     const [renderMarkdown, setRenderMarkdown] = useState<boolean>(() => {
         const saved = localStorage.getItem('chat-render-markdown');
@@ -177,6 +177,14 @@ const AsChat = ({
     const [currentPlayingReplyId, setCurrentPlayingReplyId] = useState<
         string | null
     >(null);
+
+    // Add toggle for auto-playing next speech
+    const [autoPlayNext, setAutoPlayNext] = useState<boolean>(true);
+    // Track last speech state to detect changes
+    const [lastSpeechState, setLastSpeechState] = useState<
+        Record<string, boolean>
+    >({});
+
     // Save renderMarkdown to localStorage when it changes
     useEffect(() => {
         localStorage.setItem('chat-render-markdown', renderMarkdown.toString());
@@ -327,11 +335,11 @@ const AsChat = ({
 
     const handlePlaySpeech = useCallback(
         (replyId: string) => {
-            // 停止其他正在播放的语音
+            // Stop other playing speeches
             handleStopOtherSpeech(replyId);
-            // 更新当前播放的回复ID
+            // Update currently playing reply ID
             setCurrentPlayingReplyId(replyId);
-            // 播放指定的语音
+            // Play specified speech
             playSpeech?.(replyId);
         },
         [handleStopOtherSpeech, playSpeech],
@@ -346,6 +354,70 @@ const AsChat = ({
         },
         [currentPlayingReplyId, stopSpeech],
     );
+
+    // Listen to speech state changes, detect playback completion
+    useEffect(() => {
+        if (!speechStates || !currentPlayingReplyId || !autoPlayNext) return;
+
+        const currentSpeechState = speechStates[currentPlayingReplyId];
+        if (currentSpeechState) {
+            // Check if speech has changed from "playing" to "completed"
+            const wasPlaying = lastSpeechState[currentPlayingReplyId] === true;
+            const isNowCompleted = !currentSpeechState.isPlaying;
+            if (wasPlaying && isNowCompleted) {
+                // Find the index of the currently playing reply
+                const currentIndex = organizedReplies.findIndex(
+                    (reply) =>
+                        (reply.originalReplyId || reply.replyId) ===
+                        currentPlayingReplyId,
+                );
+
+                if (currentIndex !== -1) {
+                    // Find the next reply with speech
+                    for (
+                        let i = currentIndex + 1;
+                        i < organizedReplies.length;
+                        i++
+                    ) {
+                        const nextReply = organizedReplies[i];
+                        const nextLookupId =
+                            nextReply.originalReplyId || nextReply.replyId;
+                        const nextSpeechState = speechStates[nextLookupId];
+
+                        // If the next reply has speech data, start playing
+                        if (
+                            nextSpeechState &&
+                            nextSpeechState.fullAudioData &&
+                            nextSpeechState.fullAudioData.length > 0
+                        ) {
+                            // Play the next reply after a short delay
+                            setTimeout(() => {
+                                handleStopOtherSpeech(nextLookupId);
+                                setCurrentPlayingReplyId(nextLookupId);
+                                playSpeech?.(nextLookupId);
+                            }, 300); // 300ms delay for better user experience
+                            break; // Only play the first speech message found
+                        }
+                    }
+                }
+            }
+        }
+
+        // Update the last speech state (record isPlaying status)
+        if (currentSpeechState) {
+            setLastSpeechState((prev) => ({
+                ...prev,
+                [currentPlayingReplyId]: currentSpeechState.isPlaying, // Record if currently playing
+            }));
+        }
+    }, [
+        speechStates,
+        currentPlayingReplyId,
+        autoPlayNext,
+        organizedReplies,
+        handleStopOtherSpeech,
+        playSpeech,
+    ]);
     return (
         <div className="flex flex-col w-full max-w-[800px] h-full p-4 pt-2">
             {/*The bubble list*/}
@@ -375,32 +447,12 @@ const AsChat = ({
                                 onClick={onBubbleClick}
                                 userAvatarRight={userAvatarRight}
                                 speechState={speechState}
-                                onPlaySpeech={
-                                    playSpeech
-                                        ? () => handlePlaySpeech(lookupId)
-                                        : undefined
+                                onPlaySpeech={() => handlePlaySpeech(lookupId)}
+                                onPauseSpeech={() =>
+                                    handlePauseSpeech(lookupId)
                                 }
-                                onPauseSpeech={
-                                    stopSpeech
-                                        ? () => handlePauseSpeech(lookupId)
-                                        : undefined
-                                }
-                                onStopOtherSpeech={
-                                    stopSpeech
-                                        ? () => handleStopOtherSpeech(lookupId)
-                                        : undefined
-                                }
-                                onPlaybackRateChange={
-                                    setPlaybackRate
-                                        ? (rate: number) =>
-                                              setPlaybackRate(lookupId, rate)
-                                        : undefined
-                                }
-                                onVolumeChange={
-                                    setVolume
-                                        ? (volume: number) =>
-                                              setVolume(lookupId, volume)
-                                        : undefined
+                                onStopOtherSpeech={() =>
+                                    handleStopOtherSpeech(lookupId)
                                 }
                             />
                         );
@@ -461,6 +513,98 @@ const AsChat = ({
                         >
                             <MessagesIcon className="size-4 group-data-[active=false]:grayscale group-data-[active=false]:opacity-60" />
                         </AsToggleButton>
+
+                        {/* Auto-play toggle button */}
+                        <AsToggleButton
+                            size="icon-sm"
+                            variant="outline"
+                            active={autoPlayNext}
+                            tooltip="Auto-play next speech"
+                            onClick={() => {
+                                setAutoPlayNext((prev) => !prev);
+                            }}
+                        >
+                            <VoiceautoPlayIcon className="size-4 group-data-[active=false]:grayscale group-data-[active=false]:opacity-60" />
+                        </AsToggleButton>
+
+                        {/* Playback rate selector */}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    size="icon-sm"
+                                    variant="outline"
+                                    aria-label="More options"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <GaugeIcon />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                                align="end"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                {playbackRateOptions.map((rate) => (
+                                    <DropdownMenuItem
+                                        key={rate}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setPlaybackRate?.(rate);
+                                        }}
+                                        className={cn(
+                                            Math.abs(
+                                                globalPlaybackRate - rate,
+                                            ) < 0.01 && 'bg-primary-50',
+                                        )}
+                                    >
+                                        {rate}x
+                                        {Math.abs(globalPlaybackRate - rate) <
+                                            0.01 && ' ✓'}
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+
+                        {/* Volume control */}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    size="icon-sm"
+                                    variant="outline"
+                                    aria-label="More options"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    {globalVolume === 0 ? (
+                                        <VolumeXIcon className="size-3 text-primary-600" />
+                                    ) : (
+                                        <Volume2Icon className="size-3 text-primary-600" />
+                                    )}
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                                align="end"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                {volumeOptions.map((v) => (
+                                    <DropdownMenuItem
+                                        key={v}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setVolume?.(v);
+                                        }}
+                                        className={cn(
+                                            Math.abs(globalVolume - v) < 0.01 &&
+                                                'bg-primary-50',
+                                        )}
+                                    >
+                                        {v === 0
+                                            ? 'Mute'
+                                            : `${Math.round(v * 100)}%`}
+                                        {Math.abs(globalVolume - v) < 0.01 &&
+                                            ' ✓'}
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
 
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>

@@ -45,10 +45,6 @@ export interface ReplySpeechState {
     isPlaying: boolean;
     /** Whether still receiving streaming data */
     isStreaming: boolean;
-    /** Playback rate (0.25 to 4.0, default 1.0) */
-    playbackRate: number;
-    /** Volume (0.0 to 1.0, default 1.0) */
-    volume: number;
 }
 
 /**
@@ -76,10 +72,14 @@ interface RunRoomContextType {
     playSpeech: (replyId: string) => void;
     /** Stop/pause audio for a specific reply */
     stopSpeech: (replyId: string) => void;
-    /** Set playback rate for a specific reply */
-    setPlaybackRate: (replyId: string, rate: number) => void;
-    /** Set volume for a specific reply */
-    setVolume: (replyId: string, volume: number) => void;
+    /** Set playback rate for all replies */
+    setPlaybackRate: (rate: number) => void;
+    /** Set volume for all replies */
+    setVolume: (volume: number) => void;
+    /** Global playback rate for all messages */
+    globalPlaybackRate: number;
+    /** Global volume for all messages */
+    globalVolume: number;
 }
 
 const RunRoomContext = createContext<RunRoomContextType | null>(null);
@@ -139,6 +139,11 @@ export function RunRoomContextProvider({ children }: Props) {
 
     // Speech state management - use Record for better React change detection
     const [speechStates, setSpeechStates] = useState<SpeechStatesRecord>({});
+    // Global playback settings for all messages
+    const globalPlaybackRateRef = useRef<number>(1.0);
+    const globalVolumeRef = useRef<number>(1.0);
+    const [globalPlaybackRate, setGlobalPlaybackRate] = useState<number>(1.0);
+    const [globalVolume, setGlobalVolume] = useState<number>(1.0);
     const audioContextRef = useRef<AudioContext | null>(null);
     // Store current playing audio source for each reply (for streaming)
     const currentSourceRef = useRef<
@@ -161,49 +166,54 @@ export function RunRoomContextProvider({ children }: Props) {
     // Track if queue is being processed
     const isProcessingQueueRef = useRef<Record<string, boolean>>({});
     // Store playback settings (rate and volume) as refs to avoid stale closure issues
-    const playbackSettingsRef = useRef<
-        Record<string, { playbackRate: number; volume: number }>
-    >({});
+    // Update refs when global state changes
+    useEffect(() => {
+        globalPlaybackRateRef.current = globalPlaybackRate;
+        globalVolumeRef.current = globalVolume;
+    }, [globalPlaybackRate, globalVolume]);
+    const stopAllSpeech = () => {
+        // Stop all playing audio
+        Object.keys(speechStates).forEach((replyId) => {
+            stopSpeech(replyId);
+        });
+
+        // Clean up all audio resources
+        Object.keys(audioElementRef.current).forEach((replyId) => {
+            if (audioElementRef.current[replyId]) {
+                audioElementRef.current[replyId]!.pause();
+                audioElementRef.current[replyId] = null;
+            }
+        });
+
+        // Stop all audio sources
+        Object.keys(currentSourceRef.current).forEach((replyId) => {
+            if (currentSourceRef.current[replyId]) {
+                try {
+                    currentSourceRef.current[replyId]!.stop();
+                } catch {
+                    // Ignore errors if already stopped
+                }
+                currentSourceRef.current[replyId] = null;
+            }
+        });
+
+        // Clean up WAV blob URLs
+        Object.keys(wavBlobUrlRef.current).forEach((replyId) => {
+            if (wavBlobUrlRef.current[replyId]) {
+                URL.revokeObjectURL(wavBlobUrlRef.current[replyId]!);
+                wavBlobUrlRef.current[replyId] = null;
+            }
+        });
+
+        // Suspend AudioContext
+        if (audioContextRef.current) {
+            audioContextRef.current.suspend();
+        }
+    };
     // Cleanup effect - stops all playing audio when component unmounts or route changes
     useEffect(() => {
         return () => {
-            // Stop all playing audio
-            Object.keys(speechStates).forEach((replyId) => {
-                stopSpeech(replyId);
-            });
-
-            // Clean up all audio resources
-            Object.keys(audioElementRef.current).forEach((replyId) => {
-                if (audioElementRef.current[replyId]) {
-                    audioElementRef.current[replyId]!.pause();
-                    audioElementRef.current[replyId] = null;
-                }
-            });
-
-            // Stop all audio sources
-            Object.keys(currentSourceRef.current).forEach((replyId) => {
-                if (currentSourceRef.current[replyId]) {
-                    try {
-                        currentSourceRef.current[replyId]!.stop();
-                    } catch {
-                        // Ignore errors if already stopped
-                    }
-                    currentSourceRef.current[replyId] = null;
-                }
-            });
-
-            // Clean up WAV blob URLs
-            Object.keys(wavBlobUrlRef.current).forEach((replyId) => {
-                if (wavBlobUrlRef.current[replyId]) {
-                    URL.revokeObjectURL(wavBlobUrlRef.current[replyId]!);
-                    wavBlobUrlRef.current[replyId] = null;
-                }
-            });
-
-            // Suspend AudioContext
-            if (audioContextRef.current) {
-                audioContextRef.current.suspend();
-            }
+            stopAllSpeech();
         };
     }, [location.pathname]); // Trigger cleanup when path changes
     // Initialize AudioContext on first user interaction
@@ -327,8 +337,7 @@ export function RunRoomContextProvider({ children }: Props) {
                 gainNodeRef.current[replyId] = gainNode;
 
                 // Set initial volume from settings ref
-                const settings = playbackSettingsRef.current[replyId];
-                gainNode.gain.value = settings?.volume ?? 1.0;
+                gainNode.gain.value = globalVolumeRef.current;
             }
             return gainNodeRef.current[replyId]!;
         },
@@ -351,9 +360,9 @@ export function RunRoomContextProvider({ children }: Props) {
                     source.buffer = audioBuffer;
 
                     // Get playback rate from settings ref (avoids stale closure)
-                    const settings = playbackSettingsRef.current[replyId];
-                    const playbackRate = settings?.playbackRate ?? 1.0;
-                    source.playbackRate.value = playbackRate;
+                    // const settings = playbackSettingsRef.current[replyId];
+                    // const playbackRate = settings?.playbackRate ?? 1.0;
+                    source.playbackRate.value = globalPlaybackRateRef.current;
 
                     // Connect through gain node for volume control
                     const gainNode = getOrCreateGainNode(replyId, audioContext);
@@ -413,11 +422,13 @@ export function RunRoomContextProvider({ children }: Props) {
                 if (state) {
                     const isStillStreaming =
                         speechStates[replyId]?.isStreaming || false;
+                    const isStillPlaying =
+                        speechStates[replyId]?.isPlaying || false;
                     return {
                         ...prev,
                         [replyId]: {
                             ...state,
-                            isPlaying: false,
+                            isPlaying: isStillPlaying,
                             isStreaming: isStillStreaming,
                         },
                     };
@@ -458,15 +469,10 @@ export function RunRoomContextProvider({ children }: Props) {
             const wavUrl = wavBlobUrlRef.current[replyId];
             if (!wavUrl) return;
 
-            // Get playback settings
-            const settings = playbackSettingsRef.current[replyId];
-            const playbackRate = settings?.playbackRate ?? 1.0;
-            const volume = settings?.volume ?? 1.0;
-
             // Create HTML Audio element for playback (supports preservesPitch)
             const audio = new Audio(wavUrl);
-            audio.playbackRate = playbackRate;
-            audio.volume = volume;
+            audio.playbackRate = globalPlaybackRateRef.current;
+            audio.volume = globalVolumeRef.current;
             // @ts-expect-error - preservesPitch is not in TypeScript types but supported by browsers
             audio.preservesPitch = true;
             // @ts-expect-error - webkitPreservesPitch for older Safari
@@ -555,33 +561,17 @@ export function RunRoomContextProvider({ children }: Props) {
                     // Start processing queue
                     processAudioQueue(replyId);
                 }
-
-                // Initialize playback settings ref if not exists
-                if (!playbackSettingsRef.current[replyId]) {
-                    playbackSettingsRef.current[replyId] = {
-                        playbackRate: 1.0,
-                        volume: 1.0,
-                    };
-                }
-
                 // Update state
                 setSpeechStates((prev) => {
-                    const currentState = prev[replyId];
-                    const settings = playbackSettingsRef.current[replyId];
-
                     return {
                         ...prev,
                         [replyId]: {
                             fullAudioData: fullData,
                             mediaType: mediaType,
-                            isPlaying: currentState?.isPlaying || false,
+                            isPlaying: true,
                             isStreaming: true,
-                            playbackRate:
-                                currentState?.playbackRate ??
-                                settings?.playbackRate ??
-                                1.0,
-                            volume:
-                                currentState?.volume ?? settings?.volume ?? 1.0,
+                            playbackRate: globalPlaybackRateRef.current,
+                            volume: globalVolumeRef.current,
                         },
                     };
                 });
@@ -669,82 +659,60 @@ export function RunRoomContextProvider({ children }: Props) {
         });
     }, []);
 
-    // Set playback rate for a reply
-    const setPlaybackRate = useCallback((replyId: string, rate: number) => {
+    // Set playback rate for all replies
+    const setPlaybackRate = useCallback((rate: number) => {
         // Clamp rate between 0.25 and 4.0
         const clampedRate = Math.max(0.25, Math.min(4.0, rate));
 
-        // Update settings ref (for immediate access without stale closure)
-        if (!playbackSettingsRef.current[replyId]) {
-            playbackSettingsRef.current[replyId] = {
-                playbackRate: 1.0,
-                volume: 1.0,
-            };
-        }
-        playbackSettingsRef.current[replyId].playbackRate = clampedRate;
+        // Update ref to avoid re-rendering
+        globalPlaybackRateRef.current = clampedRate;
 
-        // Update state (for UI re-render)
-        setSpeechStates((prev) => {
-            const state = prev[replyId];
-            if (state) {
-                return {
-                    ...prev,
-                    [replyId]: { ...state, playbackRate: clampedRate },
-                };
+        // Update state to trigger any necessary context updates
+        setGlobalPlaybackRate(clampedRate);
+
+        // Update all HTML Audio elements if playing
+        Object.keys(audioElementRef.current).forEach((id) => {
+            const audioElement = audioElementRef.current[id];
+            if (audioElement) {
+                audioElement.playbackRate = clampedRate;
             }
-            return prev;
         });
 
-        // Update HTML Audio element if playing
-        const audioElement = audioElementRef.current[replyId];
-        if (audioElement) {
-            audioElement.playbackRate = clampedRate;
-        }
-
-        // Update current source if playing (for streaming)
-        const currentSource = currentSourceRef.current[replyId];
-        if (currentSource) {
-            currentSource.playbackRate.value = clampedRate;
-        }
+        // Update all current sources if playing (for streaming)
+        Object.keys(currentSourceRef.current).forEach((id) => {
+            const currentSource = currentSourceRef.current[id];
+            if (currentSource) {
+                currentSource.playbackRate.value = clampedRate;
+            }
+        });
     }, []);
 
-    // Set volume for a reply
-    const setVolume = useCallback((replyId: string, volume: number) => {
+    // Set volume for all replies
+    const setVolume = useCallback((volume: number) => {
         // Clamp volume between 0.0 and 1.0
         const clampedVolume = Math.max(0.0, Math.min(1.0, volume));
 
-        // Update settings ref (for immediate access without stale closure)
-        if (!playbackSettingsRef.current[replyId]) {
-            playbackSettingsRef.current[replyId] = {
-                playbackRate: 1.0,
-                volume: 1.0,
-            };
-        }
-        playbackSettingsRef.current[replyId].volume = clampedVolume;
+        // Update ref to avoid re-rendering
+        globalVolumeRef.current = clampedVolume;
 
-        // Update state (for UI re-render)
-        setSpeechStates((prev) => {
-            const state = prev[replyId];
-            if (state) {
-                return {
-                    ...prev,
-                    [replyId]: { ...state, volume: clampedVolume },
-                };
+        // Update state to trigger any necessary context updates
+        setGlobalVolume(clampedVolume);
+
+        // Update all HTML Audio elements if playing
+        Object.keys(audioElementRef.current).forEach((id) => {
+            const audioElement = audioElementRef.current[id];
+            if (audioElement) {
+                audioElement.volume = clampedVolume;
             }
-            return prev;
         });
 
-        // Update HTML Audio element if playing
-        const audioElement = audioElementRef.current[replyId];
-        if (audioElement) {
-            audioElement.volume = clampedVolume;
-        }
-
-        // Update gain node if exists (for streaming)
-        const gainNode = gainNodeRef.current[replyId];
-        if (gainNode) {
-            gainNode.gain.value = clampedVolume;
-        }
+        // Update all gain nodes if exists (for streaming)
+        Object.keys(gainNodeRef.current).forEach((id) => {
+            const gainNode = gainNodeRef.current[id];
+            if (gainNode) {
+                gainNode.gain.value = clampedVolume;
+            }
+        });
     }, []);
 
     useEffect(() => {
@@ -817,34 +785,21 @@ export function RunRoomContextProvider({ children }: Props) {
                             const fullData = firstBlock.source.data;
                             const mediaType = firstBlock.source.media_type;
 
-                            // Initialize playback settings ref if not exists
-                            if (!playbackSettingsRef.current[reply.replyId]) {
-                                playbackSettingsRef.current[reply.replyId] = {
-                                    playbackRate: 1.0,
-                                    volume: 1.0,
-                                };
-                            }
                             // Only save the data, decode later when user clicks play
                             setSpeechStates((prev) => {
-                                const settings =
-                                    playbackSettingsRef.current[reply.replyId];
                                 const currentState = prev[reply.replyId];
                                 return {
                                     ...prev,
                                     [reply.replyId]: {
                                         fullAudioData: fullData,
                                         mediaType: mediaType,
-                                        isPlaying: false,
+                                        isPlaying:
+                                            currentState?.isPlaying || false,
                                         isStreaming:
                                             currentState?.isStreaming || false,
                                         playbackRate:
-                                            prev[reply.replyId]?.playbackRate ??
-                                            settings?.playbackRate ??
-                                            1.0,
-                                        volume:
-                                            prev[reply.replyId]?.volume ??
-                                            settings?.volume ??
-                                            1.0,
+                                            globalPlaybackRateRef.current,
+                                        volume: globalVolumeRef.current,
                                     },
                                 };
                             });
@@ -946,9 +901,7 @@ export function RunRoomContextProvider({ children }: Props) {
             );
         } else {
             setTimeout(() => {
-                Object.keys(speechStates).forEach((replyId) => {
-                    stopSpeech(replyId);
-                });
+                stopAllSpeech();
             }, 1000);
             socket.emit(
                 SocketEvents.client.sendUserInputToServer,
@@ -981,6 +934,8 @@ export function RunRoomContextProvider({ children }: Props) {
                 stopSpeech,
                 setPlaybackRate,
                 setVolume,
+                globalPlaybackRate,
+                globalVolume,
             }}
         >
             {children}

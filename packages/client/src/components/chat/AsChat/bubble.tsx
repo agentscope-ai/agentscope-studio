@@ -27,10 +27,6 @@ interface Props {
     onPauseSpeech?: () => void;
     /** Callback to stop other speech audio */
     onStopOtherSpeech?: () => void;
-    /** Callback to change playback rate */
-    onPlaybackRateChange?: (rate: number) => void;
-    /** Callback to change volume */
-    onVolumeChange?: (volume: number) => void;
 }
 
 const AsBubble = ({
@@ -43,8 +39,6 @@ const AsBubble = ({
     onPlaySpeech,
     onPauseSpeech,
     onStopOtherSpeech,
-    onPlaybackRateChange,
-    onVolumeChange,
 }: Props) => {
     const { t } = useTranslation();
 
@@ -129,14 +123,8 @@ const AsBubble = ({
                                 isPlaying={speechState?.isPlaying || false}
                                 isStreaming={speechState?.isStreaming || false}
                                 hasAudio={hasAudio}
-                                playbackRate={speechState?.playbackRate ?? 1.0}
-                                volume={speechState?.volume ?? 1.0}
                                 onPlay={onPlay}
                                 onPause={onPauseSpeech || (() => {})}
-                                onPlaybackRateChange={
-                                    onPlaybackRateChange || (() => {})
-                                }
-                                onVolumeChange={onVolumeChange || (() => {})}
                             />
                         </div>
                     )}
