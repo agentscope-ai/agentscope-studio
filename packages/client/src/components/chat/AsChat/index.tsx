@@ -57,12 +57,12 @@ import Character2Icon from '@/assets/svgs/avatar/character/035-daughter.svg?reac
 import Character3Icon from '@/assets/svgs/avatar/character/050-woman.svg?react';
 import { Avatar } from '@/components/ui/avatar.tsx';
 import { AsAvatar, AvatarSet } from '@/components/chat/AsChat/avatar.tsx';
+import { SpeechStatesRecord } from '@/context/RunRoomContext';
 import { cn } from '@/lib/utils';
-import { useRunRoom } from '@/context/RunRoomContext';
 
 interface Props {
     /** List of chat replies to display */
-    // replies: Reply[];
+    replies: Reply[];
     /** Whether the agent is currently replying */
     isReplying: boolean;
     /** Callback function when user sends a message */
@@ -98,6 +98,17 @@ interface Props {
     /** Whether to display user avatar on the right side */
     userAvatarRight?: boolean;
     /** Speech states for each reply (keyed by replyId) */
+    speechStates?: SpeechStatesRecord;
+    /** Callback to play speech for a specific reply */
+    playSpeech?: (replyId: string) => void;
+    /** Callback to stop/pause speech for a specific reply */
+    stopSpeech?: (replyId: string) => void;
+    /** Callback to set playback rate for a specific reply */
+    setPlaybackRate?: (rate: number) => void;
+    /** Callback to set volume for a specific reply */
+    setVolume?: (volume: number) => void;
+    globalPlaybackRate?: number;
+    globalVolume?: number;  
 }
 const playbackRateOptions = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
 const volumeOptions = [0, 0.25, 0.5, 0.75, 1.0];
@@ -121,6 +132,7 @@ const volumeOptions = [0, 0.25, 0.5, 0.75, 1.0];
  * @constructor
  */
 const AsChat = ({
+    replies,
     isReplying,
     onSendClick,
     disableSendBtn,
@@ -134,18 +146,14 @@ const AsChat = ({
     attachMaxFileSize,
     onError,
     userAvatarRight = false,
+    speechStates,
+    playSpeech,
+    stopSpeech,
+    setPlaybackRate,
+    setVolume,
+    globalPlaybackRate,
+    globalVolume,
 }: Props) => {
-    // TODO: use a context to manage these settings globally
-    const {
-        replies,
-        speechStates,
-        playSpeech,
-        stopSpeech,
-        setPlaybackRate,
-        setVolume,
-        globalPlaybackRate,
-        globalVolume,
-    } = useRunRoom();
     // Load renderMarkdown from localStorage or use default
     const [renderMarkdown, setRenderMarkdown] = useState<boolean>(() => {
         const saved = localStorage.getItem('chat-render-markdown');
@@ -515,7 +523,7 @@ const AsChat = ({
                         </AsToggleButton>
 
                         {/* Auto-play toggle button */}
-                        <AsToggleButton
+                        {playSpeech !== undefined && <AsToggleButton
                             size="icon-sm"
                             variant="outline"
                             active={autoPlayNext}
@@ -525,10 +533,10 @@ const AsChat = ({
                             }}
                         >
                             <VoiceautoPlayIcon className="size-4 group-data-[active=false]:grayscale group-data-[active=false]:opacity-60" />
-                        </AsToggleButton>
+                        </AsToggleButton>}
 
                         {/* Playback rate selector */}
-                        <DropdownMenu>
+                        {globalPlaybackRate !== undefined && <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button
                                     size="icon-sm"
@@ -562,10 +570,10 @@ const AsChat = ({
                                     </DropdownMenuItem>
                                 ))}
                             </DropdownMenuContent>
-                        </DropdownMenu>
+                        </DropdownMenu>}
 
                         {/* Volume control */}
-                        <DropdownMenu>
+                        {globalVolume !== undefined && <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button
                                     size="icon-sm"
@@ -604,7 +612,7 @@ const AsChat = ({
                                     </DropdownMenuItem>
                                 ))}
                             </DropdownMenuContent>
-                        </DropdownMenu>
+                        </DropdownMenu>}
 
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>

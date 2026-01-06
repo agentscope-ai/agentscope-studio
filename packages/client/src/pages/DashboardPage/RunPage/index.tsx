@@ -18,7 +18,18 @@ import { useMessageApi } from '@/context/MessageApiContext.tsx';
 const RunContentPage = () => {
     const [displayedReply, setDisplayedReply] = useState<Reply | null>(null);
     const [activateTab, setActiveTab] = useState<string>('statistics');
-    const { replies, sendUserInputToServer, inputRequests } = useRunRoom();
+    const {
+        replies,
+        sendUserInputToServer,
+        inputRequests,
+        speechStates,
+        playSpeech,
+        stopSpeech,
+        setPlaybackRate,
+        setVolume,
+        globalPlaybackRate,
+        globalVolume,
+    } = useRunRoom();
     const [currentInputRequest, setCurrentInputRequest] =
         useState<InputRequestData | null>(null);
     const { t } = useTranslation();
@@ -113,7 +124,7 @@ const RunContentPage = () => {
             <Splitter style={{ width: '100%' }}>
                 <Splitter.Panel className="flex w-full justify-center bg-[rgb(246,247,248)]">
                     <AsChat
-                        // replies={replies}
+                        replies={replies}
                         isReplying={true}
                         onSendClick={onSendClick}
                         onBubbleClick={onBubbleClick}
@@ -134,6 +145,13 @@ const RunContentPage = () => {
                         onError={async (error) => {
                             messageApi.error(error);
                         }}
+                        speechStates={speechStates}
+                        playSpeech={playSpeech}
+                        stopSpeech={stopSpeech}
+                        setPlaybackRate={setPlaybackRate}
+                        setVolume={setVolume}
+                        globalPlaybackRate={globalPlaybackRate}
+                        globalVolume={globalVolume}
                     />
                 </Splitter.Panel>
                 <Splitter.Panel
