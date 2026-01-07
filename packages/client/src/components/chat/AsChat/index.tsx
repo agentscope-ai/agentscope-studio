@@ -730,6 +730,10 @@ const AsChat = ({
                         if (isReplying && allowInterrupt && onInterruptClick) {
                             onInterruptClick();
                         } else {
+                            if (currentPlayingReplyId) {
+                                stopSpeech?.(currentPlayingReplyId);
+                                setCurrentPlayingReplyId?.(null);
+                            }
                             onSendClick(blocksInput, structuredInput);
                         }
                     }}
