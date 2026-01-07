@@ -212,7 +212,15 @@ export function RunRoomContextProvider({ children }: Props) {
         });
 
         // Suspend AudioContext
-        if (audioContextRef.current) {
+        if (
+            audioContextRef.current &&
+            audioContextRef.current.state !== 'closed'
+        ) {
+            try {
+                audioContextRef.current.close();
+            } catch (error) {
+                console.error('Error closing AudioContext:', error);
+            }
             audioContextRef.current = null;
         }
     };

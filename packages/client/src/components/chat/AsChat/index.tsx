@@ -15,6 +15,7 @@ import {
     GaugeIcon,
     Volume2Icon,
     VolumeXIcon,
+    CirclePlay,
 } from 'lucide-react';
 import {
     DropdownMenu,
@@ -28,7 +29,10 @@ import {
     DropdownMenuSubTrigger,
     DropdownMenuTrigger,
     DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuShortcut,
 } from '@/components/ui/dropdown-menu';
+import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button.tsx';
 import AsBubble from '@/components/chat/AsChat/bubble.tsx';
 import AsTextarea from '@/components/chat/AsChat/textarea.tsx';
@@ -39,7 +43,6 @@ import AsLottieButton from '@/components/buttons/AsLottieButton';
 import AsToggleButton from '@/components/buttons/AsToggleButton';
 import MarkdownIcon from '@/assets/svgs/markdown.svg?react';
 import MessagesIcon from '@/assets/svgs/messages.svg?react';
-import VoiceautoPlayIcon from '@/assets/svgs/voiceautoPlay.svg?react';
 import FrogIcon from '@/assets/svgs/avatar/fairytale/001-frog.svg?react';
 import FairyIcon from '@/assets/svgs/avatar/fairytale/008-fairy.svg?react';
 import OgreIcon from '@/assets/svgs/avatar/fairytale/017-ogre.svg?react';
@@ -426,6 +429,89 @@ const AsChat = ({
         handleStopOtherSpeech,
         playSpeech,
     ]);
+    const PlaybackRateRender = () => {
+        if (globalPlaybackRate === undefined || !setPlaybackRate) return null;
+        return (
+            <DropdownMenuGroup>
+                <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                        <GaugeIcon />
+                        <div className="flex w-full justify-between truncate gap-x-2">
+                            Speed settings
+                            <div className="text-muted-foreground/70 truncate">
+                                {globalPlaybackRate}x
+                            </div>
+                        </div>
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuPortal>
+                        <DropdownMenuSubContent>
+                            {playbackRateOptions.map((rate) => (
+                                <DropdownMenuItem
+                                    key={rate}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setPlaybackRate(rate);
+                                    }}
+                                    className={cn(
+                                        Math.abs(globalPlaybackRate - rate) <
+                                            0.01 && 'bg-primary-50',
+                                    )}
+                                >
+                                    {rate}x
+                                    {Math.abs(globalPlaybackRate - rate) <
+                                        0.01 && ' ✓'}
+                                </DropdownMenuItem>
+                            ))}
+                        </DropdownMenuSubContent>
+                    </DropdownMenuPortal>
+                </DropdownMenuSub>
+            </DropdownMenuGroup>
+        );
+    };
+
+    const VolumeRender = () => {
+        if (globalVolume === undefined || !setVolume) return null;
+        return (
+            <DropdownMenuGroup>
+                <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                        {globalVolume === 0 ? <VolumeXIcon /> : <Volume2Icon />}
+                        <div className="flex w-full justify-between truncate gap-x-2">
+                            Volume settings
+                            <div className="text-muted-foreground/70 truncate">
+                                {globalVolume === 0
+                                    ? 'Mute'
+                                    : `${Math.round(globalVolume * 100)}%`}
+                            </div>
+                        </div>
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuPortal>
+                        <DropdownMenuSubContent>
+                            {volumeOptions.map((v) => (
+                                <DropdownMenuItem
+                                    key={v}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setVolume(v);
+                                    }}
+                                    className={cn(
+                                        Math.abs(globalVolume - v) < 0.01 &&
+                                            'bg-primary-50',
+                                    )}
+                                >
+                                    {v === 0
+                                        ? 'Mute'
+                                        : `${Math.round(v * 100)}%`}
+                                    {Math.abs(globalVolume - v) < 0.01 && ' ✓'}
+                                </DropdownMenuItem>
+                            ))}
+                        </DropdownMenuSubContent>
+                    </DropdownMenuPortal>
+                </DropdownMenuSub>
+            </DropdownMenuGroup>
+        );
+    };
+
     return (
         <div className="flex flex-col w-full max-w-[800px] h-full p-4 pt-2">
             {/*The bubble list*/}
@@ -521,106 +607,6 @@ const AsChat = ({
                         >
                             <MessagesIcon className="size-4 group-data-[active=false]:grayscale group-data-[active=false]:opacity-60" />
                         </AsToggleButton>
-
-                        {/* Auto-play toggle button */}
-                        {playSpeech !== undefined && (
-                            <AsToggleButton
-                                size="icon-sm"
-                                variant="outline"
-                                active={autoPlayNext}
-                                tooltip="Auto-play next speech"
-                                onClick={() => {
-                                    setAutoPlayNext((prev) => !prev);
-                                }}
-                            >
-                                <VoiceautoPlayIcon className="size-4 group-data-[active=false]:grayscale group-data-[active=false]:opacity-60" />
-                            </AsToggleButton>
-                        )}
-
-                        {/* Playback rate selector */}
-                        {globalPlaybackRate !== undefined && (
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button
-                                        size="icon-sm"
-                                        variant="outline"
-                                        aria-label="More options"
-                                        onClick={(e) => e.stopPropagation()}
-                                    >
-                                        <GaugeIcon />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent
-                                    align="end"
-                                    onClick={(e) => e.stopPropagation()}
-                                >
-                                    {playbackRateOptions.map((rate) => (
-                                        <DropdownMenuItem
-                                            key={rate}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setPlaybackRate?.(rate);
-                                            }}
-                                            className={cn(
-                                                Math.abs(
-                                                    globalPlaybackRate - rate,
-                                                ) < 0.01 && 'bg-primary-50',
-                                            )}
-                                        >
-                                            {rate}x
-                                            {Math.abs(
-                                                globalPlaybackRate - rate,
-                                            ) < 0.01 && ' ✓'}
-                                        </DropdownMenuItem>
-                                    ))}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        )}
-
-                        {/* Volume control */}
-                        {globalVolume !== undefined && (
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button
-                                        size="icon-sm"
-                                        variant="outline"
-                                        aria-label="More options"
-                                        onClick={(e) => e.stopPropagation()}
-                                    >
-                                        {globalVolume === 0 ? (
-                                            <VolumeXIcon className="size-3 text-primary-600" />
-                                        ) : (
-                                            <Volume2Icon className="size-3 text-primary-600" />
-                                        )}
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent
-                                    align="end"
-                                    onClick={(e) => e.stopPropagation()}
-                                >
-                                    {volumeOptions.map((v) => (
-                                        <DropdownMenuItem
-                                            key={v}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setVolume?.(v);
-                                            }}
-                                            className={cn(
-                                                Math.abs(globalVolume - v) <
-                                                    0.01 && 'bg-primary-50',
-                                            )}
-                                        >
-                                            {v === 0
-                                                ? 'Mute'
-                                                : `${Math.round(v * 100)}%`}
-                                            {Math.abs(globalVolume - v) <
-                                                0.01 && ' ✓'}
-                                        </DropdownMenuItem>
-                                    ))}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        )}
-
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button
@@ -642,7 +628,7 @@ const AsChat = ({
                                         <DropdownMenuSubTrigger>
                                             <UsersIcon />
                                             <div className="flex w-full justify-between truncate gap-x-2">
-                                                Avatar sets
+                                                Avatar settings
                                                 <div className="text-muted-foreground/70 truncate">
                                                     {t(
                                                         `chat.avatar-set.${avatarSet}`,
@@ -691,6 +677,45 @@ const AsChat = ({
                                         </DropdownMenuPortal>
                                     </DropdownMenuSub>
                                 </DropdownMenuGroup>
+                                {(playSpeech ||
+                                    globalPlaybackRate ||
+                                    globalVolume) && (
+                                    <>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuLabel>
+                                            Speech
+                                        </DropdownMenuLabel>
+                                    </>
+                                )}
+                                {/* Auto-play toggle button */}
+                                {playSpeech !== undefined && (
+                                    <DropdownMenuGroup>
+                                        <DropdownMenuItem>
+                                            <CirclePlay />
+                                            Auto play speech
+                                            <DropdownMenuShortcut>
+                                                <Switch
+                                                    id="display-mode"
+                                                    checked={autoPlayNext}
+                                                    onCheckedChange={(
+                                                        checked,
+                                                    ) => {
+                                                        setAutoPlayNext(
+                                                            checked,
+                                                        );
+                                                    }}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                    }}
+                                                />
+                                            </DropdownMenuShortcut>
+                                        </DropdownMenuItem>
+                                    </DropdownMenuGroup>
+                                )}
+                                {/* Playback rate selector */}
+                                <PlaybackRateRender />
+                                {/* Volume control */}
+                                <VolumeRender />
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </ButtonGroup>
