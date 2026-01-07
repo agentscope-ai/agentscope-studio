@@ -99,6 +99,8 @@ export interface EvalTaskMeta {
     tags: string[];
 }
 
+export type EvalTrajectory = (TextBlock | ToolUseBlock | ToolResultBlock)[];
+
 // The detailed evaluation task with results
 export interface EvalTask {
     meta: {
@@ -118,7 +120,7 @@ export interface EvalTask {
             solution?: {
                 success: boolean;
                 output: unknown;
-                trajectory: (TextBlock | ToolUseBlock | ToolResultBlock)[];
+                trajectory: EvalTrajectory;
                 meta?: unknown;
             };
             stats?: EvalStats;
