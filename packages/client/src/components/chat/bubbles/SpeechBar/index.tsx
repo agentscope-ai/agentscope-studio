@@ -70,6 +70,7 @@ const SpeechBar = ({
                 'border border-primary-200',
                 'shadow-sm',
                 'transition-all duration-300',
+                'w-[80px]',
                 isPlaying && 'ring-2 ring-primary-300 ring-opacity-50',
             )}
         >

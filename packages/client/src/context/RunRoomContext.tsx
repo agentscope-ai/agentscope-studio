@@ -171,6 +171,12 @@ export function RunRoomContextProvider({ children }: Props) {
         globalPlaybackRateRef.current = globalPlaybackRate;
         globalVolumeRef.current = globalVolume;
     }, [globalPlaybackRate, globalVolume]);
+
+    const inputRequestsRef = useRef<InputRequestData[]>([]);
+    useEffect(() => {
+        inputRequestsRef.current = inputRequests;
+    }, [inputRequests]);
+
     const stopAllSpeech = () => {
         // Stop all playing audio
         Object.keys(speechStates).forEach((replyId) => {
@@ -207,7 +213,7 @@ export function RunRoomContextProvider({ children }: Props) {
 
         // Suspend AudioContext
         if (audioContextRef.current) {
-            audioContextRef.current.suspend();
+            audioContextRef.current = null;
         }
     };
     // Cleanup effect - stops all playing audio when component unmounts or route changes
@@ -417,13 +423,25 @@ export function RunRoomContextProvider({ children }: Props) {
 
             isProcessingQueueRef.current[replyId] = false;
 
+            let isStillStreaming = speechStates[replyId]?.isStreaming || false;
+            const isStillPlaying = speechStates[replyId]?.isPlaying || false;
+            if (
+                inputRequestsRef.current.length === 0 &&
+                speechStates[replyId] === undefined &&
+                audioContextRef.current
+            ) {
+                isStillStreaming = true;
+            }
+            if (
+                inputRequestsRef.current.length === 0 &&
+                speechStates[replyId] === undefined &&
+                !audioContextRef.current
+            ) {
+                isStillStreaming = false;
+            }
             setSpeechStates((prev) => {
                 const state = prev[replyId];
                 if (state) {
-                    const isStillStreaming =
-                        speechStates[replyId]?.isStreaming || false;
-                    const isStillPlaying =
-                        speechStates[replyId]?.isPlaying || false;
                     return {
                         ...prev,
                         [replyId]: {

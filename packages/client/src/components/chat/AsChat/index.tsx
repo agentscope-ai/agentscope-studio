@@ -108,7 +108,7 @@ interface Props {
     /** Callback to set volume for a specific reply */
     setVolume?: (volume: number) => void;
     globalPlaybackRate?: number;
-    globalVolume?: number;  
+    globalVolume?: number;
 }
 const playbackRateOptions = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
 const volumeOptions = [0, 0.25, 0.5, 0.75, 1.0];
@@ -523,96 +523,103 @@ const AsChat = ({
                         </AsToggleButton>
 
                         {/* Auto-play toggle button */}
-                        {playSpeech !== undefined && <AsToggleButton
-                            size="icon-sm"
-                            variant="outline"
-                            active={autoPlayNext}
-                            tooltip="Auto-play next speech"
-                            onClick={() => {
-                                setAutoPlayNext((prev) => !prev);
-                            }}
-                        >
-                            <VoiceautoPlayIcon className="size-4 group-data-[active=false]:grayscale group-data-[active=false]:opacity-60" />
-                        </AsToggleButton>}
+                        {playSpeech !== undefined && (
+                            <AsToggleButton
+                                size="icon-sm"
+                                variant="outline"
+                                active={autoPlayNext}
+                                tooltip="Auto-play next speech"
+                                onClick={() => {
+                                    setAutoPlayNext((prev) => !prev);
+                                }}
+                            >
+                                <VoiceautoPlayIcon className="size-4 group-data-[active=false]:grayscale group-data-[active=false]:opacity-60" />
+                            </AsToggleButton>
+                        )}
 
                         {/* Playback rate selector */}
-                        {globalPlaybackRate !== undefined && <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button
-                                    size="icon-sm"
-                                    variant="outline"
-                                    aria-label="More options"
+                        {globalPlaybackRate !== undefined && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        size="icon-sm"
+                                        variant="outline"
+                                        aria-label="More options"
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <GaugeIcon />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                    align="end"
                                     onClick={(e) => e.stopPropagation()}
                                 >
-                                    <GaugeIcon />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                                align="end"
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                {playbackRateOptions.map((rate) => (
-                                    <DropdownMenuItem
-                                        key={rate}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setPlaybackRate?.(rate);
-                                        }}
-                                        className={cn(
-                                            Math.abs(
+                                    {playbackRateOptions.map((rate) => (
+                                        <DropdownMenuItem
+                                            key={rate}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setPlaybackRate?.(rate);
+                                            }}
+                                            className={cn(
+                                                Math.abs(
+                                                    globalPlaybackRate - rate,
+                                                ) < 0.01 && 'bg-primary-50',
+                                            )}
+                                        >
+                                            {rate}x
+                                            {Math.abs(
                                                 globalPlaybackRate - rate,
-                                            ) < 0.01 && 'bg-primary-50',
-                                        )}
-                                    >
-                                        {rate}x
-                                        {Math.abs(globalPlaybackRate - rate) <
-                                            0.01 && ' ✓'}
-                                    </DropdownMenuItem>
-                                ))}
-                            </DropdownMenuContent>
-                        </DropdownMenu>}
+                                            ) < 0.01 && ' ✓'}
+                                        </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
 
                         {/* Volume control */}
-                        {globalVolume !== undefined && <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button
-                                    size="icon-sm"
-                                    variant="outline"
-                                    aria-label="More options"
+                        {globalVolume !== undefined && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        size="icon-sm"
+                                        variant="outline"
+                                        aria-label="More options"
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        {globalVolume === 0 ? (
+                                            <VolumeXIcon className="size-3 text-primary-600" />
+                                        ) : (
+                                            <Volume2Icon className="size-3 text-primary-600" />
+                                        )}
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                    align="end"
                                     onClick={(e) => e.stopPropagation()}
                                 >
-                                    {globalVolume === 0 ? (
-                                        <VolumeXIcon className="size-3 text-primary-600" />
-                                    ) : (
-                                        <Volume2Icon className="size-3 text-primary-600" />
-                                    )}
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                                align="end"
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                {volumeOptions.map((v) => (
-                                    <DropdownMenuItem
-                                        key={v}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setVolume?.(v);
-                                        }}
-                                        className={cn(
-                                            Math.abs(globalVolume - v) < 0.01 &&
-                                                'bg-primary-50',
-                                        )}
-                                    >
-                                        {v === 0
-                                            ? 'Mute'
-                                            : `${Math.round(v * 100)}%`}
-                                        {Math.abs(globalVolume - v) < 0.01 &&
-                                            ' ✓'}
-                                    </DropdownMenuItem>
-                                ))}
-                            </DropdownMenuContent>
-                        </DropdownMenu>}
+                                    {volumeOptions.map((v) => (
+                                        <DropdownMenuItem
+                                            key={v}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setVolume?.(v);
+                                            }}
+                                            className={cn(
+                                                Math.abs(globalVolume - v) <
+                                                    0.01 && 'bg-primary-50',
+                                            )}
+                                        >
+                                            {v === 0
+                                                ? 'Mute'
+                                                : `${Math.round(v * 100)}%`}
+                                            {Math.abs(globalVolume - v) <
+                                                0.01 && ' ✓'}
+                                        </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
 
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
