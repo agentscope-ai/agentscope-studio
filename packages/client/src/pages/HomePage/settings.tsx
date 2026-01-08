@@ -76,7 +76,7 @@ const SettingsDialog = ({
                         className="flex gap-6 items-start"
                     >
                         <div className="h-[-webkit-fill-available] flex flex-col border-r border-border">
-                            <h3 className="text-lg font-medium p-4 -mb-2 text-left">
+                            <h3 className="text-lg font-medium p-4 -mb-2 text-left ml-2">
                                 {t('common.settings')}
                             </h3>
                             <TabsList className="flex flex-col h-auto bg-transparent p-3 gap-1 w-[200px]">
