@@ -56,6 +56,12 @@ chmod +x docker/docker.sh
 
 更多 Docker 命令，请参阅项目根目录的 `docker/README.md`。
 
+### 部署到阿里云
+
+如果您计划在云上使用 AgentScope-Studio，推荐直接在阿里云实现一键部署。
+
+[在阿里云一键部署 AgentScope-Studio](https://help.aliyun.com/zh/compute-nest/use-cases/agent-scope-studio-community-edition-service-instance-deployment-document)
+
 ## 连接到 AgentScope-Studio
 
 在 AgentScope 项目中，在 `init` 函数中设置 `studio_url` 字段，如下所示：
