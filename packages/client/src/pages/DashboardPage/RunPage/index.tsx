@@ -29,6 +29,8 @@ const RunContentPage = () => {
         setVolume,
         globalPlaybackRate,
         globalVolume,
+        setAutoPlayNext,
+        autoPlayNext,
     } = useRunRoom();
     const [currentInputRequest, setCurrentInputRequest] =
         useState<InputRequestData | null>(null);
@@ -152,6 +154,8 @@ const RunContentPage = () => {
                         setVolume={setVolume}
                         globalPlaybackRate={globalPlaybackRate}
                         globalVolume={globalVolume}
+                        autoPlayNext={autoPlayNext}
+                        setAutoPlayNext={setAutoPlayNext}
                     />
                 </Splitter.Panel>
                 <Splitter.Panel

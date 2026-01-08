@@ -80,6 +80,10 @@ interface RunRoomContextType {
     globalPlaybackRate: number;
     /** Global volume for all messages */
     globalVolume: number;
+    /** Automatically play speech */
+    autoPlayNext: boolean;
+    /** Set automatically play speech */
+    setAutoPlayNext: (value: boolean) => void;
 }
 
 const RunRoomContext = createContext<RunRoomContextType | null>(null);
@@ -165,12 +169,25 @@ export function RunRoomContextProvider({ children }: Props) {
     const audioQueueRef = useRef<Record<string, string[]>>({});
     // Track if queue is being processed
     const isProcessingQueueRef = useRef<Record<string, boolean>>({});
-    // Store playback settings (rate and volume) as refs to avoid stale closure issues
+    // Add auto-playing next speech
+    const [autoPlayNext, setAutoPlayNext] = useState<boolean>(true);
+    // The ReplyId that was just played in the message list
+    const currentReplyIdRef = useRef<string>('');
+    const repliesRef = useRef<Reply[]>([]);
+    const speechStatesRef = useRef<SpeechStatesRecord>({});
+    const autoPlayNextRef = useRef<boolean>(autoPlayNext);
+
+    useEffect(() => {
+        repliesRef.current = replies;
+        speechStatesRef.current = speechStates;
+    }, [replies, speechStates]);
+
     // Update refs when global state changes
     useEffect(() => {
         globalPlaybackRateRef.current = globalPlaybackRate;
         globalVolumeRef.current = globalVolume;
-    }, [globalPlaybackRate, globalVolume]);
+        autoPlayNextRef.current = autoPlayNext;
+    }, [globalPlaybackRate, globalVolume, autoPlayNext]);
 
     const inputRequestsRef = useRef<InputRequestData[]>([]);
     useEffect(() => {
@@ -179,7 +196,7 @@ export function RunRoomContextProvider({ children }: Props) {
 
     const stopAllSpeech = () => {
         // Stop all playing audio
-        Object.keys(speechStates).forEach((replyId) => {
+        Object.keys(speechStatesRef.current).forEach((replyId) => {
             stopSpeech(replyId);
         });
 
@@ -227,6 +244,7 @@ export function RunRoomContextProvider({ children }: Props) {
     // Cleanup effect - stops all playing audio when component unmounts or route changes
     useEffect(() => {
         return () => {
+            currentReplyIdRef.current = '';
             stopAllSpeech();
         };
     }, [location.pathname]); // Trigger cleanup when path changes
@@ -398,7 +416,36 @@ export function RunRoomContextProvider({ children }: Props) {
         },
         [decodeAudioData, ensureAudioContext, getOrCreateGainNode],
     );
+    // Play next speech in the sequence
+    const playNextSpeech = (currentReplyId: string) => {
+        if (!autoPlayNextRef.current) return;
+        const currentReplies = repliesRef.current;
+        const currentSpeechStates = speechStatesRef.current;
+        // Find current reply in the replies array
+        const currentIndex = currentReplies.findIndex(
+            (reply) => reply.replyId === currentReplyId,
+        );
+        if (currentIndex === -1) return;
+        // Find the next reply with speech to play
+        for (let i = currentIndex + 1; i < currentReplies.length; i++) {
+            const nextReply = currentReplies[i];
+            const hasSpeech = nextReply.messages.some(
+                (msg) =>
+                    msg.speech &&
+                    msg.speech.length > 0 &&
+                    msg.speech.some((block) => block.source?.type === 'base64'),
+            );
 
+            if (hasSpeech) {
+                // Check if the reply has completed audio data
+                const speechState = currentSpeechStates[nextReply.replyId];
+                if (speechState && !speechState.isPlaying) {
+                    playSpeech(nextReply.replyId);
+                    return;
+                }
+            }
+        }
+    };
     // Process audio queue for a reply
     const processAudioQueue = useCallback(
         async (replyId: string) => {
@@ -440,13 +487,6 @@ export function RunRoomContextProvider({ children }: Props) {
             ) {
                 isStillStreaming = true;
             }
-            if (
-                inputRequestsRef.current.length === 0 &&
-                speechStates[replyId] === undefined &&
-                !audioContextRef.current
-            ) {
-                isStillStreaming = false;
-            }
             setSpeechStates((prev) => {
                 const state = prev[replyId];
                 if (state) {
@@ -461,6 +501,16 @@ export function RunRoomContextProvider({ children }: Props) {
                 }
                 return prev;
             });
+            if (
+                inputRequestsRef.current.length > 0 &&
+                audioContextRef.current &&
+                autoPlayNextRef.current &&
+                currentReplyIdRef.current
+            ) {
+                setTimeout(() => {
+                    playNextSpeech(currentReplyIdRef.current);
+                }, 300);
+            }
         },
         [playAudioChunk],
     );
@@ -505,7 +555,7 @@ export function RunRoomContextProvider({ children }: Props) {
             audio.webkitPreservesPitch = true;
 
             audioElementRef.current[replyId] = audio;
-
+            currentReplyIdRef.current = replyId;
             audio.onended = () => {
                 audioElementRef.current[replyId] = null;
 
@@ -519,6 +569,12 @@ export function RunRoomContextProvider({ children }: Props) {
                     }
                     return prev;
                 });
+                // Auto-play next speech if enabled
+                if (autoPlayNextRef.current) {
+                    setTimeout(() => {
+                        playNextSpeech(replyId);
+                    }, 300);
+                }
             };
 
             audio.onerror = (e) => {
@@ -627,7 +683,8 @@ export function RunRoomContextProvider({ children }: Props) {
     // Play audio for a reply
     const playSpeech = useCallback(
         (replyId: string) => {
-            const state = speechStates[replyId];
+            const state =
+                speechStates[replyId] || speechStatesRef?.current[replyId];
             if (!state || state.fullAudioData.length === 0) return;
             if (state.isPlaying) return;
 
@@ -641,10 +698,16 @@ export function RunRoomContextProvider({ children }: Props) {
                 audioContextRef.current.suspend();
             }
             playAudio(replyId, state.fullAudioData);
+
+            // If currently playing other speeches, stop them to ensure only one plays at a time
+            Object.keys(speechStates).forEach((id) => {
+                if (id !== replyId && speechStates[id]?.isPlaying) {
+                    stopSpeech(id);
+                }
+            });
         },
         [speechStates, playAudio, createWavBlobUrl],
     );
-
     // Stop playing audio for a reply
     const stopSpeech = useCallback((replyId: string) => {
         // Stop HTML Audio element if playing
@@ -684,7 +747,6 @@ export function RunRoomContextProvider({ children }: Props) {
             return prev;
         });
     }, []);
-
     // Set playback rate for all replies
     const setPlaybackRate = useCallback((rate: number) => {
         // Clamp rate between 0.25 and 4.0
@@ -962,6 +1024,8 @@ export function RunRoomContextProvider({ children }: Props) {
                 setVolume,
                 globalPlaybackRate,
                 globalVolume,
+                autoPlayNext,
+                setAutoPlayNext,
             }}
         >
             {children}

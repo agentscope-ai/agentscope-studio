@@ -112,6 +112,8 @@ interface Props {
     setVolume?: (volume: number) => void;
     globalPlaybackRate?: number;
     globalVolume?: number;
+    autoPlayNext?: boolean;
+    setAutoPlayNext?: (value: boolean) => void;
 }
 const playbackRateOptions = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
 const volumeOptions = [0, 0.25, 0.5, 0.75, 1.0];
@@ -156,6 +158,8 @@ const AsChat = ({
     setVolume,
     globalPlaybackRate,
     globalVolume,
+    autoPlayNext = true,
+    setAutoPlayNext,
 }: Props) => {
     // Load renderMarkdown from localStorage or use default
     const [renderMarkdown, setRenderMarkdown] = useState<boolean>(() => {
@@ -189,12 +193,6 @@ const AsChat = ({
         string | null
     >(null);
 
-    // Add toggle for auto-playing next speech
-    const [autoPlayNext, setAutoPlayNext] = useState<boolean>(true);
-    // Track last speech state to detect changes
-    const [lastSpeechState, setLastSpeechState] = useState<
-        Record<string, boolean>
-    >({});
 
     // Save renderMarkdown to localStorage when it changes
     useEffect(() => {
@@ -366,69 +364,6 @@ const AsChat = ({
         [currentPlayingReplyId, stopSpeech],
     );
 
-    // Listen to speech state changes, detect playback completion
-    useEffect(() => {
-        if (!speechStates || !currentPlayingReplyId || !autoPlayNext) return;
-
-        const currentSpeechState = speechStates[currentPlayingReplyId];
-        if (currentSpeechState) {
-            // Check if speech has changed from "playing" to "completed"
-            const wasPlaying = lastSpeechState[currentPlayingReplyId] === true;
-            const isNowCompleted = !currentSpeechState.isPlaying;
-            if (wasPlaying && isNowCompleted) {
-                // Find the index of the currently playing reply
-                const currentIndex = organizedReplies.findIndex(
-                    (reply) =>
-                        (reply.originalReplyId || reply.replyId) ===
-                        currentPlayingReplyId,
-                );
-
-                if (currentIndex !== -1) {
-                    // Find the next reply with speech
-                    for (
-                        let i = currentIndex + 1;
-                        i < organizedReplies.length;
-                        i++
-                    ) {
-                        const nextReply = organizedReplies[i];
-                        const nextLookupId =
-                            nextReply.originalReplyId || nextReply.replyId;
-                        const nextSpeechState = speechStates[nextLookupId];
-
-                        // If the next reply has speech data, start playing
-                        if (
-                            nextSpeechState &&
-                            nextSpeechState.fullAudioData &&
-                            nextSpeechState.fullAudioData.length > 0
-                        ) {
-                            // Play the next reply after a short delay
-                            setTimeout(() => {
-                                handleStopOtherSpeech(nextLookupId);
-                                setCurrentPlayingReplyId(nextLookupId);
-                                playSpeech?.(nextLookupId);
-                            }, 300); // 300ms delay for better user experience
-                            break; // Only play the first speech message found
-                        }
-                    }
-                }
-            }
-        }
-
-        // Update the last speech state (record isPlaying status)
-        if (currentSpeechState) {
-            setLastSpeechState((prev) => ({
-                ...prev,
-                [currentPlayingReplyId]: currentSpeechState.isPlaying, // Record if currently playing
-            }));
-        }
-    }, [
-        speechStates,
-        currentPlayingReplyId,
-        autoPlayNext,
-        organizedReplies,
-        handleStopOtherSpeech,
-        playSpeech,
-    ]);
     const PlaybackRateRender = () => {
         if (globalPlaybackRate === undefined || !setPlaybackRate) return null;
         return (
@@ -700,7 +635,7 @@ const AsChat = ({
                                                     onCheckedChange={(
                                                         checked,
                                                     ) => {
-                                                        setAutoPlayNext(
+                                                        setAutoPlayNext?.(
                                                             checked,
                                                         );
                                                     }}
