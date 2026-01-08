@@ -12,14 +12,11 @@ import {
     TabsTrigger,
 } from '@/components/ui/tabs.tsx';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert.tsx';
-import { trpc } from '@/api/trpc';
 import { Dialog, DialogContent } from '@/components/ui/dialog.tsx';
 import { useI18n } from '@/context/I18Context.tsx';
-import { useMessageApi } from '@/context/MessageApiContext.tsx';
-import { useSocket } from '@/context/SocketContext.tsx';
-import { SocketEvents } from '@shared/types/trpc';
 import { checkForUpdates } from '@/utils/versionCheck';
 import { settingsMenuItems } from './config';
+import { useSidebar } from '@/context/SidebarContext';
 
 interface SettingsDialogProps {
     open: boolean;
@@ -29,21 +26,21 @@ interface SettingsDialogProps {
 
 const SettingsDialog = ({
     open,
-    onOpenChange,
     hasUpdate,
+    onOpenChange,
 }: SettingsDialogProps) => {
     const { t } = useTranslation();
     const { changeLanguage, currentLanguage } = useI18n();
-    const { messageApi } = useMessageApi();
-    const socket = useSocket();
-
-    const [clearDataDialogOpen, setClearDataDialogOpen] = useState(false);
+    const {
+        isUpdating,
+        clearDataDialogOpen,
+        latestVersion,
+        confirmClearData,
+        handleUpdate,
+        setClearDataDialogOpen,
+        setLatestVersion,
+    } = useSidebar();
     const [selectedLanguage, setSelectedLanguage] = useState(currentLanguage);
-    const [latestVersion, setLatestVersion] = useState<string>('');
-    const [isUpdating, setIsUpdating] = useState(false);
-
-    // 使用 trpc mutation
-    const updateStudioMutation = trpc.updateStudio.useMutation();
 
     // Update selected language when current language changes
     useEffect(() => {
@@ -69,76 +66,17 @@ const SettingsDialog = ({
         setClearDataDialogOpen(true);
     };
 
-    // Handle data clearing
-    const confirmClearData = () => {
-        if (socket) {
-            socket.emit(SocketEvents.client.cleanHistoryOfFridayApp);
-            messageApi.success(t('message.settings.data-cleared'));
-            setClearDataDialogOpen(false);
-            onOpenChange(false);
-        } else {
-            messageApi.error(t('error.socket-not-connected'));
-        }
-    };
-
-    // Handle update
-    const handleUpdate = async () => {
-        if (!latestVersion) return;
-
-        setIsUpdating(true);
-        messageApi.loading({
-            content: t('message.settings.updating', { version: latestVersion }),
-            duration: 0,
-            key: 'updating',
-        });
-
-        try {
-            const result = await updateStudioMutation.mutateAsync({
-                version: latestVersion,
-            });
-
-            messageApi.destroy('updating');
-            messageApi.success({
-                content: t('message.settings.update-success', {
-                    version: result.version,
-                }),
-                duration: 5,
-            });
-
-            // 提示用户重启应用
-            setTimeout(() => {
-                messageApi.info({
-                    content: t('message.settings.restart-required'),
-                    duration: 10,
-                });
-            }, 1000);
-        } catch (error) {
-            messageApi.destroy('updating');
-            messageApi.error({
-                content: t('message.settings.update-failed', {
-                    error:
-                        error instanceof Error
-                            ? error.message
-                            : 'Unknown error',
-                }),
-                duration: 5,
-            });
-        } finally {
-            setIsUpdating(false);
-        }
-    };
-
     return (
         <>
             {/* Settings Dialog */}
             <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent className="sm:max-w-[700px] p-0">
+                <DialogContent className="sm:max-w-[1000px] max-h-[85vh] p-0">
                     <Tabs
                         defaultValue="language"
                         className="flex gap-6 items-start"
                     >
                         <div className="h-[-webkit-fill-available] flex flex-col border-r border-border">
-                            <h3 className="text-lg font-medium p-4 -mb-2 text-center">
+                            <h3 className="text-lg font-medium p-4 -mb-2 text-left">
                                 {t('common.settings')}
                             </h3>
                             <TabsList className="flex flex-col h-auto bg-transparent p-3 gap-1 w-[200px]">
@@ -279,8 +217,10 @@ const SettingsDialog = ({
                                                                     )}
                                                                     <Button
                                                                         variant="default"
-                                                                        onClick={
-                                                                            handleUpdate
+                                                                        onClick={() =>
+                                                                            handleUpdate(
+                                                                                latestVersion,
+                                                                            )
                                                                         }
                                                                         disabled={
                                                                             isUpdating
@@ -334,7 +274,9 @@ const SettingsDialog = ({
                             </Button>
                             <Button
                                 variant="destructive"
-                                onClick={confirmClearData}
+                                onClick={() =>
+                                    confirmClearData(() => onOpenChange(false))
+                                }
                             >
                                 {t('action.confirm')}
                             </Button>

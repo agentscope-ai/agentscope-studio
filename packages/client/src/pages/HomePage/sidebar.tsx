@@ -24,7 +24,7 @@ import {
     useSidebar,
 } from '@/components/ui/sidebar.tsx';
 import { RouterPath } from '@/pages/RouterPath.ts';
-import SettingsDialog from './SettingsDialog.tsx';
+import SettingsDialog from './settings.tsx';
 import { getSidebarItems } from './config';
 import { checkForUpdates } from '@/utils/versionCheck';
 
