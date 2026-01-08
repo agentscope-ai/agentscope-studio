@@ -4,6 +4,7 @@
 
 - Node.js >= 20.0.0
 - npm >= 10.0.0
+- [Docker](https://docs.docker.com/install/#supported-platforms)（可选，用于 Docker 部署）
 
 > 💡 **提示**：如果你使用 nvm，可以运行 nvm use 自动切换到所需的 Node.js 版本。
 

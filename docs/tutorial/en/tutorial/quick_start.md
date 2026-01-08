@@ -4,6 +4,7 @@
 
 - Node.js >= 20.0.0
 - npm >= 10.0.0
+- [Docker](https://docs.docker.com/install/#supported-platforms) (optional, for Docker deployment)
 
 > 💡 **Tip**: If you're using nvm, you can run nvm use to automatically switch to the required Node.js version.
 

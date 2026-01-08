@@ -11,6 +11,12 @@ docker/
 └── README.md           # This document
 ```
 
+## Prerequisites: Install Docker
+
+Before deploying AgentScope Studio, you need to install Docker and Docker Compose on your system.
+
+Please install [Docker](https://docs.docker.com/install/#supported-platforms) first.
+
 ## Quick Start
 
 > **Note**: All commands should be executed from the **project root directory**
