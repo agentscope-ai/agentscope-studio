@@ -11,7 +11,7 @@ interface SidebarContextType {
     clearDataDialogOpen: boolean;
     latestVersion: string;
     handleUpdate: (version: string) => Promise<void>;
-    confirmClearData: (onComplete?: () => void) => void;
+    confirmClearData: () => void;
     setClearDataDialogOpen: (open: boolean) => void;
     setLatestVersion: (version: string) => void;
 }
@@ -33,12 +33,11 @@ export const StudioSidebarProvider = ({
 
     const updateStudioMutation = trpc.updateStudio.useMutation();
 
-    const confirmClearData = (onComplete?: () => void) => {
+    const confirmClearData = () => {
         if (socket) {
             socket.emit(SocketEvents.client.cleanHistoryOfFridayApp);
             messageApi.success(t('message.settings.data-cleared'));
             setClearDataDialogOpen(false);
-            if (onComplete) onComplete();
         } else {
             messageApi.error(t('error.socket-not-connected'));
         }
