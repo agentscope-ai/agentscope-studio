@@ -197,7 +197,9 @@ export function RunRoomContextProvider({ children }: Props) {
     const stopAllSpeech = () => {
         // Stop all playing audio
         Object.keys(speechStatesRef.current).forEach((replyId) => {
-            stopSpeech(replyId);
+            if (speechStatesRef.current?.[replyId]?.isPlaying) {
+                stopSpeech(replyId);
+            }
         });
 
         // Clean up all audio resources
@@ -545,6 +547,9 @@ export function RunRoomContextProvider({ children }: Props) {
             const wavUrl = wavBlobUrlRef.current[replyId];
             if (!wavUrl) return;
 
+            if (audioContextRef.current) {
+                audioContextRef.current.suspend();
+            }
             // Create HTML Audio element for playback (supports preservesPitch)
             const audio = new Audio(wavUrl);
             audio.playbackRate = globalPlaybackRateRef.current;
@@ -694,17 +699,13 @@ export function RunRoomContextProvider({ children }: Props) {
                     state.fullAudioData,
                 );
             }
-            if (audioContextRef.current) {
-                audioContextRef.current.suspend();
-            }
-            playAudio(replyId, state.fullAudioData);
-
             // If currently playing other speeches, stop them to ensure only one plays at a time
             Object.keys(speechStates).forEach((id) => {
                 if (id !== replyId && speechStates[id]?.isPlaying) {
                     stopSpeech(id);
                 }
             });
+            playAudio(replyId, state.fullAudioData);
         },
         [speechStates, playAudio, createWavBlobUrl],
     );
