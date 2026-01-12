@@ -372,7 +372,7 @@ const AsChat = ({
                     <DropdownMenuSubTrigger>
                         <GaugeIcon />
                         <div className="flex w-full justify-between truncate gap-x-2">
-                            Speed settings
+                            Speed
                             <div className="text-muted-foreground/70 truncate">
                                 {globalPlaybackRate}x
                             </div>
@@ -412,7 +412,7 @@ const AsChat = ({
                     <DropdownMenuSubTrigger>
                         {globalVolume === 0 ? <VolumeXIcon /> : <Volume2Icon />}
                         <div className="flex w-full justify-between truncate gap-x-2">
-                            Volume settings
+                            Volume
                             <div className="text-muted-foreground/70 truncate">
                                 {globalVolume === 0
                                     ? 'Mute'
@@ -627,7 +627,7 @@ const AsChat = ({
                                     <DropdownMenuGroup>
                                         <DropdownMenuItem>
                                             <CirclePlay />
-                                            Auto play speech
+                                            AutoPlay
                                             <DropdownMenuShortcut>
                                                 <Switch
                                                     id="display-mode"
