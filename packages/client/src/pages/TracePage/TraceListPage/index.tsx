@@ -18,7 +18,12 @@ import { useTraceContext } from '@/context/TraceContext';
 import { copyToClipboard } from '@/utils/common';
 import { TraceListItem } from '@shared/types';
 import TraceDetailPage from '../TraceDetailPage';
-import { formatDateTime, formatNumber, formatDuration, formatDurationWithUnit } from '@/utils/common';
+import {
+    formatDateTime,
+    formatNumber,
+    formatDuration,
+    formatDurationWithUnit,
+} from '@/utils/common';
 
 // Helper component for statistic cards
 const StatCard = ({
@@ -94,7 +99,7 @@ const TraceListPage = () => {
         drawerOpen,
         setDrawerOpen,
     } = useTraceContext();
-    
+
     const getStatusDisplay = (status: number) => {
         if (status === 2) {
             return (
@@ -281,7 +286,12 @@ const TraceListPage = () => {
                             ? formatDuration(statistics.avgDuration)
                             : '-'
                     }
-                    unit={statistics?.avgDuration !== undefined && statistics.avgDuration < 1 ? 'ms' : 's'}
+                    unit={
+                        statistics?.avgDuration !== undefined &&
+                        statistics.avgDuration < 1
+                            ? 'ms'
+                            : 's'
+                    }
                 />
             </div>
 
