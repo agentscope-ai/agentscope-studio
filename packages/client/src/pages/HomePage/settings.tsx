@@ -1,7 +1,7 @@
 import { memo, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Radio } from 'antd';
-import { Tag, CircleCheckBig, Bell, Download } from 'lucide-react';
+import { CircleCheckBig, Bell, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
 import {
@@ -23,11 +23,7 @@ interface SettingsProps {
     hasUpdate: boolean;
 }
 
-const Settings = ({
-    open,
-    hasUpdate,
-    onOpenChange,
-}: SettingsProps) => {
+const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
     const { t } = useTranslation();
     const { changeLanguage, currentLanguage } = useI18n();
     const {
@@ -70,7 +66,7 @@ const Settings = ({
         <>
             {/* Settings Dialog */}
             <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent className="sm:max-w-[900px] p-0">
+                <DialogContent className="sm:max-w-[800px] p-0">
                     <Tabs
                         defaultValue="language"
                         className="flex gap-6 items-start"
@@ -102,7 +98,7 @@ const Settings = ({
                                 })}
                             </TabsList>
                         </div>
-                        <div className="flex-1 min-h-[600px]">
+                        <div className="flex-1 min-h-[500px]">
                             {settingsMenuItems.map((item) => {
                                 const Icon = item.icon;
                                 return (
@@ -126,7 +122,12 @@ const Settings = ({
                                                 </div>
                                             </div>
                                             {item.value === 'language' && (
-                                                <div className="flex flex-col gap-4">
+                                                <div className="flex flex-col bg-gray-50 rounded-lg p-4">
+                                                    <div className="text-sm font-medium text-bolt-elements-textPrimary mb-2">
+                                                        {t(
+                                                            'settings.language-settings',
+                                                        )}
+                                                    </div>
                                                     <Radio.Group
                                                         value={selectedLanguage}
                                                         onChange={(e) => {
@@ -142,7 +143,7 @@ const Settings = ({
                                                             }
                                                         }}
                                                     >
-                                                        <div className="flex flex-col gap-3">
+                                                        <div className="flex gap-3">
                                                             <Radio value="zh">
                                                                 中文
                                                             </Radio>
@@ -154,57 +155,61 @@ const Settings = ({
                                                 </div>
                                             )}
                                             {item.value === 'data' && (
-                                                <div className="flex flex-col gap-4">
-                                                    <Button
-                                                        variant="destructive"
-                                                        onClick={
-                                                            handleClearData
-                                                        }
-                                                    >
+                                                <div className="flex flex-col bg-gray-50 rounded-lg p-4">
+                                                    <div className="text-sm font-medium text-bolt-elements-textPrimary mb-2">
                                                         {t('action.clear-data')}
-                                                    </Button>
-                                                    <p className="text-xs text-muted-foreground">
+                                                    </div>
+
+                                                    <div className="flex items-center text-xs text-muted-foreground">
                                                         {t(
                                                             'settings.clear-data-warning',
                                                         )}
-                                                    </p>
+                                                        <Button
+                                                            className="text-xs ml-2"
+                                                            variant="destructive"
+                                                            onClick={
+                                                                handleClearData
+                                                            }
+                                                        >
+                                                            {t(
+                                                                'action.clear-data',
+                                                            )}
+                                                        </Button>
+                                                    </div>
                                                 </div>
                                             )}
                                             {item.value === 'version' && (
                                                 <div className="flex flex-col gap-4">
-                                                    <div className="flex items-center justify-between gap-2 p-5 border rounded-md bg-[#FAFAFA]">
-                                                        <div>
-                                                            <div className="text-sm text-muted-foreground">
-                                                                {t(
-                                                                    'settings.current-version',
-                                                                )}
-                                                                :
-                                                            </div>
-                                                            <div className="font-medium text-2xl">
-                                                                {currentVersion}
-                                                                {!hasUpdate && (
-                                                                    <span className="w-18 flex items-center justify-around p-1 rounded-md text-xs text-[#166534] ml-18 -mt-5 bg-[#DCFCE6]">
-                                                                        <CircleCheckBig className="h-3 w-3" />
-                                                                        Latest
-                                                                    </span>
-                                                                )}
-                                                            </div>
+                                                    <div className="flex flex-col bg-gray-50 rounded-lg p-4">
+                                                        <div className="text-sm font-medium text-bolt-elements-textPrimary mb-2">
+                                                            {t(
+                                                                'settings.current-version',
+                                                            )}
                                                         </div>
-                                                        <Tag />
+                                                        <div className="font-medium text-2xl">
+                                                            {currentVersion}
+                                                            {!hasUpdate && (
+                                                                <span className="w-18 flex items-center justify-around rounded-md text-xs text-[#166534] ml-18 -mt-5 bg-[#DCFCE6]">
+                                                                    <CircleCheckBig className="h-3 w-3" />
+                                                                    Latest
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                     {hasUpdate &&
                                                         latestVersion && (
                                                             <Alert
                                                                 variant="default"
-                                                                className="border-[#fde68a] bg-[#fffbeb]"
+                                                                className="border-none bg-[#fffbeb]"
                                                             >
-                                                                <Bell className="h-4 w-4" />
-                                                                <AlertTitle>
+                                                                
+                                                                <AlertTitle className='flex items-center'>
+                                                                    <Bell className="h-4 w-4 mr-2" />
                                                                     {t(
                                                                         'settings.new-update-available',
                                                                     )}
                                                                 </AlertTitle>
-                                                                <AlertDescription>
+                                                                <AlertDescription className='flex items-center'>
                                                                     {t(
                                                                         'settings.new-version-available',
                                                                         {
@@ -222,7 +227,7 @@ const Settings = ({
                                                                         disabled={
                                                                             isUpdating
                                                                         }
-                                                                        className="mt-2"
+                                                                        className="ml-2"
                                                                     >
                                                                         <Download className="mr-2 h-4 w-4" />
                                                                         {isUpdating

@@ -207,7 +207,8 @@
         "new-version-available": "发现新版本 {{version}}",
         "clear-data-warning": "此操作将清空 Friday 的所有历史对话数据，此操作不可恢复",
         "clear-data-confirm-title": "⚠️ 确认清空数据？",
-        "clear-data-confirm-description": "您即将清空所有 Friday 历史对话数据。此操作不可撤销，请谨慎操作。确定要继续吗？"
+        "clear-data-confirm-description": "您即将清空所有 Friday 历史对话数据。此操作不可撤销，请谨慎操作。确定要继续吗？",
+        "language-settings": "语言设置"
     },
     "table": {
         "column": {
