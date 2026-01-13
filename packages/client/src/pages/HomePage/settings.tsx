@@ -202,14 +202,13 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                                                 variant="default"
                                                                 className="border-none bg-[#fffbeb]"
                                                             >
-                                                                
-                                                                <AlertTitle className='flex items-center'>
+                                                                <AlertTitle className="flex items-center">
                                                                     <Bell className="h-4 w-4 mr-2" />
                                                                     {t(
                                                                         'settings.new-update-available',
                                                                     )}
                                                                 </AlertTitle>
-                                                                <AlertDescription className='flex items-center'>
+                                                                <AlertDescription className="flex items-center">
                                                                     {t(
                                                                         'settings.new-version-available',
                                                                         {
