@@ -10,6 +10,7 @@ interface SidebarContextType {
     isUpdating: boolean;
     clearDataDialogOpen: boolean;
     latestVersion: string;
+    currentVersion: string;
     handleUpdate: (version: string) => Promise<void>;
     confirmClearData: () => void;
     setClearDataDialogOpen: (open: boolean) => void;
@@ -30,6 +31,7 @@ export const StudioSidebarProvider = ({
     const [clearDataDialogOpen, setClearDataDialogOpen] = useState(false);
     const [latestVersion, setLatestVersion] = useState<string>('');
     const [isUpdating, setIsUpdating] = useState(false);
+    const { data: currentVersionData } = trpc.getCurrentVersion.useQuery();
 
     const updateStudioMutation = trpc.updateStudio.useMutation();
 
@@ -94,6 +96,7 @@ export const StudioSidebarProvider = ({
         isUpdating,
         clearDataDialogOpen,
         latestVersion,
+        currentVersion: currentVersionData?.data?.version || '',
         handleUpdate,
         confirmClearData,
         setLatestVersion,
