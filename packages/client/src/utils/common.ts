@@ -229,12 +229,13 @@ export const formatDuration = (seconds: number): number => {
  * Format a duration in seconds into a human-readable string with appropriate units (seconds, minutes, hours).
  *
  * @param seconds - The duration in seconds to format
- * @returns Formatted string with appropriate time unit (e.g., "45s", "2m 30s", "1h 15m 30s")
+ * @param decimals - The number of decimal places to show (default: 1)
+ * @returns Formatted string with appropriate time unit (e.g., "45.2s", "2m 30.0s", "1h 15m 30.5s")
  */
-export const formatTime = (seconds: number): string => {
-    // If duration is less than 60 seconds, display in seconds
+export const formatTime = (seconds: number, decimals: number = 1): string => {
+    // If duration is less than 60 seconds, display in seconds with specified decimal places
     if (seconds < 60) {
-        return `${seconds}s`;
+        return `${seconds.toFixed(decimals)}s`;
     }
     // If duration is between 60 seconds and 1 hour, display in minutes and seconds
     else if (seconds < 3600) {
@@ -244,8 +245,8 @@ export const formatTime = (seconds: number): string => {
         if (remainingSeconds === 0) {
             return `${minutes}min`;
         }
-        // Otherwise, show both minutes and seconds
-        return `${minutes}min ${remainingSeconds}s`;
+        // Otherwise, show both minutes and seconds with specified decimal places
+        return `${minutes}min ${remainingSeconds.toFixed(decimals)}s`;
     }
     // If duration is 1 hour or more, display in hours, minutes, and seconds
     else {
@@ -263,9 +264,9 @@ export const formatTime = (seconds: number): string => {
         }
         // Show hours and seconds if minutes is zero
         else if (minutes === 0) {
-            return `${hours}h ${remainingSeconds}s`;
+            return `${hours}h ${remainingSeconds.toFixed(decimals)}s`;
         }
         // Show all components: hours, minutes, and seconds
-        return `${hours}h ${minutes}m ${remainingSeconds}s`;
+        return `${hours}h ${minutes}m ${remainingSeconds.toFixed(decimals)}s`;
     }
 };

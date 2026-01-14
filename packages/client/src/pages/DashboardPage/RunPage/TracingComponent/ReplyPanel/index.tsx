@@ -53,8 +53,10 @@ const ReplyPanel = ({ reply }: Props) => {
             const rawBase64 = data.split(',')[1] || data;
             const binaryString = atob(rawBase64);
             const byteLength = binaryString.length;
-            const duration = Math.round(
-                byteLength / (sampleRate * channels * bytesPerSample),
+            const duration = parseFloat(
+                (byteLength / (sampleRate * channels * bytesPerSample)).toFixed(
+                    1,
+                ),
             );
             return formatTime(duration);
         } catch (error) {
