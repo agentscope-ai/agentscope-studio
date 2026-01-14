@@ -67,12 +67,23 @@ const AsBubble = ({
         onStopOtherSpeech?.();
         onPlaySpeech?.();
     };
+
+    const hasSpeech = (reply: Reply): boolean => {
+        if (!reply.messages || reply.messages.length === 0) {
+            return false;
+        }
+        return reply.messages.some((message) => message.speech);
+    };
+
     const hasAudio = useMemo(
         () => (speechState?.fullAudioData?.length || 0) > 0,
         [speechState?.fullAudioData],
     );
     const showSpeechBar = useMemo(
-        () => speechState?.isStreaming || hasAudio,
+        () => {
+            if(!hasSpeech(reply)) return false;
+            return speechState?.isStreaming || hasAudio
+        },
         [speechState?.isStreaming, hasAudio],
     );
 
