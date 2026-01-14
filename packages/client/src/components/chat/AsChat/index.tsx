@@ -193,7 +193,6 @@ const AsChat = ({
         string | null
     >(null);
 
-
     // Save renderMarkdown to localStorage when it changes
     useEffect(() => {
         localStorage.setItem('chat-render-markdown', renderMarkdown.toString());
