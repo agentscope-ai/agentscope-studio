@@ -224,3 +224,48 @@ export const formatDuration = (seconds: number): number => {
     }
     return parseFloat(seconds.toFixed(2));
 };
+
+/**
+ * Format a duration in seconds into a human-readable string with appropriate units (seconds, minutes, hours).
+ *
+ * @param seconds - The duration in seconds to format
+ * @returns Formatted string with appropriate time unit (e.g., "45s", "2m 30s", "1h 15m 30s")
+ */
+export const formatTime = (seconds: number): string => {
+    // If duration is less than 60 seconds, display in seconds
+    if (seconds < 60) {
+        return `${seconds}s`;
+    }
+    // If duration is between 60 seconds and 1 hour, display in minutes and seconds
+    else if (seconds < 3600) {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        // If there are no remaining seconds, only show minutes
+        if (remainingSeconds === 0) {
+            return `${minutes}min`;
+        }
+        // Otherwise, show both minutes and seconds
+        return `${minutes}min ${remainingSeconds}s`;
+    }
+    // If duration is 1 hour or more, display in hours, minutes, and seconds
+    else {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const remainingSeconds = seconds % 60;
+
+        // Only show hours if minutes and seconds are both zero
+        if (minutes === 0 && remainingSeconds === 0) {
+            return `${hours}h`;
+        }
+        // Show hours and minutes if seconds is zero
+        else if (remainingSeconds === 0) {
+            return `${hours}h ${minutes}m`;
+        }
+        // Show hours and seconds if minutes is zero
+        else if (minutes === 0) {
+            return `${hours}h ${remainingSeconds}s`;
+        }
+        // Show all components: hours, minutes, and seconds
+        return `${hours}h ${minutes}m ${remainingSeconds}s`;
+    }
+};

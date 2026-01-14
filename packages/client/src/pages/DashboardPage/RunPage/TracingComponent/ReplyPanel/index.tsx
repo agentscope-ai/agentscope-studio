@@ -15,7 +15,7 @@ import {
     AccordionItem,
 } from '@/components/ui/accordion.tsx';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert.tsx';
-import { formatDateTime } from '@/utils/common.ts';
+import { formatDateTime, formatTime } from '@/utils/common.ts';
 
 interface Props {
     reply: Reply | null;
@@ -26,7 +26,49 @@ const ReplyPanel = ({ reply }: Props) => {
     if (!reply) {
         return <EmptyMessagePage />;
     }
+    const getSpeechDuration = (): string => {
+        try {
+            const speechMessage = reply?.messages?.find(
+                (message) => message.speech,
+            );
+            if (!speechMessage?.speech?.[0]?.source) {
+                return '';
+            }
+            const speechSource = speechMessage.speech[0].source;
+            if (speechSource.type !== 'base64') {
+                return '';
+            }
+            const { data, media_type = '' } = speechSource;
+            const rateMatch = media_type.match(/rate=(\d+)/);
+            if (!rateMatch) {
+                return '';
+            }
+            const sampleRate = parseInt(rateMatch[1], 10);
+            if (isNaN(sampleRate) || sampleRate <= 0) {
+                return '';
+            }
+            const bitsPerSample = parseBitsPerSample(media_type);
+            const channels = 1;
+            const bytesPerSample = bitsPerSample / 8;
+            const rawBase64 = data.split(',')[1] || data;
+            const binaryString = atob(rawBase64);
+            const byteLength = binaryString.length;
+            const duration = Math.round(
+                byteLength / (sampleRate * channels * bytesPerSample),
+            );
+            return formatTime(duration);
+        } catch (error) {
+            console.error('Error calculating speech duration:', error);
+            return '';
+        }
+    };
 
+    const parseBitsPerSample = (mediaType: string): number => {
+        if (mediaType.includes('bit=32')) return 32;
+        if (mediaType.includes('bit=8')) return 8;
+        return 16;
+    };
+    const speechDuration = getSpeechDuration();
     const renderCodeBlock = (code: ContentType | object, title: string) => {
         let codeString;
         if (typeof code === 'string') {
@@ -73,6 +115,9 @@ const ReplyPanel = ({ reply }: Props) => {
                     Role: reply.replyRole,
                     CreatedAt: formatDateTime(reply.createdAt),
                     '% Messages': reply.messages.length,
+                    ...(speechDuration !== '' && {
+                        'Speech duration': speechDuration,
+                    }),
                 }}
             />
 
