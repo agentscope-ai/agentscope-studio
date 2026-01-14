@@ -1,22 +1,22 @@
 import { Button, Flex, Input, Layout, Tooltip } from 'antd';
 import { Key, memo, useEffect, useRef, useState } from 'react';
-import { useMatch, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useMatch, useNavigate } from 'react-router-dom';
 
-import AsTable from '@/components/tables/AsTable';
-import EyeIcon from '@/assets/svgs/eye.svg?react';
 import DeleteIcon from '@/assets/svgs/delete.svg?react';
 import EyeInvisibleIcon from '@/assets/svgs/eye-invisible.svg?react';
+import EyeIcon from '@/assets/svgs/eye.svg?react';
+import AsTable from '@/components/tables/AsTable';
 
-import { LogOutIcon } from 'lucide-react';
+import { SecondaryButton, SwitchButton } from '@/components/buttons/ASButton';
+import { StatusCell, TextCell } from '@/components/tables/utils.tsx';
+import { useProjectRoom } from '@/context/ProjectRoomContext.tsx';
 import { useTour } from '@/context/TourContext.tsx';
 import { RemoveScrollBarStyle } from '@/styles.ts';
-import { StatusCell, TextCell } from '@/components/tables/utils.tsx';
-import { SecondaryButton, SwitchButton } from '@/components/buttons/ASButton';
-import { useProjectRoom } from '@/context/ProjectRoomContext.tsx';
+import { LogOutIcon } from 'lucide-react';
 
-import './index.css';
 import { RouterPath } from '@/pages/RouterPath.ts';
+import './index.css';
 
 const { Sider } = Layout;
 
@@ -48,7 +48,7 @@ const ProjectRunSider = ({ onRunClick }: Props) => {
 
     const [folded] = useState<boolean>(true);
     const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
-    const [focusOnLatestRun, setFocusOnLatestRun] = useState<boolean>(true);
+    const [focusOnLatestRun, setFocusOnLatestRun] = useState<boolean>(false);
 
     // Register tour step for the run table
     useEffect(() => {
