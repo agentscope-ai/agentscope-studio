@@ -260,13 +260,13 @@ export const formatTime = (seconds: number, decimals: number = 1): string => {
         }
         // Show hours and minutes if seconds is zero
         else if (remainingSeconds === 0) {
-            return `${hours}h ${minutes}m`;
+            return `${hours}h ${minutes}min`;
         }
         // Show hours and seconds if minutes is zero
         else if (minutes === 0) {
             return `${hours}h ${remainingSeconds.toFixed(decimals)}s`;
         }
         // Show all components: hours, minutes, and seconds
-        return `${hours}h ${minutes}m ${remainingSeconds.toFixed(decimals)}s`;
+        return `${hours}h ${minutes}min ${remainingSeconds.toFixed(decimals)}s`;
     }
 };
