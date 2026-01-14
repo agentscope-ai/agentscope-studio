@@ -319,6 +319,7 @@ export class RunDao {
                             content: msg.msg.content,
                             timestamp: msg.msg.timestamp,
                             metadata: msg.msg.metadata,
+                            speech: msg.speech,
                         })),
                     })),
                     spans: spans,
