@@ -208,7 +208,11 @@
         "clear-data-warning": "此操作将清空 Friday 的所有历史对话数据，此操作不可恢复",
         "clear-data-confirm-title": "⚠️ 确认清空数据？",
         "clear-data-confirm-description": "您即将清空所有 Friday 历史对话数据。此操作不可撤销，请谨慎操作。确定要继续吗？",
-        "language-settings": "语言设置"
+        "language-settings": "语言设置",
+        "database": "数据库",
+        "path": "路径：",
+        "database-usage": "数据库使用情况",
+        "fridaydata": "Friday数据"
     },
     "table": {
         "column": {

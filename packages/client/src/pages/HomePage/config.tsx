@@ -7,7 +7,7 @@ import {
     FolderGit2Icon,
     RouteIcon,
     UnplugIcon,
-    Package,
+    Tag,
 } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 import { ComponentType, SVGProps } from 'react';
@@ -46,7 +46,7 @@ export const settingsMenuItems: SettingsMenuItem[] = [
         value: 'version',
         labelKey: 'settings.version',
         descriptionKey: 'settings.version-description',
-        icon: Package,
+        icon: Tag,
     },
 ];
 

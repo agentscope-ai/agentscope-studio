@@ -6,11 +6,18 @@ import { useMessageApi } from '@/context/MessageApiContext.tsx';
 import { useSocket } from '@/context/SocketContext.tsx';
 import { SocketEvents } from '@shared/types/trpc';
 
+interface DatabaseInfoType {
+    size: number;
+    formattedSize: string;
+    path: string;
+    fridayConfigPath: string;
+}
 interface SidebarContextType {
     isUpdating: boolean;
     clearDataDialogOpen: boolean;
     latestVersion: string;
     currentVersion: string;
+    databaseInfo?: DatabaseInfoType | null;
     handleUpdate: (version: string) => Promise<void>;
     confirmClearData: () => void;
     setClearDataDialogOpen: (open: boolean) => void;
@@ -32,7 +39,7 @@ export const StudioSidebarProvider = ({
     const [latestVersion, setLatestVersion] = useState<string>('');
     const [isUpdating, setIsUpdating] = useState(false);
     const { data: currentVersionData } = trpc.getCurrentVersion.useQuery();
-
+    const { data: databaseInfo } = trpc.getDatabaseInfo.useQuery();
     const updateStudioMutation = trpc.updateStudio.useMutation();
 
     const confirmClearData = () => {
@@ -97,6 +104,7 @@ export const StudioSidebarProvider = ({
         clearDataDialogOpen,
         latestVersion,
         currentVersion: currentVersionData?.data?.version || '',
+        databaseInfo: databaseInfo?.data || null,
         handleUpdate,
         confirmClearData,
         setLatestVersion,

@@ -14,8 +14,9 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert.tsx';
 import { Dialog, DialogContent } from '@/components/ui/dialog.tsx';
 import { useI18n } from '@/context/I18Context.tsx';
 import { checkForUpdates } from '@/utils/versionCheck';
-import { settingsMenuItems } from './config';
+import { settingsMenuItems } from '../config';
 import { useSidebar } from '@/context/SidebarContext';
+import { DatabaseChart } from './databasechart';
 
 interface SettingsProps {
     open: boolean;
@@ -31,6 +32,7 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
         clearDataDialogOpen,
         latestVersion,
         currentVersion,
+        databaseInfo,
         confirmClearData,
         handleUpdate,
         setClearDataDialogOpen,
@@ -98,7 +100,7 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                 })}
                             </TabsList>
                         </div>
-                        <div className="flex-1 min-h-[500px]">
+                        <div className="flex-1 min-h-[540px]">
                             {settingsMenuItems.map((item) => {
                                 const Icon = item.icon;
                                 return (
@@ -155,27 +157,63 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                                 </div>
                                             )}
                                             {item.value === 'data' && (
-                                                <div className="flex flex-col bg-gray-50 rounded-lg p-4">
-                                                    <div className="text-sm font-medium text-bolt-elements-textPrimary mb-2">
-                                                        {t('action.clear-data')}
+                                                <div className="flex flex-col gap-4">
+                                                    <div className="flex flex-col bg-gray-50 rounded-lg p-4">
+                                                        <div className="text-sm font-medium text-bolt-elements-textPrimary mb-2">
+                                                            {t(
+                                                                'settings.fridaydata',
+                                                            )}
+                                                        </div>
+                                                        {databaseInfo && (
+                                                            <div className="text-xs pb-1">
+                                                                {t(
+                                                                    'settings.path',
+                                                                )}
+                                                                {
+                                                                    databaseInfo.fridayConfigPath
+                                                                }
+                                                            </div>
+                                                        )}
+                                                        <div className="flex items-center text-xs text-muted-foreground">
+                                                            {t(
+                                                                'settings.clear-data-warning',
+                                                            )}
+                                                            <Button
+                                                                className="h-6 px-1.5 not-last:text-xs ml-2"
+                                                                variant="destructive"
+                                                                onClick={
+                                                                    handleClearData
+                                                                }
+                                                            >
+                                                                {t(
+                                                                    'action.clear-data',
+                                                                )}
+                                                            </Button>
+                                                        </div>
                                                     </div>
 
-                                                    <div className="flex items-center text-xs text-muted-foreground">
-                                                        {t(
-                                                            'settings.clear-data-warning',
-                                                        )}
-                                                        <Button
-                                                            className="text-xs ml-2"
-                                                            variant="destructive"
-                                                            onClick={
-                                                                handleClearData
-                                                            }
-                                                        >
-                                                            {t(
-                                                                'action.clear-data',
-                                                            )}
-                                                        </Button>
-                                                    </div>
+                                                    {databaseInfo && (
+                                                        <div className="flex flex-col bg-gray-50 rounded-lg p-4">
+                                                            <div className="text-sm font-medium text-bolt-elements-textPrimary mb-2">
+                                                                {t(
+                                                                    'settings.database',
+                                                                )}
+                                                            </div>
+                                                            <div className="text-xs">
+                                                                {t(
+                                                                    'settings.path',
+                                                                )}
+                                                                {
+                                                                    databaseInfo.path
+                                                                }
+                                                            </div>
+                                                            <DatabaseChart
+                                                                size={
+                                                                    databaseInfo.formattedSize
+                                                                }
+                                                            />
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
                                             {item.value === 'version' && (

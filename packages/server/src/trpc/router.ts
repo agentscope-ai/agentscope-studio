@@ -29,6 +29,7 @@ import { ReplyDao } from '@/dao/Reply';
 import { SpanDao } from '../dao/Trace';
 import { APP_INFO } from '../../../shared/src';
 import { runPythonScript } from './socket';
+import { ConfigManager } from '../../../shared/src/config/server';
 
 const textBlock = z.object({
     text: z.string(),
@@ -470,13 +471,44 @@ export const appRouter = t.router({
             } as ResponseBody<{ version: string }>;
         } catch (error) {
             console.error('Error getting current version:', error);
-            return {
-                success: false,
+            throw new TRPCError({
+                code: 'INTERNAL_SERVER_ERROR',
                 message:
                     error instanceof Error
                         ? error.message
-                        : 'Failed to get version',
-            } as ResponseBody<{ version: string }>;
+                        : 'Failed to getting current version',
+            });
+        }
+    }),
+
+    getDatabaseInfo: t.procedure.query(async () => {
+        try {
+            const configManager = ConfigManager.getInstance();
+            const dbStats = configManager.getDatabaseStats();
+            return {
+                success: true,
+                message: 'Database info retrieved successfully',
+                data: {
+                    path: dbStats.path,
+                    size: dbStats.size,
+                    formattedSize: dbStats.formattedSize,
+                    fridayConfigPath: dbStats.fridayConfigPath,
+                },
+            } as ResponseBody<{
+                path: string;
+                size: number;
+                formattedSize: string;
+                fridayConfigPath: string;
+            }>;
+        } catch (error) {
+            console.error('Error getting database info:', error);
+            throw new TRPCError({
+                code: 'INTERNAL_SERVER_ERROR',
+                message:
+                    error instanceof Error
+                        ? error.message
+                        : 'Failed to getting database info',
+            });
         }
     }),
 
