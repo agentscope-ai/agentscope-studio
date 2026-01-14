@@ -446,6 +446,12 @@ const AsChat = ({
         );
     };
 
+    const hasSpeech = (reply: Reply): boolean => {
+        if (!reply.messages || reply.messages.length === 0) {
+            return false;
+        }
+        return reply.messages.some((message) => message.speech);
+    };
     return (
         <div className="flex flex-col w-full max-w-[800px] h-full p-4 pt-2">
             {/*The bubble list*/}
@@ -458,7 +464,8 @@ const AsChat = ({
                     {organizedReplies.map((reply) => {
                         // Look up speechState using originalReplyId if available (for flattened mode)
                         const lookupId = reply.originalReplyId || reply.replyId;
-                        const speechState = speechStates?.[lookupId];
+                        let speechState = speechStates?.[lookupId];
+                        if (!hasSpeech(reply)) speechState = undefined;
                         return (
                             <AsBubble
                                 avatar={
