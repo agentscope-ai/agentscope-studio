@@ -15,6 +15,7 @@ import {
     AccordionItem,
 } from '@/components/ui/accordion.tsx';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert.tsx';
+import { formatDateTime } from '@/utils/common.ts';
 
 interface Props {
     reply: Reply | null;
@@ -70,7 +71,7 @@ const ReplyPanel = ({ reply }: Props) => {
                     ReplyId: reply.replyId,
                     Name: reply.replyName,
                     Role: reply.replyRole,
-                    CreatedAt: reply.createdAt,
+                    CreatedAt: formatDateTime(reply.createdAt),
                     '% Messages': reply.messages.length,
                 }}
             />

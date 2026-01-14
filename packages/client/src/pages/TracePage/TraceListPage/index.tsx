@@ -1,5 +1,4 @@
 import { TableColumnsType } from 'antd';
-import dayjs from 'dayjs';
 import { CheckCircle2Icon, CopyIcon, InfoIcon } from 'lucide-react';
 import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -19,6 +18,7 @@ import { useTraceContext } from '@/context/TraceContext';
 import { copyToClipboard } from '@/utils/common';
 import { TraceListItem } from '@shared/types';
 import TraceDetailPage from '../TraceDetailPage';
+import { formatDateTime, formatNumber, formatDuration, formatDurationWithUnit } from '@/utils/common';
 
 // Helper component for statistic cards
 const StatCard = ({
@@ -94,19 +94,7 @@ const TraceListPage = () => {
         drawerOpen,
         setDrawerOpen,
     } = useTraceContext();
-
-    const formatDuration = (seconds: number): string => {
-        if (seconds < 1) {
-            return `${(seconds * 1000).toFixed(2)}ms`;
-        }
-        return `${seconds.toFixed(2)}s`;
-    };
-
-    const formatTime = (timeNs: string): string => {
-        const timeMs = Number(BigInt(timeNs) / BigInt(1_000_000));
-        return dayjs(timeMs).format('YYYY-MM-DD HH:mm:ss.SSS');
-    };
-
+    
     const getStatusDisplay = (status: number) => {
         if (status === 2) {
             return (
@@ -203,7 +191,7 @@ const TraceListPage = () => {
                 minWidth: 150,
                 render: (_, record) => (
                     <span className="text-xs sm:text-sm">
-                        {formatTime(record.startTime)}
+                        {formatDateTime(record.startTime)}
                     </span>
                 ),
             },
@@ -215,7 +203,7 @@ const TraceListPage = () => {
                     <span
                         className={`text-xs sm:text-sm ${getLatencyColor(record.duration)}`}
                     >
-                        {formatDuration(record.duration)}
+                        {formatDurationWithUnit(record.duration)}
                     </span>
                 ),
             },
@@ -226,7 +214,7 @@ const TraceListPage = () => {
                 render: (_, record) => (
                     <span className="text-xs sm:text-sm">
                         {record.totalTokens
-                            ? record.totalTokens.toLocaleString()
+                            ? formatNumber(record.totalTokens)
                             : '-'}
                     </span>
                 ),
@@ -293,6 +281,7 @@ const TraceListPage = () => {
                             ? formatDuration(statistics.avgDuration)
                             : '-'
                     }
+                    unit={statistics?.avgDuration !== undefined && statistics.avgDuration < 1 ? 'ms' : 's'}
                 />
             </div>
 

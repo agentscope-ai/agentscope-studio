@@ -16,6 +16,7 @@ import {
     TextCell,
 } from '@/components/tables/utils.tsx';
 import { useProjectListRoom } from '@/context/ProjectListRoomContext.tsx';
+import { formatDateTime } from '@/utils/common';
 
 const ProjectPage = () => {
     // Obtain data and actions from the ProjectListRoom context
@@ -124,7 +125,7 @@ const ProjectPage = () => {
             sortIcon: (sortOrder) => renderSortIcon(sortOrder, true),
             render: (value, record) => (
                 <TextCell
-                    text={value}
+                    text={formatDateTime(value)}
                     selected={selectedRowKeys.includes(record.project)}
                 />
             ),

@@ -1,4 +1,3 @@
-import dayjs from 'dayjs';
 import {
     CheckCircle2Icon,
     ChevronDownIcon,
@@ -23,24 +22,12 @@ import { useTraceContext } from '@/context/TraceContext';
 import { copyToClipboard } from '@/utils/common';
 import { SpanData } from '@shared/types/trace';
 import { getNestedValue } from '@shared/utils/objectUtils';
+import { formatDateTime, formatDurationWithUnit } from '@/utils/common';
 
 interface SpanTreeNode {
     span: SpanData;
     children?: SpanTreeNode[];
 }
-
-// Helper functions defined outside component to avoid hoisting issues
-const formatDuration = (seconds: number): string => {
-    if (seconds < 1) {
-        return `${(seconds * 1000).toFixed(2)}ms`;
-    }
-    return `${seconds.toFixed(2)}s`;
-};
-
-const formatTime = (timeNs: string): string => {
-    const timeMs = Number(BigInt(timeNs) / BigInt(1_000_000));
-    return dayjs(timeMs).format('YYYY-MM-DD HH:mm:ss.SSS');
-};
 
 const getStatusIcon = (statusCode: number) => {
     if (statusCode === 2) {
@@ -258,7 +245,7 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                     {!hasChildren && <div className="w-4" />}
                     <span className="flex-1 text-sm">{node.span.name}</span>
                     <span className="text-xs text-muted-foreground">
-                        {formatDuration(duration)}
+                        {formatDurationWithUnit(duration)}
                     </span>
                     {getStatusIcon(node.span.status?.code || 0)}
                 </div>
@@ -296,7 +283,7 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                                     {t('table.column.duration')}:
                                 </span>
                                 <span className="text-xs">
-                                    {formatDuration(traceDuration)}
+                                    {formatDurationWithUnit(traceDuration)}
                                 </span>
                             </div>
                             <div>
@@ -304,7 +291,7 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                                     {t('table.column.startTime')}:
                                 </span>
                                 <span className="text-xs">
-                                    {formatTime(rootSpan.startTimeUnixNano)}
+                                    {formatDateTime(rootSpan.startTimeUnixNano)}
                                 </span>
                             </div>
                         </div>
@@ -383,7 +370,7 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                                     {t('common.start-time')}
                                 </div>
                                 <div className="text-sm font-medium break-words">
-                                    {formatTime(displaySpan.startTimeUnixNano)}
+                                    {formatDateTime(displaySpan.startTimeUnixNano)}
                                 </div>
                             </div>
                             <div>
@@ -391,7 +378,7 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                                     {t('table.column.duration')}
                                 </div>
                                 <div className="text-sm font-medium">
-                                    {formatDuration(
+                                    {formatDurationWithUnit(
                                         Number(
                                             BigInt(
                                                 displaySpan.endTimeUnixNano,
