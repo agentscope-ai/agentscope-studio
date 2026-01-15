@@ -49,6 +49,7 @@ const ProjectRunSider = ({ onRunClick }: Props) => {
     const [folded] = useState<boolean>(true);
     const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
     const [focusOnLatestRun, setFocusOnLatestRun] = useState<boolean>(false);
+    const [searchText, setSearchText] = useState<string>('');
 
     // Register tour step for the run table
     useEffect(() => {
@@ -147,6 +148,10 @@ const ProjectRunSider = ({ onRunClick }: Props) => {
                 {/* Search and control buttons */}
                 <Flex vertical={false} gap="small" justify="space-between">
                     <Input
+                        value={searchText}
+                        onChange={(event) => {
+                            setSearchText(event.target.value);
+                        }}
                         style={{
                             maxWidth: 300,
                             borderRadius: 'calc(var(--radius) - 2px)',
@@ -263,7 +268,11 @@ const ProjectRunSider = ({ onRunClick }: Props) => {
                             ),
                         },
                     ]}
-                    dataSource={runs}
+                    dataSource={runs.filter((run) =>
+                        run.name
+                            .toLowerCase()
+                            .includes(searchText.toLowerCase()),
+                    )}
                     onRow={(record) => {
                         const styleProps: Record<string, unknown> = {};
                         // Highlight current run row
