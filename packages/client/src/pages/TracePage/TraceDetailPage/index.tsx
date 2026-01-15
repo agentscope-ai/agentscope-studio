@@ -370,7 +370,9 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                                     {t('common.start-time')}
                                 </div>
                                 <div className="text-sm font-medium break-words">
-                                    {formatDateTime(displaySpan.startTimeUnixNano)}
+                                    {formatDateTime(
+                                        displaySpan.startTimeUnixNano,
+                                    )}
                                 </div>
                             </div>
                             <div>
