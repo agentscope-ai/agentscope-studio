@@ -47,7 +47,6 @@ If you plan to use AgentScope-Studio on the cloud, it is recommended that you di
 
 [Deploy AgentScope-Studio on Alibaba Cloud](https://help.aliyun.com/zh/compute-nest/use-cases/agent-scope-studio-community-edition-service-instance-deployment-document)
 
-
 ## Connect to AgentScope-Studio
 
 In an AgentScope project, set the `studio_url` field in the `init` function as follows:
