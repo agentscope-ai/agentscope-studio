@@ -51,7 +51,7 @@
         "react-nice-avatar": "^1.5.0",
         "react-router-dom": "^7.4.0",
         "react-slot-counter": "^3.3.1",
-        "react-syntax-highlighter": "^15.6.1",
+        "react-syntax-highlighter": "^16.1.0",
         "recharts": "^2.15.2",
         "rehype-raw": "^7.0.0",
         "remark-gfm": "^4.0.1",
