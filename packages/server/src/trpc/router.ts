@@ -27,6 +27,9 @@ import { FridayConfigManager } from '../../../shared/src/config/friday';
 import { FridayAppMessageDao } from '../dao/FridayAppMessage';
 import { ReplyDao } from '../dao/Reply';
 import { SpanDao } from '../dao/Trace';
+import { APP_INFO } from '../../../shared/src';
+import { runPythonScript } from './socket';
+import { ConfigManager } from '../../../shared/src/config/server';
 
 const textBlock = z.object({
     text: z.string(),
@@ -303,26 +306,25 @@ export const appRouter = t.router({
             }),
         )
         .mutation(async ({ input }) => {
-            FridayAppMessageDao.saveReplyMessage(
-                input.replyId,
-                input.msg as {
-                    id: string;
-                    name: string;
-                    role: string;
-                    content: ContentBlocks;
-                    metadata: object;
-                    timestamp: string;
-                },
-                false,
-            )
-                .then((reply) => {
-                    // Broadcast to all the clients in the FridayAppRoom
-                    SocketManager.broadcastReplyToFridayAppRoom(reply);
-                })
-                .catch((error) => {
-                    console.error(error);
-                    throw error;
-                });
+            try {
+                const reply = await FridayAppMessageDao.saveReplyMessage(
+                    input.replyId,
+                    input.msg as {
+                        id: string;
+                        name: string;
+                        role: string;
+                        content: ContentBlocks;
+                        metadata: object;
+                        timestamp: string;
+                    },
+                    false,
+                );
+                // Broadcast to all the clients in the FridayAppRoom
+                SocketManager.broadcastReplyToFridayAppRoom(reply);
+            } catch (error) {
+                console.error(error);
+                throw error;
+            }
         }),
 
     pushFinishedSignalToFridayApp: t.procedure
@@ -453,6 +455,104 @@ export const appRouter = t.router({
                         error instanceof Error
                             ? error.message
                             : 'Failed to get trace statistics',
+                });
+            }
+        }),
+
+    getCurrentVersion: t.procedure.query(async () => {
+        try {
+            const version = APP_INFO.version;
+            return {
+                success: true,
+                message: 'Version retrieved successfully',
+                data: {
+                    version: version,
+                },
+            } as ResponseBody<{ version: string }>;
+        } catch (error) {
+            console.error('Error get current version:', error);
+            throw new TRPCError({
+                code: 'INTERNAL_SERVER_ERROR',
+                message:
+                    error instanceof Error
+                        ? error.message
+                        : 'Failed to get current version',
+            });
+        }
+    }),
+
+    getDatabaseInfo: t.procedure.query(async () => {
+        try {
+            const configManager = ConfigManager.getInstance();
+            const dbStats = configManager.getDatabaseStats();
+            return {
+                success: true,
+                message: 'Database info retrieved successfully',
+                data: {
+                    path: dbStats.path,
+                    size: dbStats.size,
+                    formattedSize: dbStats.formattedSize,
+                    fridayConfigPath: dbStats.fridayConfigPath,
+                    fridayHistoryPath: dbStats.fridayHistoryPath,
+                },
+            } as ResponseBody<{
+                path: string;
+                size: number;
+                formattedSize: string;
+                fridayConfigPath: string;
+                fridayHistoryPath: string;
+            }>;
+        } catch (error) {
+            console.error('Error get database info:', error);
+            throw new TRPCError({
+                code: 'INTERNAL_SERVER_ERROR',
+                message:
+                    error instanceof Error
+                        ? error.message
+                        : 'Failed to get database info',
+            });
+        }
+    }),
+
+    updateStudio: t.procedure
+        .input(
+            z.object({
+                version: z.string(),
+            }),
+        )
+        .mutation(async ({ input }) => {
+            try {
+                // Execute the npm global update command using spawn
+                const command = 'npm';
+                const args = [
+                    'install',
+                    '-g',
+                    `@agentscope/studio@${input.version}`,
+                ];
+                const result = await runPythonScript(command, args);
+                if (result.success) {
+                    console.debug('Update data:', result.data);
+
+                    return {
+                        success: true,
+                        message:
+                            'Studio updated successfully. Please restart the application.',
+                        version: input.version,
+                    };
+                } else {
+                    throw new TRPCError({
+                        code: 'INTERNAL_SERVER_ERROR',
+                        message: `npm install failed: ${result.error}`,
+                    });
+                }
+            } catch (error) {
+                console.error('Error updating studio:', error);
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : 'Failed to update studio',
                 });
             }
         }),
