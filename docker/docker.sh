@@ -4,7 +4,7 @@
 
 set -e
 
-IMAGE_NAME="agentscope-studio"
+IMAGE_NAME="agentscope/studio"
 IMAGE_TAG="latest"
 COMPOSE_FILE="docker/docker-compose.yml"
 

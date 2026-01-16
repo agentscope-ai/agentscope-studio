@@ -1,6 +1,6 @@
 services:
     agentscope-studio:
-        image: agentscope-studio:latest
+        image: agentscope/studio
         ports:
             - '3000:3000'
             - '4317:4317'
