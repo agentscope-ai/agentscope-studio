@@ -21,13 +21,15 @@ RUN npm ci
 
 COPY bin/ ./bin/
 
-# Install Python dependencies and build
+# Install Python dependencies and build//
 RUN pip install --no-cache-dir -r packages/app/requirements.txt \
     && npm run build
 
-# Cleanup: keep only dist and node_modules (production deps)
-RUN npm ci --omit=dev \
-    && rm -rf packages \
+# Reinstall production dependencies only
+RUN npm ci --omit=dev
+
+# Cleanup: keep only dist and node_modules (no runtime dependency on package.json)
+RUN rm -rf packages \
     && rm -rf bin \
     && rm -rf package.json package-lock.json \
     && rm -rf node_modules/.cache \

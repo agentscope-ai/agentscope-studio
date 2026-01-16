@@ -39,22 +39,7 @@ npm run dev
 
 ### Docker Deployment
 
-```bash
-# Add execute permission
-chmod +x docker/docker.sh
-
-# Build and start
-./docker/docker.sh build
-./docker/docker.sh start
-
-# View logs
-./docker/docker.sh logs
-
-# Stop
-./docker/docker.sh stop
-```
-
-For more Docker commands, see `docker/README.md` in the project root.
+Please refer to `docker/README.md` in the project root.
 
 ### Deploy on Alibaba Cloud
 

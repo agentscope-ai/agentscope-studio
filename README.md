@@ -130,22 +130,7 @@ as_studio
 
 ### Docker Deployment
 
-```bash
-# Add execute permission
-chmod +x docker/docker.sh
-
-# Build and start
-./docker/docker.sh build
-./docker/docker.sh start
-
-# View logs
-./docker/docker.sh logs
-
-# Stop
-./docker/docker.sh stop
-```
-
-For more details, see [docker/README.md](docker/README.md).
+Please refer to [docker/README.md](docker/README.md).
 
 ## 🚀 QuickStart
 
