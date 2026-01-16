@@ -1,7 +1,7 @@
 import { memo, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Radio } from 'antd';
-import { CircleCheckBig, Bell, Download } from 'lucide-react';
+import { CircleCheckBig, Bell, Download, CopyIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
 import {
@@ -10,6 +10,11 @@ import {
     TabsList,
     TabsTrigger,
 } from '@/components/ui/tabs.tsx';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert.tsx';
 import { Dialog, DialogContent } from '@/components/ui/dialog.tsx';
 import { useI18n } from '@/context/I18Context.tsx';
@@ -17,6 +22,8 @@ import { checkForUpdates } from '@/utils/versionCheck';
 import { settingsMenuItems } from '../config';
 import { useSidebar } from '@/context/SidebarContext';
 import { DatabaseChart } from './databasechart';
+import { copyToClipboard } from '@/utils/common';
+import { useMessageApi } from '@/context/MessageApiContext.tsx';
 
 interface SettingsProps {
     open: boolean;
@@ -27,6 +34,7 @@ interface SettingsProps {
 const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
     const { t } = useTranslation();
     const { changeLanguage, currentLanguage } = useI18n();
+    const { messageApi } = useMessageApi();
     const {
         isUpdating,
         clearDataDialogOpen,
@@ -63,7 +71,33 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
     const handleClearData = () => {
         setClearDataDialogOpen(true);
     };
-
+    const PathRender = ({ path }: { path?: string }) => {
+        if (!path) return null;
+        const handleCopyPath = async () => {
+            const success = await copyToClipboard(path);
+            if (success) messageApi.success(t('trace.message.copySuccess'));
+            else messageApi.success(t('trace.message.copyFailed'));
+        };
+        return (
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <div className="flex items-center text-xs mr-2  whitespace-nowrap max-w-40 truncate cursor-default">
+                        {path.trim().split('/').pop()}
+                        <Button
+                            size="icon-sm"
+                            variant="ghost"
+                            onClick={handleCopyPath}
+                        >
+                            <CopyIcon className="size-3" />
+                        </Button>
+                    </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>{path}</p>
+                </TooltipContent>
+            </Tooltip>
+        );
+    };
     return (
         <>
             {/* Settings Dialog */}
@@ -165,14 +199,11 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                                             )}
                                                         </div>
                                                         {databaseInfo && (
-                                                            <div className="text-xs pb-1">
-                                                                {t(
-                                                                    'settings.path',
-                                                                )}
-                                                                {
+                                                            <PathRender
+                                                                path={
                                                                     databaseInfo.fridayConfigPath
                                                                 }
-                                                            </div>
+                                                            />
                                                         )}
                                                         <div className="flex items-center text-xs text-muted-foreground">
                                                             {t(
@@ -199,14 +230,14 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                                                     'settings.database',
                                                                 )}
                                                             </div>
-                                                            <div className="text-xs">
-                                                                {t(
-                                                                    'settings.path',
-                                                                )}
-                                                                {
-                                                                    databaseInfo.path
-                                                                }
-                                                            </div>
+                                                            {databaseInfo && (
+                                                                <PathRender
+                                                                    path={
+                                                                        databaseInfo.path
+                                                                    }
+                                                                />
+                                                            )}
+
                                                             <DatabaseChart
                                                                 size={
                                                                     databaseInfo.formattedSize
