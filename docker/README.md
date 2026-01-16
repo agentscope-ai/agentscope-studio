@@ -47,7 +47,7 @@ chmod +x docker/docker.sh
 
 ```bash
 # Build image
-docker build -f docker/Dockerfile -t agentscope-studio:latest .
+docker build -f docker/Dockerfile -t agentscope/studio:latest .
 
 # Start
 docker-compose -f docker/docker-compose.yml up -d
