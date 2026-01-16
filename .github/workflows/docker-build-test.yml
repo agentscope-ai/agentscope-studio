@@ -1,0 +1,82 @@
+name: Docker Build and Test
+
+on: [push, pull_request]
+
+env:
+  REGISTRY: docker.io
+  IMAGE_NAME: agentscope/studio
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install docker-compose
+        run: |
+          echo "📦 Installing docker-compose..."
+          sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+          docker-compose --version
+
+      - name: Setup docker.sh
+        run: chmod +x docker/docker.sh
+
+      - name: Get version from package.json
+        id: package_version
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          TAG="v${PACKAGE_VERSION}"
+          echo "version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "📦 Package.json version: $PACKAGE_VERSION"
+          echo "🏷️  Docker tag: $TAG"
+
+      - name: Build Docker image (docker.sh build)
+        run: |
+          echo "🔨 Building Docker image..."
+          ./docker/docker.sh build
+          docker tag agentscope/studio:latest ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.package_version.outputs.tag }}
+          docker tag agentscope/studio:latest ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          docker images
+
+      - name: Update docker-compose image
+        run: |
+          sed -i "s|image: agentscope/studio:latest|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest|g" docker/docker-compose.yml
+
+      - name: Start container (docker.sh start)
+        run: |
+          echo "🚀 Starting container..."
+          ./docker/docker.sh start
+          sleep 10
+
+      - name: Check status (docker.sh status)
+        run: ./docker/docker.sh status
+
+      - name: Health check
+        run: |
+          echo "🏥 Health check..."
+          for i in {1..30}; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/trpc 2>/dev/null || echo "000")
+            if [ "$HTTP_CODE" != "000" ]; then
+              echo "✅ Service responding (HTTP $HTTP_CODE)"
+              exit 0
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+          echo "❌ Service not responding"
+          exit 1
+
+      - name: Print container logs
+        if: always()
+        run: |
+          echo "📋 Container logs:"
+          docker-compose -f docker/docker-compose.yml logs --tail=100 || true
+
+      - name: Stop container (docker.sh stop)
+        if: always()
+        run: ./docker/docker.sh stop

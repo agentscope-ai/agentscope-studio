@@ -47,7 +47,7 @@ export const ServerConfig = {
             DEFAULT_CONFIG.server.otelGrpcPort.toString(),
     ),
     database: {
-        type: 'sqlite' as const,
+        type: 'better-sqlite3' as const,
         database: path.join(PATHS.getAppDataDir(), 'database.sqlite'),
     },
 } as const;

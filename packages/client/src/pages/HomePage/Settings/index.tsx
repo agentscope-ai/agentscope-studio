@@ -80,8 +80,7 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
             if (success) {
                 setCopyedPath(path);
                 messageApi.success(t('trace.message.copySuccess'));
-            }
-            else messageApi.success(t('trace.message.copyFailed'));
+            } else messageApi.success(t('trace.message.copyFailed'));
         };
         return (
             <div className="text-xs py-1 w-[100%]">
@@ -95,7 +94,7 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                         <div className="text-xs truncate">{path}</div>
                     </div>
                     <div className="ml-3" onClick={handleCopyPath}>
-                        {path === copyedPath ? <CopyCheckIcon /> : <CopyIcon /> }
+                        {path === copyedPath ? <CopyCheckIcon /> : <CopyIcon />}
                     </div>
                 </div>
             </div>
@@ -218,16 +217,16 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                                             />
                                                         </div>
                                                         <Button
-                                                                className="h-6 px-1.5 not-last:text-xs mt-1 w-[80px]"
-                                                                variant="secondary"
-                                                                onClick={
-                                                                    handleClearData
-                                                                }
-                                                            >
-                                                                {t(
-                                                                    'action.clear-data',
-                                                                )}
-                                                            </Button>
+                                                            className="h-6 px-1.5 not-last:text-xs mt-1 w-[80px]"
+                                                            variant="secondary"
+                                                            onClick={
+                                                                handleClearData
+                                                            }
+                                                        >
+                                                            {t(
+                                                                'action.clear-data',
+                                                            )}
+                                                        </Button>
                                                     </div>
 
                                                     {databaseInfo && (
@@ -238,19 +237,22 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                                                 )}
                                                             </div>
                                                             <div className="flex justify-between">
-                                                                <div className='w-[40%]'><PathRender
-                                                                path={
-                                                                    databaseInfo?.path
-                                                                }
-                                                                title={t(
-                                                                    'settings.path',
-                                                                )}
-                                                            /></div>
-                                                            <DatabaseChart
-                                                                size={
-                                                                    databaseInfo.formattedSize
-                                                                }
-                                                            /></div>
+                                                                <div className="w-[40%]">
+                                                                    <PathRender
+                                                                        path={
+                                                                            databaseInfo?.path
+                                                                        }
+                                                                        title={t(
+                                                                            'settings.path',
+                                                                        )}
+                                                                    />
+                                                                </div>
+                                                                <DatabaseChart
+                                                                    size={
+                                                                        databaseInfo.formattedSize
+                                                                    }
+                                                                />
+                                                            </div>
                                                         </div>
                                                     )}
                                                 </div>
@@ -267,9 +269,9 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                                             {currentVersion}
                                                             {!hasUpdate && (
                                                                 <span className="w-16 flex items-center justify-around rounded-md text-xs text-emerald-700 ml-16 -mt-5 bg-emerald-100">
-                                                                <CircleCheckBig className="h-3 w-3" />
-                                                                Latest
-                                                            </span>
+                                                                    <CircleCheckBig className="h-3 w-3" />
+                                                                    Latest
+                                                                </span>
                                                             )}
                                                         </div>
                                                     </div>
