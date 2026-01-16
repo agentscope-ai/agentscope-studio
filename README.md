@@ -90,6 +90,7 @@ AgentScope Studio is a powerful **local visualization toolkit** designed for dev
 
 - **Node.js >= 20.0.0**
 - **npm >= 10.0.0**
+- [Docker](https://docs.docker.com/install/#supported-platforms) (optional, for Docker deployment)
 
 > **💡 Tip**: If you're using [nvm](https://github.com/nvm-sh/nvm), you can run `nvm use` to automatically switch to the required Node.js version.
 
@@ -118,6 +119,18 @@ npm install
 # Start in development mode
 npm run dev
 ```
+
+- From npm
+
+```bash
+npm install -g @agentscope/studio  # or npm install @agentscope/studio
+
+as_studio
+```
+
+### Docker Deployment
+
+Please refer to [docker/README.md](docker/README.md).
 
 ## 🚀 QuickStart
 
