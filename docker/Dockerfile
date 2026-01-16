@@ -31,7 +31,6 @@ RUN npm ci --omit=dev
 # Cleanup: keep only dist and node_modules (no runtime dependency on package.json)
 RUN rm -rf packages \
     && rm -rf bin \
-    && rm -rf package.json package-lock.json \
     && rm -rf node_modules/.cache \
     && npm cache clean --force \
     && rm -rf ~/.npm/_cacache \
