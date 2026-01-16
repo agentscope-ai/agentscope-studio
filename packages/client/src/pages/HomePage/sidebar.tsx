@@ -161,7 +161,7 @@ const StudioSidebar = () => {
                         {hasUpdate && (
                             <Badge
                                 variant="destructive"
-                                className="absolute top-1.6 -right-1 h-1.5 w-1.5 p-0 z-10"
+                                className="absolute top-1.5 -right-1 h-1.5 w-1.5 p-0 z-10"
                             />
                         )}
                     </div>

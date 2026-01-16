@@ -211,8 +211,9 @@
         "language-settings": "语言设置",
         "database": "数据库",
         "path": "路径：",
-        "database-usage": "数据库使用情况",
-        "fridaydata": "Friday数据"
+        "friday-history": "对话历史",
+        "database-usage": "大小",
+        "used": "已用"
     },
     "table": {
         "column": {

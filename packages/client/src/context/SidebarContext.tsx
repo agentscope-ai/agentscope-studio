@@ -11,6 +11,7 @@ interface DatabaseInfoType {
     formattedSize: string;
     path: string;
     fridayConfigPath: string;
+    fridayHistoryPath: string;
 }
 interface SidebarContextType {
     isUpdating: boolean;
@@ -53,7 +54,7 @@ export const StudioSidebarProvider = ({
     };
 
     // Handle update
-    const handleUpdate = async () => {
+    const handleUpdate = async (latestVersion: string) => {
         if (!latestVersion) return;
 
         setIsUpdating(true);

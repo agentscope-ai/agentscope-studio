@@ -470,13 +470,13 @@ export const appRouter = t.router({
                 },
             } as ResponseBody<{ version: string }>;
         } catch (error) {
-            console.error('Error getting current version:', error);
+            console.error('Error get current version:', error);
             throw new TRPCError({
                 code: 'INTERNAL_SERVER_ERROR',
                 message:
                     error instanceof Error
                         ? error.message
-                        : 'Failed to getting current version',
+                        : 'Failed to get current version',
             });
         }
     }),
@@ -493,21 +493,23 @@ export const appRouter = t.router({
                     size: dbStats.size,
                     formattedSize: dbStats.formattedSize,
                     fridayConfigPath: dbStats.fridayConfigPath,
+                    fridayHistoryPath: dbStats.fridayHistoryPath,
                 },
             } as ResponseBody<{
                 path: string;
                 size: number;
                 formattedSize: string;
                 fridayConfigPath: string;
+                fridayHistoryPath: string;
             }>;
         } catch (error) {
-            console.error('Error getting database info:', error);
+            console.error('Error get database info:', error);
             throw new TRPCError({
                 code: 'INTERNAL_SERVER_ERROR',
                 message:
                     error instanceof Error
                         ? error.message
-                        : 'Failed to getting database info',
+                        : 'Failed to get database info',
             });
         }
     }),

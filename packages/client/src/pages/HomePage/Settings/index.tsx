@@ -1,7 +1,13 @@
 import { memo, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Radio } from 'antd';
-import { CircleCheckBig, Bell, Download, CopyIcon } from 'lucide-react';
+import {
+    CircleCheckBig,
+    Bell,
+    Download,
+    CopyIcon,
+    CopyCheckIcon,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
 import {
@@ -10,11 +16,6 @@ import {
     TabsList,
     TabsTrigger,
 } from '@/components/ui/tabs.tsx';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert.tsx';
 import { Dialog, DialogContent } from '@/components/ui/dialog.tsx';
 import { useI18n } from '@/context/I18Context.tsx';
@@ -47,7 +48,7 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
         setLatestVersion,
     } = useSidebar();
     const [selectedLanguage, setSelectedLanguage] = useState(currentLanguage);
-
+    const [copyedPath, setCopyedPath] = useState('');
     // Update selected language when current language changes
     useEffect(() => {
         setSelectedLanguage(currentLanguage);
@@ -62,6 +63,7 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                 }
             });
         }
+        setCopyedPath('');
     }, [open, hasUpdate]);
 
     const handleLanguageChange = () => {
@@ -71,38 +73,39 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
     const handleClearData = () => {
         setClearDataDialogOpen(true);
     };
-    const PathRender = ({ path }: { path?: string }) => {
+    const PathRender = ({ path, title }: { path?: string; title: string }) => {
         if (!path) return null;
         const handleCopyPath = async () => {
             const success = await copyToClipboard(path);
-            if (success) messageApi.success(t('trace.message.copySuccess'));
+            if (success) {
+                setCopyedPath(path);
+                messageApi.success(t('trace.message.copySuccess'));
+            }
             else messageApi.success(t('trace.message.copyFailed'));
         };
         return (
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <div className="flex items-center text-xs mr-2  whitespace-nowrap max-w-40 truncate cursor-default">
-                        {path.trim().split('/').pop()}
-                        <Button
-                            size="icon-sm"
-                            variant="ghost"
-                            onClick={handleCopyPath}
-                        >
-                            <CopyIcon className="size-3" />
-                        </Button>
+            <div className="text-xs py-1 w-[100%]">
+                <div className="mr-2 mb-1 font-medium">{title}</div>
+                <div className="flex items-center">
+                    <div
+                        className="flex items-center border border-gray-300 rounded-md h-8 px-2 w-[calc(100%-40px)] 
+                            hover:border-muted-foreground hover:shadow-sm hover:ring hover:ring-muted-foreground hover:ring-opacity-30 
+                            transition-all duration-200 ease-in-out"
+                    >
+                        <div className="text-xs truncate">{path}</div>
                     </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>{path}</p>
-                </TooltipContent>
-            </Tooltip>
+                    <div className="ml-3" onClick={handleCopyPath}>
+                        {path === copyedPath ? <CopyCheckIcon /> : <CopyIcon /> }
+                    </div>
+                </div>
+            </div>
         );
     };
     return (
         <>
             {/* Settings Dialog */}
             <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent className="sm:max-w-[800px] p-0">
+                <DialogContent className="sm:max-w-[820px] p-0">
                     <Tabs
                         defaultValue="language"
                         className="flex gap-6 items-start"
@@ -194,24 +197,29 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                                 <div className="flex flex-col gap-4">
                                                     <div className="flex flex-col bg-gray-50 rounded-lg p-4">
                                                         <div className="text-sm font-medium text-bolt-elements-textPrimary mb-2">
-                                                            {t(
-                                                                'settings.fridaydata',
-                                                            )}
+                                                            Friday
                                                         </div>
-                                                        {databaseInfo && (
+                                                        <PathRender
+                                                            path={
+                                                                databaseInfo?.fridayConfigPath
+                                                            }
+                                                            title={t(
+                                                                'settings.path',
+                                                            )}
+                                                        />
+                                                        <div className="flex items-center">
                                                             <PathRender
                                                                 path={
-                                                                    databaseInfo.fridayConfigPath
+                                                                    databaseInfo?.fridayHistoryPath
                                                                 }
+                                                                title={t(
+                                                                    'settings.friday-history',
+                                                                )}
                                                             />
-                                                        )}
-                                                        <div className="flex items-center text-xs text-muted-foreground">
-                                                            {t(
-                                                                'settings.clear-data-warning',
-                                                            )}
-                                                            <Button
-                                                                className="h-6 px-1.5 not-last:text-xs ml-2"
-                                                                variant="destructive"
+                                                        </div>
+                                                        <Button
+                                                                className="h-6 px-1.5 not-last:text-xs mt-1 w-[80px]"
+                                                                variant="secondary"
                                                                 onClick={
                                                                     handleClearData
                                                                 }
@@ -220,7 +228,6 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                                                     'action.clear-data',
                                                                 )}
                                                             </Button>
-                                                        </div>
                                                     </div>
 
                                                     {databaseInfo && (
@@ -230,19 +237,20 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                                                     'settings.database',
                                                                 )}
                                                             </div>
-                                                            {databaseInfo && (
-                                                                <PathRender
-                                                                    path={
-                                                                        databaseInfo.path
-                                                                    }
-                                                                />
-                                                            )}
-
+                                                            <div className="flex justify-between">
+                                                                <div className='w-[40%]'><PathRender
+                                                                path={
+                                                                    databaseInfo?.path
+                                                                }
+                                                                title={t(
+                                                                    'settings.path',
+                                                                )}
+                                                            /></div>
                                                             <DatabaseChart
                                                                 size={
                                                                     databaseInfo.formattedSize
                                                                 }
-                                                            />
+                                                            /></div>
                                                         </div>
                                                     )}
                                                 </div>
@@ -258,10 +266,10 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                                         <div className="font-medium text-2xl">
                                                             {currentVersion}
                                                             {!hasUpdate && (
-                                                                <span className="w-18 flex items-center justify-around rounded-md text-xs text-[#166534] ml-18 -mt-5 bg-[#DCFCE6]">
-                                                                    <CircleCheckBig className="h-3 w-3" />
-                                                                    Latest
-                                                                </span>
+                                                                <span className="w-16 flex items-center justify-around rounded-md text-xs text-emerald-700 ml-16 -mt-5 bg-emerald-100">
+                                                                <CircleCheckBig className="h-3 w-3" />
+                                                                Latest
+                                                            </span>
                                                             )}
                                                         </div>
                                                     </div>

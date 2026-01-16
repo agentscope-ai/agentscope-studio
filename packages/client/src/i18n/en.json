@@ -216,9 +216,10 @@
         "clear-data-confirm-description": "You are about to clear all Friday conversation history data. This action is irreversible and cannot be undone. Are you sure you want to continue?",
         "language-settings": "Language settings",
         "database": "Database",
-        "path": "path: ",
-        "database-usage": "Database usage",
-        "fridaydata": "Friday data"
+        "path": "Path",
+        "friday-history": "Conversation history",
+        "database-usage": "Size",
+        "used": "Used"
     },
     "table": {
         "column": {

@@ -156,16 +156,17 @@ export class ConfigManager {
         path: string;
         size: number; // in bytes
         formattedSize: string; // formatted size with appropriate unit
+        fridayHistoryPath: string;
     } {
         const dbPath = this.getDatabasePath();
         const size = this.getDatabaseSize();
         const formattedSize = this.getFormattedDatabaseSize();
-
         return {
             path: dbPath,
-            size: size,
-            formattedSize: formattedSize,
+            size,
+            formattedSize,
             fridayConfigPath: PATHS.getFridayConfigPath(),
+            fridayHistoryPath: PATHS.getFridayDialogHistoryPath(),
         };
     }
 }
