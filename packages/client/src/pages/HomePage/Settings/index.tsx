@@ -7,6 +7,7 @@ import {
     RotateCcw,
     CopyIcon,
     CopyCheckIcon,
+    Trash,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
@@ -72,6 +73,12 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
     const handleClearData = () => {
         setClearDataDialogOpen(true);
     };
+    const goNewVersion = () => {
+        window.open(
+            'https://www.npmjs.com/package/@agentscope/studio',
+            '_blank',
+        );
+    };
     const PathRender = ({ path, title }: { path?: string; title: string }) => {
         if (!path) return null;
         const handleCopyPath = async () => {
@@ -96,9 +103,9 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                     </div>
                     <div className="ml-4" onClick={handleCopyPath}>
                         {path === copyedPath ? (
-                            <CopyCheckIcon className="h-4 w-4 text-emerald-500" />
+                            <CopyCheckIcon className="h-3 w-3 text-emerald-500" />
                         ) : (
-                            <CopyIcon className="h-4 w-4" />
+                            <CopyIcon className="h-3 w-3" />
                         )}
                     </div>
                 </div>
@@ -115,7 +122,7 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                         className="flex gap-6 items-start"
                     >
                         <div className="h-[-webkit-fill-available] flex flex-col border-r border-border">
-                            <h3 className="text-lg font-medium p-4 -mb-2 text-left ml-2">
+                            <h3 className="text-sm font-medium p-4 -mb-2 text-left ml-2">
                                 {t('common.settings')}
                             </h3>
                             <TabsList className="flex flex-col h-auto bg-transparent p-3 gap-1 w-[200px]">
@@ -125,10 +132,12 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                         <TabsTrigger
                                             key={item.value}
                                             value={item.value}
-                                            className="w-full justify-start data-[state=active]:bg-muted gap-2 px-3 py-2 relative"
+                                            className="w-full justify-start data-[state=active]:bg-muted gap-2 px-3 py-1.5 relative hover:bg-accent hover:text-accent-foreground"
                                         >
                                             <Icon className="h-4 w-4" />
-                                            <span>{t(item.labelKey)}</span>
+                                            <span className="text-sm">
+                                                {t(item.labelKey)}
+                                            </span>
                                             {item.value === 'version' &&
                                                 hasUpdate && (
                                                     <Badge
@@ -153,14 +162,14 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                         <div className="flex flex-col gap-6">
                                             <div>
                                                 <div className="flex items-center gap-2">
-                                                    <Icon className="h-5 w-5" />
+                                                    <Icon className="h-4 w-4" />
                                                     <div>
-                                                        <h3 className="text-lg font-medium">
+                                                        <h3 className="text-sm font-medium">
                                                             {t(item.labelKey)}
                                                         </h3>
                                                     </div>
                                                 </div>
-                                                <div className="text-sm text-muted-foreground mt-1">
+                                                <div className="text-xs text-muted-foreground mt-1">
                                                     {t(item.descriptionKey)}
                                                 </div>
                                             </div>
@@ -203,12 +212,13 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                                         <div className="flex justify-between text-sm font-medium text-bolt-elements-textPrimary">
                                                             <div>Friday</div>
                                                             <Button
-                                                                className="h-8 w-[80px] cursor-pointer"
+                                                                className="h-8 cursor-pointer text-xs"
                                                                 variant="outline"
                                                                 onClick={
                                                                     handleClearData
                                                                 }
                                                             >
+                                                                <Trash className="max-h-3 max-w-3" />
                                                                 {t(
                                                                     'action.clear-data',
                                                                 )}
@@ -273,7 +283,7 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                                                 'settings.current-version',
                                                             )}
                                                         </div>
-                                                        <div className="font-medium text-2xl">
+                                                        <div className="font-medium text-xl">
                                                             {currentVersion}
                                                             {!hasUpdate && (
                                                                 <span className="w-16 flex items-center justify-around rounded-md text-xs text-emerald-700 ml-16 -mt-5 bg-emerald-100">
@@ -289,13 +299,13 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                                                 variant="default"
                                                                 className="border-none bg-[#fffbeb]"
                                                             >
-                                                                <AlertTitle className="flex items-center">
-                                                                    <Bell className="h-4 w-4 mr-2" />
+                                                                <AlertTitle className="flex items-center text-sm">
+                                                                    <Bell className="h-3 w-3 mr-2" />
                                                                     {t(
                                                                         'settings.new-update-available',
                                                                     )}
                                                                 </AlertTitle>
-                                                                <AlertDescription className="flex items-center">
+                                                                <AlertDescription className="flex items-center text-xs">
                                                                     {t(
                                                                         'settings.new-version-available',
                                                                         {
@@ -303,17 +313,18 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                                                                 latestVersion,
                                                                         },
                                                                     )}
-                                                                    <a
-                                                                        href="https://www.npmjs.com/package/@agentscope/studio"
-                                                                        target="_blank"
-                                                                        rel="noopener noreferrer"
-                                                                        className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ml-2"
+                                                                    <Button
+                                                                        className="h-8 cursor-pointer text-xs ml-2"
+                                                                        variant="outline"
+                                                                        onClick={
+                                                                            goNewVersion
+                                                                        }
                                                                     >
-                                                                        <RotateCcw className="h-4 w-4" />
+                                                                        <RotateCcw className="max-h-3 max-w-3" />
                                                                         {t(
                                                                             'action.go-to-new-version',
                                                                         )}
-                                                                    </a>
+                                                                    </Button>
                                                                     {/* <Button
                                                                         variant="default"
                                                                         onClick={() =>
