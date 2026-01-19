@@ -17,7 +17,6 @@ import {
     TabsList,
     TabsTrigger,
 } from '@/components/ui/tabs.tsx';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert.tsx';
 import { Dialog, DialogContent } from '@/components/ui/dialog.tsx';
 import { useI18n } from '@/context/I18Context.tsx';
 import { checkForUpdates } from '@/utils/versionCheck';
@@ -37,13 +36,11 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
     const { changeLanguage, currentLanguage } = useI18n();
     const { messageApi } = useMessageApi();
     const {
-        // isUpdating,
         clearDataDialogOpen,
         latestVersion,
         currentVersion,
         databaseInfo,
         confirmClearData,
-        // handleUpdate,
         setClearDataDialogOpen,
         setLatestVersion,
     } = useSidebar();
@@ -90,9 +87,7 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
         };
         return (
             <div className="text-xs py-1 w-[100%]">
-                <div className="mr-2 mb-1 font-medium text-gray-500">
-                    {title}
-                </div>
+                <div className="mr-2 mb-1 text-gray-500">{title}</div>
                 <div className="flex items-center">
                     <div
                         className="flex items-center border border-gray-300 rounded-md h-8 px-2 w-[calc(100%-40px)] 
@@ -122,10 +117,10 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                         className="flex gap-6 items-start"
                     >
                         <div className="h-[-webkit-fill-available] flex flex-col border-r border-border">
-                            <h3 className="text-sm font-medium p-4 -mb-2 text-left ml-2">
+                            <h3 className="text-sm p-4 -mb-2 text-left ml-2">
                                 {t('common.settings')}
                             </h3>
-                            <TabsList className="flex flex-col h-auto bg-transparent p-3 gap-1 w-[200px]">
+                            <TabsList className="flex flex-col h-auto bg-transparent p-3 w-[200px]">
                                 {settingsMenuItems.map((item) => {
                                     const Icon = item.icon;
                                     return (
@@ -135,7 +130,7 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                             className="w-full justify-start data-[state=active]:bg-muted gap-2 px-3 py-1.5 relative hover:bg-accent hover:text-accent-foreground"
                                         >
                                             <Icon className="h-4 w-4" />
-                                            <span className="text-sm">
+                                            <span className="text-sm font-normal">
                                                 {t(item.labelKey)}
                                             </span>
                                             {item.value === 'version' &&
@@ -164,7 +159,7 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                                 <div className="flex items-center gap-2">
                                                     <Icon className="h-4 w-4" />
                                                     <div>
-                                                        <h3 className="text-sm font-medium">
+                                                        <h3 className="text-sm">
                                                             {t(item.labelKey)}
                                                         </h3>
                                                     </div>
@@ -175,7 +170,7 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                             </div>
                                             {item.value === 'language' && (
                                                 <div className="flex flex-col bg-gray-50 rounded-lg p-4">
-                                                    <div className="text-sm font-medium text-bolt-elements-textPrimary mb-2">
+                                                    <div className="text-sm text-bolt-elements-textPrimary mb-2">
                                                         {t(
                                                             'settings.language-settings',
                                                         )}
@@ -209,7 +204,7 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                             {item.value === 'data' && (
                                                 <div className="flex flex-col gap-4">
                                                     <div className="flex flex-col bg-gray-50 rounded-lg p-4">
-                                                        <div className="flex justify-between text-sm font-medium text-bolt-elements-textPrimary">
+                                                        <div className="flex justify-between text-sm text-bolt-elements-textPrimary">
                                                             <div>Friday</div>
                                                             <Button
                                                                 className="h-8 cursor-pointer text-xs"
@@ -244,14 +239,14 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
 
                                                     {databaseInfo && (
                                                         <div className="flex flex-col bg-gray-50 rounded-lg p-4">
-                                                            <div className="flex justify-between text-sm font-medium text-bolt-elements-textPrimary mb-2">
+                                                            <div className="flex justify-between text-sm text-bolt-elements-textPrimary mb-2">
                                                                 <div>
                                                                     {t(
                                                                         'settings.database',
                                                                     )}
                                                                 </div>
                                                                 <div className="text-xs">
-                                                                    <span className="mr-2 font-medium text-gray-500">
+                                                                    <span className="mr-2 text-gray-500">
                                                                         {t(
                                                                             'settings.database-usage',
                                                                         )}
@@ -278,76 +273,57 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                             {item.value === 'version' && (
                                                 <div className="flex flex-col gap-4">
                                                     <div className="flex flex-col bg-gray-50 rounded-lg p-4">
-                                                        <div className="text-sm font-medium text-bolt-elements-textPrimary mb-2">
+                                                        <div className="flex justify-between items-center text-sm text-bolt-elements-textPrimary">
                                                             {t(
                                                                 'settings.current-version',
                                                             )}
-                                                        </div>
-                                                        <div className="font-medium text-xl">
-                                                            {currentVersion}
-                                                            {!hasUpdate && (
-                                                                <span className="w-16 flex items-center justify-around rounded-md text-xs text-emerald-700 ml-16 -mt-5 bg-emerald-100">
-                                                                    <CircleCheckBig className="h-3 w-3" />
-                                                                    Latest
-                                                                </span>
-                                                            )}
+                                                            <div className="text-xl">
+                                                                {currentVersion}
+                                                                {!hasUpdate && (
+                                                                    <span className="w-16 flex items-center justify-around rounded-md text-xs text-emerald-700 ml-16 -mt-5 bg-emerald-100">
+                                                                        <CircleCheckBig className="h-3 w-3" />
+                                                                        Latest
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                     {hasUpdate &&
                                                         latestVersion && (
-                                                            <Alert
-                                                                variant="default"
-                                                                className="border-none bg-[#fffbeb]"
-                                                            >
-                                                                <AlertTitle className="flex items-center text-sm">
-                                                                    <Bell className="h-3 w-3 mr-2" />
+                                                            <div className="flex justify-between  bg-amber-50 border border-amber-200 rounded-lg p-4">
+                                                                <div className="flex items-center">
+                                                                    <Bell className="h-4 w-4 mr-2 text-yellow-600" />
+                                                                    <div>
+                                                                        <div className="flex items-center text-sm text-yellow-800 mb-0.5">
+                                                                            {t(
+                                                                                'settings.new-update-available',
+                                                                            )}
+                                                                        </div>
+                                                                        <div className="flex items-center text-xs text-yellow-600">
+                                                                            {t(
+                                                                                'settings.new-version-available',
+                                                                                {
+                                                                                    version:
+                                                                                        latestVersion,
+                                                                                },
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <Button
+                                                                    className="h-8 cursor-pointer text-xs ml-2"
+                                                                    variant="outline"
+                                                                    onClick={
+                                                                        goNewVersion
+                                                                    }
+                                                                >
+                                                                    <RotateCcw className="max-h-3 max-w-3" />
                                                                     {t(
-                                                                        'settings.new-update-available',
+                                                                        'action.go-to-new-version',
                                                                     )}
-                                                                </AlertTitle>
-                                                                <AlertDescription className="flex items-center text-xs">
-                                                                    {t(
-                                                                        'settings.new-version-available',
-                                                                        {
-                                                                            version:
-                                                                                latestVersion,
-                                                                        },
-                                                                    )}
-                                                                    <Button
-                                                                        className="h-8 cursor-pointer text-xs ml-2"
-                                                                        variant="outline"
-                                                                        onClick={
-                                                                            goNewVersion
-                                                                        }
-                                                                    >
-                                                                        <RotateCcw className="max-h-3 max-w-3" />
-                                                                        {t(
-                                                                            'action.go-to-new-version',
-                                                                        )}
-                                                                    </Button>
-                                                                    {/* <Button
-                                                                        variant="default"
-                                                                        onClick={() =>
-                                                                            handleUpdate(
-                                                                                latestVersion,
-                                                                            )
-                                                                        }
-                                                                        disabled={
-                                                                            isUpdating
-                                                                        }
-                                                                        className="ml-2"
-                                                                    >
-                                                                        <Download className="mr-2 h-4 w-4" />
-                                                                        {isUpdating
-                                                                            ? t(
-                                                                                  'action.updating',
-                                                                              )
-                                                                            : t(
-                                                                                  'action.update-now',
-                                                                              )}
-                                                                    </Button> */}
-                                                                </AlertDescription>
-                                                            </Alert>
+                                                                </Button>
+                                                            </div>
                                                         )}
                                                 </div>
                                             )}

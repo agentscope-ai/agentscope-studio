@@ -205,9 +205,9 @@
     "settings": {
         "language": "Language",
         "language-description": "Select the display language for the application interface",
-        "data-management": "Data Management",
+        "data-management": "Data",
         "data-management-description": "Manage and clear application history data",
-        "version": "Version Information",
+        "version": "Version",
         "version-description": "View the current application version number",
         "current-version": "Current Version",
         "new-update-available": "New Update Available",
