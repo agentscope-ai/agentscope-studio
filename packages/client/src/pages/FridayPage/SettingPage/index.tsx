@@ -6,72 +6,76 @@ import { CheckCircle } from 'lucide-react';
 
 import KwargsFormList from './KwargsFormList.tsx';
 import PageTitleSpan from '@/components/spans/PageTitleSpan.tsx';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+
+// Switch Form Item Configuration Type
+interface SwitchFormItemConfig {
+    name: string;
+    label: string;
+    helpKey: string;
+}
+
+// Switch Form Item Component
+const SwitchFormItem = ({ name, label, helpKey }: SwitchFormItemConfig) => {
+    const { t } = useTranslation();
+    return (
+        <Form.Item
+            name={name}
+            label={label}
+            valuePropName="checked"
+            help={t(helpKey)}
+        >
+            <Switch size="small" />
+        </Form.Item>
+    );
+};
+
+// Conditional Enable Switch component
+interface EnableSwitchSectionProps {
+    enableFieldName: string;
+    label?: string;
+    helpKey?: string;
+    children: ReactNode;
+}
+
+const EnableSwitchSection = ({
+    enableFieldName,
+    label = 'Enable',
+    helpKey,
+    children,
+}: EnableSwitchSectionProps) => {
+    return (
+        <>
+            <Form.Item
+                name={enableFieldName}
+                label={label}
+                valuePropName="checked"
+                help={helpKey}
+            >
+                <Switch size="small" />
+            </Form.Item>
+
+            <Form.Item shouldUpdate noStyle>
+                {({ getFieldValue }) => {
+                    const isEnabled = getFieldValue(enableFieldName);
+                    return isEnabled ? <>{children}</> : null;
+                }}
+            </Form.Item>
+        </>
+    );
+};
 
 import { FridayConfig } from '@shared/config/friday.ts';
 import { useMessageApi } from '@/context/MessageApiContext.tsx';
 import { RouterPath } from '@/pages/RouterPath.ts';
 import { useFridaySettingRoom } from '@/context/FridaySettingRoomContext.tsx';
-import { llmProviderOptions } from '../config';
-
-// Form format for kwargs
-interface KwargsFormItem {
-    type: string;
-    key: string;
-    value: string;
-}
-
-// Backend format for kwargs
-type KwargsBackendItem = { [key: string]: string | number | boolean };
-
-// Convert kwargs from form format [{type, key, value}] to backend format {key1: value1, key2: value2}
-const convertKwargsToBackendFormat = (
-    kwargs: KwargsFormItem[] | undefined,
-): KwargsBackendItem | undefined => {
-    if (!kwargs || !Array.isArray(kwargs) || kwargs.length === 0) {
-        return undefined;
-    }
-    const result: KwargsBackendItem = {};
-    kwargs.forEach((item) => {
-        if (!item.key) return; // Skip items without key
-        let convertedValue: string | number | boolean = item.value;
-        // Convert value based on type
-        if (item.type === 'number') {
-            convertedValue = Number(item.value);
-        } else if (item.type === 'boolean') {
-            convertedValue = item.value === 'true';
-        }
-        result[item.key] = convertedValue;
-    });
-    return Object.keys(result).length > 0 ? result : undefined;
-};
-
-// Convert kwargs from backend format {key1: value1, key2: value2} to form format [{type, key, value}]
-const convertKwargsFromBackendFormat = (
-    kwargs: KwargsBackendItem | undefined,
-): KwargsFormItem[] | undefined => {
-    if (!kwargs || typeof kwargs !== 'object' || Array.isArray(kwargs)) {
-        return undefined;
-    }
-    return Object.entries(kwargs).map(([key, value]) => {
-        // Infer type from value
-        let type = 'string';
-        let stringValue = String(value);
-        if (typeof value === 'boolean') {
-            type = 'boolean';
-            stringValue = value ? 'true' : 'false';
-        } else if (typeof value === 'number') {
-            type = 'number';
-            stringValue = String(value);
-        } else if (value === 'true' || value === 'false') {
-            type = 'boolean';
-        } else if (/^[0-9]+$/.test(String(value))) {
-            // If it's a numeric string, we keep it as string by default
-            // User can manually change to number type if needed
-            type = 'string';
-        }
-        return { type, key, value: stringValue };
-    });
-};
+import {
+    llmProviderOptions,
+    KwargsFormItem,
+    KwargsBackendItem,
+    convertKwargsToBackendFormat,
+    convertKwargsFromBackendFormat,
+} from '../config';
 
 // Extended FridayConfig for form (includes kwargs in form format)
 interface FridayConfigForm extends FridayConfig {
@@ -92,11 +96,11 @@ const SettingPage = () => {
     const formItemLayout = {
         labelCol: {
             xs: { span: 24 },
-            sm: { span: 8 },
+            sm: { span: 6 },
         },
         wrapperCol: {
-            xs: { span: 24 },
-            sm: { span: 8 },
+            xs: { span: 22 },
+            sm: { span: 16 },
         },
     };
     const {
@@ -138,7 +142,7 @@ const SettingPage = () => {
             },
             sm: {
                 span: 16,
-                offset: 8,
+                offset: 11,
             },
         },
     };
@@ -241,63 +245,187 @@ const SettingPage = () => {
                     validateTrigger={['onBlur']}
                     {...formItemLayout}
                 >
-                    <Form.Item
-                        name="pythonEnv"
-                        label="Python Environment"
-                        hasFeedback={true}
-                        rules={[
-                            {
-                                required: true,
-                                message: 'Input the Python env',
-                            },
-                            {
-                                validator: async (_, value) => {
-                                    if (!value) return;
-                                    const result = await verifyPythonEnv(value);
-                                    if (!result.success) {
-                                        throw new Error(result.message);
-                                    }
+                    {/* Run Settings */}
+                    <Card className="w-3/5 mx-auto">
+                        <CardHeader>
+                            <CardTitle>Run Settings</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <Form.Item
+                                name="pythonEnv"
+                                label="Python Environment"
+                                hasFeedback={true}
+                                rules={[
+                                    {
+                                        required: true,
+                                        message: 'Input the Python env',
+                                    },
+                                    {
+                                        validator: async (_, value) => {
+                                            if (!value) return;
+                                            const result =
+                                                await verifyPythonEnv(value);
+                                            if (!result.success) {
+                                                throw new Error(result.message);
+                                            }
+                                        },
+                                    },
+                                ]}
+                            >
+                                <Input
+                                    placeholder={t('help.friday.python-env')}
+                                />
+                            </Form.Item>
+                        </CardContent>
+                    </Card>
+                    {/* Model Settings */}
+                    <Card className="w-3/5 mx-auto">
+                        <CardHeader>
+                            <CardTitle>Model</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <Form.Item
+                                name="llmProvider"
+                                label="LLM Provider"
+                                required
+                            >
+                                <Select options={llmProviderOptions} />
+                            </Form.Item>
+
+                            <Form.Item
+                                name="modelName"
+                                label="Model Name"
+                                required
+                                help={t('help.friday.model-name', {
+                                    llmProvider,
+                                })}
+                            >
+                                <Input />
+                            </Form.Item>
+
+                            <Form.Item
+                                name="apiKey"
+                                label="API Key"
+                                required={requiredAPIKey}
+                                dependencies={['model']}
+                                help={t('help.friday.api-key', { llmProvider })}
+                            >
+                                <Input type="password" />
+                            </Form.Item>
+
+                            <KwargsFormList name="clientKwargs" />
+
+                            <KwargsFormList name="generateKwargs" />
+                        </CardContent>
+                    </Card>
+                    {/* Tool Settings */}
+                    <Card className="w-3/5 mx-auto">
+                        <CardHeader>
+                            <CardTitle>Tool</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {[
+                                {
+                                    name: 'enableMetaTool',
+                                    label: 'Meta Tool',
+                                    helpKey: 'help.friday.meta-tool',
                                 },
-                            },
-                        ]}
-                    >
-                        <Input placeholder={t('help.friday.python-env')} />
-                    </Form.Item>
+                                {
+                                    name: 'enablePlan',
+                                    label: 'Plan Tool',
+                                    helpKey: 'help.friday.plan-tool',
+                                },
+                                {
+                                    name: 'enableDynamicMCP',
+                                    label: 'Dynamically add MCP',
+                                    helpKey: 'help.friday.dynamic-mcp',
+                                },
+                                {
+                                    name: 'enableAgentScopeTool',
+                                    label: 'Add AgentScope Tool',
+                                    helpKey: 'help.friday.agentscope-tool',
+                                },
+                                {
+                                    name: 'enableFileWritten',
+                                    label: 'Write Permission',
+                                    helpKey: 'help.friday.write-permission',
+                                },
+                                {
+                                    name: 'enableShell',
+                                    label: 'Enable Shell',
+                                    helpKey: 'help.friday.enable-shell',
+                                },
+                                {
+                                    name: 'enablePython',
+                                    label: 'Enable Python',
+                                    helpKey: 'help.friday.enable-python',
+                                },
+                            ].map((config) => (
+                                <SwitchFormItem key={config.name} {...config} />
+                            ))}
+                        </CardContent>
+                    </Card>
+                    {/* Agent Skill Settings */}
+                    <Card className="w-3/5 mx-auto">
+                        <CardHeader>
+                            <CardTitle>Agent Skill</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <EnableSwitchSection enableFieldName="enableAgentSkill">
+                                <Form.Item
+                                    name="agentSkillDir"
+                                    label="Storage Directory"
+                                    help={t('help.friday.agent-skill-dir')}
+                                >
+                                    <Input />
+                                </Form.Item>
+                            </EnableSwitchSection>
+                        </CardContent>
+                    </Card>
+                    {/* Long-term Memory Settings */}
+                    <Card className="w-3/5 mx-auto">
+                        <CardHeader>
+                            <CardTitle>Long-term Memory</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <EnableSwitchSection enableFieldName="enableLongTermMemory">
+                                <Form.Item
+                                    name="embeddingProvider"
+                                    label="Embedding Provider"
+                                    required
+                                >
+                                    <Select options={llmProviderOptions} />
+                                </Form.Item>
 
-                    <Form.Item name="llmProvider" label="LLM Provider" required>
-                        <Select options={llmProviderOptions} />
-                    </Form.Item>
+                                <Form.Item
+                                    name="embeddingModelName"
+                                    label="Model Name"
+                                    required
+                                    help={t('help.friday.model-name', {
+                                        llmProvider,
+                                    })}
+                                >
+                                    <Input />
+                                </Form.Item>
 
-                    <Form.Item
-                        name="modelName"
-                        label="Model Name"
-                        required
-                        help={t('help.friday.model-name', { llmProvider })}
-                    >
-                        <Input />
-                    </Form.Item>
+                                <Form.Item
+                                    name="embeddingAPIKey"
+                                    label="API Key"
+                                    required={requiredAPIKey}
+                                    dependencies={['model']}
+                                    help={t('help.friday.api-key', {
+                                        llmProvider,
+                                    })}
+                                >
+                                    <Input type="password" />
+                                </Form.Item>
 
-                    <Form.Item
-                        name="apiKey"
-                        label="API Key"
-                        required={requiredAPIKey}
-                        dependencies={['model']}
-                        help={t('help.friday.api-key', { llmProvider })}
-                    >
-                        <Input type="password" />
-                    </Form.Item>
+                                <KwargsFormList name="embeddingClientKwargs" />
 
-                    <KwargsFormList name="clientKwargs" />
-
-                    <KwargsFormList name="generateKwargs" />
-
-                    <Form.Item
-                        name="writePermission"
-                        label="Write Permission"
-                        help={t('help.friday.write-permission')}
-                    >
-                        <Switch size="small" />
-                    </Form.Item>
+                                <KwargsFormList name="embeddingGenerateKwargs" />
+                            </EnableSwitchSection>
+                        </CardContent>
+                    </Card>
 
                     <Form.Item {...tailFormItemLayout}>
                         <Button
