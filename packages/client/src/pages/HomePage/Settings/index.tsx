@@ -277,10 +277,10 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                                             {t(
                                                                 'settings.current-version',
                                                             )}
-                                                            <div className="text-xl">
+                                                            <div className="flex items-center text-xl">
                                                                 {currentVersion}
                                                                 {!hasUpdate && (
-                                                                    <span className="w-16 flex items-center justify-around rounded-md text-xs text-emerald-700 ml-16 -mt-5 bg-emerald-100">
+                                                                    <span className="w-16 flex items-center justify-around rounded-md text-xs text-emerald-700 ml-2 bg-emerald-100">
                                                                         <CircleCheckBig className="h-3 w-3" />
                                                                         Latest
                                                                     </span>
