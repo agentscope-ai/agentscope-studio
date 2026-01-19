@@ -4,7 +4,7 @@ import { Radio } from 'antd';
 import {
     CircleCheckBig,
     Bell,
-    RotateCcw,
+    ExternalLink,
     CopyIcon,
     CopyCheckIcon,
     Trash,
@@ -318,7 +318,7 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                                                         goNewVersion
                                                                     }
                                                                 >
-                                                                    <RotateCcw className="max-h-3 max-w-3" />
+                                                                    <ExternalLink className="max-h-3 max-w-3" />
                                                                     {t(
                                                                         'action.go-to-new-version',
                                                                     )}
