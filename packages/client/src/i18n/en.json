@@ -218,8 +218,7 @@
         "database": "Database",
         "path": "Path",
         "friday-history": "Conversation history",
-        "database-usage": "Size",
-        "used": "Used"
+        "database-usage": "Size"
     },
     "table": {
         "column": {

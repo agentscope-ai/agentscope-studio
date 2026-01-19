@@ -22,7 +22,6 @@ import { useI18n } from '@/context/I18Context.tsx';
 import { checkForUpdates } from '@/utils/versionCheck';
 import { settingsMenuItems } from '../config';
 import { useSidebar } from '@/context/SidebarContext';
-import { DatabaseChart } from './databasechart';
 import { copyToClipboard } from '@/utils/common';
 import { useMessageApi } from '@/context/MessageApiContext.tsx';
 
@@ -84,7 +83,9 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
         };
         return (
             <div className="text-xs py-1 w-[100%]">
-                <div className="mr-2 mb-1 font-medium">{title}</div>
+                <div className="mr-2 mb-1 font-medium text-gray-500">
+                    {title}
+                </div>
                 <div className="flex items-center">
                     <div
                         className="flex items-center border border-gray-300 rounded-md h-8 px-2 w-[calc(100%-40px)] 
@@ -93,8 +94,12 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                     >
                         <div className="text-xs truncate">{path}</div>
                     </div>
-                    <div className="ml-3" onClick={handleCopyPath}>
-                        {path === copyedPath ? <CopyCheckIcon /> : <CopyIcon />}
+                    <div className="ml-4" onClick={handleCopyPath}>
+                        {path === copyedPath ? (
+                            <CopyCheckIcon className="h-4 w-4 text-emerald-500" />
+                        ) : (
+                            <CopyIcon className="h-4 w-4" />
+                        )}
                     </div>
                 </div>
             </div>
@@ -195,8 +200,19 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                             {item.value === 'data' && (
                                                 <div className="flex flex-col gap-4">
                                                     <div className="flex flex-col bg-gray-50 rounded-lg p-4">
-                                                        <div className="text-sm font-medium text-bolt-elements-textPrimary mb-2">
-                                                            Friday
+                                                        <div className="flex justify-between text-sm font-medium text-bolt-elements-textPrimary">
+                                                            <div>Friday</div>
+                                                            <Button
+                                                                className="h-8 w-[80px]"
+                                                                variant="outline"
+                                                                onClick={
+                                                                    handleClearData
+                                                                }
+                                                            >
+                                                                {t(
+                                                                    'action.clear-data',
+                                                                )}
+                                                            </Button>
                                                         </div>
                                                         <PathRender
                                                             path={
@@ -206,53 +222,45 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                                                 'settings.path',
                                                             )}
                                                         />
-                                                        <div className="flex items-center">
-                                                            <PathRender
-                                                                path={
-                                                                    databaseInfo?.fridayHistoryPath
-                                                                }
-                                                                title={t(
-                                                                    'settings.friday-history',
-                                                                )}
-                                                            />
-                                                        </div>
-                                                        <Button
-                                                            className="h-6 px-1.5 not-last:text-xs mt-1 w-[80px]"
-                                                            variant="secondary"
-                                                            onClick={
-                                                                handleClearData
+                                                        <PathRender
+                                                            path={
+                                                                databaseInfo?.fridayHistoryPath
                                                             }
-                                                        >
-                                                            {t(
-                                                                'action.clear-data',
+                                                            title={t(
+                                                                'settings.friday-history',
                                                             )}
-                                                        </Button>
+                                                        />
                                                     </div>
 
                                                     {databaseInfo && (
                                                         <div className="flex flex-col bg-gray-50 rounded-lg p-4">
-                                                            <div className="text-sm font-medium text-bolt-elements-textPrimary mb-2">
-                                                                {t(
-                                                                    'settings.database',
-                                                                )}
-                                                            </div>
-                                                            <div className="flex justify-between">
-                                                                <div className="w-[40%]">
-                                                                    <PathRender
-                                                                        path={
-                                                                            databaseInfo?.path
-                                                                        }
-                                                                        title={t(
-                                                                            'settings.path',
-                                                                        )}
-                                                                    />
+                                                            <div className="flex justify-between text-sm font-medium text-bolt-elements-textPrimary mb-2">
+                                                                <div>
+                                                                    {t(
+                                                                        'settings.database',
+                                                                    )}
                                                                 </div>
-                                                                <DatabaseChart
-                                                                    size={
-                                                                        databaseInfo.formattedSize
-                                                                    }
-                                                                />
+                                                                <div className="text-xs">
+                                                                    <span className="mr-2 font-medium text-gray-500">
+                                                                        {t(
+                                                                            'settings.database-usage',
+                                                                        )}
+                                                                    </span>
+                                                                    <span className="mr-2 font-semibold">
+                                                                        {
+                                                                            databaseInfo.formattedSize
+                                                                        }
+                                                                    </span>
+                                                                </div>
                                                             </div>
+                                                            <PathRender
+                                                                path={
+                                                                    databaseInfo?.path
+                                                                }
+                                                                title={t(
+                                                                    'settings.path',
+                                                                )}
+                                                            />
                                                         </div>
                                                     )}
                                                 </div>

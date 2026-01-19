@@ -210,10 +210,9 @@
         "clear-data-confirm-description": "您即将清空所有 Friday 历史对话数据。此操作不可撤销，请谨慎操作。确定要继续吗？",
         "language-settings": "语言设置",
         "database": "数据库",
-        "path": "路径：",
+        "path": "路径",
         "friday-history": "对话历史",
-        "database-usage": "大小",
-        "used": "已用"
+        "database-usage": "大小"
     },
     "table": {
         "column": {
