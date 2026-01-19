@@ -7,7 +7,7 @@ env:
   IMAGE_NAME: agentscope/studio
 
 jobs:
-  build-test:
+  docker-build-test:
     runs-on: ubuntu-latest
     timeout-minutes: 40
 
