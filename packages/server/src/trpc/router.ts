@@ -26,7 +26,7 @@ import { MessageDao } from '../dao/Message';
 import { SocketManager } from './socket';
 import { FridayConfigManager } from '../../../shared/src/config/friday';
 import { FridayAppMessageDao } from '../dao/FridayAppMessage';
-import { ReplyDao } from '@/dao/Reply';
+import { ReplyDao } from '../dao/Reply';
 import { SpanDao } from '../dao/Trace';
 
 const textBlock = z.object({

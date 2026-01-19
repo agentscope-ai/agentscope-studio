@@ -4,6 +4,7 @@
 
 - Node.js >= 20.0.0
 - npm >= 10.0.0
+- [Docker](https://docs.docker.com/install/#supported-platforms) (optional, for Docker deployment)
 
 > 💡 **Tip**: If you're using nvm, you can run nvm use to automatically switch to the required Node.js version.
 
@@ -36,12 +37,15 @@ npm install
 npm run dev
 ```
 
+### Docker Deployment
+
+Please refer to `docker/README.md` in the project root.
+
 ### Deploy on Alibaba Cloud
 
 If you plan to use AgentScope-Studio on the cloud, it is recommended that you directly implement one-click deployment on Alibaba Cloud.
 
-[Deploy AgentScope-Studio on Alibaba Cloud](https://help.aliyun.com/zh/compute-nest/use-cases/agent-scope-studio-community-edition-service-instance-deployment-docume)
-
+[Deploy AgentScope-Studio on Alibaba Cloud](https://help.aliyun.com/zh/compute-nest/use-cases/agent-scope-studio-community-edition-service-instance-deployment-document)
 
 ## Connect to AgentScope-Studio
 

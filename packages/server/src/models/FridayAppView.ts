@@ -13,7 +13,7 @@ import { ContentBlocks } from '../../../shared/src';
 
         const jsonArrayAgg = (() => {
             switch (dialect) {
-                case 'sqlite':
+                case 'better-sqlite3':
                     // SQLite
                     return `(
                 SELECT json_group_array(json(content))
