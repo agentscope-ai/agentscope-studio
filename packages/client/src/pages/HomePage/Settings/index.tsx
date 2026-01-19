@@ -203,7 +203,7 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                                         <div className="flex justify-between text-sm font-medium text-bolt-elements-textPrimary">
                                                             <div>Friday</div>
                                                             <Button
-                                                                className="h-8 w-[80px]"
+                                                                className="h-8 w-[80px] cursor-pointer"
                                                                 variant="outline"
                                                                 onClick={
                                                                     handleClearData
