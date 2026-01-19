@@ -9,7 +9,8 @@
         "focus-on-latest-run": "Focus on latest",
         "ok": "OK",
         "update-now": "Update Now",
-        "updating": "Updating..."
+        "updating": "Updating...",
+        "go-to-new-version": "Go to New Version"
     },
     "chat": {
         "avatar-set": {

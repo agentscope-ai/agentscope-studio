@@ -4,7 +4,7 @@ import { Radio } from 'antd';
 import {
     CircleCheckBig,
     Bell,
-    Download,
+    RotateCcw,
     CopyIcon,
     CopyCheckIcon,
 } from 'lucide-react';
@@ -36,13 +36,13 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
     const { changeLanguage, currentLanguage } = useI18n();
     const { messageApi } = useMessageApi();
     const {
-        isUpdating,
+        // isUpdating,
         clearDataDialogOpen,
         latestVersion,
         currentVersion,
         databaseInfo,
         confirmClearData,
-        handleUpdate,
+        // handleUpdate,
         setClearDataDialogOpen,
         setLatestVersion,
     } = useSidebar();
@@ -303,7 +303,18 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                                                                 latestVersion,
                                                                         },
                                                                     )}
-                                                                    <Button
+                                                                    <a
+                                                                        href="https://www.npmjs.com/package/@agentscope/studio"
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ml-2"
+                                                                    >
+                                                                        <RotateCcw className="h-4 w-4" />
+                                                                        {t(
+                                                                            'action.go-to-new-version',
+                                                                        )}
+                                                                    </a>
+                                                                    {/* <Button
                                                                         variant="default"
                                                                         onClick={() =>
                                                                             handleUpdate(
@@ -323,7 +334,7 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                                                             : t(
                                                                                   'action.update-now',
                                                                               )}
-                                                                    </Button>
+                                                                    </Button> */}
                                                                 </AlertDescription>
                                                             </Alert>
                                                         )}

@@ -9,7 +9,8 @@
         "focus-on-latest-run": "自动切换到最新运行",
         "ok": "确认",
         "update-now": "立即更新",
-        "updating": "更新中..."
+        "updating": "更新中...",
+        "go-to-new-version": "前往新版本"
     },
     "chat": {
         "avatar-set": {
