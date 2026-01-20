@@ -23,7 +23,9 @@ interface StudioSidebarContextType {
     setLatestVersion: (version: string) => void;
 }
 
-const StudioSidebarContext = createContext<StudioSidebarContextType | null>(null);
+const StudioSidebarContext = createContext<StudioSidebarContextType | null>(
+    null,
+);
 
 export const StudioSidebarProvider = ({
     children,

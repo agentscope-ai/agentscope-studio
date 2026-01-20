@@ -28,7 +28,6 @@ import { FridayAppMessageDao } from '../dao/FridayAppMessage';
 import { ReplyDao } from '../dao/Reply';
 import { SpanDao } from '../dao/Trace';
 import { APP_INFO } from '../../../shared/src';
-import { runPythonScript } from './socket';
 import { ConfigManager } from '../../../shared/src/config/server';
 
 const textBlock = z.object({
