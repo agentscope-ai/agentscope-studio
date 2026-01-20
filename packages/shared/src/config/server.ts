@@ -151,7 +151,7 @@ export class ConfigManager {
         return `${formattedSize} ${units[unitIndex]}`;
     }
 
-    getDatabaseStats(): {
+    getDataStats(): {
         fridayConfigPath: string;
         path: string;
         size: number; // in bytes

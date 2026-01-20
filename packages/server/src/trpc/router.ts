@@ -481,10 +481,10 @@ export const appRouter = t.router({
         }
     }),
 
-    getDatabaseInfo: t.procedure.query(async () => {
+    getDataInfo: t.procedure.query(async () => {
         try {
             const configManager = ConfigManager.getInstance();
-            const dbStats = configManager.getDatabaseStats();
+            const dbStats = configManager.getDataStats();
             return {
                 success: true,
                 message: 'Database info retrieved successfully',
@@ -513,49 +513,6 @@ export const appRouter = t.router({
             });
         }
     }),
-
-    updateStudio: t.procedure
-        .input(
-            z.object({
-                version: z.string(),
-            }),
-        )
-        .mutation(async ({ input }) => {
-            try {
-                // Execute the npm global update command using spawn
-                const command = 'npm';
-                const args = [
-                    'install',
-                    '-g',
-                    `@agentscope/studio@${input.version}`,
-                ];
-                const result = await runPythonScript(command, args);
-                if (result.success) {
-                    console.debug('Update data:', result.data);
-
-                    return {
-                        success: true,
-                        message:
-                            'Studio updated successfully. Please restart the application.',
-                        version: input.version,
-                    };
-                } else {
-                    throw new TRPCError({
-                        code: 'INTERNAL_SERVER_ERROR',
-                        message: `npm install failed: ${result.error}`,
-                    });
-                }
-            } catch (error) {
-                console.error('Error updating studio:', error);
-                throw new TRPCError({
-                    code: 'INTERNAL_SERVER_ERROR',
-                    message:
-                        error instanceof Error
-                            ? error.message
-                            : 'Failed to update studio',
-                });
-            }
-        }),
 });
 
 export type AppRouter = typeof appRouter;

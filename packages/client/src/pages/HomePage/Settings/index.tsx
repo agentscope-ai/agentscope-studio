@@ -22,7 +22,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog.tsx';
 import { useI18n } from '@/context/I18Context.tsx';
 import { checkForUpdates } from '@/utils/versionCheck';
 import { settingsMenuItems } from '../config';
-import { useSidebar } from '@/context/SidebarContext';
+import { useStudioSidebar } from '@/context/SidebarContext';
 import { copyToClipboard } from '@/utils/common';
 import { useMessageApi } from '@/context/MessageApiContext.tsx';
 
@@ -44,7 +44,7 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
         confirmClearData,
         setClearDataDialogOpen,
         setLatestVersion,
-    } = useSidebar();
+    } = useStudioSidebar();
     const [selectedLanguage, setSelectedLanguage] = useState(currentLanguage);
     const [copyedPath, setCopyedPath] = useState('');
     // Update selected language when current language changes

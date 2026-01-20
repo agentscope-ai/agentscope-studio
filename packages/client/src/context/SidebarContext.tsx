@@ -13,19 +13,17 @@ interface DatabaseInfoType {
     fridayConfigPath: string;
     fridayHistoryPath: string;
 }
-interface SidebarContextType {
-    isUpdating: boolean;
+interface StudioSidebarContextType {
     clearDataDialogOpen: boolean;
     latestVersion: string;
     currentVersion: string;
     databaseInfo?: DatabaseInfoType | null;
-    handleUpdate: (version: string) => Promise<void>;
     confirmClearData: () => void;
     setClearDataDialogOpen: (open: boolean) => void;
     setLatestVersion: (version: string) => void;
 }
 
-const SidebarContext = createContext<SidebarContextType | null>(null);
+const StudioSidebarContext = createContext<StudioSidebarContextType | null>(null);
 
 export const StudioSidebarProvider = ({
     children,
@@ -38,10 +36,8 @@ export const StudioSidebarProvider = ({
 
     const [clearDataDialogOpen, setClearDataDialogOpen] = useState(false);
     const [latestVersion, setLatestVersion] = useState<string>('');
-    const [isUpdating, setIsUpdating] = useState(false);
     const { data: currentVersionData } = trpc.getCurrentVersion.useQuery();
-    const { data: databaseInfo } = trpc.getDatabaseInfo.useQuery();
-    const updateStudioMutation = trpc.updateStudio.useMutation();
+    const { data: databaseInfo } = trpc.getDataInfo.useQuery();
 
     const confirmClearData = () => {
         if (socket) {
@@ -53,77 +49,28 @@ export const StudioSidebarProvider = ({
         }
     };
 
-    // Handle update
-    const handleUpdate = async (latestVersion: string) => {
-        if (!latestVersion) return;
-
-        setIsUpdating(true);
-        messageApi.loading({
-            content: t('message.settings.updating', { version: latestVersion }),
-            duration: 0,
-            key: 'updating',
-        });
-
-        try {
-            const result = await updateStudioMutation.mutateAsync({
-                version: latestVersion,
-            });
-
-            messageApi.destroy('updating');
-            messageApi.success({
-                content: t('message.settings.update-success', {
-                    version: result.version,
-                }),
-                duration: 5,
-            });
-
-            // Prompt the user to restart the application
-            setTimeout(() => {
-                messageApi.info({
-                    content: t('message.settings.restart-required'),
-                    duration: 10,
-                });
-            }, 1000);
-        } catch (error) {
-            messageApi.destroy('updating');
-            messageApi.error({
-                content: t('message.settings.update-failed', {
-                    error:
-                        error instanceof Error
-                            ? error.message
-                            : 'Unknown error',
-                }),
-                duration: 5,
-            });
-        } finally {
-            setIsUpdating(false);
-        }
-    };
-
-    const value: SidebarContextType = {
-        isUpdating,
+    const value: StudioSidebarContextType = {
         clearDataDialogOpen,
         latestVersion,
         currentVersion: currentVersionData?.data?.version || '',
         databaseInfo: databaseInfo?.data || null,
-        handleUpdate,
         confirmClearData,
         setLatestVersion,
         setClearDataDialogOpen,
     };
 
     return (
-        <SidebarContext.Provider value={value}>
+        <StudioSidebarContext.Provider value={value}>
             {children}
-        </SidebarContext.Provider>
+        </StudioSidebarContext.Provider>
     );
 };
 
-export const useSidebar = () => {
-    const context = useContext(SidebarContext);
+export const useStudioSidebar = () => {
+    const context = useContext(StudioSidebarContext);
     if (!context) {
         throw new Error(
-            'useSidebar must be used within a StudioSidebarProvider',
+            'useStudioSidebar must be used within a StudioSidebarProvider',
         );
     }
     return context;
