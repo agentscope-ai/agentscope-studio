@@ -11,6 +11,7 @@ import { RouterPath } from '../RouterPath.ts';
 import { checkForUpdates } from '@/utils/versionCheck.ts';
 import { useNotification } from '@/context/NotificationContext.tsx';
 import { OverviewRoomContextProvider } from '@/context/OverviewRoomContext.tsx';
+import { StudioSidebarProvider } from '@/context/SidebarContext.tsx';
 import StudioSidebar from '@/pages/HomePage/sidebar.tsx';
 import TracePage from '../TracePage/index.tsx';
 
@@ -49,7 +50,9 @@ const HomePage = () => {
 
     return (
         <SidebarProvider>
-            <StudioSidebar />
+            <StudioSidebarProvider>
+                <StudioSidebar />
+            </StudioSidebarProvider>
             <SidebarInset>
                 <Routes>
                     <Route
