@@ -1,18 +1,16 @@
-name: Publish to NPM
+name: NPM Build Test (Dry Run)
 
-on:
-    release:
-        types: [published]
+on: [push, pull_request]
 
 permissions:
     contents: read
 
 concurrency:
-    group: publish-npm-${{ github.ref }}
-    cancel-in-progress: false
+    group: npm-build-test-${{ github.ref }}
+    cancel-in-progress: true
 
 jobs:
-    publish:
+    npm-build-test:
         runs-on: ubuntu-latest
 
         steps:
@@ -31,21 +29,7 @@ jobs:
                   PACKAGE_VERSION=$(node -p "require('./package.json').version")
                   echo "version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
                   echo "📦 Package.json version: $PACKAGE_VERSION"
-            - name: Get version from Release tag
-              id: release_version
-              run: |
-                  RELEASE_VERSION=${GITHUB_REF#refs/tags/v}
-                  echo "version=$RELEASE_VERSION" >> $GITHUB_OUTPUT
-                  echo "🏷️  Release tag version: $RELEASE_VERSION"
-            - name: Verify version consistency
-              run: |
-                  PACKAGE_V="${{ steps.package_version.outputs.version }}"
-                  RELEASE_V="${{ steps.release_version.outputs.version }}"
-                  if [ "$PACKAGE_V" != "$RELEASE_V" ]; then
-                    echo "::error::❌ Version mismatch! package.json: $PACKAGE_V, tag: $RELEASE_V"
-                    exit 1
-                  fi
-                  echo "✅ Version match: $PACKAGE_V"
+
             - name: Check if version exists on npm
               id: npm_check
               run: |
@@ -54,32 +38,30 @@ jobs:
                   if npm view "$PKG_NAME@$VERSION" version >/dev/null 2>&1; then
                     echo ""
                     echo "╔════════════════════════════════════════════════════════════╗"
-                    echo "║  ⚠️  VERSION ALREADY EXISTS - SKIPPING PUBLISH              ║"
+                    echo "║  ⚠️  VERSION ALREADY EXISTS ON NPM                          ║"
                     echo "╠════════════════════════════════════════════════════════════╣"
                     echo "║  Package: $PKG_NAME"
                     echo "║  Version: $VERSION"
                     echo "║  Status:  Already published on npm"
                     echo "╚════════════════════════════════════════════════════════════╝"
                     echo ""
-                    echo "::warning::⚠️ $PKG_NAME@$VERSION already exists on npm, skipping publish"
+                    echo "::warning::⚠️ $PKG_NAME@$VERSION already exists on npm"
                     echo "already_exists=true" >> $GITHUB_OUTPUT
                   else
-                    echo "✅ $PKG_NAME@$VERSION not found on npm, will publish"
+                    echo "✅ $PKG_NAME@$VERSION not found on npm, ready to publish"
                     echo "already_exists=false" >> $GITHUB_OUTPUT
                   fi
+
             - name: Install dependencies
-              if: steps.npm_check.outputs.already_exists == 'false'
               run: npm ci
 
             - name: Build
-              if: steps.npm_check.outputs.already_exists == 'false'
               run: npm run build
 
-            - name: Publish to NPM
-              if: steps.npm_check.outputs.already_exists == 'false'
+            - name: Dry Run Publish
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-              run: npm publish --access public
+              run: npm publish --access public --dry-run
 
             - name: Success
               if: steps.npm_check.outputs.already_exists == 'false'
@@ -88,13 +70,14 @@ jobs:
                   VERSION="${{ steps.package_version.outputs.version }}"
                   echo ""
                   echo "╔════════════════════════════════════════════════════════════╗"
-                  echo "║  🎉  PUBLISH SUCCESS                                        ║"
+                  echo "║  ✅  DRY RUN SUCCESS                                        ║"
                   echo "╠════════════════════════════════════════════════════════════╣"
                   echo "║  Package: $PKG_NAME"
                   echo "║  Version: $VERSION"
-                  echo "║  URL:     https://www.npmjs.com/package/$PKG_NAME"
+                  echo "║  Status:  Ready to publish (new version)"
                   echo "╚════════════════════════════════════════════════════════════╝"
                   echo ""
+
             - name: Skipped
               if: steps.npm_check.outputs.already_exists == 'true'
               run: |
@@ -102,10 +85,10 @@ jobs:
                   VERSION="${{ steps.package_version.outputs.version }}"
                   echo ""
                   echo "╔════════════════════════════════════════════════════════════╗"
-                  echo "║  ⏭️  PUBLISH SKIPPED                                        ║"
+                  echo "║  ⚠️  DRY RUN COMPLETE (VERSION EXISTS)                      ║"
                   echo "╠════════════════════════════════════════════════════════════╣"
                   echo "║  Package: $PKG_NAME"
                   echo "║  Version: $VERSION"
-                  echo "║  Reason:  Version already exists on npm"
+                  echo "║  Status:  Version already exists on npm"
                   echo "╚════════════════════════════════════════════════════════════╝"
                   echo ""
