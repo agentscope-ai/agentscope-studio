@@ -1,6 +1,6 @@
 import { memo, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Radio } from 'antd';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
     CircleCheckBig,
     Bell,
@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
+import { SecondaryButton } from '@/components/buttons/ASButton';
 import {
     Tabs,
     TabsContent,
@@ -90,8 +91,8 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                 <div className="mr-2 mb-1 text-gray-500">{title}</div>
                 <div className="flex items-center">
                     <div
-                        className="flex items-center border border-gray-300 rounded-md h-8 px-2 w-[calc(100%-40px)] 
-                            hover:border-muted-foreground hover:shadow-sm hover:ring hover:ring-muted-foreground hover:ring-opacity-30 
+                        className="flex items-center border border-gray-300 rounded-md h-8 px-2 w-[calc(100%-40px)]
+                            hover:border-muted-foreground hover:shadow-sm hover:ring hover:ring-muted-foreground hover:ring-opacity-30
                             transition-all duration-200 ease-in-out"
                     >
                         <div className="text-xs truncate">{path}</div>
@@ -120,24 +121,22 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                             <h3 className="text-sm p-4 -mb-2 text-left ml-2">
                                 {t('common.settings')}
                             </h3>
-                            <TabsList className="flex flex-col h-auto bg-transparent p-3 w-[200px]">
+                            <TabsList className="flex flex-col h-auto bg-transparent p-2 w-[200px]">
                                 {settingsMenuItems.map((item) => {
                                     const Icon = item.icon;
                                     return (
                                         <TabsTrigger
                                             key={item.value}
                                             value={item.value}
-                                            className="w-full justify-start data-[state=active]:bg-muted gap-2 px-3 py-1.5 relative hover:bg-accent hover:text-accent-foreground"
+                                            className="w-full justify-start data-[state=active]:bg-muted gap-2 px-2 py-2 relative hover:bg-accent hover:text-accent-foreground"
                                         >
-                                            <Icon className="h-4 w-4" />
-                                            <span className="text-sm font-normal">
-                                                {t(item.labelKey)}
-                                            </span>
+                                            <Icon className="size-4" />
+                                            <span>{t(item.labelKey)}</span>
                                             {item.value === 'version' &&
                                                 hasUpdate && (
                                                     <Badge
                                                         variant="destructive"
-                                                        className="absolute right-1 top-1 h-1.5 w-1.5 p-0"
+                                                        className="absolute right-1 top-1/2 -translate-y-1/2 h-1.5 w-1.5 p-0"
                                                     />
                                                 )}
                                         </TabsTrigger>
@@ -169,62 +168,88 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                                 </div>
                                             </div>
                                             {item.value === 'language' && (
-                                                <div className="flex flex-col bg-gray-50 rounded-lg p-4">
-                                                    <div className="text-sm text-bolt-elements-textPrimary mb-2">
-                                                        {t(
-                                                            'settings.language-settings',
-                                                        )}
-                                                    </div>
-                                                    <Radio.Group
-                                                        value={selectedLanguage}
-                                                        onChange={(e) => {
-                                                            setSelectedLanguage(
-                                                                e.target.value,
-                                                            );
-                                                            if (
-                                                                e.target
-                                                                    .value !==
-                                                                currentLanguage
-                                                            ) {
-                                                                handleLanguageChange();
+                                                <div className="flex flex-col bg-muted/50 rounded-lg p-4">
+                                                    <div className="flex justify-between items-center text-sm">
+                                                        <span className="text-muted-foreground">
+                                                            {t(
+                                                                'settings.language-settings',
+                                                            )}
+                                                        </span>
+                                                        <ToggleGroup
+                                                            type="single"
+                                                            value={
+                                                                selectedLanguage
                                                             }
-                                                        }}
-                                                    >
-                                                        <div className="flex gap-3">
-                                                            <Radio value="zh">
+                                                            onValueChange={(
+                                                                value,
+                                                            ) => {
+                                                                if (
+                                                                    value &&
+                                                                    value !==
+                                                                        currentLanguage
+                                                                ) {
+                                                                    setSelectedLanguage(
+                                                                        value,
+                                                                    );
+                                                                    handleLanguageChange();
+                                                                }
+                                                            }}
+                                                            variant="outline"
+                                                            size="sm"
+                                                        >
+                                                            <ToggleGroupItem
+                                                                value="zh"
+                                                                className="text-xs px-3 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                                                            >
                                                                 中文
-                                                            </Radio>
-                                                            <Radio value="en">
+                                                            </ToggleGroupItem>
+                                                            <ToggleGroupItem
+                                                                value="en"
+                                                                className="text-xs px-3 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                                                            >
                                                                 English
-                                                            </Radio>
-                                                        </div>
-                                                    </Radio.Group>
+                                                            </ToggleGroupItem>
+                                                        </ToggleGroup>
+                                                    </div>
                                                 </div>
                                             )}
                                             {item.value === 'data' && (
                                                 <div className="flex flex-col gap-4">
-                                                    <div className="flex flex-col bg-gray-50 rounded-lg p-4">
-                                                        <div className="flex justify-between text-sm text-bolt-elements-textPrimary">
-                                                            <div>Friday</div>
-                                                            <Button
-                                                                className="h-8 cursor-pointer text-xs"
-                                                                variant="outline"
+                                                    <div className="flex flex-col bg-muted/50 rounded-lg p-4">
+                                                        <div className="flex justify-between items-center text-sm mb-2">
+                                                            <span className="font-medium">
+                                                                Friday
+                                                            </span>
+                                                            <SecondaryButton
+                                                                tooltip={t(
+                                                                    'action.clear-data',
+                                                                )}
+                                                                icon={
+                                                                    <Trash
+                                                                        width={
+                                                                            13
+                                                                        }
+                                                                        height={
+                                                                            13
+                                                                        }
+                                                                    />
+                                                                }
+                                                                variant="dashed"
                                                                 onClick={
                                                                     handleClearData
                                                                 }
                                                             >
-                                                                <Trash className="max-h-3 max-w-3" />
                                                                 {t(
                                                                     'action.clear-data',
                                                                 )}
-                                                            </Button>
+                                                            </SecondaryButton>
                                                         </div>
                                                         <PathRender
                                                             path={
                                                                 databaseInfo?.fridayConfigPath
                                                             }
                                                             title={t(
-                                                                'settings.path',
+                                                                'settings.config-path',
                                                             )}
                                                         />
                                                         <PathRender
@@ -238,20 +263,20 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                                     </div>
 
                                                     {databaseInfo && (
-                                                        <div className="flex flex-col bg-gray-50 rounded-lg p-4">
-                                                            <div className="flex justify-between text-sm text-bolt-elements-textPrimary mb-2">
-                                                                <div>
+                                                        <div className="flex flex-col bg-muted/50 rounded-lg p-4">
+                                                            <div className="flex justify-between items-center text-sm mb-2">
+                                                                <span className="font-medium">
                                                                     {t(
                                                                         'settings.database',
                                                                     )}
-                                                                </div>
-                                                                <div className="text-xs">
-                                                                    <span className="mr-2 text-gray-500">
+                                                                </span>
+                                                                <div className="flex items-center gap-1.5 text-xs">
+                                                                    <span className="text-muted-foreground">
                                                                         {t(
                                                                             'settings.database-usage',
                                                                         )}
                                                                     </span>
-                                                                    <span className="mr-2 font-semibold">
+                                                                    <span className="font-medium">
                                                                         {
                                                                             databaseInfo.formattedSize
                                                                         }
@@ -272,15 +297,21 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                             )}
                                             {item.value === 'version' && (
                                                 <div className="flex flex-col gap-4">
-                                                    <div className="flex flex-col bg-gray-50 rounded-lg p-4">
-                                                        <div className="flex justify-between items-center text-sm text-bolt-elements-textPrimary">
-                                                            {t(
-                                                                'settings.current-version',
-                                                            )}
-                                                            <div className="flex items-center text-xl">
-                                                                {currentVersion}
+                                                    <div className="flex flex-col bg-muted/50 rounded-lg p-4">
+                                                        <div className="flex justify-between items-center text-sm">
+                                                            <span className="text-muted-foreground">
+                                                                {t(
+                                                                    'settings.current-version',
+                                                                )}
+                                                            </span>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="font-medium">
+                                                                    {
+                                                                        currentVersion
+                                                                    }
+                                                                </span>
                                                                 {!hasUpdate && (
-                                                                    <span className="w-16 flex items-center justify-around rounded-md text-xs text-emerald-700 ml-2 bg-emerald-100">
+                                                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs text-emerald-700 bg-emerald-100">
                                                                         <CircleCheckBig className="h-3 w-3" />
                                                                         Latest
                                                                     </span>
@@ -290,16 +321,16 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                                     </div>
                                                     {hasUpdate &&
                                                         latestVersion && (
-                                                            <div className="flex justify-between  bg-amber-50 border border-amber-200 rounded-lg p-4">
-                                                                <div className="flex items-center">
-                                                                    <Bell className="h-4 w-4 mr-2 text-yellow-600" />
+                                                            <div className="flex justify-between items-center bg-amber-50 border border-amber-200 rounded-lg p-4">
+                                                                <div className="flex items-center gap-2">
+                                                                    <Bell className="h-4 w-4 text-amber-500 flex-shrink-0" />
                                                                     <div>
-                                                                        <div className="flex items-center text-sm text-yellow-800 mb-0.5">
+                                                                        <div className="text-sm text-amber-800">
                                                                             {t(
                                                                                 'settings.new-update-available',
                                                                             )}
                                                                         </div>
-                                                                        <div className="flex items-center text-xs text-yellow-600">
+                                                                        <div className="text-xs text-amber-600 mt-0.5">
                                                                             {t(
                                                                                 'settings.new-version-available',
                                                                                 {
@@ -310,19 +341,29 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                                                         </div>
                                                                     </div>
                                                                 </div>
-
-                                                                <Button
-                                                                    className="h-8 cursor-pointer text-xs ml-2"
-                                                                    variant="outline"
+                                                                <SecondaryButton
+                                                                    tooltip={t(
+                                                                        'action.view-update',
+                                                                    )}
+                                                                    icon={
+                                                                        <ExternalLink
+                                                                            width={
+                                                                                13
+                                                                            }
+                                                                            height={
+                                                                                13
+                                                                            }
+                                                                        />
+                                                                    }
+                                                                    variant="dashed"
                                                                     onClick={
                                                                         goNewVersion
                                                                     }
                                                                 >
-                                                                    <ExternalLink className="max-h-3 max-w-3" />
                                                                     {t(
-                                                                        'action.go-to-new-version',
+                                                                        'action.view-update',
                                                                     )}
-                                                                </Button>
+                                                                </SecondaryButton>
                                                             </div>
                                                         )}
                                                 </div>

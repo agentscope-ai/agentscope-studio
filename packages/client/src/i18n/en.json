@@ -10,7 +10,7 @@
         "ok": "OK",
         "update-now": "Update Now",
         "updating": "Updating...",
-        "go-to-new-version": "Go to New Version"
+        "view-update": "View"
     },
     "chat": {
         "avatar-set": {
@@ -204,22 +204,23 @@
     },
     "settings": {
         "language": "Language",
-        "language-description": "Select the display language for the application interface",
-        "data-management": "Data",
-        "data-management-description": "Manage and clear application history data",
+        "language-description": "Switch display language",
+        "data-management": "Data Management",
+        "data-management-description": "View storage paths and clear data",
         "version": "Version",
-        "version-description": "View the current application version number",
+        "version-description": "View version and check updates",
         "current-version": "Current Version",
-        "new-update-available": "New Update Available",
-        "new-version-available": "New version {{version}} available",
-        "clear-data-warning": "This operation will clear all Friday conversation history data. This action cannot be undone.",
-        "clear-data-confirm-title": "⚠️ Confirm Clear Data?",
-        "clear-data-confirm-description": "You are about to clear all Friday conversation history data. This action is irreversible and cannot be undone. Are you sure you want to continue?",
-        "language-settings": "Language settings",
+        "new-update-available": "Update Available",
+        "new-version-available": "Studio {{version}} is available",
+        "clear-data-warning": "This will clear all history data and cannot be undone.",
+        "clear-data-confirm-title": "Confirm Clear",
+        "clear-data-confirm-description": "This will clear all Friday conversation history. This action cannot be undone. Continue?",
+        "language-settings": "Display Language",
         "database": "Database",
-        "path": "Path",
-        "friday-history": "Conversation history",
-        "database-usage": "Size"
+        "path": "Storage Path",
+        "friday-history": "Conversation History",
+        "database-usage": "Size",
+        "config-path": "Config File"
     },
     "table": {
         "column": {
