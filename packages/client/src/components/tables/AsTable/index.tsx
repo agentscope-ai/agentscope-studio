@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/input-group.tsx';
 import { StringFilterOperator, TableRequestParams } from '@shared/types';
 import { ChevronDownIcon } from 'lucide-react';
+import { TableRowSelection } from 'antd/es/table/interface';
 
 interface AsTableProps<T> extends Omit<TableProps<T>, 'columns'> {
     columns: TableColumnsType<T>;
@@ -104,9 +105,9 @@ const AsTable = <T extends object>({
                 ellipsis: true,
                 sorter: columnKey
                     ? (a: T, b: T) => {
-                          const result = generalSorter(a, b, columnKey);
-                          return result ?? 0;
-                      }
+                        const result = generalSorter(a, b, columnKey);
+                        return result ?? 0;
+                    }
                     : false,
                 sortIcon: (sortOrder) => renderSortIcon(sortOrder, true),
             };
@@ -155,28 +156,28 @@ const AsTable = <T extends object>({
     const handleSearch = (searchText: string) => {
         setTableRequestParams((prevParams) => {
             if (searchField) {
-                // Check if the filter value has actually changed
-                const hasChanged =
-                    !prevParams.filters ||
-                    !prevParams.filters[searchField] ||
-                    prevParams.filters[searchField].value !== searchText;
+                const newFilters = { ...prevParams.filters };
+                const currentFilterValue = newFilters[searchField]?.value;
 
-                if (hasChanged) {
-                    return {
-                        ...prevParams,
-                        pagination: {
-                            page: 1,
-                            pageSize: prevParams.pagination.pageSize,
-                        },
-                        filters: {
-                            ...prevParams.filters,
-                            [searchField]: {
-                                operator: StringFilterOperator.CONTAINS,
-                                value: searchText,
-                            },
-                        },
+                if (searchText) {
+                    if (currentFilterValue === searchText) return prevParams;
+                    newFilters[searchField] = {
+                        operator: StringFilterOperator.CONTAINS,
+                        value: searchText,
                     };
+                } else {
+                    if (currentFilterValue === undefined) return prevParams;
+                    delete newFilters[searchField];
                 }
+
+                return {
+                    ...prevParams,
+                    pagination: {
+                        page: 1,
+                        pageSize: prevParams.pagination.pageSize,
+                    },
+                    filters: newFilters,
+                };
             }
             return prevParams;
         });
@@ -245,6 +246,7 @@ const AsTable = <T extends object>({
                                     if (column !== undefined) {
                                         return (
                                             <DropdownMenuCheckboxItem
+                                                key={column.toString()}
                                                 checked={
                                                     searchField ===
                                                     column.toString()
@@ -282,7 +284,7 @@ const AsTable = <T extends object>({
                     sticky={{ offsetHeader: 0 }}
                     showSorterTooltip={{ target: 'full-header' }}
                     pagination={false}
-                    rowSelection={rowSelection}
+                    rowSelection={rowSelection as TableRowSelection<T>}
                     scroll={{
                         x: 'max-content',
                         ...rest.scroll,
@@ -293,7 +295,7 @@ const AsTable = <T extends object>({
             <AsPagination
                 total={total}
                 pageTotal={rest.dataSource ? rest.dataSource.length : 0}
-                nSelectedRows={selectedRowKeys.length}
+                nSelectedRows={selectedRowKeys?.length ?? 0}
                 page={tableRequestParams.pagination.page}
                 pageSize={tableRequestParams.pagination.pageSize}
                 onPageChange={handlePageChange}

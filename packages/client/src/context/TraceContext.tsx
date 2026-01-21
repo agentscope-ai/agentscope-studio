@@ -22,16 +22,16 @@ export interface TraceContextType {
     traces: Trace[];
     statistics: TraceStatistics | undefined;
     traceData:
-        | {
-              traceId: string;
-              spans: import('@shared/types/trace').SpanData[];
-              startTime: string;
-              endTime: string;
-              duration: number;
-              status: number;
-              totalTokens?: number;
-          }
-        | undefined; // Selected trace detail data
+    | {
+        traceId: string;
+        spans: import('@shared/types/trace').SpanData[];
+        startTime: string;
+        endTime: string;
+        duration: number;
+        status: number;
+        totalTokens?: number;
+    }
+    | undefined; // Selected trace detail data
     isLoading: boolean;
     isLoadingTrace: boolean;
     error: Error | null;
@@ -111,14 +111,14 @@ export function TraceContextProvider({
             },
             filters: initialTimeRange
                 ? {
-                      timeRange: {
-                          operator: RangeFilterOperator.BETWEEN,
-                          value: [
-                              initialTimeRange.startTime,
-                              initialTimeRange.endTime,
-                          ],
-                      },
-                  }
+                    timeRange: {
+                        operator: RangeFilterOperator.BETWEEN,
+                        value: [
+                            initialTimeRange.startTime,
+                            initialTimeRange.endTime,
+                        ],
+                    },
+                }
                 : undefined,
         });
 
@@ -132,23 +132,22 @@ export function TraceContextProvider({
     const setTimeRange = (range: 'week' | 'month' | 'all') => {
         setTimeRangeState(range);
         const timeValues = getTimeRangeValues(range);
-        console.log('timeValues', timeValues);
         setTableRequestParams((prev) => ({
             ...prev,
             pagination: { ...prev.pagination, page: 1 },
             filters: timeValues
                 ? {
-                      ...prev.filters,
-                      timeRange: {
-                          operator: RangeFilterOperator.BETWEEN,
-                          value: [timeValues.startTime, timeValues.endTime],
-                      },
-                  }
+                    ...prev.filters,
+                    timeRange: {
+                        operator: RangeFilterOperator.BETWEEN,
+                        value: [timeValues.startTime, timeValues.endTime],
+                    },
+                }
                 : Object.fromEntries(
-                      Object.entries(prev.filters || {}).filter(
-                          ([key]) => key !== 'timeRange',
-                      ),
-                  ),
+                    Object.entries(prev.filters || {}).filter(
+                        ([key]) => key !== 'timeRange',
+                    ),
+                ),
         }));
     };
 
