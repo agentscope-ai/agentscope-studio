@@ -14,9 +14,7 @@ import {
  * 2. Migrate historical data: create Reply records for all replyIds
  * 3. Change message_table.replyId to a non-nullable foreign key
  */
-export class AddMessageReplyForeignKey1730000000000
-    implements MigrationInterface
-{
+export class AddMessageReplyForeignKey1730000000000 implements MigrationInterface {
     name = 'AddMessageReplyForeignKey1730000000000';
 
     public async up(queryRunner: QueryRunner): Promise<void> {

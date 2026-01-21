@@ -28,6 +28,8 @@ import { FridayConfigManager } from '../../../shared/src/config/friday';
 import { FridayAppMessageDao } from '../dao/FridayAppMessage';
 import { ReplyDao } from '../dao/Reply';
 import { SpanDao } from '../dao/Trace';
+import { APP_INFO } from '../../../shared/src';
+import { ConfigManager } from '../../../shared/src/config/server';
 
 const textBlock = z.object({
     text: z.string(),
@@ -329,26 +331,25 @@ export const appRouter = t.router({
             }),
         )
         .mutation(async ({ input }) => {
-            FridayAppMessageDao.saveReplyMessage(
-                input.replyId,
-                input.msg as {
-                    id: string;
-                    name: string;
-                    role: string;
-                    content: ContentBlocks;
-                    metadata: object;
-                    timestamp: string;
-                },
-                false,
-            )
-                .then((reply) => {
-                    // Broadcast to all the clients in the FridayAppRoom
-                    SocketManager.broadcastReplyToFridayAppRoom(reply);
-                })
-                .catch((error) => {
-                    console.error(error);
-                    throw error;
-                });
+            try {
+                const reply = await FridayAppMessageDao.saveReplyMessage(
+                    input.replyId,
+                    input.msg as {
+                        id: string;
+                        name: string;
+                        role: string;
+                        content: ContentBlocks;
+                        metadata: object;
+                        timestamp: string;
+                    },
+                    false,
+                );
+                // Broadcast to all the clients in the FridayAppRoom
+                SocketManager.broadcastReplyToFridayAppRoom(reply);
+            } catch (error) {
+                console.error(error);
+                throw error;
+            }
         }),
 
     pushFinishedSignalToFridayApp: t.procedure
@@ -482,6 +483,61 @@ export const appRouter = t.router({
                 });
             }
         }),
+
+    getCurrentVersion: t.procedure.query(async () => {
+        try {
+            const version = APP_INFO.version;
+            return {
+                success: true,
+                message: 'Version retrieved successfully',
+                data: {
+                    version: version,
+                },
+            } as ResponseBody<{ version: string }>;
+        } catch (error) {
+            console.error('Error get current version:', error);
+            throw new TRPCError({
+                code: 'INTERNAL_SERVER_ERROR',
+                message:
+                    error instanceof Error
+                        ? error.message
+                        : 'Failed to get current version',
+            });
+        }
+    }),
+
+    getDataInfo: t.procedure.query(async () => {
+        try {
+            const configManager = ConfigManager.getInstance();
+            const dbStats = configManager.getDataStats();
+            return {
+                success: true,
+                message: 'Database info retrieved successfully',
+                data: {
+                    path: dbStats.path,
+                    size: dbStats.size,
+                    formattedSize: dbStats.formattedSize,
+                    fridayConfigPath: dbStats.fridayConfigPath,
+                    fridayHistoryPath: dbStats.fridayHistoryPath,
+                },
+            } as ResponseBody<{
+                path: string;
+                size: number;
+                formattedSize: string;
+                fridayConfigPath: string;
+                fridayHistoryPath: string;
+            }>;
+        } catch (error) {
+            console.error('Error get database info:', error);
+            throw new TRPCError({
+                code: 'INTERNAL_SERVER_ERROR',
+                message:
+                    error instanceof Error
+                        ? error.message
+                        : 'Failed to get database info',
+            });
+        }
+    }),
 });
 
 export type AppRouter = typeof appRouter;

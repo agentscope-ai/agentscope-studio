@@ -2,10 +2,15 @@
     "action": {
         "cancel": "Cancel",
         "clean-history": "Clean History",
+        "clear-data": "Clear Data",
         "compare": "Compare",
+        "confirm": "Confirm",
         "delete": "Delete",
         "focus-on-latest-run": "Focus on latest",
-        "ok": "OK"
+        "ok": "OK",
+        "update-now": "Update Now",
+        "updating": "Updating...",
+        "view-update": "View"
     },
     "chat": {
         "avatar-set": {
@@ -32,7 +37,6 @@
         "apps": "Apps",
         "average": "Average",
         "benchmark": "Benchmark",
-        "changeLanguage": "Change Language",
         "completion": "Completion",
         "completion-average": "Completion(Avg)",
         "contact": "Contact",
@@ -53,7 +57,7 @@
         "id": "ID",
         "input": "Input",
         "input-tokens": "Input Tokens",
-        "language": "Language",
+        "settings": "Settings",
         "latency": "Latency",
         "llm-invocation": "Invocation",
         "llm-invocations": "Invocations",
@@ -99,6 +103,7 @@
         "no-data-available": "No data available"
     },
     "description": {
+        "settings": "Manage application settings, including language preferences and data management",
         "trace": {
             "input": "The tracing span input, organized in a JSON format with \"args\" and \"kwargs\" fields",
             "metadata": "The tracing span metadata for additional information",
@@ -110,7 +115,8 @@
         "empty-input": "Input cannot be empty",
         "invalid-url": "Invalid URL: cannot get file extension",
         "project-not-found": "Project not found",
-        "run-not-found": "Run not found"
+        "run-not-found": "Run not found",
+        "socket-not-connected": "Not connected to server"
     },
     "help": {
         "friday": {
@@ -156,6 +162,22 @@
     "modal": {
         "title-input-url": "Please input the file URL"
     },
+    "message": {
+        "settings": {
+            "data-cleared": "All data has been cleared",
+            "update-instruction": "Please use npm install -g @agentscope/studio@{{version}} to update to the latest version",
+            "updating": "Updating to {{version}}, please wait...",
+            "update-success": "Update successful! Installed version {{version}}",
+            "update-failed": "Update failed: {{error}}",
+            "restart-required": "Please restart the application to use the new version"
+        },
+        "friday": {
+            "success-install-requirements": "Requirements installed successfully.",
+            "success-save-config": "Configuration saved successfully.",
+            "info-install-requirements": "Installing Python requirements for Friday, please wait ...",
+            "info-save-config": "Save the configuration for Friday, please wait ..."
+        }
+    },
     "notification": {
         "friday-error-title": "Error when executing Friday",
         "update-version-description": "A new version ({{latestVersion}}) is available. Your current version is {{currentVersion}}. Please update to the latest version",
@@ -180,13 +202,25 @@
         "running": "Running",
         "unknown": "Unknown"
     },
-    "message": {
-        "friday": {
-            "success-install-requirements": "Requirements installed successfully.",
-            "success-save-config": "Configuration saved successfully.",
-            "info-install-requirements": "Installing Python requirements for Friday, please wait ...",
-            "info-save-config": "Save the configuration for Friday, please wait ..."
-        }
+    "settings": {
+        "language": "Language",
+        "language-description": "Switch display language",
+        "data-management": "Data Management",
+        "data-management-description": "View storage paths and clear data",
+        "version": "Version",
+        "version-description": "View version and check updates",
+        "current-version": "Current Version",
+        "new-update-available": "Update Available",
+        "new-version-available": "Studio {{version}} is available",
+        "clear-data-warning": "This will clear all history data and cannot be undone.",
+        "clear-data-confirm-title": "Confirm Clear",
+        "clear-data-confirm-description": "This will clear all Friday conversation history. This action cannot be undone. Continue?",
+        "language-settings": "Display Language",
+        "database": "Database",
+        "path": "Storage Path",
+        "friday-history": "Conversation History",
+        "database-usage": "Size",
+        "config-path": "Config File"
     },
     "table": {
         "column": {
