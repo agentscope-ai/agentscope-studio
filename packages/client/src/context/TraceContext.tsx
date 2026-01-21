@@ -1,4 +1,9 @@
-import { TraceListItem, TraceStatistics } from '@shared/types';
+import {
+    RangeFilterOperator,
+    TableRequestParams,
+    Trace,
+    TraceStatistics,
+} from '@shared/types';
 import dayjs from 'dayjs';
 import { createContext, ReactNode, useContext, useMemo, useState } from 'react';
 import { trpc } from '../api/trpc';
@@ -8,14 +13,13 @@ export interface TraceContextType {
     timeRange: 'week' | 'month' | 'all';
     setTimeRange: (range: 'week' | 'month' | 'all') => void;
 
-    // Pagination state
-    page: number;
-    setPage: (page: number) => void;
-    pageSize: number;
-    setPageSize: (size: number) => void;
+    tableRequestParams: TableRequestParams;
+    setTableRequestParams: (
+        updateFn: (params: TableRequestParams) => TableRequestParams,
+    ) => void;
 
     // Data
-    traces: TraceListItem[];
+    traces: Trace[];
     statistics: TraceStatistics | undefined;
     traceData:
         | {
@@ -36,6 +40,8 @@ export interface TraceContextType {
     // Selected trace
     selectedTraceId: string | null;
     setSelectedTraceId: (traceId: string | null) => void;
+    selectedRootSpanId: string | null; // For orphan spans, only show this span and its descendants
+    setSelectedRootSpanId: (spanId: string | null) => void;
     drawerOpen: boolean;
     setDrawerOpen: (open: boolean) => void;
 
@@ -52,81 +58,120 @@ interface TraceContextProviderProps {
     pollingEnabled?: boolean;
 }
 
-// Internal component that uses tRPC hooks - must be inside trpc.Provider
-function TraceContextProviderInner({
+// Helper function to calculate time range values
+const getTimeRangeValues = (
+    range: 'week' | 'month' | 'all',
+): { startTime: string; endTime: string } | null => {
+    const now = dayjs();
+
+    switch (range) {
+        case 'week':
+            return {
+                startTime: (
+                    BigInt(now.subtract(7, 'day').startOf('day').valueOf()) *
+                    BigInt(1_000_000)
+                ).toString(),
+                endTime: (
+                    BigInt(now.endOf('day').valueOf()) * BigInt(1_000_000)
+                ).toString(),
+            };
+        case 'month':
+            return {
+                startTime: (
+                    BigInt(now.subtract(30, 'day').startOf('day').valueOf()) *
+                    BigInt(1_000_000)
+                ).toString(),
+                endTime: (
+                    BigInt(now.endOf('day').valueOf()) * BigInt(1_000_000)
+                ).toString(),
+            };
+        case 'all':
+        default:
+            return null;
+    }
+};
+
+export function TraceContextProvider({
     children,
     pollingInterval = 5000,
     pollingEnabled = true,
 }: TraceContextProviderProps) {
     // Filter state
-    const [timeRange, setTimeRange] = useState<'week' | 'month' | 'all'>(
+    const [timeRange, setTimeRangeState] = useState<'week' | 'month' | 'all'>(
         'week',
     );
 
-    // Pagination state
-    const [page, setPage] = useState(1);
-    const [pageSize, setPageSize] = useState(10);
+    // Initialize tableRequestParams with time range filter
+    const initialTimeRange = getTimeRangeValues('week');
+    const [tableRequestParams, setTableRequestParams] =
+        useState<TableRequestParams>({
+            pagination: {
+                page: 1,
+                pageSize: 10,
+            },
+            filters: initialTimeRange
+                ? {
+                      timeRange: {
+                          operator: RangeFilterOperator.BETWEEN,
+                          value: [
+                              initialTimeRange.startTime,
+                              initialTimeRange.endTime,
+                          ],
+                      },
+                  }
+                : undefined,
+        });
 
     // Selected trace
     const [selectedTraceId, setSelectedTraceId] = useState<string | null>(null);
+    const [selectedRootSpanId, setSelectedRootSpanId] = useState<string | null>(
+        null,
+    );
     const [drawerOpen, setDrawerOpen] = useState(false);
 
-    // Calculate time range filter
+    const setTimeRange = (range: 'week' | 'month' | 'all') => {
+        setTimeRangeState(range);
+        const timeValues = getTimeRangeValues(range);
+        console.log('timeValues', timeValues);
+        setTableRequestParams((prev) => ({
+            ...prev,
+            pagination: { ...prev.pagination, page: 1 },
+            filters: timeValues
+                ? {
+                      ...prev.filters,
+                      timeRange: {
+                          operator: RangeFilterOperator.BETWEEN,
+                          value: [timeValues.startTime, timeValues.endTime],
+                      },
+                  }
+                : Object.fromEntries(
+                      Object.entries(prev.filters || {}).filter(
+                          ([key]) => key !== 'timeRange',
+                      ),
+                  ),
+        }));
+    };
+
     const timeRangeFilter = useMemo(() => {
-        const now = dayjs();
-        let startTime: string | undefined;
-        let endTime: string | undefined;
-
-        switch (timeRange) {
-            case 'week':
-                startTime = (
-                    BigInt(now.subtract(7, 'day').startOf('day').valueOf()) *
-                    BigInt(1_000_000)
-                ).toString();
-                endTime = (
-                    BigInt(now.endOf('day').valueOf()) * BigInt(1_000_000)
-                ).toString();
-                break;
-            case 'month':
-                startTime = (
-                    BigInt(now.subtract(30, 'day').startOf('day').valueOf()) *
-                    BigInt(1_000_000)
-                ).toString();
-                endTime = (
-                    BigInt(now.endOf('day').valueOf()) * BigInt(1_000_000)
-                ).toString();
-                break;
-            case 'all':
-            default:
-                startTime = undefined;
-                endTime = undefined;
-                break;
-        }
-
-        return { startTime, endTime };
+        const timeValues = getTimeRangeValues(timeRange);
+        return timeValues
+            ? { startTime: timeValues.startTime, endTime: timeValues.endTime }
+            : { startTime: undefined, endTime: undefined };
     }, [timeRange]);
 
-    // Fetch trace list with polling
     const {
-        data: traceListData,
+        data: response,
         isLoading,
         error,
         refetch,
-    } = trpc.getTraceList.useQuery(
-        {
-            limit: pageSize,
-            offset: (page - 1) * pageSize,
-            ...timeRangeFilter,
-        },
-        {
-            refetchOnMount: true,
-            refetchOnWindowFocus: false,
-            staleTime: 0,
-            gcTime: 0,
-            refetchInterval: pollingEnabled ? pollingInterval : false,
-            refetchIntervalInBackground: true,
-        },
-    );
+    } = trpc.getTraces.useQuery(tableRequestParams, {
+        refetchOnMount: true,
+        refetchOnWindowFocus: false,
+        staleTime: 0,
+        gcTime: 0,
+        refetchInterval: pollingEnabled ? pollingInterval : false,
+        refetchIntervalInBackground: true,
+    });
 
     // Fetch statistics with polling
     const { data: statistics, refetch: refetchStatistics } =
@@ -158,7 +203,7 @@ function TraceContextProviderInner({
     );
 
     // Use traces directly from API (no client-side filtering needed)
-    const traces = traceListData?.traces || [];
+    const traces = response?.data?.list || [];
 
     const value: TraceContextType = useMemo(
         () => ({
@@ -166,11 +211,9 @@ function TraceContextProviderInner({
             timeRange,
             setTimeRange,
 
-            // Pagination state
-            page,
-            setPage,
-            pageSize,
-            setPageSize,
+            // Table request params
+            tableRequestParams,
+            setTableRequestParams,
 
             // Data
             traces,
@@ -179,11 +222,13 @@ function TraceContextProviderInner({
             isLoading,
             isLoadingTrace,
             error: error as Error | null,
-            total: traceListData?.total || 0,
+            total: response?.data?.total || 0,
 
             // Selected trace
             selectedTraceId,
             setSelectedTraceId,
+            selectedRootSpanId,
+            setSelectedRootSpanId,
             drawerOpen,
             setDrawerOpen,
 
@@ -196,16 +241,16 @@ function TraceContextProviderInner({
         }),
         [
             timeRange,
-            page,
-            pageSize,
+            tableRequestParams,
             traces,
             statistics,
             traceData,
             isLoading,
             isLoadingTrace,
             error,
-            traceListData?.total,
+            response?.data?.total || 0,
             selectedTraceId,
+            selectedRootSpanId,
             drawerOpen,
             refetch,
             refetchStatistics,
@@ -215,22 +260,6 @@ function TraceContextProviderInner({
 
     return (
         <TraceContext.Provider value={value}>{children}</TraceContext.Provider>
-    );
-}
-
-// External wrapper that provides QueryClientProvider and trpc.Provider
-export function TraceContextProvider({
-    children,
-    pollingInterval = 5000, // 5 seconds default
-    pollingEnabled = true,
-}: TraceContextProviderProps) {
-    return (
-        <TraceContextProviderInner
-            pollingInterval={pollingInterval}
-            pollingEnabled={pollingEnabled}
-        >
-            {children}
-        </TraceContextProviderInner>
     );
 }
 

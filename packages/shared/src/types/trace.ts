@@ -87,9 +87,10 @@ export interface SpanData {
     latencyNs: number;
 }
 
-// Trace list item interface for UI display
-export interface TraceListItem {
+// Trace interface for list display
+export interface Trace {
     traceId: string;
+    spanId: string; // Unique identifier for each row (root or orphan span)
     name: string;
     startTime: string;
     endTime: string;
@@ -97,6 +98,7 @@ export interface TraceListItem {
     status: number;
     spanCount: number;
     totalTokens?: number;
+    isOrphan: boolean; // True if this is an orphan span (parent not yet in database)
 }
 
 // Trace statistics interface

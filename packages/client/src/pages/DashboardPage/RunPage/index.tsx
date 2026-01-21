@@ -1,19 +1,19 @@
+import { Splitter } from 'antd';
 import { memo, useCallback, useEffect, useState } from 'react';
-import { Flex, Layout, Splitter } from 'antd';
 import { Route, Routes, useNavigate, useParams } from 'react-router-dom';
 
-import TracingComponent from './TracingComponent';
 import ProjectRunSider from './ProjectRunSider';
+import TracingComponent from './TracingComponent';
 
-import { InputRequestData, Reply } from '@shared/types/trpc';
-import { ProjectRoomContextProvider } from '@/context/ProjectRoomContext';
-import { EmptyRunPage, ProjectNotFoundPage } from '../../DefaultPage';
-import { RunRoomContextProvider, useRunRoom } from '@/context/RunRoomContext';
 import AsChat from '@/components/chat/AsChat';
-import { ContentBlocks } from '@shared/types';
-import { useTranslation } from 'react-i18next';
-import { isMacOs } from 'react-device-detect';
 import { useMessageApi } from '@/context/MessageApiContext.tsx';
+import { ProjectRoomContextProvider } from '@/context/ProjectRoomContext';
+import { RunRoomContextProvider, useRunRoom } from '@/context/RunRoomContext';
+import { ContentBlocks } from '@shared/types';
+import { InputRequestData, Reply } from '@shared/types/trpc';
+import { isMacOs } from 'react-device-detect';
+import { useTranslation } from 'react-i18next';
+import { EmptyRunPage, ProjectNotFoundPage } from '../../DefaultPage';
 
 const RunContentPage = () => {
     const [displayedReply, setDisplayedReply] = useState<Reply | null>(null);
@@ -101,14 +101,9 @@ const RunContentPage = () => {
     const shortcutKeys = isMacOs ? 'Command + Enter' : 'fCtrl + Enter';
 
     return (
-        <Flex
-            style={{
-                minHeight: 0,
-                height: 0,
-            }}
-            flex={1}
-            vertical={true}
-            gap="middle"
+        <div
+            className="flex flex-col flex-1 gap-4"
+            style={{ minHeight: 0, height: 0 }}
         >
             <Splitter style={{ width: '100%' }}>
                 <Splitter.Panel className="flex w-full justify-center bg-[rgb(246,247,248)]">
@@ -149,12 +144,11 @@ const RunContentPage = () => {
                     />
                 </Splitter.Panel>
             </Splitter>
-        </Flex>
+        </div>
     );
 };
 
 const RunPage = () => {
-    const { Content } = Layout;
     const { projectName } = useParams<{ projectName: string }>();
     const navigate = useNavigate();
 
@@ -164,7 +158,7 @@ const RunPage = () => {
 
     return (
         <ProjectRoomContextProvider project={projectName}>
-            <Layout>
+            <div className="flex h-full w-full">
                 <ProjectRunSider
                     onRunClick={(runId) =>
                         navigate(`/projects/${projectName}/runs/${runId}`, {
@@ -172,30 +166,21 @@ const RunPage = () => {
                         })
                     }
                 />
-                <Content>
-                    <Flex
-                        flex={1}
-                        style={{
-                            height: '100%',
-                            minHeight: 0,
-                        }}
-                        vertical={true}
-                    >
-                        <Routes>
-                            <Route index element={<EmptyRunPage />} />
-                            <Route path="runs" element={<EmptyRunPage />} />
-                            <Route
-                                path="runs/:runId"
-                                element={
-                                    <RunRoomContextProvider>
-                                        <RunContentPage />
-                                    </RunRoomContextProvider>
-                                }
-                            />
-                        </Routes>
-                    </Flex>
-                </Content>
-            </Layout>
+                <main className="flex flex-col flex-1 h-full min-h-0 min-w-0">
+                    <Routes>
+                        <Route index element={<EmptyRunPage />} />
+                        <Route path="runs" element={<EmptyRunPage />} />
+                        <Route
+                            path="runs/:runId"
+                            element={
+                                <RunRoomContextProvider>
+                                    <RunContentPage />
+                                </RunRoomContextProvider>
+                            }
+                        />
+                    </Routes>
+                </main>
+            </div>
         </ProjectRoomContextProvider>
     );
 };

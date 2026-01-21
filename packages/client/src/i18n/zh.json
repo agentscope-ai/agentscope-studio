@@ -188,6 +188,7 @@
         "search-evaluation": "搜索评测历史",
         "search-project": "搜索项目",
         "search-run": "搜索运行实例",
+        "search-trace": "搜索跟踪数据",
         "search-span": "搜索跟踪数据"
     },
     "status": {
@@ -226,6 +227,7 @@
             "name": "名称",
             "pending": "等待中",
             "progress": "进度",
+            "project": "项目",
             "question": "问题",
             "repeat": "重复次数",
             "running": "运行中",

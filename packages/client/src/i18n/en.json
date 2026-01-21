@@ -194,6 +194,7 @@
         "search-evaluation": "Search evaluation history",
         "search-project": "Search projects in the table",
         "search-run": "Search runs in the table",
+        "search-trace": "Search traces in the table",
         "search-span": "Search spans in the trace"
     },
     "status": {
@@ -231,6 +232,7 @@
             "id": "ID",
             "name": "Name",
             "pending": "Pending",
+            "project": "Project",
             "progress": "Progress",
             "question": "Question",
             "repeat": "Repeat",

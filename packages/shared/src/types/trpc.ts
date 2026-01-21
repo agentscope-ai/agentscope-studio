@@ -2,6 +2,105 @@ import { z } from 'zod';
 import { ContentBlocks, ContentType, Status } from './messageForm';
 import { Usage } from './usage';
 
+/**
+ * Filter operators for table filtering
+ */
+
+// Numeric filter operators
+export enum NumericFilterOperator {
+    EQUALS = 'eq',
+    NOT_EQUALS = 'ne',
+    GREATER_THAN = 'gt',
+    GREATER_THAN_OR_EQUAL = 'gte',
+    LESS_THAN = 'lt',
+    LESS_THAN_OR_EQUAL = 'lte',
+}
+
+// Range filter operators
+export enum RangeFilterOperator {
+    BETWEEN = 'between',
+    NOT_BETWEEN = 'notBetween',
+}
+
+// String filter operators
+export enum StringFilterOperator {
+    CONTAINS = 'contains',
+    NOT_CONTAINS = 'notContains',
+}
+
+// Array filter operators
+export enum ArrayFilterOperator {
+    // Check if a value is in an array of possible values
+    // e.g., status IN ['active', 'pending'] - checks if status value is one of ['active', 'pending']
+    IN = 'in',
+    NOT_IN = 'notIn',
+}
+
+export enum ArrayElementContainsFilterOperator {
+    // Check if any element in array contains a substring
+    // e.g., tags ARRAY_ELEMENT_CONTAINS 'ab' - checks if any element in ['abc', 'def'] contains 'ab'
+    // any(element.includes(value) for element in array)
+    ARRAY_ELEMENT_CONTAINS = 'arrayElementContains',
+    ARRAY_ELEMENT_NOT_CONTAINS = 'arrayElementNotContains',
+}
+
+// Define filter value schemas for different operator types
+const NumericFilterSchema = z.object({
+    operator: z.nativeEnum(NumericFilterOperator),
+    value: z.number(),
+});
+
+const RangeFilterSchema = z.object({
+    operator: z.nativeEnum(RangeFilterOperator),
+    value: z.tuple([z.number(), z.number()]),
+});
+
+// String range filter for timestamp comparisons (BigInt as string)
+const StringRangeFilterSchema = z.object({
+    operator: z.nativeEnum(RangeFilterOperator),
+    value: z.tuple([z.string(), z.string()]),
+});
+
+const StringFilterSchema = z.object({
+    operator: z.nativeEnum(StringFilterOperator),
+    value: z.string(),
+});
+
+const ArrayFilterSchema = z.object({
+    operator: z.nativeEnum(ArrayFilterOperator),
+    value: z.array(z.unknown()),
+});
+
+const ArrayElementContainsFilterSchema = z.object({
+    operator: z.nativeEnum(ArrayElementContainsFilterOperator),
+    value: z.string(), // Substring to search for in array elements
+});
+
+const BasicTableParamsSchema = {
+    pagination: z.object({
+        page: z.number().int().min(1),
+        pageSize: z.number().int().min(10),
+    }),
+    sort: z
+        .object({
+            field: z.string(),
+            order: z.enum(['asc', 'desc']),
+        })
+        .optional(),
+    filters: z
+        .record(
+            z.union([
+                NumericFilterSchema,
+                RangeFilterSchema,
+                StringRangeFilterSchema,
+                StringFilterSchema,
+                ArrayFilterSchema,
+                ArrayElementContainsFilterSchema,
+            ]),
+        )
+        .optional(),
+};
+
 export const RegisterReplyParamsSchema = z.object({
     runId: z.string(),
     replyId: z.string(),
@@ -15,19 +114,7 @@ export type RegisterReplyParams = z.infer<typeof RegisterReplyParamsSchema>;
  * Zod schema for table request parameters.
  * This schema validates the structure of the request parameters used for table-related operations.
  */
-export const TableRequestParamsSchema = z.object({
-    pagination: z.object({
-        page: z.number().int().min(1),
-        pageSize: z.number().int().min(10),
-    }),
-    sort: z
-        .object({
-            field: z.string(),
-            order: z.enum(['asc', 'desc']),
-        })
-        .optional(),
-    filters: z.record(z.unknown()).optional(),
-});
+export const TableRequestParamsSchema = z.object(BasicTableParamsSchema);
 export type TableRequestParams = z.infer<typeof TableRequestParamsSchema>;
 
 export const SocketRoomName = {
@@ -232,95 +319,6 @@ export interface TableData<T> {
     page: number;
     pageSize: number;
 }
-
-interface Metric {
-    name: string;
-    type: 'discrete';
-    enum: (string | number)[];
-}
-
-export interface EvaluationMeta {
-    id: string;
-    benchmark: string;
-    createdAt: string;
-    time: string;
-    repeat: number;
-    dir: string;
-}
-
-export interface EvaluationResult {
-    results: Record<string, Record<string, unknown>>;
-}
-
-export interface DiscreteMetricRes {
-    name: string;
-    type: 'category' | 'number';
-    value: string | number;
-    enum: (string | number)[];
-    multipleOf?: number;
-}
-
-export interface ContinuousMetricRes {
-    name: string;
-    type: 'number';
-    minimum?: number;
-    maximum?: number;
-    multipleOf?: number;
-    exclusiveMinimum?: number;
-    exclusiveMaximum?: number;
-    description?: string;
-}
-
-export interface EvaluationMetaData {
-    id: string;
-    name: string;
-    status: string;
-    progress: number;
-    createdAt: string;
-    time: number;
-    metrics: Metric[];
-    repeat: number;
-    report_dir: string;
-}
-
-export interface Task {
-    id: string;
-    question: string;
-    ground_truth: string;
-    repeat: string;
-    status: Status;
-
-    answers: string | null;
-    result: Record<string, unknown>;
-}
-
-export interface EvaluationData {
-    // Metadata
-    id: string;
-    name: string;
-    status: string;
-    benchmark: string;
-    progress: number;
-    createdAt: string;
-    time: number;
-    metrics: Metric[];
-    repeat: number;
-    report_dir: string;
-    // Data
-    results: Record<string, unknown>;
-}
-
-// TracePage trpc schemas
-export const GetTraceListParamsSchema = z.object({
-    serviceName: z.string().optional(),
-    operationName: z.string().optional(),
-    status: z.number().optional(),
-    startTime: z.string().optional(),
-    endTime: z.string().optional(),
-    limit: z.number().optional(),
-    offset: z.number().optional(),
-});
-export type GetTraceListParams = z.infer<typeof GetTraceListParamsSchema>;
 
 export const GetTraceParamsSchema = z.object({
     traceId: z.string(),
