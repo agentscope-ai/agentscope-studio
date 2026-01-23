@@ -489,12 +489,9 @@ export class SpanDao {
                         : String(filters.traceId);
 
                 if (filterValue) {
-                    queryBuilder.having(
-                        'MIN(span.traceId) LIKE :traceIdFilter',
-                        {
-                            traceIdFilter: `%${filterValue}%`,
-                        },
-                    );
+                    queryBuilder.having('span.traceId LIKE :traceIdFilter', {
+                        traceIdFilter: `%${filterValue}%`,
+                    });
                 }
             }
 
@@ -560,12 +557,22 @@ export class SpanDao {
                     queryBuilder.orderBy('MIN(span.startTimeUnixNano)', 'DESC');
             }
 
-            // Query all matching traces (without pagination) - let frontend handle pagination and statistics
-            const allResults = await queryBuilder.getRawMany();
-            const total = allResults.length;
+            // Get total count (before pagination)
+            const countQuery = queryBuilder.clone();
+            const totalResult = await countQuery.getRawMany();
+            const total = totalResult.length;
 
-            // Simple mapping - return raw data, let frontend calculate duration and statistics
-            const allTraces = allResults.map((row) => ({
+            // Apply pagination
+            const page = pagination.page || 1;
+            const pageSize = pagination.pageSize || 10;
+            const skip = (page - 1) * pageSize;
+            queryBuilder.skip(skip).take(pageSize);
+
+            // Query paginated traces
+            const results = await queryBuilder.getRawMany();
+
+            // Simple mapping - return raw data
+            const traces = results.map((row) => ({
                 traceId: row.traceId || '',
                 name: row.name || 'Unknown',
                 startTime: row.startTime || '0',
@@ -578,12 +585,12 @@ export class SpanDao {
                         : undefined,
             }));
 
-            // Return all data - frontend will handle pagination and statistics
+            // Return paginated data
             return {
-                list: allTraces as Trace[],
+                list: traces as Trace[],
                 total,
-                page: pagination.page,
-                pageSize: pagination.pageSize,
+                page,
+                pageSize,
             };
         } catch (error) {
             console.error('Error in getTraces:', error);
@@ -662,6 +669,117 @@ export class SpanDao {
             };
         } catch (error) {
             console.error(`Error getting trace ${traceId}:`, error);
+            throw error;
+        }
+    }
+
+    // Get trace statistics
+    static async getTraceStatistic(filters?: {
+        startTime?: string;
+        endTime?: string;
+        traceId?: string;
+    }): Promise<{
+        totalTraces: number;
+        totalSpans: number;
+        errorTraces: number;
+        avgDuration: number;
+        totalTokens: number;
+        tracesByStatus: Array<{ status: number; count: number }>;
+    }> {
+        try {
+            const queryBuilder = SpanTable.createQueryBuilder('span');
+
+            if (filters?.startTime) {
+                queryBuilder.andWhere('span.startTimeUnixNano >= :startTime', {
+                    startTime: filters.startTime,
+                });
+            }
+
+            if (filters?.endTime) {
+                queryBuilder.andWhere('span.startTimeUnixNano <= :endTime', {
+                    endTime: filters.endTime,
+                });
+            }
+
+            if (filters?.traceId) {
+                queryBuilder.andWhere('span.traceId LIKE :traceId', {
+                    traceId: `%${filters.traceId}%`,
+                });
+            }
+
+            // Get total spans
+            const totalSpans = await queryBuilder.getCount();
+
+            // Get unique trace count
+            const uniqueTracesQuery = queryBuilder
+                .clone()
+                .select('COUNT(DISTINCT span.traceId)', 'count')
+                .getRawOne();
+            const totalTraces = Number((await uniqueTracesQuery).count || 0);
+
+            // Get error traces count
+            const errorTracesQuery = queryBuilder
+                .clone()
+                .select('COUNT(DISTINCT span.traceId)', 'count')
+                .andWhere('span.statusCode = :statusCode', { statusCode: 2 })
+                .getRawOne();
+            const errorTraces = Number((await errorTracesQuery).count || 0);
+
+            // Get average duration
+            const durationQuery = await queryBuilder
+                .clone()
+                .select('span.traceId', 'traceId')
+                .addSelect('MIN(span.startTimeUnixNano)', 'startTime')
+                .addSelect('MAX(span.endTimeUnixNano)', 'endTime')
+                .groupBy('span.traceId')
+                .getRawMany();
+
+            const durations = durationQuery.map(
+                (row: { startTime: string; endTime: string }) => {
+                    const startTimeNs = BigInt(row.startTime);
+                    const endTimeNs = BigInt(row.endTime);
+                    return Number(endTimeNs - startTimeNs) / 1e9;
+                },
+            );
+
+            const avgDuration =
+                durations.length > 0
+                    ? durations.reduce((a: number, b: number) => a + b, 0) /
+                      durations.length
+                    : 0;
+
+            // Get total tokens
+            const tokensQuery = queryBuilder
+                .clone()
+                .select('SUM(COALESCE(span.totalTokens, 0))', 'total')
+                .getRawOne();
+            const totalTokens = Number((await tokensQuery).total || 0);
+
+            // Get traces by status
+            const statusQuery = await queryBuilder
+                .clone()
+                .select('span.statusCode', 'status')
+                .addSelect('COUNT(DISTINCT span.traceId)', 'count')
+                .groupBy('span.statusCode')
+                .getRawMany();
+
+            const tracesByStatus = statusQuery.map(
+                (row: { status: number | string; count: number | string }) => ({
+                    status: Number(row.status) || 0,
+                    count: Number(row.count) || 0,
+                }),
+            );
+
+            return {
+                totalTraces,
+                totalSpans,
+                errorTraces,
+                avgDuration,
+                totalTokens,
+                tracesByStatus,
+            };
+        } catch (error) {
+            console.error('Error getting trace statistics:', error);
             throw error;
         }
     }

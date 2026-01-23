@@ -146,8 +146,15 @@ export function TraceContextProvider({
         }));
     };
 
+    const timeRangeFilter = useMemo(() => {
+        const timeValues = getTimeRangeValues(timeRange);
+        return timeValues
+            ? { startTime: timeValues.startTime, endTime: timeValues.endTime }
+            : { startTime: undefined, endTime: undefined };
+    }, [timeRange]);
+
     const {
-        data: response,
+        data: getTracesResponse,
         isLoading,
         error,
         refetch,
@@ -159,6 +166,17 @@ export function TraceContextProvider({
         refetchInterval: pollingEnabled ? pollingInterval : false,
         refetchIntervalInBackground: true,
     });
+
+    // Fetch statistics with polling
+    const { data: statistics, refetch: refetchStatistics } =
+        trpc.getTraceStatistic.useQuery(timeRangeFilter, {
+            refetchOnMount: true,
+            refetchOnWindowFocus: false,
+            staleTime: 0,
+            gcTime: 0,
+            refetchInterval: pollingEnabled ? pollingInterval : false,
+            refetchIntervalInBackground: true,
+        });
 
     // Fetch selected trace detail with polling
     const {
@@ -178,9 +196,9 @@ export function TraceContextProvider({
         },
     );
 
-    // Process traces: calculate duration and apply pagination
-    const allTraces = useMemo(() => {
-        const rawTraces = response?.data?.list || [];
+    // Process traces: calculate duration
+    const traces = useMemo(() => {
+        const rawTraces = getTracesResponse?.data?.list || [];
         return rawTraces.map((trace) => {
             // Calculate duration from startTime and endTime
             const startTimeNs = BigInt(trace.startTime || '0');
@@ -192,68 +210,7 @@ export function TraceContextProvider({
                 duration,
             } as Trace;
         });
-    }, [response?.data?.list]);
-
-    // Calculate statistics from all traces
-    const statistics = useMemo<TraceStatistics | undefined>(() => {
-        if (allTraces.length === 0) {
-            return undefined;
-        }
-
-        let totalSpans = 0;
-        let totalTokens = 0;
-        const statusMap = new Map<number, number>();
-        let errorTraces = 0;
-        let totalDuration = 0;
-
-        allTraces.forEach((trace) => {
-            // Sum spans and tokens
-            totalSpans += trace.spanCount || 0;
-            totalTokens += trace.totalTokens || 0;
-
-            // Count by status
-            statusMap.set(trace.status, (statusMap.get(trace.status) || 0) + 1);
-
-            // Count error traces
-            if (trace.status === 2) {
-                errorTraces++;
-            }
-
-            // Sum durations
-            totalDuration += trace.duration;
-        });
-
-        const avgDuration =
-            allTraces.length > 0 ? totalDuration / allTraces.length : 0;
-
-        const tracesByStatus = Array.from(statusMap.entries()).map(
-            ([status, count]) => ({
-                status,
-                count,
-            }),
-        );
-
-        return {
-            totalTraces: allTraces.length,
-            totalSpans,
-            errorTraces,
-            avgDuration,
-            totalTokens,
-            tracesByStatus,
-        };
-    }, [allTraces]);
-
-    // Apply pagination to get current page
-    const traces = useMemo(() => {
-        const page = tableRequestParams.pagination.page;
-        const pageSize = tableRequestParams.pagination.pageSize;
-        const skip = (page - 1) * pageSize;
-        return allTraces.slice(skip, skip + pageSize);
-    }, [
-        allTraces,
-        tableRequestParams.pagination.page,
-        tableRequestParams.pagination.pageSize,
-    ]);
+    }, [getTracesResponse?.data?.list]);
 
     const value: TraceContextType = useMemo(
         () => ({
@@ -272,7 +229,7 @@ export function TraceContextProvider({
             isLoading,
             isLoadingTrace,
             error: error as Error | null,
-            total: allTraces.length,
+            total: getTracesResponse?.data?.total || 0,
 
             // Selected trace
             selectedTraceId,
@@ -281,7 +238,10 @@ export function TraceContextProvider({
             setDrawerOpen,
 
             // Refresh functions
-            refetch,
+            refetch: () => {
+                refetch();
+                refetchStatistics();
+            },
             refetchTrace,
         }),
         [
@@ -293,10 +253,11 @@ export function TraceContextProvider({
             isLoading,
             isLoadingTrace,
             error,
-            allTraces.length,
+            getTracesResponse?.data?.total,
             selectedTraceId,
             drawerOpen,
             refetch,
+            refetchStatistics,
             refetchTrace,
         ],
     );

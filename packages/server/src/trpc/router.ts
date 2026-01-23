@@ -4,6 +4,7 @@ import {
     BlockType,
     ContentBlocks,
     GetTraceParamsSchema,
+    GetTraceStatisticParamsSchema,
     InputRequestData,
     MessageForm,
     ProjectData,
@@ -430,6 +431,23 @@ export const appRouter = t.router({
                         error instanceof Error
                             ? error.message
                             : 'Failed to get trace',
+                });
+            }
+        }),
+
+    getTraceStatistic: t.procedure
+        .input(GetTraceStatisticParamsSchema)
+        .query(async ({ input }) => {
+            try {
+                return await SpanDao.getTraceStatistic(input);
+            } catch (error) {
+                console.error('Error in getTraceStatistic:', error);
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : 'Failed to get trace statistics',
                 });
             }
         }),
