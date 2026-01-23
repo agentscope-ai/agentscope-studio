@@ -90,7 +90,7 @@ export interface SpanData {
 // Trace interface for list display
 export interface Trace {
     traceId: string;
-    name: string;
+    traceName: string;
     startTime: string;
     endTime: string;
     duration: number;

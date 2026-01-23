@@ -168,8 +168,19 @@ const AsTable = <T extends object>({
                         value: searchText,
                     };
                 } else {
-                    if (currentFilterValue === undefined) return prevParams;
-                    delete newFilters[searchField];
+                    // When searchText is empty, clear all filters
+                    const hasFilters =
+                        Object.keys(prevParams.filters || {}).length > 0;
+                    if (!hasFilters) return prevParams;
+
+                    return {
+                        ...prevParams,
+                        pagination: {
+                            page: 1,
+                            pageSize: prevParams.pagination.pageSize,
+                        },
+                        filters: undefined,
+                    };
                 }
 
                 return {
@@ -218,7 +229,13 @@ const AsTable = <T extends object>({
                                 : t('action.search')
                         }
                         value={searchText}
-                        onChange={(e) => setSearchText(e.target.value)}
+                        onChange={(e) => {
+                            const newValue = e.target.value;
+                            setSearchText(newValue);
+                            if (newValue === '') {
+                                handleSearch('');
+                            }
+                        }}
                         onKeyUp={(e) => {
                             if (e.key === 'Enter') {
                                 handleSearch(searchText);

@@ -151,9 +151,38 @@ const TraceListPage = () => {
     const columns: TableColumnsType<Trace> = useMemo(
         () => [
             {
+                key: 'traceName',
+                ellipsis: false,
+                render: (_, record) => (
+                    <div className="group flex items-center gap-1 min-w-0">
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span className="truncate cursor-default">
+                                    {record.traceName}
+                                </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <span className="text-xs break-all max-w-[400px]">
+                                    {record.traceName}
+                                </span>
+                            </TooltipContent>
+                        </Tooltip>
+                        <Button
+                            size="icon-sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleCopy(record.traceName);
+                            }}
+                            className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                            <CopyIcon className="size-3" />
+                        </Button>
+                    </div>
+                ),
+            },
+            {
                 key: 'traceId',
-                width: 200,
-                minWidth: 150,
                 ellipsis: true,
                 render: (_, record) => (
                     <div className="group flex items-center gap-1 min-w-0">
@@ -184,42 +213,7 @@ const TraceListPage = () => {
                 ),
             },
             {
-                key: 'name',
-                width: 200,
-                minWidth: 150,
-                ellipsis: true,
-                render: (_, record) => (
-                    <div className="group flex items-center gap-1 min-w-0">
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <span className="truncate cursor-default">
-                                    {record.name}
-                                </span>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <span className="text-xs break-all max-w-[400px]">
-                                    {record.name}
-                                </span>
-                            </TooltipContent>
-                        </Tooltip>
-                        <Button
-                            size="icon-sm"
-                            variant="ghost"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleCopy(record.name);
-                            }}
-                            className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                            <CopyIcon className="size-3" />
-                        </Button>
-                    </div>
-                ),
-            },
-            {
                 key: 'startTime',
-                width: 180,
-                minWidth: 150,
                 render: (_, record) => (
                     <span className="text-xs sm:text-sm">
                         {formatDateTime(record.startTime)}
@@ -228,8 +222,6 @@ const TraceListPage = () => {
             },
             {
                 key: 'duration',
-                width: 100,
-                minWidth: 80,
                 render: (_, record) => (
                     <span
                         className={`text-xs sm:text-sm ${getLatencyColor(record.duration)}`}
@@ -240,8 +232,6 @@ const TraceListPage = () => {
             },
             {
                 key: 'totalTokens',
-                width: 100,
-                minWidth: 80,
                 render: (_, record) => (
                     <span className="text-xs sm:text-sm">
                         {record.totalTokens
@@ -251,9 +241,17 @@ const TraceListPage = () => {
                 ),
             },
             {
+                key: 'spanCount',
+                render: (_, record) => (
+                    <span className="text-xs sm:text-sm">
+                        {record.spanCount
+                            ? formatNumber(record.spanCount)
+                            : '-'}
+                    </span>
+                ),
+            },
+            {
                 key: 'status',
-                width: 120,
-                minWidth: 100,
                 render: (_, record) => getStatusDisplay(record.status),
             },
         ],
@@ -347,7 +345,7 @@ const TraceListPage = () => {
                     setTableRequestParams={setTableRequestParams}
                     selectedRowKeys={selectedRowKeys}
                     setSelectedRowKeys={setSelectedRowKeys}
-                    searchableColumns={['name', 'traceId']}
+                    searchableColumns={['traceName', 'traceId']}
                 />
             </div>
 

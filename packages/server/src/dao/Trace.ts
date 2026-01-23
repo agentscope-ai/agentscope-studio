@@ -463,19 +463,23 @@ export class SpanDao {
                 .addSelect(totalTokensSubquery, 'totalTokens')
                 .groupBy('span.traceId');
 
-            // Apply name filter
-            if (filters?.name) {
+            // Apply name filter - use the subquery directly in HAVING
+            if (filters?.traceName) {
                 const filterValue =
-                    typeof filters.name === 'object' &&
-                    filters.name !== null &&
-                    'value' in filters.name
-                        ? (filters.name as { value: string }).value
-                        : String(filters.name);
+                    typeof filters.traceName === 'object' &&
+                    filters.traceName !== null &&
+                    'value' in filters.traceName
+                        ? (filters.traceName as { value: string }).value
+                        : String(filters.traceName);
 
                 if (filterValue) {
-                    queryBuilder.having('MIN(span.name) LIKE :nameFilter', {
-                        nameFilter: `%${filterValue}%`,
-                    });
+                    // Use the same subquery in HAVING clause to filter by name
+                    queryBuilder.having(
+                        `${nameSubquery} LIKE :traceNameFilter`,
+                        {
+                            traceNameFilter: `%${filterValue}%`,
+                        },
+                    );
                 }
             }
 
@@ -574,7 +578,7 @@ export class SpanDao {
             // Simple mapping - return raw data
             const traces = results.map((row) => ({
                 traceId: row.traceId || '',
-                name: row.name || 'Unknown',
+                traceName: row.name || 'Unknown',
                 startTime: row.startTime || '0',
                 endTime: row.endTime || '0',
                 status: Number(row.status) || 0,
