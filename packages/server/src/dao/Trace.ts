@@ -432,58 +432,36 @@ export class SpanDao {
         try {
             const { pagination, sort, filters } = params;
 
-            // Build subqueries for aggregated fields
+            // Build base query - group by traceId and aggregate information
             const spanCountSubquery = `(
-                WITH RECURSIVE descendants AS (
-                    SELECT spanId FROM span_table WHERE spanId = span.spanId
-                    UNION ALL
-                    SELECT s.spanId FROM span_table s
-                    JOIN descendants d ON s.parentSpanId = d.spanId
-                )
-                SELECT COUNT(*) FROM descendants
+                SELECT COUNT(*) FROM span_table s WHERE s.traceId = span.traceId
             )`;
 
             const totalTokensSubquery = `(
-                WITH RECURSIVE descendants AS (
-                    SELECT spanId, totalTokens FROM span_table WHERE spanId = span.spanId
-                    UNION ALL
-                    SELECT s.spanId, s.totalTokens FROM span_table s
-                    JOIN descendants d ON s.parentSpanId = d.spanId
+                SELECT SUM(COALESCE(s.totalTokens, 0)) FROM span_table s WHERE s.traceId = span.traceId
+            )`;
+
+            // Subquery to get the name of the span with the earliest startTimeUnixNano
+            const nameSubquery = `(
+                SELECT s.name FROM span_table s
+                WHERE s.traceId = span.traceId
+                AND s.startTimeUnixNano = (
+                    SELECT MIN(s2.startTimeUnixNano)
+                    FROM span_table s2
+                    WHERE s2.traceId = span.traceId
                 )
-                SELECT SUM(COALESCE(totalTokens, 0)) FROM descendants
+                LIMIT 1
             )`;
 
-            const isOrphanSubquery = `(
-                span.parentSpanId IS NOT NULL
-                AND span.parentSpanId != ''
-                AND span.parentSpanId NOT IN (SELECT p.spanId FROM span_table p WHERE p.traceId = span.traceId)
-            )`;
-
-            // Build base query
             const queryBuilder = SpanTable.createQueryBuilder('span')
                 .select('span.traceId', 'traceId')
-                .addSelect('span.spanId', 'spanId')
-                .addSelect('span.name', 'name')
-                .addSelect('span.startTimeUnixNano', 'startTime')
-                .addSelect('span.endTimeUnixNano', 'endTime')
-                .addSelect('span.statusCode', 'status')
+                .addSelect('MIN(span.startTimeUnixNano)', 'startTime')
+                .addSelect('MAX(span.endTimeUnixNano)', 'endTime')
+                .addSelect('MAX(span.statusCode)', 'status')
+                .addSelect(nameSubquery, 'name')
                 .addSelect(spanCountSubquery, 'spanCount')
                 .addSelect(totalTokensSubquery, 'totalTokens')
-                .addSelect(isOrphanSubquery, 'isOrphan')
-                .where(
-                    `(
-                        (span.parentSpanId IS NULL OR span.parentSpanId = '')
-                        OR
-                        (
-                            span.parentSpanId NOT IN (SELECT p.spanId FROM span_table p WHERE p.traceId = span.traceId)
-                            AND NOT EXISTS (
-                                SELECT 1 FROM span_table r
-                                WHERE r.traceId = span.traceId
-                                AND (r.parentSpanId IS NULL OR r.parentSpanId = '')
-                            )
-                        )
-                    )`,
-                );
+                .groupBy('span.traceId');
 
             // Apply name filter
             if (filters?.name) {
@@ -495,7 +473,7 @@ export class SpanDao {
                         : String(filters.name);
 
                 if (filterValue) {
-                    queryBuilder.andWhere('span.name LIKE :nameFilter', {
+                    queryBuilder.having('MIN(span.name) LIKE :nameFilter', {
                         nameFilter: `%${filterValue}%`,
                     });
                 }
@@ -532,10 +510,6 @@ export class SpanDao {
                 }
             }
 
-            // Get total count (before pagination)
-            const countQuery = queryBuilder.clone();
-            const total = await countQuery.getCount();
-
             // Apply sorting
             const sortField = sort?.field || 'startTime';
             const sortOrder =
@@ -543,16 +517,19 @@ export class SpanDao {
 
             switch (sortField) {
                 case 'startTime':
-                    queryBuilder.orderBy('span.startTimeUnixNano', sortOrder);
+                    queryBuilder.orderBy(
+                        'MIN(span.startTimeUnixNano)',
+                        sortOrder,
+                    );
                     break;
                 case 'duration':
                     queryBuilder.orderBy(
-                        '(span.endTimeUnixNano - span.startTimeUnixNano)',
+                        '(MAX(span.endTimeUnixNano) - MIN(span.startTimeUnixNano))',
                         sortOrder,
                     );
                     break;
                 case 'status':
-                    queryBuilder.orderBy('span.statusCode', sortOrder);
+                    queryBuilder.orderBy('MAX(span.statusCode)', sortOrder);
                     break;
                 case 'totalTokens':
                     queryBuilder.orderBy(
@@ -561,42 +538,30 @@ export class SpanDao {
                     );
                     break;
                 default:
-                    queryBuilder.orderBy('span.startTimeUnixNano', 'DESC');
+                    queryBuilder.orderBy('MIN(span.startTimeUnixNano)', 'DESC');
             }
 
-            // Apply pagination
-            const skip = (pagination.page - 1) * pagination.pageSize;
-            queryBuilder.limit(pagination.pageSize).offset(skip);
+            // Query all matching traces (without pagination) - let frontend handle pagination and statistics
+            const allResults = await queryBuilder.getRawMany();
+            const total = allResults.length;
 
-            // Execute query
-            const results = await queryBuilder.getRawMany();
+            // Simple mapping - return raw data, let frontend calculate duration and statistics
+            const allTraces = allResults.map((row) => ({
+                traceId: row.traceId || '',
+                name: row.name || 'Unknown',
+                startTime: row.startTime || '0',
+                endTime: row.endTime || '0',
+                status: Number(row.status) || 0,
+                spanCount: Number(row.spanCount) || 0,
+                totalTokens:
+                    row.totalTokens !== null && row.totalTokens !== undefined
+                        ? Number(row.totalTokens)
+                        : undefined,
+            }));
 
-            // Map results to Trace type
-            const list = results.map((row) => {
-                const startTimeNs = BigInt(row.startTime || '0');
-                const endTimeNs = BigInt(row.endTime || '0');
-                const duration = Number(endTimeNs - startTimeNs) / 1e9;
-
-                return {
-                    traceId: row.traceId || '',
-                    spanId: row.spanId || '',
-                    name: row.name || 'Unknown',
-                    startTime: row.startTime || '0',
-                    endTime: row.endTime || '0',
-                    duration,
-                    status: Number(row.status) || 0,
-                    spanCount: Number(row.spanCount) || 0,
-                    totalTokens:
-                        row.totalTokens !== null &&
-                        row.totalTokens !== undefined
-                            ? Number(row.totalTokens)
-                            : undefined,
-                    isOrphan: Boolean(row.isOrphan),
-                };
-            }) as Trace[];
-
+            // Return all data - frontend will handle pagination and statistics
             return {
-                list,
+                list: allTraces as Trace[],
                 total,
                 page: pagination.page,
                 pageSize: pagination.pageSize,
@@ -678,124 +643,6 @@ export class SpanDao {
             };
         } catch (error) {
             console.error(`Error getting trace ${traceId}:`, error);
-            throw error;
-        }
-    }
-
-    // Get trace statistics
-    static async getTraceStatistic(filters?: {
-        startTime?: string;
-        endTime?: string;
-        serviceName?: string;
-        operationName?: string;
-    }): Promise<{
-        totalTraces: number;
-        totalSpans: number;
-        errorTraces: number;
-        avgDuration: number;
-        totalTokens: number;
-        tracesByStatus: Array<{ status: number; count: number }>;
-    }> {
-        try {
-            const queryBuilder = SpanTable.createQueryBuilder('span');
-
-            if (filters?.serviceName) {
-                queryBuilder.andWhere('span.serviceName = :serviceName', {
-                    serviceName: filters.serviceName,
-                });
-            }
-
-            if (filters?.operationName) {
-                queryBuilder.andWhere('span.operationName = :operationName', {
-                    operationName: filters.operationName,
-                });
-            }
-
-            if (filters?.startTime) {
-                queryBuilder.andWhere('span.startTimeUnixNano >= :startTime', {
-                    startTime: filters.startTime,
-                });
-            }
-
-            if (filters?.endTime) {
-                queryBuilder.andWhere('span.startTimeUnixNano <= :endTime', {
-                    endTime: filters.endTime,
-                });
-            }
-
-            // Get total spans
-            const totalSpans = await queryBuilder.getCount();
-
-            // Get unique trace count
-            const uniqueTracesQuery = queryBuilder
-                .clone()
-                .select('COUNT(DISTINCT span.traceId)', 'count')
-                .getRawOne();
-            const totalTraces = Number((await uniqueTracesQuery).count || 0);
-
-            // Get error traces count
-            const errorTracesQuery = queryBuilder
-                .clone()
-                .select('COUNT(DISTINCT span.traceId)', 'count')
-                .andWhere('span.statusCode = :statusCode', { statusCode: 2 })
-                .getRawOne();
-            const errorTraces = Number((await errorTracesQuery).count || 0);
-
-            // Get average duration
-            const durationQuery = await queryBuilder
-                .clone()
-                .select('span.traceId', 'traceId')
-                .addSelect('MIN(span.startTimeUnixNano)', 'startTime')
-                .addSelect('MAX(span.endTimeUnixNano)', 'endTime')
-                .groupBy('span.traceId')
-                .getRawMany();
-
-            const durations = durationQuery.map(
-                (row: { startTime: string; endTime: string }) => {
-                    const startTimeNs = BigInt(row.startTime);
-                    const endTimeNs = BigInt(row.endTime);
-                    return Number(endTimeNs - startTimeNs) / 1e9;
-                },
-            );
-
-            const avgDuration =
-                durations.length > 0
-                    ? durations.reduce((a: number, b: number) => a + b, 0) /
-                      durations.length
-                    : 0;
-
-            // Get total tokens
-            const tokensQuery = queryBuilder
-                .clone()
-                .select('SUM(COALESCE(span.totalTokens, 0))', 'total')
-                .getRawOne();
-            const totalTokens = Number((await tokensQuery).total || 0);
-
-            // Get traces by status
-            const statusQuery = await queryBuilder
-                .clone()
-                .select('span.statusCode', 'status')
-                .addSelect('COUNT(DISTINCT span.traceId)', 'count')
-                .groupBy('span.statusCode')
-                .getRawMany();
-
-            const tracesByStatus = statusQuery.map(
-                (row: { status: number | string; count: number | string }) => ({
-                    status: Number(row.status) || 0,
-                    count: Number(row.count) || 0,
-                }),
-            );
-
-            return {
-                totalTraces,
-                totalSpans,
-                errorTraces,
-                avgDuration,
-                totalTokens,
-                tracesByStatus,
-            };
-        } catch (error) {
-            console.error('Error getting trace statistics:', error);
             throw error;
         }
     }

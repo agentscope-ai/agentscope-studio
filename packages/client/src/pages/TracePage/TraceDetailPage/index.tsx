@@ -57,7 +57,6 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
         isLoadingTrace: isLoading,
         selectedTraceId,
         setSelectedTraceId,
-        selectedRootSpanId,
     } = useTraceContext();
     const [selectedSpanId, setSelectedSpanId] = useState<string | null>(null);
     const [idPanelOpen, setIdPanelOpen] = useState(false);
@@ -70,35 +69,11 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
         }
     }, [traceId, selectedTraceId, setSelectedTraceId]);
 
-    // Filter spans to only include selectedRootSpanId and its descendants
+    // Use all spans from trace data
     const filteredSpans = useMemo(() => {
         if (!traceData?.spans) return [];
-        if (!selectedRootSpanId) return traceData.spans;
-
-        // Find all descendants of selectedRootSpanId
-        const result: typeof traceData.spans = [];
-        const spanMap = new Map(
-            traceData.spans.map((span) => [span.spanId, span]),
-        );
-
-        // BFS to collect all descendants
-        const queue = [selectedRootSpanId];
-        while (queue.length > 0) {
-            const currentId = queue.shift()!;
-            const span = spanMap.get(currentId);
-            if (span) {
-                result.push(span);
-                // Find children
-                traceData.spans.forEach((s) => {
-                    if (s.parentSpanId === currentId) {
-                        queue.push(s.spanId);
-                    }
-                });
-            }
-        }
-
-        return result;
-    }, [traceData, selectedRootSpanId]);
+        return traceData.spans;
+    }, [traceData]);
 
     // Build tree structure from spans
     const treeData = useMemo(() => {
@@ -138,23 +113,15 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
         return filteredSpans.find((s) => s.spanId === selectedSpanId) || null;
     }, [selectedSpanId, filteredSpans]);
 
-    // Get root span for overall trace info (first span in filtered list for orphans)
+    // Get root span for overall trace info
     const rootSpan = useMemo(() => {
         if (!filteredSpans.length) return null;
-        // If selectedRootSpanId is set, use that span as root
-        if (selectedRootSpanId) {
-            return (
-                filteredSpans.find((s) => s.spanId === selectedRootSpanId) ||
-                filteredSpans[0] ||
-                null
-            );
-        }
         return (
             filteredSpans.find((s) => !s.parentSpanId) ||
             filteredSpans[0] ||
             null
         );
-    }, [filteredSpans, selectedRootSpanId]);
+    }, [filteredSpans]);
 
     // Calculate trace total duration (from earliest start to latest end)
     const traceDuration = useMemo(() => {

@@ -95,7 +95,6 @@ const TraceListPage = () => {
         // Selected trace
         selectedTraceId,
         setSelectedTraceId,
-        setSelectedRootSpanId,
         drawerOpen,
         setDrawerOpen,
     } = useTraceContext();
@@ -104,9 +103,9 @@ const TraceListPage = () => {
 
     // Filter the selected rows when traces data changes
     useEffect(() => {
-        const existedSpanIds = traces.map((trace) => trace.spanId);
+        const existedTraceIds = traces.map((trace) => trace.traceId);
         setSelectedRowKeys((prevRowKeys) =>
-            prevRowKeys.filter((id) => existedSpanIds.includes(id as string)),
+            prevRowKeys.filter((id) => existedTraceIds.includes(id as string)),
         );
     }, [traces]);
 
@@ -151,6 +150,14 @@ const TraceListPage = () => {
 
     const columns: TableColumnsType<Trace> = useMemo(
         () => [
+            {
+                key: 'traceId',
+                width: 180,
+                minWidth: 150,
+                render: (_, record) => (
+                    <span className="text-xs sm:text-sm">{record.traceId}</span>
+                ),
+            },
             {
                 key: 'name',
                 width: 200,
@@ -301,14 +308,11 @@ const TraceListPage = () => {
                     columns={columns}
                     dataSource={traces}
                     loading={isLoading}
-                    rowKey="spanId"
+                    rowKey="traceId"
                     searchType="trace"
                     onRow={(record: Trace) => ({
                         onClick: () => {
                             setSelectedTraceId(record.traceId);
-                            setSelectedRootSpanId(
-                                record.isOrphan ? record.spanId : null,
-                            );
                             setDrawerOpen(true);
                         },
                         className: 'cursor-pointer',

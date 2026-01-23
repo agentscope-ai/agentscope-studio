@@ -40,8 +40,6 @@ export interface TraceContextType {
     // Selected trace
     selectedTraceId: string | null;
     setSelectedTraceId: (traceId: string | null) => void;
-    selectedRootSpanId: string | null; // For orphan spans, only show this span and its descendants
-    setSelectedRootSpanId: (spanId: string | null) => void;
     drawerOpen: boolean;
     setDrawerOpen: (open: boolean) => void;
 
@@ -124,9 +122,6 @@ export function TraceContextProvider({
 
     // Selected trace
     const [selectedTraceId, setSelectedTraceId] = useState<string | null>(null);
-    const [selectedRootSpanId, setSelectedRootSpanId] = useState<string | null>(
-        null,
-    );
     const [drawerOpen, setDrawerOpen] = useState(false);
 
     const setTimeRange = (range: 'week' | 'month' | 'all') => {
@@ -151,13 +146,6 @@ export function TraceContextProvider({
         }));
     };
 
-    const timeRangeFilter = useMemo(() => {
-        const timeValues = getTimeRangeValues(timeRange);
-        return timeValues
-            ? { startTime: timeValues.startTime, endTime: timeValues.endTime }
-            : { startTime: undefined, endTime: undefined };
-    }, [timeRange]);
-
     const {
         data: response,
         isLoading,
@@ -171,17 +159,6 @@ export function TraceContextProvider({
         refetchInterval: pollingEnabled ? pollingInterval : false,
         refetchIntervalInBackground: true,
     });
-
-    // Fetch statistics with polling
-    const { data: statistics, refetch: refetchStatistics } =
-        trpc.getTraceStatistic.useQuery(timeRangeFilter, {
-            refetchOnMount: true,
-            refetchOnWindowFocus: false,
-            staleTime: 0,
-            gcTime: 0,
-            refetchInterval: pollingEnabled ? pollingInterval : false,
-            refetchIntervalInBackground: true,
-        });
 
     // Fetch selected trace detail with polling
     const {
@@ -201,8 +178,82 @@ export function TraceContextProvider({
         },
     );
 
-    // Use traces directly from API (no client-side filtering needed)
-    const traces = response?.data?.list || [];
+    // Process traces: calculate duration and apply pagination
+    const allTraces = useMemo(() => {
+        const rawTraces = response?.data?.list || [];
+        return rawTraces.map((trace) => {
+            // Calculate duration from startTime and endTime
+            const startTimeNs = BigInt(trace.startTime || '0');
+            const endTimeNs = BigInt(trace.endTime || '0');
+            const duration = Number(endTimeNs - startTimeNs) / 1e9;
+
+            return {
+                ...trace,
+                duration,
+            } as Trace;
+        });
+    }, [response?.data?.list]);
+
+    // Calculate statistics from all traces
+    const statistics = useMemo<TraceStatistics | undefined>(() => {
+        if (allTraces.length === 0) {
+            return undefined;
+        }
+
+        let totalSpans = 0;
+        let totalTokens = 0;
+        const statusMap = new Map<number, number>();
+        let errorTraces = 0;
+        let totalDuration = 0;
+
+        allTraces.forEach((trace) => {
+            // Sum spans and tokens
+            totalSpans += trace.spanCount || 0;
+            totalTokens += trace.totalTokens || 0;
+
+            // Count by status
+            statusMap.set(trace.status, (statusMap.get(trace.status) || 0) + 1);
+
+            // Count error traces
+            if (trace.status === 2) {
+                errorTraces++;
+            }
+
+            // Sum durations
+            totalDuration += trace.duration;
+        });
+
+        const avgDuration =
+            allTraces.length > 0 ? totalDuration / allTraces.length : 0;
+
+        const tracesByStatus = Array.from(statusMap.entries()).map(
+            ([status, count]) => ({
+                status,
+                count,
+            }),
+        );
+
+        return {
+            totalTraces: allTraces.length,
+            totalSpans,
+            errorTraces,
+            avgDuration,
+            totalTokens,
+            tracesByStatus,
+        };
+    }, [allTraces]);
+
+    // Apply pagination to get current page
+    const traces = useMemo(() => {
+        const page = tableRequestParams.pagination.page;
+        const pageSize = tableRequestParams.pagination.pageSize;
+        const skip = (page - 1) * pageSize;
+        return allTraces.slice(skip, skip + pageSize);
+    }, [
+        allTraces,
+        tableRequestParams.pagination.page,
+        tableRequestParams.pagination.pageSize,
+    ]);
 
     const value: TraceContextType = useMemo(
         () => ({
@@ -221,21 +272,16 @@ export function TraceContextProvider({
             isLoading,
             isLoadingTrace,
             error: error as Error | null,
-            total: response?.data?.total || 0,
+            total: allTraces.length,
 
             // Selected trace
             selectedTraceId,
             setSelectedTraceId,
-            selectedRootSpanId,
-            setSelectedRootSpanId,
             drawerOpen,
             setDrawerOpen,
 
             // Refresh functions
-            refetch: () => {
-                refetch();
-                refetchStatistics();
-            },
+            refetch,
             refetchTrace,
         }),
         [
@@ -247,12 +293,10 @@ export function TraceContextProvider({
             isLoading,
             isLoadingTrace,
             error,
-            response?.data?.total || 0,
+            allTraces.length,
             selectedTraceId,
-            selectedRootSpanId,
             drawerOpen,
             refetch,
-            refetchStatistics,
             refetchTrace,
         ],
     );

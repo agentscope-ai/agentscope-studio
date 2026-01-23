@@ -318,19 +318,17 @@ export interface TableData<T> {
     total: number;
     page: number;
     pageSize: number;
+    statistics?: {
+        totalTraces: number;
+        totalSpans: number;
+        errorTraces: number;
+        avgDuration: number;
+        totalTokens: number;
+        tracesByStatus: Array<{ status: number; count: number }>;
+    };
 }
 
 export const GetTraceParamsSchema = z.object({
     traceId: z.string(),
 });
 export type GetTraceParams = z.infer<typeof GetTraceParamsSchema>;
-
-export const GetTraceStatisticParamsSchema = z.object({
-    startTime: z.string().optional(),
-    endTime: z.string().optional(),
-    serviceName: z.string().optional(),
-    operationName: z.string().optional(),
-});
-export type GetTraceStatisticParams = z.infer<
-    typeof GetTraceStatisticParamsSchema
->;
