@@ -51,7 +51,9 @@ const AsTable = <T extends object>({
 }: AsTableProps<T>) => {
     const { t } = useTranslation();
     const defaultSearchField =
-        columns.length > 0 ? columns[0].key?.toString() : undefined;
+        searchableColumns.length > 0
+            ? searchableColumns[0]?.toString()
+            : undefined;
     const [searchField, setSearchField] = useState<string | undefined>(
         defaultSearchField,
     );
