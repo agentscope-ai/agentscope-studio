@@ -105,9 +105,9 @@ const AsTable = <T extends object>({
                 ellipsis: true,
                 sorter: columnKey
                     ? (a: T, b: T) => {
-                        const result = generalSorter(a, b, columnKey);
-                        return result ?? 0;
-                    }
+                          const result = generalSorter(a, b, columnKey);
+                          return result ?? 0;
+                      }
                     : false,
                 sortIcon: (sortOrder) => renderSortIcon(sortOrder, true),
             };
