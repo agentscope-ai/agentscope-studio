@@ -303,26 +303,25 @@ export const appRouter = t.router({
             }),
         )
         .mutation(async ({ input }) => {
-            FridayAppMessageDao.saveReplyMessage(
-                input.replyId,
-                input.msg as {
-                    id: string;
-                    name: string;
-                    role: string;
-                    content: ContentBlocks;
-                    metadata: object;
-                    timestamp: string;
-                },
-                false,
-            )
-                .then((reply) => {
-                    // Broadcast to all the clients in the FridayAppRoom
-                    SocketManager.broadcastReplyToFridayAppRoom(reply);
-                })
-                .catch((error) => {
-                    console.error(error);
-                    throw error;
-                });
+            try {
+                const reply = await FridayAppMessageDao.saveReplyMessage(
+                    input.replyId,
+                    input.msg as {
+                        id: string;
+                        name: string;
+                        role: string;
+                        content: ContentBlocks;
+                        metadata: object;
+                        timestamp: string;
+                    },
+                    false,
+                );
+                // Broadcast to all the clients in the FridayAppRoom
+                SocketManager.broadcastReplyToFridayAppRoom(reply);
+            } catch (error) {
+                console.error(error);
+                throw error;
+            }
         }),
 
     pushFinishedSignalToFridayApp: t.procedure
