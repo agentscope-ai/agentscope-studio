@@ -239,6 +239,7 @@
             "repeat": "Repeat",
             "running": "Running",
             "status": "Status",
+            "traceId": "Trace ID",
             "time": "Time",
             "total": "Total",
             "totalTokens": "Tokens",

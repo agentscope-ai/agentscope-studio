@@ -233,6 +233,7 @@
             "repeat": "重复次数",
             "running": "运行中",
             "status": "状态",
+            "traceId": "跟踪ID",
             "time": "用时",
             "total": "总计",
             "totalTokens": "Token 量",

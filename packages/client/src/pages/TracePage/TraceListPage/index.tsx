@@ -152,10 +152,35 @@ const TraceListPage = () => {
         () => [
             {
                 key: 'traceId',
-                width: 180,
+                width: 200,
                 minWidth: 150,
+                ellipsis: true,
                 render: (_, record) => (
-                    <span className="text-xs sm:text-sm">{record.traceId}</span>
+                    <div className="group flex items-center gap-1 min-w-0">
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span className="truncate cursor-default">
+                                    {record.traceId}
+                                </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <span className="text-xs break-all max-w-[400px]">
+                                    {record.traceId}
+                                </span>
+                            </TooltipContent>
+                        </Tooltip>
+                        <Button
+                            size="icon-sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleCopy(record.traceId);
+                            }}
+                            className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                            <CopyIcon className="size-3" />
+                        </Button>
+                    </div>
                 ),
             },
             {
@@ -322,7 +347,7 @@ const TraceListPage = () => {
                     setTableRequestParams={setTableRequestParams}
                     selectedRowKeys={selectedRowKeys}
                     setSelectedRowKeys={setSelectedRowKeys}
-                    searchableColumns={['name']}
+                    searchableColumns={['name', 'traceId']}
                 />
             </div>
 

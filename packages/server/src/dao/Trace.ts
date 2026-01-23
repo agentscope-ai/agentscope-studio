@@ -479,6 +479,25 @@ export class SpanDao {
                 }
             }
 
+            // Apply traceId filter
+            if (filters?.traceId) {
+                const filterValue =
+                    typeof filters.traceId === 'object' &&
+                    filters.traceId !== null &&
+                    'value' in filters.traceId
+                        ? (filters.traceId as { value: string }).value
+                        : String(filters.traceId);
+
+                if (filterValue) {
+                    queryBuilder.having(
+                        'MIN(span.traceId) LIKE :traceIdFilter',
+                        {
+                            traceIdFilter: `%${filterValue}%`,
+                        },
+                    );
+                }
+            }
+
             // Apply time range filter
             if (filters?.timeRange) {
                 const timeRangeFilter = filters.timeRange as {
