@@ -195,8 +195,8 @@
         "search-evaluation": "Search evaluation history",
         "search-project": "Search projects in the table",
         "search-run": "Search runs in the table",
-        "search-trace": "Search traces in the table",
-        "search-span": "Search spans in the trace"
+        "search-span": "Search spans in the trace",
+        "search-trace": "Search traces in the table"
     },
     "status": {
         "done": "Done",
@@ -228,6 +228,7 @@
         "column": {
             "benchmark": "Benchmark",
             "createdAt": "Created At",
+            "duration": "Duration",
             "finished": "Finished",
             "ground-truth": "Ground Truth",
             "id": "ID",
@@ -240,13 +241,12 @@
             "running": "Running",
             "spanCount": "Span Count",
             "status": "Status",
+            "startTime": "Start Time",
             "traceId": "Trace ID",
             "traceName": "Trace Name",
             "time": "Time",
             "total": "Total",
-            "totalTokens": "Tokens",
-            "duration": "Duration",
-            "startTime": "Start Time"
+            "totalTokens": "Tokens"
         },
         "pagination": {
             "total": "{{total}} items in total"

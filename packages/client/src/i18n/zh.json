@@ -189,8 +189,8 @@
         "search-evaluation": "搜索评测历史",
         "search-project": "搜索项目",
         "search-run": "搜索运行实例",
-        "search-trace": "搜索跟踪数据",
-        "search-span": "搜索跟踪数据"
+        "search-span": "搜索跟踪数据",
+        "search-trace": "搜索跟踪数据"
     },
     "status": {
         "done": "已结束",
@@ -222,6 +222,7 @@
         "column": {
             "benchmark": "基准",
             "createdAt": "创建时间",
+            "duration": "调用时长",
             "finished": "已结束",
             "ground-truth": "正确答案",
             "id": "ID",
@@ -234,13 +235,12 @@
             "running": "运行中",
             "spanCount": "Span 数量",
             "status": "状态",
+            "startTime": "开始时间",
             "traceId": "跟踪ID",
             "traceName": "跟踪名称",
             "time": "用时",
             "total": "总计",
-            "totalTokens": "Token 量",
-            "duration": "调用时长",
-            "startTime": "开始时间"
+            "totalTokens": "Token 量"
         },
         "pagination": {
             "total": "共 {{total}} 项"
