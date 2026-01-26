@@ -13,7 +13,7 @@ export const TracePanel = () => {
     const { t } = useTranslation();
 
     if (!trace || spans.length === 0) {
-        return <EmptyPage size={150} title={t('hint.empty-trace')} />;
+        return <EmptyPage size={150} title={t('hint.empty-data')} />;
     }
 
     const metadata: Record<string, string | number | undefined | ReactNode> =
@@ -28,7 +28,7 @@ export const TracePanel = () => {
             {trace ? (
                 <TraceTree spans={spans} />
             ) : (
-                <EmptyPage size={150} title={t('hint.empty-trace')} />
+                <EmptyPage size={150} title={t('hint.empty-data')} />
             )}
         </div>
     );

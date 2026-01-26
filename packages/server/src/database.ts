@@ -11,6 +11,7 @@ import { ReplyTable } from './models/Reply';
 import { RunTable } from './models/Run';
 import { RunView } from './models/RunView';
 import { SpanTable } from './models/Trace';
+import { EvaluationTable } from '@/models/evaluation';
 
 export const initializeDatabase = async (
     databaseConfig: DataSourceOptions,
@@ -29,6 +30,7 @@ export const initializeDatabase = async (
                 FridayAppMessageTable,
                 FridayAppReplyTable,
                 FridayAppReplyView,
+                EvaluationTable,
             ],
             synchronize: true,
             migrations: migrations,

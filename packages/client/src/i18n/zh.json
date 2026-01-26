@@ -1,5 +1,6 @@
 {
     "action": {
+        "back-to-evaluation": "返回评测",
         "cancel": "取消",
         "clean-history": "清除历史",
         "clear-data": "清空数据",
@@ -7,6 +8,7 @@
         "confirm": "确认",
         "delete": "删除",
         "focus-on-latest-run": "自动切换到最新运行",
+        "import": "导入评测",
         "ok": "确认",
         "search": "搜索",
         "update-now": "立即更新",
@@ -38,6 +40,8 @@
         "apps": "应用",
         "average": "平均",
         "benchmark": "基准数据集",
+        "categorical": "分类型",
+        "categorical-metric": "分类型指标",
         "completion": "生成内容",
         "completion-average": "生成内容(Avg)",
         "contact": "联系",
@@ -55,18 +59,22 @@
         "github": "GitHub",
         "hint": "提示",
         "home": "主页",
+        "id": "ID",
         "input": "输入",
         "input-tokens": "输入 Token 数",
-        "id": "ID",
         "settings": "设置",
         "latency": "耗时",
+        "llm": "大模型",
         "llm-invocation": "模型调用",
         "llm-invocations": "模型调用",
         "message": "消息",
         "messages": "消息",
         "metadata": "元数据",
+        "metric": "指标",
         "model-category": "模型种类",
         "name": "名称",
+        "numerical": "数值型",
+        "numerical-metric": "数值型指标",
         "overview": "概览",
         "output": "输出",
         "output-tokens": "输出 Token 数",
@@ -76,9 +84,11 @@
         "projects": "项目",
         "prompt": "提示词",
         "prompt-average": "提示词(Avg)",
+        "result": "结果",
         "run": "运行",
         "runs": "运行",
         "run-name": "名称",
+        "task": "任务",
         "thinking": "思考",
         "times": "次数",
         "timestamp": "时间戳",
@@ -86,6 +96,9 @@
         "traces": "跟踪",
         "trace-details": "跟踪详情",
         "tracing": "追溯",
+        "trajectory": "执行轨迹",
+        "token-usage": "Token 用量",
+        "tool": "工具",
         "total": "总计",
         "total-times": "总次数",
         "total-tokens": "总 Token 数",
@@ -98,12 +111,28 @@
         "start-time": "开始时间",
         "end-time": "结束时间",
         "statistics": "统计",
-        "status": "状态"
+        "status": "状态",
+        "step": "步骤"
     },
     "default-page": {
         "no-data-available": "暂无数据"
     },
     "description": {
+        "eval": {
+            "benchmark-subtitle": "基准数据集 {{benchmarkName}} 的评测",
+            "categorical-bar-footer": "{{metricName}} 在不同重复中的类别分布",
+            "categorical-metric-description": "所选指标的分布和各类别的得分",
+            "categorical-pie-footer": "{{metricName}} 聚合后的类别分布",
+            "llm": "评测中 LLM 的使用分布情况",
+            "llm-footer": "总计调用 {{kind}} 种不同的 LLM 模型 {{count}} 次",
+            "numerical-metric-bar-footer": "{{metricName}} 在不同重复中的得分",
+            "numerical-metric-cdf-footer": "{{metricName}} 的累积分布函数 (CDF)",
+            "numerical-metric-description": "所选指标的分布和各重复的得分",
+            "showing-repeats": "共 {{count}} 次重复",
+            "title": "智能体应用的评测记录",
+            "tool": "评测中使用频率 Top-10 的工具函数分布情况",
+            "tool-footer": "总计调用 {{kind}} 种不同的工具函数 {{count}} 次"
+        },
         "settings": "管理应用设置，包括语言偏好和数据管理",
         "trace": {
             "input": "Span 输入，采用 JSON 格式组织并包含 \"args\" 和 \"kwargs\" 两个字段",
@@ -117,6 +146,7 @@
         "invalid-url": "URL 无效：无法获取文件扩展名",
         "project-not-found": "项目不存在",
         "run-not-round": "运行实例不存在",
+        "select-directory": "请选择一个目录",
         "socket-not-connected": "未连接到服务器"
     },
     "help": {
@@ -161,6 +191,7 @@
         "overview-description": "最近一年中，每个月运行的实例数量统计"
     },
     "modal": {
+        "title-import-evaluation": "导入评测",
         "title-input-url": "请输入文件 URL"
     },
     "message": {
@@ -180,6 +211,7 @@
     },
     "placeholder": {
         "input-as-user": "以 {{name}} 的身份进行输入",
+        "input-directory-path": "输入目录路径",
         "input-disable": "当前不需要用户进行输入",
         "input-friday-afternoon": "下午好，我能为你做些什么？",
         "input-friday-evening": "晚上好，我能为你做些什么？",
@@ -187,10 +219,12 @@
         "input-url": "指向图片/视频/音频的本地或网络 URL（回车键确认）",
         "search-benchmark": "搜索基准数据集",
         "search-evaluation": "搜索评测历史",
+        "search-evaluation-task": "搜索评测任务",
         "search-project": "搜索项目",
         "search-run": "搜索运行实例",
         "search-span": "搜索跟踪数据",
-        "search-trace": "搜索跟踪数据"
+        "search-trace": "搜索跟踪数据",
+        "select-metric": "选择指标"
     },
     "status": {
         "done": "已结束",
@@ -221,11 +255,18 @@
     "table": {
         "column": {
             "benchmark": "基准",
+            "benchmarkName": "基准名称",
+            "completed": "已完成",
             "createdAt": "创建时间",
             "duration": "调用时长",
+            "evaluationDir": "评测目录",
+            "evaluationName": "评测名称",
             "finished": "已结束",
             "ground-truth": "正确答案",
             "id": "ID",
+            "incomplete": "未完成",
+            "input": "输入",
+            "metrics": "%评测指标",
             "name": "名称",
             "pending": "等待中",
             "progress": "进度",
@@ -236,8 +277,11 @@
             "spanCount": "Span 数量",
             "startTime": "开始时间",
             "status": "状态",
+            "tags": "标签",
+            "taskId": "任务 ID",
             "time": "用时",
             "total": "总计",
+            "totalRepeats": "重复次数",
             "totalTokens": "Token 量",
             "traceId": "跟踪ID",
             "traceName": "跟踪名称"

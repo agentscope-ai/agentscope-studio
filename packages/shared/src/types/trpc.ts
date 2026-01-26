@@ -101,6 +101,27 @@ const BasicTableParamsSchema = {
         .optional(),
 };
 
+/**
+ * Zod schema for get evaluation tasks parameters.
+ */
+export const GetEvaluationTasksParamsSchema = z.object({
+    evaluationId: z.string(),
+    ...BasicTableParamsSchema,
+});
+export type GetEvaluationTasksParams = z.infer<
+    typeof GetEvaluationTasksParamsSchema
+>;
+
+/**
+ * Zod schema for delete evaluations parameters.
+ */
+export const DeleteEvaluationsParamsSchema = z.object({
+    evaluationIds: z.array(z.string()),
+});
+export type DeleteEvaluationsParams = z.infer<
+    typeof DeleteEvaluationsParamsSchema
+>;
+
 export const RegisterReplyParamsSchema = z.object({
     runId: z.string(),
     replyId: z.string(),
@@ -167,6 +188,10 @@ export const SocketEvents = {
         interruptReplyOfFridayApp: 'interruptReplyOfFridayApp',
         deleteProjects: 'deleteProjects',
         deleteRuns: 'deleteRuns',
+        deleteEvaluations: 'deleteEvaluations',
+        getEvaluationResult: 'getEvaluationResult',
+        getSolutionResult: 'getSolutionResult',
+        listDir: 'listDir',
     },
 };
 
@@ -331,4 +356,12 @@ export const GetTraceStatisticParamsSchema = z.object({
 });
 export type GetTraceStatisticParams = z.infer<
     typeof GetTraceStatisticParamsSchema
+>;
+
+// GetEvaluationResultParamsSchema
+export const GetEvaluationResultParamsSchema = z.object({
+    evaluationId: z.string(),
+});
+export type GetEvaluationResultParams = z.infer<
+    typeof GetEvaluationResultParamsSchema
 >;
