@@ -151,6 +151,7 @@ const StudioSidebar = () => {
             <SidebarFooter>
                 <SidebarMenuItem className="list-none">
                     <SidebarMenuButton
+                        className="relative"
                         tooltip={t('common.settings')}
                         onClick={() => setSettingsDialogOpen(true)}
                     >
@@ -159,7 +160,7 @@ const StudioSidebar = () => {
                         {hasUpdate && (
                             <Badge
                                 variant="destructive"
-                                className="h-1.5 w-1.5 p-0 z-10 -mt-2"
+                                className="absolute top-1.5 right-0 h-1.5 w-1.5 p-0"
                             />
                         )}
                     </SidebarMenuButton>

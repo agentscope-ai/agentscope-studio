@@ -299,12 +299,13 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                                         key={item.value}
                                                     >
                                                         <SidebarMenuButton
-                                                            className={`px-3 ${activeTab === item.value ? 'bg-sidebar-accent text-sidebar-accent-foreground' : ''}`}
+                                                            className="px-3"
                                                             onClick={() =>
                                                                 setActiveTab(
                                                                     item.value,
                                                                 )
                                                             }
+                                                            isActive={activeTab === item.value}
                                                         >
                                                             <Icon className="mr-2 size-4" />
                                                             <span>
