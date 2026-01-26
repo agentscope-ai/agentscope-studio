@@ -484,7 +484,7 @@ export function RunRoomContextProvider({ children }: Props) {
             const isStillPlaying = speechStates[replyId]?.isPlaying || false;
             if (
                 inputRequestsRef.current.length === 0 &&
-                speechStates[replyId] === undefined &&
+                !speechStates[replyId] &&
                 audioContextRef.current
             ) {
                 isStillStreaming = true;
@@ -657,8 +657,6 @@ export function RunRoomContextProvider({ children }: Props) {
                             mediaType: mediaType,
                             isPlaying: true,
                             isStreaming: true,
-                            playbackRate: globalPlaybackRateRef.current,
-                            volume: globalVolumeRef.current,
                         },
                     };
                 });
@@ -886,9 +884,6 @@ export function RunRoomContextProvider({ children }: Props) {
                                             currentState?.isPlaying || false,
                                         isStreaming:
                                             currentState?.isStreaming || false,
-                                        playbackRate:
-                                            globalPlaybackRateRef.current,
-                                        volume: globalVolumeRef.current,
                                     },
                                 };
                             });
@@ -989,9 +984,7 @@ export function RunRoomContextProvider({ children }: Props) {
                 'Server is not connected, please refresh the page.',
             );
         } else {
-            setTimeout(() => {
-                stopAllSpeech();
-            }, 1000);
+            stopAllSpeech();
             socket.emit(
                 SocketEvents.client.sendUserInputToServer,
                 requestId,
