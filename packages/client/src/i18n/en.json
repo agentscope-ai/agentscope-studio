@@ -8,6 +8,7 @@
         "delete": "Delete",
         "focus-on-latest-run": "Focus on latest",
         "ok": "OK",
+        "search": "Search",
         "update-now": "Update Now",
         "updating": "Updating...",
         "view-update": "View"
@@ -194,7 +195,8 @@
         "search-evaluation": "Search evaluation history",
         "search-project": "Search projects in the table",
         "search-run": "Search runs in the table",
-        "search-span": "Search spans in the trace"
+        "search-span": "Search spans in the trace",
+        "search-trace": "Search traces in the table"
     },
     "status": {
         "done": "Done",
@@ -226,21 +228,25 @@
         "column": {
             "benchmark": "Benchmark",
             "createdAt": "Created At",
+            "duration": "Duration",
             "finished": "Finished",
             "ground-truth": "Ground Truth",
             "id": "ID",
             "name": "Name",
             "pending": "Pending",
             "progress": "Progress",
+            "project": "Project",
             "question": "Question",
             "repeat": "Repeat",
             "running": "Running",
+            "spanCount": "Span Count",
+            "startTime": "Start Time",
             "status": "Status",
             "time": "Time",
             "total": "Total",
             "totalTokens": "Tokens",
-            "duration": "Duration",
-            "startTime": "Start Time"
+            "traceId": "Trace ID",
+            "traceName": "Trace Name"
         },
         "pagination": {
             "total": "{{total}} items in total"

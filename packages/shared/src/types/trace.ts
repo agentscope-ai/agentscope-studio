@@ -87,10 +87,10 @@ export interface SpanData {
     latencyNs: number;
 }
 
-// Trace list item interface for UI display
-export interface TraceListItem {
+// Trace interface for list display
+export interface Trace {
     traceId: string;
-    name: string;
+    traceName: string;
     startTime: string;
     endTime: string;
     duration: number;

@@ -1,6 +1,6 @@
 import { TableColumnsType } from 'antd';
 import { CheckCircle2Icon, CopyIcon, InfoIcon } from 'lucide-react';
-import { memo, useMemo } from 'react';
+import { Key, memo, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import NumberCounter from '@/components/numbers/NumberCounter';
@@ -14,16 +14,17 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from '@/components/ui/tooltip.tsx';
+import { useMessageApi } from '@/context/MessageApiContext';
 import { useTraceContext } from '@/context/TraceContext';
-import { copyToClipboard } from '@/utils/common';
-import { TraceListItem } from '@shared/types';
-import TraceDetailPage from '../TraceDetailPage';
 import {
+    copyToClipboard,
     formatDateTime,
-    formatNumber,
     formatDuration,
     formatDurationWithUnit,
+    formatNumber,
 } from '@/utils/common';
+import { Trace } from '@shared/types';
+import TraceDetailPage from '../TraceDetailPage';
 
 // Helper component for statistic cards
 const StatCard = ({
@@ -75,16 +76,14 @@ const StatCard = ({
 
 const TraceListPage = () => {
     const { t } = useTranslation();
+    const { messageApi } = useMessageApi();
     const {
         // Filter state
         timeRange,
         setTimeRange,
 
-        // Pagination state
-        page,
-        setPage,
-        pageSize,
-        setPageSize,
+        tableRequestParams,
+        setTableRequestParams,
 
         // Data
         traces,
@@ -99,6 +98,16 @@ const TraceListPage = () => {
         drawerOpen,
         setDrawerOpen,
     } = useTraceContext();
+
+    const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
+
+    // Filter the selected rows when traces data changes
+    useEffect(() => {
+        const existedTraceIds = traces.map((trace) => trace.traceId);
+        setSelectedRowKeys((prevRowKeys) =>
+            prevRowKeys.filter((id) => existedTraceIds.includes(id as string)),
+        );
+    }, [traces]);
 
     const getStatusDisplay = (status: number) => {
         if (status === 2) {
@@ -130,70 +139,81 @@ const TraceListPage = () => {
         return 'text-green-500';
     };
 
-    const handleCopyTraceId = async (traceId: string) => {
-        const success = await copyToClipboard(traceId);
+    const handleCopy = async (text: string) => {
+        const success = await copyToClipboard(text);
         if (success) {
-            // TODO: Add toast notification
-            console.log(t('trace.message.copySuccess'));
+            messageApi.success(t('trace.message.copySuccess'));
         } else {
-            console.error(t('trace.message.copyFailed'));
+            messageApi.error(t('trace.message.copyFailed'));
         }
     };
 
-    const columns: TableColumnsType<TraceListItem> = useMemo(
+    const columns: TableColumnsType<Trace> = useMemo(
         () => [
             {
-                key: 'name',
-                width: 200,
-                minWidth: 150,
+                key: 'traceName',
+                ellipsis: false,
                 render: (_, record) => (
-                    <div className="flex items-center gap-2 min-w-0">
-                        <button
-                            className="text-left hover:underline truncate"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedTraceId(record.traceId);
-                                setDrawerOpen(true);
-                            }}
-                        >
-                            {record.name}
-                        </button>
+                    <div className="group flex items-center gap-1 min-w-0">
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                    }}
-                                    className="shrink-0"
-                                >
-                                    <InfoIcon className="size-3 text-muted-foreground hover:text-foreground" />
-                                </button>
+                                <span className="truncate cursor-default">
+                                    {record.traceName}
+                                </span>
                             </TooltipTrigger>
                             <TooltipContent>
-                                <div className="flex flex-col gap-2 text-xs">
-                                    <div>
-                                        {t('trace.traceId')}: {record.traceId}
-                                    </div>
-                                    <Button
-                                        size="icon-sm"
-                                        variant="ghost"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleCopyTraceId(record.traceId);
-                                        }}
-                                    >
-                                        <CopyIcon className="size-3" />
-                                    </Button>
-                                </div>
+                                <span className="text-xs break-all max-w-[400px]">
+                                    {record.traceName}
+                                </span>
                             </TooltipContent>
                         </Tooltip>
+                        <Button
+                            size="icon-sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleCopy(record.traceName);
+                            }}
+                            className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                            <CopyIcon className="size-3" />
+                        </Button>
+                    </div>
+                ),
+            },
+            {
+                key: 'traceId',
+                ellipsis: true,
+                render: (_, record) => (
+                    <div className="group flex items-center gap-1 min-w-0">
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span className="truncate cursor-default">
+                                    {record.traceId}
+                                </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <span className="text-xs break-all max-w-[400px]">
+                                    {record.traceId}
+                                </span>
+                            </TooltipContent>
+                        </Tooltip>
+                        <Button
+                            size="icon-sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleCopy(record.traceId);
+                            }}
+                            className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                            <CopyIcon className="size-3" />
+                        </Button>
                     </div>
                 ),
             },
             {
                 key: 'startTime',
-                width: 180,
-                minWidth: 150,
                 render: (_, record) => (
                     <span className="text-xs sm:text-sm">
                         {formatDateTime(record.startTime)}
@@ -202,8 +222,6 @@ const TraceListPage = () => {
             },
             {
                 key: 'duration',
-                width: 100,
-                minWidth: 80,
                 render: (_, record) => (
                     <span
                         className={`text-xs sm:text-sm ${getLatencyColor(record.duration)}`}
@@ -214,8 +232,6 @@ const TraceListPage = () => {
             },
             {
                 key: 'totalTokens',
-                width: 100,
-                minWidth: 80,
                 render: (_, record) => (
                     <span className="text-xs sm:text-sm">
                         {record.totalTokens
@@ -225,13 +241,21 @@ const TraceListPage = () => {
                 ),
             },
             {
+                key: 'spanCount',
+                render: (_, record) => (
+                    <span className="text-xs sm:text-sm">
+                        {record.spanCount
+                            ? formatNumber(record.spanCount)
+                            : '-'}
+                    </span>
+                ),
+            },
+            {
                 key: 'status',
-                width: 120,
-                minWidth: 100,
                 render: (_, record) => getStatusDisplay(record.status),
             },
         ],
-        [t, setSelectedTraceId, setDrawerOpen, handleCopyTraceId],
+        [t, handleCopy],
     );
 
     const timeRangeOptions = [
@@ -303,32 +327,25 @@ const TraceListPage = () => {
 
             {/* Table */}
             <div className="flex-1 min-h-0 w-full">
-                <AsTable<TraceListItem>
+                <AsTable<Trace>
                     columns={columns}
                     dataSource={traces}
                     loading={isLoading}
                     rowKey="traceId"
-                    onRow={(record) => ({
+                    searchType="trace"
+                    onRow={(record: Trace) => ({
                         onClick: () => {
                             setSelectedTraceId(record.traceId);
                             setDrawerOpen(true);
                         },
                         className: 'cursor-pointer',
                     })}
-                    pagination={{
-                        current: page,
-                        pageSize: pageSize,
-                        total: total,
-                        showSizeChanger: true,
-                        pageSizeOptions: ['10', '20', '50', '100'],
-                        showTotal: (total) => `${t('common.total')}: ${total}`,
-                        onChange: (newPage, newPageSize) => {
-                            setPage(newPage);
-                            setPageSize(newPageSize);
-                        },
-                        className: 'mr-4!',
-                    }}
-                    scroll={{ x: 'max-content' }}
+                    total={total}
+                    tableRequestParams={tableRequestParams}
+                    setTableRequestParams={setTableRequestParams}
+                    selectedRowKeys={selectedRowKeys}
+                    setSelectedRowKeys={setSelectedRowKeys}
+                    searchableColumns={['traceName', 'traceId']}
                 />
             </div>
 

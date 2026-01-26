@@ -1,32 +1,30 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';
-
 import {
-    GetTraceListParamsSchema,
+    BlockType,
+    ContentBlocks,
     GetTraceParamsSchema,
     GetTraceStatisticParamsSchema,
     InputRequestData,
-    // RunData,
-    TableData,
+    MessageForm,
     ProjectData,
-    TableRequestParamsSchema,
-    ResponseBody,
     RegisterReplyParams,
     RegisterReplyParamsSchema,
+    ResponseBody,
     RunData,
-    BlockType,
-    ContentBlocks,
-    MessageForm,
     Status,
+    TableData,
+    TableRequestParamsSchema,
+    Trace,
 } from '../../../shared/src';
-import { RunDao } from '../dao/Run';
-import { InputRequestDao } from '../dao/InputRequest';
-import { MessageDao } from '../dao/Message';
-import { SocketManager } from './socket';
 import { FridayConfigManager } from '../../../shared/src/config/friday';
 import { FridayAppMessageDao } from '../dao/FridayAppMessage';
+import { InputRequestDao } from '../dao/InputRequest';
+import { MessageDao } from '../dao/Message';
 import { ReplyDao } from '../dao/Reply';
+import { RunDao } from '../dao/Run';
 import { SpanDao } from '../dao/Trace';
+import { SocketManager } from './socket';
 import { APP_INFO } from '../../../shared/src';
 import { ConfigManager } from '../../../shared/src/config/server';
 
@@ -378,42 +376,38 @@ export const appRouter = t.router({
         .input(TableRequestParamsSchema)
         .query(async ({ input }) => {
             try {
-                const result = await RunDao.getProjects(
-                    input.pagination,
-                    input.sort,
-                    input.filters,
-                );
-
+                console.debug('[TRPC] getProjects called with input:', input);
+                const result = await RunDao.getProjects(input);
                 return {
                     success: true,
                     message: 'Projects fetched successfully',
                     data: result,
                 } as ResponseBody<TableData<ProjectData>>;
             } catch (error) {
-                console.error('Error fetching projects:', error);
-                return {
-                    success: false,
+                console.error('Error in getProjects:', error);
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
                     message:
                         error instanceof Error
                             ? error.message
-                            : 'Unknown error',
-                } as ResponseBody<TableData<ProjectData>>;
+                            : 'Failed to get projects',
+                });
             }
         }),
 
-    getTraceList: t.procedure
-        .input(GetTraceListParamsSchema)
+    getTraces: t.procedure
+        .input(TableRequestParamsSchema)
         .query(async ({ input }) => {
             try {
-                console.debug('[TRPC] getTraceList called with input:', input);
-                const result = await SpanDao.getTraceList(input);
-                console.debug('[TRPC] getTraceList result:', {
-                    total: result.total,
-                    tracesCount: result.traces.length,
-                });
-                return result;
+                console.debug('[TRPC] getTraces called with input:', input);
+                const result = await SpanDao.getTraces(input);
+                return {
+                    success: true,
+                    message: 'Traces fetched successfully',
+                    data: result,
+                } as ResponseBody<TableData<Trace>>;
             } catch (error) {
-                console.error('Error in getTraceList:', error);
+                console.error('Error in getTraces:', error);
                 throw new TRPCError({
                     code: 'INTERNAL_SERVER_ERROR',
                     message:
