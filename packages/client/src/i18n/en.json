@@ -234,19 +234,19 @@
             "id": "ID",
             "name": "Name",
             "pending": "Pending",
-            "project": "Project",
             "progress": "Progress",
+            "project": "Project",
             "question": "Question",
             "repeat": "Repeat",
             "running": "Running",
             "spanCount": "Span Count",
-            "status": "Status",
             "startTime": "Start Time",
-            "traceId": "Trace ID",
-            "traceName": "Trace Name",
+            "status": "Status",
             "time": "Time",
             "total": "Total",
-            "totalTokens": "Tokens"
+            "totalTokens": "Tokens",
+            "traceId": "Trace ID",
+            "traceName": "Trace Name"
         },
         "pagination": {
             "total": "{{total}} items in total"

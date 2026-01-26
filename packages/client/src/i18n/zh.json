@@ -234,13 +234,13 @@
             "repeat": "重复次数",
             "running": "运行中",
             "spanCount": "Span 数量",
-            "status": "状态",
             "startTime": "开始时间",
-            "traceId": "跟踪ID",
-            "traceName": "跟踪名称",
+            "status": "状态",
             "time": "用时",
             "total": "总计",
-            "totalTokens": "Token 量"
+            "totalTokens": "Token 量",
+            "traceId": "跟踪ID",
+            "traceName": "跟踪名称"
         },
         "pagination": {
             "total": "共 {{total}} 项"
