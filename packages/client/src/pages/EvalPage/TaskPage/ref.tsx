@@ -1,6 +1,4 @@
 import D3SankeyChart, { SankeyNodeData, SankeyLinkData } from './sankey-implementations/D3SankeyChart';
-import { SankeyChartFactory, ChartLibrary } from './sankey-implementations';
-import { SankeyNode, SankeyLink } from './sankey-implementations/types';
 import {
     Select,
     SelectContent,
@@ -8,7 +6,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select.tsx';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useEvaluationTaskContext } from '@/context/EvaluationTaskContext';
 import { BlockType, ToolUseBlock } from '@shared/types';
 import { EvalTask, EvalTrajectory } from '@shared/types/evaluation.ts';
@@ -206,12 +203,6 @@ const buildSankeyData = (
     }
     layerLabels.push({ label: selectedMetric || 'Metrics', layer: metricLayer });
 
-    // Build repeatNodeNames map for highlighting
-    const repeatNodeNames = new Map<string, Set<string>>();
-    repeats.forEach(([repeatId]) => {
-        repeatNodeNames.set(repeatId, new Set());
-    });
-
     // Build links
     repeats.forEach(([repeatId, data]) => {
         const tools = extractToolUseBlocks(data.solution?.trajectory || []);
@@ -229,11 +220,6 @@ const buildSankeyData = (
         const metricNode = `metric:${metricResult}`;
         const repeatNode = `repeat:${repeatId}`;
 
-        // Track all nodes associated with this repeat
-        const repeatNodes = repeatNodeNames.get(repeatId)!;
-        repeatNodes.add(repeatNode);
-        repeatNodes.add(metricNode);
-
         if (tools.length === 0) {
             links.push({
                 source: repeatNode,
@@ -244,8 +230,6 @@ const buildSankeyData = (
             });
         } else {
             // First link: repeat -> first tool
-            const firstToolNode = `step0:${tools[0].name}`;
-            repeatNodes.add(firstToolNode);
             links.push({
                 source: repeatNode,
                 target: `step0:${tools[0].name}`,
@@ -258,8 +242,6 @@ const buildSankeyData = (
             for (let i = 0; i < tools.length - 1; i++) {
                 const sourceNode = `step${i}:${tools[i].name}`;
                 const targetNode = `step${i + 1}:${tools[i + 1].name}`;
-                repeatNodes.add(sourceNode);
-                repeatNodes.add(targetNode);
                 const sourceColor = toolColors.get(tools[i].name) || TOOL_COLORS[0];
                 links.push({
                     source: sourceNode,
@@ -272,7 +254,6 @@ const buildSankeyData = (
 
             // Last link: last tool -> metric
             const lastToolNode = `step${tools.length - 1}:${tools[tools.length - 1].name}`;
-            repeatNodes.add(lastToolNode);
             const lastToolColor = toolColors.get(tools[tools.length - 1].name) || TOOL_COLORS[0];
             links.push({
                 source: lastToolNode,
@@ -303,35 +284,6 @@ const buildSankeyData = (
         links,
         maxSteps,
         layerLabels,
-        repeatIds: repeats.map(([id]) => id),
-        repeatNodeNames,
-    };
-};
-
-/**
- * 转换 D3SankeyChart 的数据格式到其他图表库的格式
- */
-const convertToCommonFormat = (
-    nodes: SankeyNodeData[],
-    links: SankeyLinkData[],
-): { nodes: SankeyNode[]; links: SankeyLink[] } => {
-    return {
-        nodes: nodes.map((node) => ({
-            name: node.id,
-            itemStyle: {
-                color: node.color,
-            },
-        })),
-        links: links.map((link) => ({
-            source: link.source,
-            target: link.target,
-            value: link.value,
-            repeatId: link.repeatId,
-            lineStyle: {
-                color: link.color,
-                opacity: 0.5,
-            },
-        })),
     };
 };
 
@@ -349,12 +301,6 @@ const ChartPage: React.FC = () => {
     // Selected metric state
     const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
 
-    // Selected repeats state for highlighting
-    const [selectedRepeats, setSelectedRepeats] = useState<Set<string>>(new Set());
-
-    // Selected chart library
-    const [chartLibrary, setChartLibrary] = useState<ChartLibrary>('d3sankey');
-
     // Initialize selected metric when available metrics change
     useEffect(() => {
         if (availableMetrics.length > 0 && !selectedMetric) {
@@ -367,15 +313,9 @@ const ChartPage: React.FC = () => {
         return availableMetrics.find((m) => m.name === selectedMetric);
     }, [availableMetrics, selectedMetric]);
 
-    const { nodes, links, maxSteps, layerLabels, repeatIds, repeatNodeNames } = useMemo(
+    const { nodes, links, maxSteps, layerLabels } = useMemo(
         () => buildSankeyData(task, selectedMetric, selectedMetricMeta),
         [task, selectedMetric, selectedMetricMeta],
-    );
-
-    // 转换数据格式以适配其他图表库
-    const commonFormatData = useMemo(
-        () => convertToCommonFormat(nodes, links),
-        [nodes, links],
     );
 
     const chartHeight = Math.max(400, (maxSteps + 3) * 80);
@@ -397,48 +337,15 @@ const ChartPage: React.FC = () => {
         return () => resizeObserver.disconnect();
     }, [chartHeight]);
 
-    // Handle repeat checkbox toggle
-    const handleRepeatToggle = useCallback((repeatId: string) => {
-        setSelectedRepeats((prev) => {
-            const newSet = new Set(prev);
-            if (newSet.has(repeatId)) {
-                newSet.delete(repeatId);
-            } else {
-                newSet.add(repeatId);
-            }
-            return newSet;
-        });
-    }, []);
-
     // Handle node click
-    const handleNodeClick = useCallback((nodeOrName: SankeyNodeData | string) => {
-        // 兼容两种参数类型
-        let repeatId: string | undefined;
-
-        if (typeof nodeOrName === 'string') {
-            // 来自其他图表库，是字符串
-            if (nodeOrName.startsWith('repeat:')) {
-                repeatId = nodeOrName.split(':')[1];
-            }
-        } else {
-            // 来自 D3SankeyChart，是对象
-            if (nodeOrName.id && nodeOrName.id.startsWith('repeat:')) {
-                repeatId = nodeOrName.id.split(':')[1];
-            }
-        }
-
-        if (repeatId) {
-            handleRepeatToggle(repeatId);
-        }
-    }, [handleRepeatToggle]);
+    const handleNodeClick = useCallback((node: SankeyNodeData) => {
+        console.log('Node clicked:', node);
+    }, []);
 
     // Handle link click
     const handleLinkClick = useCallback((link: SankeyLinkData) => {
-        // If clicking a link, highlight its repeat
-        if (link.repeatId) {
-            handleRepeatToggle(link.repeatId);
-        }
-    }, [handleRepeatToggle]);
+        console.log('Link clicked:', link);
+    }, []);
 
     if (nodes.length === 0) {
         return (
@@ -457,80 +364,36 @@ const ChartPage: React.FC = () => {
 
     return (
         <div className="col-span-full rounded-xl border shadow">
-            <div className="p-6 pb-2">
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-medium">
-                        {t('common.trajectory')} Workflow
-                    </h3>
-                    <div className="flex gap-3">
-                        {/* Chart Library Selector */}
-                        <Select
-                            value={chartLibrary}
-                            onValueChange={(value) => setChartLibrary(value as ChartLibrary)}
-                        >
-                            <SelectTrigger size="sm" className="w-40">
-                                <SelectValue placeholder="Select Library" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="d3sankey">D3 Sankey (Advanced)</SelectItem>
-                                <SelectItem value="echarts">ECharts</SelectItem>
-                                <SelectItem value="plotly">Plotly</SelectItem>
-                                <SelectItem value="d3">D3 Simple</SelectItem>
-                                <SelectItem value="google">Google Charts</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        {/* Metric Selector */}
-                        {availableMetrics.length > 1 && (
-                            <Select
-                                value={selectedMetric || undefined}
-                                onValueChange={setSelectedMetric}
-                            >
-                                <SelectTrigger size="sm" className="w-48">
-                                    <SelectValue
-                                        placeholder={t('placeholder.select-metric')}
-                                    />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {availableMetrics.map((metric) => (
-                                        <SelectItem key={metric.name} value={metric.name}>
-                                            {metric.name}
-                                            <span className="ml-2 text-xs text-muted-foreground">
-                                                ({metric.metric_type})
-                                            </span>
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        )}
-                    </div>
-                </div>
-
-                {/* Repeat selection checkboxes */}
-                <div className="flex flex-wrap gap-3 mb-4">
-                    {repeatIds.map((repeatId, index) => {
-                        const isChecked = selectedRepeats.has(repeatId);
-                        const color = REPEAT_COLORS[index % REPEAT_COLORS.length];
-                        return (
-                            <label
-                                key={repeatId}
-                                className="flex items-center gap-2 cursor-pointer group"
-                            >
-                                <Checkbox
-                                    checked={isChecked}
-                                    onCheckedChange={() => handleRepeatToggle(repeatId)}
-                                />
-                                <span
-                                    className="text-sm font-medium transition-colors group-hover:opacity-80"
-                                    style={{ color: color }}
+            <div className="p-6 pb-2 flex items-center justify-between">
+                <h3 className="text-sm font-medium">
+                    {t('common.trajectory')} Workflow
+                </h3>
+                {availableMetrics.length > 1 && (
+                    <Select
+                        value={selectedMetric || undefined}
+                        onValueChange={setSelectedMetric}
+                    >
+                        <SelectTrigger size="sm" className="w-48">
+                            <SelectValue
+                                placeholder={t('placeholder.select-metric')}
+                            />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {availableMetrics.map((metric) => (
+                                <SelectItem
+                                    key={metric.name}
+                                    value={metric.name}
                                 >
-                                    Repeat {repeatId}
-                                </span>
-                            </label>
-                        );
-                    })}
-                </div>
+                                    {metric.name}
+                                    <span className="ml-2 text-xs text-muted-foreground">
+                                        ({metric.metric_type})
+                                    </span>
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                )}
             </div>
-
             <div className="p-6 pt-2">
                 <div
                     ref={containerRef}
@@ -553,31 +416,19 @@ const ChartPage: React.FC = () => {
                             </div>
                         ))}
                     </div>
-                    {/* Chart rendering based on selected library */}
+                    {/* D3 Sankey Chart */}
                     <div className="flex-1">
-                        {chartLibrary === 'd3sankey' ? (
-                            <D3SankeyChart
-                                nodes={nodes}
-                                links={links}
-                                width={dimensions.width - 64}
-                                height={chartHeight}
-                                nodeWidth={20}
-                                nodePadding={15}
-                                linkWidth={10}
-                                selectedRepeats={Array.from(selectedRepeats)}
-                                onNodeClick={handleNodeClick}
-                                onLinkClick={handleLinkClick}
-                            />
-                        ) : (
-                            <SankeyChartFactory
-                                library={chartLibrary}
-                                data={commonFormatData}
-                                width={dimensions.width - 64}
-                                selectedRepeats={Array.from(selectedRepeats)}
-                                repeatNodeNames={repeatNodeNames}
-                                onNodeClick={handleNodeClick}
-                            />
-                        )}
+                        <D3SankeyChart
+                            nodes={nodes}
+                            links={links}
+                            width={dimensions.width - 64}
+                            height={chartHeight}
+                            nodeWidth={20}
+                            nodePadding={15}
+                            linkWidth={10}
+                            onNodeClick={handleNodeClick}
+                            onLinkClick={handleLinkClick}
+                        />
                     </div>
                 </div>
             </div>
