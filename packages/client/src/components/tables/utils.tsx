@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Progress } from 'antd';
+import { Progress, Tooltip } from 'antd';
 import { useTranslation } from 'react-i18next';
 
 import SortIcon from '@/assets/svgs/sort.svg?react';
@@ -13,6 +13,8 @@ import DoneStatus from '@/assets/svgs/status-done.svg?react';
 
 import { Status } from '@shared/types';
 import { SortOrder } from 'antd/lib/table/interface';
+import { Badge } from '@/components/ui/badge.tsx';
+import { cn } from '@/lib/utils.ts';
 
 /**
  * Props for the progress cell inside a table.
@@ -103,10 +105,50 @@ export const StatusCell = memo(
  * Render an animated number using NumberCounter with optional selected styling.
  */
 export const NumberCell = memo(
-    ({ number, selected = false }: { number: number; selected?: boolean }) => {
+    ({
+        number,
+        selected = false,
+    }: {
+        number: number | undefined | null;
+        selected?: boolean;
+    }) => {
         return (
             <div className={selected ? 'text-primary-foreground' : undefined}>
                 <NumberCounter number={number} style={{ paddingBottom: 2 }} />
+            </div>
+        );
+    },
+);
+
+export const TagsCell = memo(
+    ({ tags, selected = false }: { tags: string[]; selected?: boolean }) => {
+        return (
+            <div
+                className={cn(
+                    'flex flex-row gap-1 items-center',
+                    selected ? 'text-primary-foreground' : '',
+                )}
+            >
+                {tags.slice(0, 3).map((tag) => (
+                    <Badge variant="outline">
+                        <div className="font-medium">{tag}</div>
+                    </Badge>
+                ))}
+                {tags.length > 3 ? (
+                    <Tooltip
+                        title={
+                            <div className="flex flex-wrap gap-1 max-w-xs">
+                                {tags.slice(3).map((tag) => (
+                                    <Badge key={tag} variant="outline">
+                                        <div className="font-medium">{tag}</div>
+                                    </Badge>
+                                ))}
+                            </div>
+                        }
+                    >
+                        <Badge variant="outline">···</Badge>
+                    </Tooltip>
+                ) : null}
             </div>
         );
     },
@@ -162,10 +204,21 @@ export const DurationCell = memo(
  * Render a truncated text cell with optional selected styling.
  */
 export const TextCell = memo(
-    ({ text, selected = false }: { text: string; selected?: boolean }) => {
+    ({
+        text,
+        selected = false,
+        className = '',
+    }: {
+        text: string;
+        selected?: boolean;
+        className?: string;
+    }) => {
         return (
             <div
-                className={`truncate text-sm ${selected ? 'text-primary-foreground' : 'text-primary'}`}
+                className={cn(
+                    `truncate text-sm ${selected ? 'text-primary-foreground' : 'text-primary'}`,
+                    className,
+                )}
             >
                 {text}
             </div>

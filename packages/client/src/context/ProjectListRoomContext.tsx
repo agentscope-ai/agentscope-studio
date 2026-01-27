@@ -67,22 +67,6 @@ export function ProjectListRoomContextProvider({
         }
     }, [error]);
 
-    /**
-     * Update query params and reset polling timer
-     *
-     * @param updateFn - function to update the table request params
-     */
-    const handleUpdateTableRequestParams = (
-        updateFn: (params: TableRequestParams) => TableRequestParams,
-    ) => {
-        // update the table request params state and reset the polling timer
-        setTableRequestParams((prevParams) => {
-            return updateFn(prevParams);
-        });
-        // Reset polling by calling refetch
-        refetch();
-    };
-
     // After deleting a project, refresh the project list
     const deleteProjects = (projects: string[]) => {
         return new Promise<void>((resolve, reject) => {
@@ -100,7 +84,7 @@ export function ProjectListRoomContextProvider({
                 (response: { success: boolean; message?: string }) => {
                     if (response.success) {
                         messageApi.success('Projects deleted successfully.');
-                        refetch(); // 删除成功后刷新数据
+                        refetch();
                         resolve();
                     } else {
                         const errorMsg =
@@ -120,7 +104,7 @@ export function ProjectListRoomContextProvider({
                 tableLoading: isLoading,
                 total: response?.data?.total || 0,
                 tableRequestParams,
-                setTableRequestParams: handleUpdateTableRequestParams,
+                setTableRequestParams,
                 deleteProjects,
             }}
         >

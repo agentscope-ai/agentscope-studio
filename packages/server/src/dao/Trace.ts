@@ -6,8 +6,13 @@ import {
     SpanLink,
     SpanResource,
     SpanScope,
+    Trace,
 } from '../../../shared/src/types/trace';
-import { ModelInvocationData } from '../../../shared/src/types/trpc';
+import {
+    ModelInvocationData,
+    TableData,
+    TableRequestParams,
+} from '../../../shared/src/types/trpc';
 import { getNestedValue } from '../../../shared/src/utils/objectUtils';
 import { ModelInvocationView } from '../models/ModelInvocationView';
 import { SpanTable } from '../models/Trace';
@@ -216,70 +221,6 @@ export class SpanDao {
         });
     }
 
-    static async searchTraces(filters: {
-        serviceName?: string;
-        operationName?: string;
-        instrumentationName?: string;
-        model?: string;
-        status?: number; // Status code: 0=UNSET, 1=OK, 2=ERROR
-        startTime?: string;
-        endTime?: string;
-        limit?: number;
-    }): Promise<SpanTable[]> {
-        const queryBuilder = SpanTable.createQueryBuilder('span');
-
-        if (filters.serviceName) {
-            queryBuilder.andWhere('span.serviceName = :serviceName', {
-                serviceName: filters.serviceName,
-            });
-        }
-
-        if (filters.operationName) {
-            queryBuilder.andWhere('span.operationName = :operationName', {
-                operationName: filters.operationName,
-            });
-        }
-
-        if (filters.instrumentationName) {
-            queryBuilder.andWhere(
-                'span.instrumentationName = :instrumentationName',
-                { instrumentationName: filters.instrumentationName },
-            );
-        }
-
-        if (filters.model) {
-            queryBuilder.andWhere('span.model = :model', {
-                model: filters.model,
-            });
-        }
-
-        if (filters.status !== undefined) {
-            queryBuilder.andWhere('span.statusCode = :statusCode', {
-                statusCode: filters.status,
-            });
-        }
-
-        if (filters.startTime) {
-            queryBuilder.andWhere('span.startTimeUnixNano >= :startTime', {
-                startTime: filters.startTime,
-            });
-        }
-
-        if (filters.endTime) {
-            queryBuilder.andWhere('span.startTimeUnixNano <= :endTime', {
-                endTime: filters.endTime,
-            });
-        }
-
-        queryBuilder.orderBy('span.startTimeUnixNano', 'DESC');
-
-        if (filters.limit) {
-            queryBuilder.limit(filters.limit);
-        }
-
-        return await queryBuilder.getMany();
-    }
-
     static async getModelInvocationViewData() {
         const res = await ModelInvocationView.find();
         if (res.length > 0) {
@@ -478,67 +419,146 @@ export class SpanDao {
         }
     }
 
-    // Get unique trace IDs with aggregated information
-    static async getTraceList(filters: {
-        serviceName?: string;
-        operationName?: string;
-        status?: number;
-        startTime?: string;
-        endTime?: string;
-        limit?: number;
-        offset?: number;
-    }): Promise<{
-        traces: Array<{
-            traceId: string;
-            name: string;
-            startTime: string;
-            endTime: string;
-            duration: number; // in seconds
-            status: number;
-            spanCount: number;
-            totalTokens?: number;
-        }>;
-        total: number;
-    }> {
+    /**
+     * Get unique trace IDs with aggregated information
+     * Uses the same parameter pattern as RunDao.getProjects (TableRequestParams)
+     *
+     * @param params - TableRequestParams containing pagination, sort, and filters
+     * @returns TableData<Trace> with list, total, page, pageSize
+     */
+    static async getTraces(
+        params: TableRequestParams,
+    ): Promise<TableData<Trace>> {
         try {
+            const { pagination, sort, filters } = params;
+
+            // Build base query - group by traceId and aggregate information
+            const spanCountSubquery = `(
+                SELECT COUNT(*) FROM span_table s WHERE s.traceId = span.traceId
+            )`;
+
+            const totalTokensSubquery = `(
+                SELECT SUM(COALESCE(s.totalTokens, 0)) FROM span_table s WHERE s.traceId = span.traceId
+            )`;
+
+            // Subquery to get the name of the span with the earliest startTimeUnixNano
+            const nameSubquery = `(
+                SELECT s.name FROM span_table s
+                WHERE s.traceId = span.traceId
+                AND s.startTimeUnixNano = (
+                    SELECT MIN(s2.startTimeUnixNano)
+                    FROM span_table s2
+                    WHERE s2.traceId = span.traceId
+                )
+                LIMIT 1
+            )`;
+
             const queryBuilder = SpanTable.createQueryBuilder('span')
                 .select('span.traceId', 'traceId')
                 .addSelect('MIN(span.startTimeUnixNano)', 'startTime')
                 .addSelect('MAX(span.endTimeUnixNano)', 'endTime')
-                .addSelect('MIN(span.name)', 'name')
                 .addSelect('MAX(span.statusCode)', 'status')
-                .addSelect('COUNT(span.id)', 'spanCount')
-                .addSelect('SUM(COALESCE(span.totalTokens, 0))', 'totalTokens')
+                .addSelect(nameSubquery, 'name')
+                .addSelect(spanCountSubquery, 'spanCount')
+                .addSelect(totalTokensSubquery, 'totalTokens')
                 .groupBy('span.traceId');
 
-            if (filters.serviceName) {
-                queryBuilder.andWhere('span.serviceName = :serviceName', {
-                    serviceName: filters.serviceName,
-                });
+            // Apply name filter - use the subquery directly in HAVING
+            if (filters?.traceName) {
+                const filterValue =
+                    typeof filters.traceName === 'object' &&
+                    filters.traceName !== null &&
+                    'value' in filters.traceName
+                        ? (filters.traceName as { value: string }).value
+                        : String(filters.traceName);
+
+                if (filterValue) {
+                    // Use the same subquery in HAVING clause to filter by name
+                    queryBuilder.having(
+                        `${nameSubquery} LIKE :traceNameFilter`,
+                        {
+                            traceNameFilter: `%${filterValue}%`,
+                        },
+                    );
+                }
             }
 
-            if (filters.operationName) {
-                queryBuilder.andWhere('span.operationName = :operationName', {
-                    operationName: filters.operationName,
-                });
+            // Apply traceId filter
+            if (filters?.traceId) {
+                const filterValue =
+                    typeof filters.traceId === 'object' &&
+                    filters.traceId !== null &&
+                    'value' in filters.traceId
+                        ? (filters.traceId as { value: string }).value
+                        : String(filters.traceId);
+
+                if (filterValue) {
+                    queryBuilder.having('span.traceId LIKE :traceIdFilter', {
+                        traceIdFilter: `%${filterValue}%`,
+                    });
+                }
             }
 
-            if (filters.status !== undefined) {
-                queryBuilder.andWhere('span.statusCode = :statusCode', {
-                    statusCode: filters.status,
-                });
+            // Apply time range filter
+            if (filters?.timeRange) {
+                const timeRangeFilter = filters.timeRange as {
+                    operator?: string;
+                    value?: (string | null)[];
+                };
+                if (
+                    timeRangeFilter.operator === 'between' &&
+                    Array.isArray(timeRangeFilter.value) &&
+                    timeRangeFilter.value.length === 2
+                ) {
+                    const [rangeStart, rangeEnd] = timeRangeFilter.value;
+                    if (rangeStart && rangeEnd) {
+                        queryBuilder.andWhere(
+                            'span.startTimeUnixNano >= :rangeStart AND span.startTimeUnixNano <= :rangeEnd',
+                            { rangeStart, rangeEnd },
+                        );
+                    } else if (rangeStart) {
+                        queryBuilder.andWhere(
+                            'span.startTimeUnixNano >= :rangeStart',
+                            { rangeStart },
+                        );
+                    } else if (rangeEnd) {
+                        queryBuilder.andWhere(
+                            'span.startTimeUnixNano <= :rangeEnd',
+                            { rangeEnd },
+                        );
+                    }
+                }
             }
 
-            if (filters.startTime) {
-                queryBuilder.andWhere('span.startTimeUnixNano >= :startTime', {
-                    startTime: filters.startTime,
-                });
-            }
+            // Apply sorting
+            const sortField = sort?.field || 'startTime';
+            const sortOrder =
+                sort?.order?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
-            if (filters.endTime) {
-                queryBuilder.andWhere('span.startTimeUnixNano <= :endTime', {
-                    endTime: filters.endTime,
-                });
+            switch (sortField) {
+                case 'startTime':
+                    queryBuilder.orderBy(
+                        'MIN(span.startTimeUnixNano)',
+                        sortOrder,
+                    );
+                    break;
+                case 'duration':
+                    queryBuilder.orderBy(
+                        '(MAX(span.endTimeUnixNano) - MIN(span.startTimeUnixNano))',
+                        sortOrder,
+                    );
+                    break;
+                case 'status':
+                    queryBuilder.orderBy('MAX(span.statusCode)', sortOrder);
+                    break;
+                case 'totalTokens':
+                    queryBuilder.orderBy(
+                        `(SELECT SUM(COALESCE(s.totalTokens, 0)) FROM span_table s WHERE s.traceId = span.traceId)`,
+                        sortOrder,
+                    );
+                    break;
+                default:
+                    queryBuilder.orderBy('MIN(span.startTimeUnixNano)', 'DESC');
             }
 
             // Get total count (before pagination)
@@ -546,87 +566,38 @@ export class SpanDao {
             const totalResult = await countQuery.getRawMany();
             const total = totalResult.length;
 
-            // Apply ordering and pagination
-            // Use the aggregate expression directly for ordering
-            queryBuilder.orderBy('MIN(span.startTimeUnixNano)', 'DESC');
+            // Apply pagination
+            const page = pagination.page || 1;
+            const pageSize = pagination.pageSize || 10;
+            const skip = (page - 1) * pageSize;
+            queryBuilder.skip(skip).take(pageSize);
 
-            if (filters.limit) {
-                queryBuilder.limit(filters.limit);
-            }
-
-            if (filters.offset) {
-                queryBuilder.offset(filters.offset);
-            }
-
+            // Query paginated traces
             const results = await queryBuilder.getRawMany();
 
-            console.debug(
-                `[TraceDao] getTraceList: found ${total} traces, returning ${results.length} with limit=${filters.limit}, offset=${filters.offset}`,
-            );
+            // Simple mapping - return raw data
+            const traces = results.map((row) => ({
+                traceId: row.traceId || '',
+                traceName: row.name || 'Unknown',
+                startTime: row.startTime || '0',
+                endTime: row.endTime || '0',
+                status: Number(row.status) || 0,
+                spanCount: Number(row.spanCount) || 0,
+                totalTokens:
+                    row.totalTokens !== null && row.totalTokens !== undefined
+                        ? Number(row.totalTokens)
+                        : undefined,
+            }));
 
-            // Get root spans for each trace to extract input/output
-            interface TraceListRow {
-                traceId: string;
-                startTime: string;
-                endTime: string;
-                name: string;
-                status: number | string;
-                spanCount: number | string;
-                totalTokens: number | string | null;
-            }
-            const traceIds = results.map((row: TraceListRow) => row.traceId);
-
-            // Get root spans (spans with no parent or empty parent) for the traces in results
-            const rootSpans =
-                traceIds.length > 0
-                    ? await SpanTable.createQueryBuilder('span')
-                          .where('span.traceId IN (:...traceIds)', { traceIds })
-                          .andWhere(
-                              '(span.parentSpanId IS NULL OR span.parentSpanId = :emptyString)',
-                              { emptyString: '' },
-                          )
-                          .select(['span.traceId', 'span.name'])
-                          .getMany()
-                    : [];
-
-            const rootSpanMap = new Map(
-                rootSpans.map((span) => [span.traceId, span]),
-            );
-
-            const traces = results.map((row: TraceListRow) => {
-                try {
-                    const startTimeNs = BigInt(row.startTime || '0');
-                    const endTimeNs = BigInt(row.endTime || '0');
-                    const duration = Number(endTimeNs - startTimeNs) / 1e9; // Convert nanoseconds to seconds
-
-                    const rootSpan = rootSpanMap.get(row.traceId);
-
-                    return {
-                        traceId: row.traceId || '',
-                        name: rootSpan?.name || row.name || 'Unknown',
-                        startTime: row.startTime || '0',
-                        endTime: row.endTime || '0',
-                        duration,
-                        status: Number(row.status) || 0,
-                        spanCount: Number(row.spanCount) || 0,
-                        totalTokens:
-                            row.totalTokens !== null &&
-                            row.totalTokens !== undefined
-                                ? Number(row.totalTokens)
-                                : undefined,
-                    };
-                } catch (err) {
-                    console.error('Error processing trace row:', row, err);
-                    throw err;
-                }
-            });
-
-            console.debug(
-                `[TraceDao] getTraceList: returning ${traces.length} traces`,
-            );
-            return { traces, total };
+            // Return paginated data
+            return {
+                list: traces as Trace[],
+                total,
+                page,
+                pageSize,
+            };
         } catch (error) {
-            console.error('Error getting trace list:', error);
+            console.error('Error in getTraces:', error);
             throw error;
         }
     }
@@ -710,8 +681,7 @@ export class SpanDao {
     static async getTraceStatistic(filters?: {
         startTime?: string;
         endTime?: string;
-        serviceName?: string;
-        operationName?: string;
+        traceId?: string;
     }): Promise<{
         totalTraces: number;
         totalSpans: number;
@@ -723,18 +693,6 @@ export class SpanDao {
         try {
             const queryBuilder = SpanTable.createQueryBuilder('span');
 
-            if (filters?.serviceName) {
-                queryBuilder.andWhere('span.serviceName = :serviceName', {
-                    serviceName: filters.serviceName,
-                });
-            }
-
-            if (filters?.operationName) {
-                queryBuilder.andWhere('span.operationName = :operationName', {
-                    operationName: filters.operationName,
-                });
-            }
-
             if (filters?.startTime) {
                 queryBuilder.andWhere('span.startTimeUnixNano >= :startTime', {
                     startTime: filters.startTime,
@@ -744,6 +702,12 @@ export class SpanDao {
             if (filters?.endTime) {
                 queryBuilder.andWhere('span.startTimeUnixNano <= :endTime', {
                     endTime: filters.endTime,
+                });
+            }
+
+            if (filters?.traceId) {
+                queryBuilder.andWhere('span.traceId LIKE :traceId', {
+                    traceId: `%${filters.traceId}%`,
                 });
             }
 

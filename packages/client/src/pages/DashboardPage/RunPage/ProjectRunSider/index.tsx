@@ -1,24 +1,28 @@
-import { Button, Flex, Input, Layout, Tooltip } from 'antd';
-import { Key, memo, useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMatch, useNavigate } from 'react-router-dom';
 
 import DeleteIcon from '@/assets/svgs/delete.svg?react';
 import EyeInvisibleIcon from '@/assets/svgs/eye-invisible.svg?react';
 import EyeIcon from '@/assets/svgs/eye.svg?react';
-import AsTable from '@/components/tables/AsTable';
 
-import { SecondaryButton, SwitchButton } from '@/components/buttons/ASButton';
-import { StatusCell, TextCell } from '@/components/tables/utils.tsx';
+import EmptyData from '@/components/tables/EmptyData.tsx';
+import { StatusCell } from '@/components/tables/utils.tsx';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useProjectRoom } from '@/context/ProjectRoomContext.tsx';
 import { useTour } from '@/context/TourContext.tsx';
-import { RemoveScrollBarStyle } from '@/styles.ts';
-import { LogOutIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { LogOutIcon, X } from 'lucide-react';
 
 import { RouterPath } from '@/pages/RouterPath.ts';
 import './index.css';
-
-const { Sider } = Layout;
 
 /**
  * Sider width configurations for folded and unfolded states.
@@ -37,26 +41,25 @@ interface Props {
 
 /**
  * Sidebar component for displaying and managing project runs.
- * Features run table, search, auto-focus on latest run, and tour integration.
+ * Features card list, search, auto-focus on latest run, and tour integration.
  */
 const ProjectRunSider = ({ onRunClick }: Props) => {
     const { t } = useTranslation();
-    const { runs } = useProjectRoom();
+    const { runs, project } = useProjectRoom();
     const { registerRunPageTourStep } = useTour();
     const navigate = useNavigate();
-    const refTable = useRef(null);
+    const refList = useRef<HTMLDivElement>(null);
 
     const [folded] = useState<boolean>(true);
-    const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
-    const [focusOnLatestRun, setFocusOnLatestRun] = useState<boolean>(false);
     const [searchText, setSearchText] = useState<string>('');
+    const [focusOnLatestRun, setFocusOnLatestRun] = useState<boolean>(false);
 
-    // Register tour step for the run table
+    // Register tour step for the run list
     useEffect(() => {
         registerRunPageTourStep({
             title: t('tour.run.run-table-title'),
             description: t('tour.run.run-table-description'),
-            target: refTable.current,
+            target: refList.current,
             placement: 'right',
         });
     }, []);
@@ -64,249 +67,218 @@ const ProjectRunSider = ({ onRunClick }: Props) => {
     // Extract current run and project from URL
     const match = useMatch('/projects/:projectName/runs/:runId');
     const runId = match?.params?.runId;
-    const project = match?.params?.projectName;
+
+    // Filter and sort runs
+    const filteredRuns = useMemo(() => {
+        let result = runs;
+
+        // Filter by search text
+        if (searchText) {
+            const lowerSearch = searchText.toLowerCase();
+            result = result.filter(
+                (run) =>
+                    run.name.toLowerCase().includes(lowerSearch) ||
+                    run.id.toLowerCase().includes(lowerSearch),
+            );
+        }
+
+        // Sort by timestamp (latest first) when focusOnLatestRun is enabled
+        if (focusOnLatestRun) {
+            result = [...result].sort((a, b) =>
+                b.timestamp.localeCompare(a.timestamp),
+            );
+        }
+
+        return result;
+    }, [runs, searchText, focusOnLatestRun]);
 
     // Auto-navigate to latest run when focus mode is enabled
     useEffect(() => {
-        if (focusOnLatestRun && runs.length > 0) {
-            const latestRun = runs.reduce((prev, current) => {
-                return prev.timestamp > current.timestamp ? prev : current;
-            });
-
+        if (focusOnLatestRun && filteredRuns.length > 0) {
+            const latestRun = filteredRuns[0];
             if (latestRun.id !== runId) {
                 onRunClick(latestRun.id);
             }
         }
-    }, [runs, focusOnLatestRun]);
-
-    // Row selection configuration for multi-select functionality
-    const rowSelection = {
-        selectedRowKeys,
-        onChange: (newSelectedRowKeys: Key[]) => {
-            setSelectedRowKeys(newSelectedRowKeys);
-        },
-    };
+    }, [filteredRuns, focusOnLatestRun]);
 
     return (
-        <Sider
-            width={SiderDrawerWidth.FOLDED}
-            style={{ height: '100%', zIndex: 1 }}
+        <aside
+            className="h-full z-[1] shrink-0"
+            style={{ width: SiderDrawerWidth.FOLDED }}
         >
-            <Flex
-                ref={refTable}
-                className="animated-sider-content"
+            <div
+                ref={refList}
+                className="animated-sider-content flex flex-col gap-4 p-4 h-full bg-background border-r border-border"
                 style={{
                     width: folded
                         ? SiderDrawerWidth.FOLDED
                         : SiderDrawerWidth.UNFOLDED,
-                    padding: 16,
-                    height: '100%',
-                    background: 'white',
                     transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     boxShadow: folded
                         ? 'none'
                         : '2px 0 8px -2px rgba(0,0,0,0.15)',
-                    position: 'relative',
-                    borderRight: '1px solid var(--border)',
                 }}
-                vertical={true}
-                gap="middle"
             >
                 {/* Header with back button and project name */}
-                <Flex
-                    vertical={false}
-                    align="center"
-                    gap="small"
-                    style={{ maxWidth: '100%' }}
-                >
-                    <Button
-                        variant="filled"
-                        icon={<LogOutIcon className="rotate-180 size-4" />}
-                        color="default"
-                        onClick={() => {
-                            navigate(RouterPath.PROJECTS);
-                        }}
-                    />
-
-                    <Tooltip title={t('common.project') + `: ${project}`}>
-                        <div
-                            style={{
-                                flex: 1,
-                                minWidth: 0,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                fontSize: 14,
-                                fontWeight: 500,
-                            }}
-                        >
-                            {project}
-                        </div>
+                <div className="flex items-center gap-2 max-w-full">
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                variant="secondary"
+                                size="icon"
+                                onClick={() => {
+                                    navigate(RouterPath.PROJECTS);
+                                }}
+                            >
+                                <LogOutIcon className="rotate-180 size-4" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            {t('tooltip.button.back-to-projects')}
+                        </TooltipContent>
                     </Tooltip>
-                </Flex>
+
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div className="flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-sm font-medium">
+                                {project}
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            {t('common.project')}: {project}
+                        </TooltipContent>
+                    </Tooltip>
+                </div>
 
                 {/* Search and control buttons */}
-                <Flex vertical={false} gap="small" justify="space-between">
-                    <Input
-                        value={searchText}
-                        onChange={(event) => {
-                            setSearchText(event.target.value);
-                        }}
-                        style={{
-                            maxWidth: 300,
-                            borderRadius: 'calc(var(--radius) - 2px)',
-                            flex: 1,
-                        }}
-                        variant="outlined"
-                        placeholder={t('placeholder.search-run')}
-                    />
+                <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                        <Input
+                            className="pr-8"
+                            placeholder={t('placeholder.search-run')}
+                            value={searchText}
+                            onChange={(e) => setSearchText(e.target.value)}
+                        />
+                        {searchText && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-0 top-0 h-full w-8 hover:bg-transparent"
+                                onClick={() => setSearchText('')}
+                            >
+                                <X className="size-4 text-muted-foreground" />
+                            </Button>
+                        )}
+                    </div>
 
-                    <SwitchButton
-                        active={focusOnLatestRun}
-                        activeIcon={<EyeIcon width={14} height={14} />}
-                        inactiveIcon={
-                            <EyeInvisibleIcon width={14} height={14} />
-                        }
-                        onClick={() =>
-                            setFocusOnLatestRun((prevState) => !prevState)
-                        }
-                        tooltip={t('tooltip.button.focus-on-latest-run')}
-                        style={{ border: '1px dashed var(--border)' }}
-                        title={undefined}
-                    >
-                        {folded ? null : 'Latest'}
-                    </SwitchButton>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                variant={
+                                    focusOnLatestRun ? 'default' : 'outline'
+                                }
+                                size="icon"
+                                onClick={() =>
+                                    setFocusOnLatestRun((prev) => !prev)
+                                }
+                            >
+                                {focusOnLatestRun ? (
+                                    <EyeIcon width={14} height={14} />
+                                ) : (
+                                    <EyeInvisibleIcon width={14} height={14} />
+                                )}
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            {t('tooltip.button.focus-on-latest-run')}
+                        </TooltipContent>
+                    </Tooltip>
 
                     {/* Delete button only shown when unfolded */}
-                    {folded ? null : (
-                        <SecondaryButton
-                            tooltip="Delete the selected runs"
-                            icon={<DeleteIcon width={13} height={13} />}
-                        />
+                    {!folded && (
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="outline" size="icon">
+                                    <DeleteIcon width={13} height={13} />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                {t('tooltip.button.delete-selected-runs')}
+                            </TooltipContent>
+                        </Tooltip>
                     )}
-                </Flex>
+                </div>
 
-                {/* Runs table with conditional columns and row selection */}
-                <AsTable
-                    columns={[
-                        {
-                            key: 'id',
-                            hidden: folded,
-                            ellipsis: { showTitle: false },
-                            render: (value, record) => (
-                                <TextCell
-                                    text={value}
-                                    selected={selectedRowKeys.includes(
-                                        record.project,
-                                    )}
-                                />
-                            ),
-                        },
-                        {
-                            dataIndex: 'name',
-                            key: 'name',
-                            render: (value, record) => (
-                                <TextCell
-                                    text={value}
-                                    selected={selectedRowKeys.includes(
-                                        record.project,
-                                    )}
-                                />
-                            ),
-                        },
-                        {
-                            key: 'status',
-                            render: (value, record) => (
-                                <StatusCell
-                                    status={value}
-                                    selected={selectedRowKeys.includes(
-                                        record.project,
-                                    )}
-                                />
-                            ),
-                        },
-                        {
-                            key: 'timestamp',
-                            hidden: folded,
-                            ellipsis: { showTitle: false },
-                            render: (value, record) => (
-                                <TextCell
-                                    text={value}
-                                    selected={selectedRowKeys.includes(
-                                        record.project,
-                                    )}
-                                />
-                            ),
-                            defaultSortOrder: 'descend',
-                            sortOrder:
-                                focusOnLatestRun && folded
-                                    ? 'descend'
-                                    : undefined,
-                        },
-                        {
-                            key: 'pid',
-                            hidden: folded,
-                            render: (value, record) => (
-                                <TextCell
-                                    text={value}
-                                    selected={selectedRowKeys.includes(
-                                        record.project,
-                                    )}
-                                />
-                            ),
-                        },
-                        {
-                            key: 'run_dir',
-                            hidden: folded,
-                            render: (value, record) => (
-                                <TextCell
-                                    text={value}
-                                    selected={selectedRowKeys.includes(
-                                        record.project,
-                                    )}
-                                />
-                            ),
-                        },
-                    ]}
-                    dataSource={runs.filter((run) =>
-                        run.name
-                            .toLowerCase()
-                            .includes(searchText.toLowerCase()),
-                    )}
-                    onRow={(record) => {
-                        const styleProps: Record<string, unknown> = {};
-                        // Highlight current run row
-                        if (runId === record.id) {
-                            styleProps['background'] = 'var(--primary-200)';
-                        }
-                        return {
-                            onClick: (event) => {
-                                if (event.type === 'click') {
-                                    onRunClick(record.id);
-                                }
-                            },
-                            style: {
-                                cursor: 'pointer',
-                                ...styleProps,
-                            },
-                        };
-                    }}
-                    pagination={false}
-                    rowKey="id"
-                    rowSelection={folded ? undefined : rowSelection}
-                    showSorterTooltip={!folded}
-                    style={{
-                        border: '1px solid var(--border)',
-                        borderRadius: 'calc(var(--radius) - 2px)',
-                        flex: 1,
-                        overflow: 'auto',
-                        minHeight: 0,
-                        ...RemoveScrollBarStyle,
-                    }}
-                    rowHoverable={true}
-                />
-            </Flex>
-        </Sider>
+                <div className="flex flex-col flex-1 min-h-0 border rounded-md overflow-hidden">
+                    {/* List header - styled like Table column headers */}
+                    <div
+                        className="px-3 py-1.5 text-sm font-medium text-muted-foreground bg-muted/50 border-b border-border shrink-0"
+                        style={{
+                            display: 'grid',
+                            gridTemplateColumns: '1fr auto',
+                            gap: 8,
+                            alignItems: 'center',
+                        }}
+                    >
+                        <div className="overflow-hidden text-ellipsis select-none">
+                            {t('table.column.name')}
+                        </div>
+                        <div className="select-none">
+                            {t('table.column.status')}
+                        </div>
+                    </div>
+
+                    {/* Runs card list */}
+                    <ScrollArea className="flex-1 min-h-0">
+                        <div>
+                            {filteredRuns.length === 0 ? (
+                                <EmptyData />
+                            ) : (
+                                filteredRuns.map((run) => (
+                                    <div
+                                        key={run.id}
+                                        className={cn(
+                                            'px-3 py-2 cursor-pointer transition-colors border-b border-border last:border-b-0',
+                                            'hover:bg-muted/50',
+                                            runId === run.id &&
+                                                'bg-primary/10 hover:bg-primary/15',
+                                        )}
+                                        style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: '1fr auto',
+                                            gap: 8,
+                                            alignItems: 'center',
+                                        }}
+                                        onClick={() => onRunClick(run.id)}
+                                    >
+                                        {/* Run name - truncated */}
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <div className="overflow-hidden text-ellipsis whitespace-nowrap text-sm">
+                                                    {run.name}
+                                                </div>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="top">
+                                                <span className="text-xs break-all max-w-[300px]">
+                                                    {run.name}
+                                                </span>
+                                            </TooltipContent>
+                                        </Tooltip>
+
+                                        {/* Status badge */}
+                                        <StatusCell
+                                            status={run.status}
+                                            selected={false}
+                                        />
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </ScrollArea>
+                </div>
+            </div>
+        </aside>
     );
 };
 
