@@ -186,7 +186,7 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                                                 if (
                                                                     value &&
                                                                     value !==
-                                                                        currentLanguage
+                                                                    currentLanguage
                                                                 ) {
                                                                     setSelectedLanguage(
                                                                         value,
@@ -286,6 +286,26 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                                             <PathRender
                                                                 path={
                                                                     databaseInfo?.path
+                                                                }
+                                                                title={t(
+                                                                    'settings.path',
+                                                                )}
+                                                            />
+                                                        </div>
+                                                    )}
+
+                                                    {databaseInfo?.evaluationDataPath && (
+                                                        <div className="flex flex-col bg-muted/50 rounded-lg p-4">
+                                                            <div className="flex justify-between items-center text-sm mb-2">
+                                                                <span className="font-medium">
+                                                                    {t(
+                                                                        'settings.evaluation-data',
+                                                                    )}
+                                                                </span>
+                                                            </div>
+                                                            <PathRender
+                                                                path={
+                                                                    databaseInfo.evaluationDataPath
                                                                 }
                                                                 title={t(
                                                                     'settings.path',

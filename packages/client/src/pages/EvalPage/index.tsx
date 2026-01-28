@@ -3,12 +3,12 @@ import { memo } from 'react';
 import { Route, Routes } from 'react-router-dom';
 
 import OverviewPage from '@/pages/EvalPage/OverviewPage';
-import TaskDetailPage from '@/pages/EvalPage/TaskDetailPage';
-import ComparisonPage from '@/pages/EvalPage/TaskComparisonPage';
-import EvaluationDetailPage from '@/pages/EvalPage/EvaluationDetailPage';
-
+import EvaluationPage from '@/pages/EvalPage/EvaluationPage';
+import TaskPage from '@/pages/EvalPage/TaskPage';
 import { RouterPath } from '@/pages/RouterPath.ts';
-import { EvaluationRoomContextProvider } from '@/context/EvaluationRoomContext';
+import { EvaluationListContextProvider } from '@/context/EvaluationListContext.tsx';
+import { EvaluationContextProvider } from '@/context/EvaluationContext.tsx';
+import { EvaluationTaskContextProvider } from '@/context/EvaluationTaskContext.tsx';
 
 const EvalPage = () => {
     return (
@@ -16,26 +16,32 @@ const EvalPage = () => {
             {/*<TitleBar title={t('common.evaluation')} />*/}
 
             <Routes>
-                <Route index element={<OverviewPage />} />
+                <Route
+                    index
+                    element={
+                        <EvaluationListContextProvider>
+                            <OverviewPage />
+                        </EvaluationListContextProvider>
+                    }
+                />
                 <Route
                     path={RouterPath.EVAL_EVALUATION}
                     element={
-                        <EvaluationRoomContextProvider>
-                            <EvaluationDetailPage />
-                        </EvaluationRoomContextProvider>
+                        <EvaluationContextProvider>
+                            <EvaluationPage />
+                        </EvaluationContextProvider>
                     }
                 />
                 <Route
                     path={RouterPath.EVAL_TASK}
-                    element={<TaskDetailPage />}
-                />
-                <Route
-                    path="/eval/:evalId/compare/"
-                    element={<ComparisonPage />}
+                    element={
+                        <EvaluationTaskContextProvider>
+                            <TaskPage />
+                        </EvaluationTaskContextProvider>
+                    }
                 />
             </Routes>
         </Layout>
     );
 };
-
 export default memo(EvalPage);

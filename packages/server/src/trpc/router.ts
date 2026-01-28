@@ -1,8 +1,13 @@
 import { initTRPC, TRPCError } from '@trpc/server';
+import fs from 'fs';
+import path from 'path';
 import { z } from 'zod';
 import {
     BlockType,
     ContentBlocks,
+    DeleteEvaluationsParamsSchema,
+    GetEvaluationResultParamsSchema,
+    GetEvaluationTasksParamsSchema,
     GetTraceParamsSchema,
     GetTraceStatisticParamsSchema,
     InputRequestData,
@@ -14,9 +19,14 @@ import {
     RunData,
     Status,
     TableData,
+    TableRequestParams,
     TableRequestParamsSchema,
     Trace,
 } from '../../../shared/src';
+import { EvalResult, Evaluation } from '../../../shared/src/types/evaluation';
+import { FileDao } from '@/dao/File';
+import { EvaluationDao } from '@/dao/Evaluation';
+import { verifyMetadataByVersion } from '@/trpc/utils-evaluation';
 import { FridayConfigManager } from '../../../shared/src/config/friday';
 import { FridayAppMessageDao } from '../dao/FridayAppMessage';
 import { InputRequestDao } from '../dao/InputRequest';
@@ -487,6 +497,7 @@ export const appRouter = t.router({
                     formattedSize: dbStats.formattedSize,
                     fridayConfigPath: dbStats.fridayConfigPath,
                     fridayHistoryPath: dbStats.fridayHistoryPath,
+                    evaluationDataPath: dbStats.evaluationDataPath,
                 },
             } as ResponseBody<{
                 path: string;
@@ -494,6 +505,7 @@ export const appRouter = t.router({
                 formattedSize: string;
                 fridayConfigPath: string;
                 fridayHistoryPath: string;
+                evaluationDataPath: string;
             }>;
         } catch (error) {
             console.error('Error get database info:', error);
@@ -506,6 +518,380 @@ export const appRouter = t.router({
             });
         }
     }),
+
+    /**
+     * Upload evaluation folder - accept files and reconstruct directory structure
+     * Files are stored in a secure directory managed by ConfigManager
+     * If evaluation with same ID exists, it will be replaced and old directory cleaned up
+     */
+    uploadEvaluation: t.procedure
+        .input(
+            z.object({
+                files: z.array(
+                    z.object({
+                        relativePath: z.string(),
+                        content: z.string(), // base64 encoded content
+                    }),
+                ),
+            }),
+        )
+        .mutation(async ({ input }) => {
+            let tempDir: string | null = null;
+
+            try {
+                // Get secure evaluation data directory from ConfigManager
+                const configManager = ConfigManager.getInstance();
+                const evaluationBaseDir = configManager.getEvaluationDataDir();
+
+                // Create a unique directory for this evaluation using timestamp
+                const timestamp = Date.now();
+                tempDir = path.join(
+                    evaluationBaseDir,
+                    `eval_${timestamp}`,
+                );
+                fs.mkdirSync(tempDir, { recursive: true });
+
+                // Write all uploaded files to the temp directory
+                for (const file of input.files) {
+                    const filePath = path.join(tempDir, file.relativePath);
+                    const fileDir = path.dirname(filePath);
+
+                    // Create directory structure if not exists
+                    if (!fs.existsSync(fileDir)) {
+                        fs.mkdirSync(fileDir, { recursive: true });
+                    }
+
+                    // Decode base64 content and write to file
+                    const content = Buffer.from(file.content, 'base64');
+                    fs.writeFileSync(filePath, content);
+                }
+
+                // Check if evaluation_meta.json exists
+                const metaFile = path.join(tempDir, 'evaluation_meta.json');
+                if (!fs.existsSync(metaFile)) {
+                    // Clean up temp directory
+                    fs.rmSync(tempDir, { recursive: true, force: true });
+                    return {
+                        success: false,
+                        message: 'evaluation_meta.json file not found in uploaded folder',
+                    };
+                }
+
+                // Read and parse the meta.json file
+                const metaData = JSON.parse(
+                    fs.readFileSync(metaFile, 'utf-8'),
+                );
+
+                if (typeof metaData !== 'object') {
+                    // Clean up temp directory
+                    fs.rmSync(tempDir, { recursive: true, force: true });
+                    return {
+                        success: false,
+                        message: 'evaluation_meta is not a valid json object',
+                    };
+                }
+
+                // verify the metadata by version
+                verifyMetadataByVersion(metaData);
+
+                // Convert metadata from snake_case to camelCase and add evaluationDir field
+                await EvaluationDao.saveEvaluation({
+                    id: `${metaData.benchmark.name}-${metaData.created_at}`,
+                    evaluationName: metaData.evaluation_name,
+                    createdAt: metaData.created_at,
+                    totalRepeats: metaData.total_repeats,
+                    schemaVersion: metaData.schema_version,
+                    evaluationDir: tempDir,
+                    benchmarkName: metaData.benchmark.name,
+                    benchmarkDescription: metaData.benchmark.description,
+                    benchmarkTotalTasks: metaData.benchmark.total_tasks,
+                } as Evaluation);
+
+                return {
+                    success: true,
+                    message: 'Upload and import evaluation successfully!',
+                    data: metaData,
+                };
+            } catch (error) {
+                // Clean up the directory we created if something went wrong
+                if (tempDir && fs.existsSync(tempDir)) {
+                    try {
+                        fs.rmSync(tempDir, { recursive: true, force: true });
+                        console.debug(`Cleaned up failed upload directory: ${tempDir}`);
+                    } catch (cleanupError) {
+                        console.error(`Failed to cleanup directory ${tempDir}:`, cleanupError);
+                    }
+                }
+
+                console.error(error);
+                return { success: false, message: `Error: ${error}` };
+            }
+        }),
+
+    /**
+     * List the files and directories in a given path, this interface is for
+     * frontend file explorer to import evaluation from local disk.
+     *
+     * NOTE: This interface should be protected to only allow requests from
+     * localhost for security reasons.
+     *
+     * @deprecated This method is deprecated. Use uploadEvaluation instead
+     * for better security and user experience.
+     *
+     * TODO: implement the security check
+     */
+    listDir: t.procedure
+        .input(z.object({ path: z.string() }))
+        .mutation(async ({ input }) => {
+            // TODO: check if the request is from localhost
+
+            try {
+                if (fs.existsSync(input.path)) {
+                    const fileNames = fs
+                        .readdirSync(input.path)
+                        .map((fileName) => {
+                            const filePath = path.join(input.path, fileName);
+                            const stats = fs.statSync(filePath);
+                            return {
+                                name: fileName,
+                                path: filePath,
+                                isDirectory: stats.isDirectory(),
+                            };
+                        });
+                    console.debug('success: ', fileNames);
+                    return {
+                        success: true,
+                        message: 'Directory listed successfully',
+                        data: fileNames,
+                    };
+                }
+                console.error('Directory not exists: ', input.path);
+                return { success: false, message: 'Directory not exists' };
+            } catch (error) {
+                console.error(error);
+                return { success: false, message: `Error: ${error}` };
+            }
+        }),
+
+    /**
+     * Get the evaluation data by reading the corresponding file from
+     * the evaluation directory.
+     */
+    getEvaluationData: t.procedure
+        .input(GetEvaluationResultParamsSchema)
+        .query(async ({ input }) => {
+            try {
+                const evaluation = await EvaluationDao.getEvaluation(
+                    input.evaluationId,
+                );
+
+                if (!evaluation) {
+                    throw new TRPCError({
+                        code: 'BAD_REQUEST',
+                        message: `Evaluation with id ${input.evaluationId} does not exist`,
+                    });
+                }
+
+                const result = await FileDao.getJSONFile<EvalResult>(
+                    path.join(
+                        evaluation.evaluationDir,
+                        'evaluation_result.json',
+                    ),
+                );
+
+                return {
+                    success: true,
+                    message: 'Get evaluation result successfully',
+                    data: {
+                        evaluation: evaluation,
+                        result: result,
+                    },
+                } as ResponseBody<{
+                    evaluation: Evaluation;
+                    result: EvalResult;
+                }>;
+            } catch (error) {
+                console.error(error);
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message: `Failed to get evaluation result: ${error}`,
+                });
+            }
+        }),
+
+    /**
+     * Get paginated evaluations with optional sorting and filtering
+     */
+    getEvaluations: t.procedure
+        .input(TableRequestParamsSchema)
+        .query(async ({ input }) => {
+            try {
+                console.log('getEvaluations input: ', input);
+                const result = await EvaluationDao.getEvaluations(input);
+                return {
+                    success: true,
+                    message: 'Evaluations fetched successfully',
+                    data: result,
+                } as ResponseBody<TableData<Evaluation>>;
+            } catch (error) {
+                console.error('Error fetching evaluations:', error);
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message: `Failed to register reply for error: ${error}`,
+                });
+            }
+        }),
+
+    /**
+     * Delete evaluations by their evaluation IDs
+     */
+    deleteEvaluations: t.procedure
+        .input(DeleteEvaluationsParamsSchema)
+        .mutation(async ({ input }) => {
+            try {
+                // Validate input
+                if (input.evaluationIds.length === 0) {
+                    throw new TRPCError({
+                        code: 'BAD_REQUEST',
+                        message: 'No evaluation IDs provided',
+                    });
+                }
+
+                const affected = await EvaluationDao.deleteEvaluations(
+                    input.evaluationIds,
+                );
+
+                return {
+                    success: true,
+                    message: `Successfully deleted ${affected} evaluation(s)`,
+                } as ResponseBody;
+            } catch (error) {
+                console.error('Error deleting evaluations:', error);
+
+                // If it's already a TRPCError, re-throw it
+                if (error instanceof TRPCError) {
+                    throw error;
+                }
+
+                // For other errors, throw a detailed TRPCError
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message:
+                        error instanceof Error
+                            ? `Failed to delete evaluations: ${error.message}`
+                            : 'Failed to delete evaluations',
+                });
+            }
+        }),
+
+    /**
+     * Get the evaluations tasks with pagination
+     */
+    getEvaluationTasks: t.procedure
+        .input(GetEvaluationTasksParamsSchema)
+        .query(async ({ input }) => {
+            console.log(JSON.stringify(input, null, 2));
+            // First validate the evaluationId and get the evaluationDir
+            try {
+                const evaluation = await EvaluationDao.getEvaluation(
+                    input.evaluationId,
+                );
+                if (!evaluation) {
+                    throw new TRPCError({
+                        code: 'BAD_REQUEST',
+                        message: `Evaluation with id ${input.evaluationId} does not exist`,
+                    });
+                }
+
+                // Read the tasks from the evaluationDir
+                return await FileDao.getEvaluationTasks(
+                    evaluation.evaluationDir,
+                    {
+                        pagination: input.pagination,
+                        sort: input.sort,
+                        filters: input.filters,
+                    } as TableRequestParams,
+                );
+            } catch (error) {
+                console.error('Error in getEvaluationTasks:', error);
+
+                if (error instanceof TRPCError) {
+                    throw error;
+                }
+
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : 'Failed to get evaluation tasks',
+                });
+            }
+        }),
+
+    getEvaluationTask: t.procedure
+        .input(z.object({ evaluationId: z.string(), taskId: z.string() }))
+        .query(async ({ input }) => {
+            try {
+                // First get the evaluationDir by evaluationId
+                const evaluation = await EvaluationDao.getEvaluation(
+                    input.evaluationId,
+                );
+                if (!evaluation) {
+                    throw new TRPCError({
+                        code: 'BAD_REQUEST',
+                        message: `Evaluation with id ${input.evaluationId} does not exist`,
+                    });
+                }
+
+                // Then read the task from the evaluationDir
+                return await FileDao.getEvaluationTask(
+                    evaluation.evaluationDir,
+                    input.taskId,
+                );
+            } catch (error) {
+                console.error('Error in getEvaluationTask:', error);
+            }
+        }),
+
+    /**
+     * Get the tags used in an evaluation
+     *
+     * @param evaluationId - The ID of the evaluation
+     * @returns Array of tags used in the evaluation
+     */
+    getEvaluationTags: t.procedure
+        .input(z.object({ evaluationId: z.string() }))
+        .query(async ({ input }) => {
+            try {
+                const evaluation = await EvaluationDao.getEvaluation(
+                    input.evaluationId,
+                );
+                if (!evaluation) {
+                    throw new TRPCError({
+                        code: 'BAD_REQUEST',
+                        message: `Evaluation with id ${input.evaluationId} does not exist`,
+                    });
+                }
+                return await FileDao.getAllEvaluationTags(
+                    evaluation.evaluationDir,
+                );
+            } catch (error) {
+                console.error('Error in getEvaluationTags:', error);
+
+                if (error instanceof TRPCError) {
+                    throw error;
+                }
+
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : 'Failed to get evaluation tasks',
+                });
+            }
+        }),
 });
 
 export type AppRouter = typeof appRouter;
