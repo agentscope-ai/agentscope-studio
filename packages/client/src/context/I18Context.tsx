@@ -22,7 +22,7 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({
 
     return (
         <I18nContext.Provider
-            value={{ setCurrentLanguage, currentLanguage }}
+            value={{ currentLanguage, setCurrentLanguage }}
         >
             {children}
         </I18nContext.Provider>

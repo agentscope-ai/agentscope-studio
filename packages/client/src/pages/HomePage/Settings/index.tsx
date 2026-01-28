@@ -44,7 +44,7 @@ interface SettingsProps {
 
 const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
     const { t } = useTranslation();
-    const { setCurrentLanguage, currentLanguage } = useI18n();
+    const { currentLanguage, setCurrentLanguage } = useI18n();
     const { messageApi } = useMessageApi();
     const {
         clearDataDialogOpen,
