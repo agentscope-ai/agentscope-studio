@@ -1,5 +1,26 @@
 import { SankeyNode, SankeyLink } from './types';
 
+/**
+ * 构建 repeat 到节点名称的映射
+ * @param links - Sankey 连线数据
+ * @returns Map<repeatId, Set<nodeName>>
+ */
+export function buildRepeatNodeNames(links: SankeyLink[]): Map<string, Set<string>> {
+    const repeatNodeNames = new Map<string, Set<string>>();
+
+    links.forEach((link) => {
+        if (link.repeatId) {
+            if (!repeatNodeNames.has(link.repeatId)) {
+                repeatNodeNames.set(link.repeatId, new Set());
+            }
+            repeatNodeNames.get(link.repeatId)!.add(link.source);
+            repeatNodeNames.get(link.repeatId)!.add(link.target);
+        }
+    });
+
+    return repeatNodeNames;
+}
+
 // Material Design Color Palette - 用于美观的配色
 export const MATERIAL_COLORS = [
     '#4a90c2', // Blue
@@ -96,6 +117,7 @@ export function processLinks(
     links: SankeyLink[],
     selectedRepeats: string[],
     nodeMap: Map<string, number>,
+    linkWidthScale: number = 1.0,
 ) {
     const sources: number[] = [];
     const targets: number[] = [];
@@ -113,8 +135,8 @@ export function processLinks(
         sources.push(sourceIdx);
         targets.push(targetIdx);
 
-        // 使用较小的值让连线更细，更美观
-        values.push(link.value * 0.25);
+        // 使用 linkWidthScale 控制连线宽度
+        values.push(link.value * linkWidthScale);
 
         // 确定连线颜色和透明度
         const baseColor = link.lineStyle?.color || '#94a3b8';
@@ -173,6 +195,55 @@ export function calculateNodeValues(
 
     // 确保至少有一个最小值
     return nodeValues.map((v) => Math.max(v, 1));
+}
+
+/**
+ * 计算每个节点应该的宽度（基于通过的连线数量）
+ * @param nodes - 节点列表
+ * @param links - 连线列表
+ * @param baseLinkWidth - 单条连线的基础宽度
+ * @returns Map<nodeName, width>
+ */
+export function calculateNodeWidths(
+    nodes: SankeyNode[],
+    links: SankeyLink[],
+    baseLinkWidth: number,
+): Map<string, number> {
+    const nodeWidthMap = new Map<string, number>();
+
+    // 统计每个节点的连线数量（入度和出度的最大值）
+    const nodeConnectionCount = new Map<string, { incoming: Set<string>, outgoing: Set<string> }>();
+
+    nodes.forEach(node => {
+        nodeConnectionCount.set(node.name, { incoming: new Set(), outgoing: new Set() });
+    });
+
+    links.forEach(link => {
+        const sourceData = nodeConnectionCount.get(link.source);
+        const targetData = nodeConnectionCount.get(link.target);
+
+        if (sourceData && link.repeatId) {
+            sourceData.outgoing.add(link.repeatId);
+        }
+        if (targetData && link.repeatId) {
+            targetData.incoming.add(link.repeatId);
+        }
+    });
+
+    // 计算每个节点的宽度 = max(入度, 出度) * baseLinkWidth
+    nodes.forEach(node => {
+        const data = nodeConnectionCount.get(node.name);
+        if (data) {
+            const maxConnections = Math.max(data.incoming.size, data.outgoing.size);
+            // 至少为1条连线的宽度
+            const width = Math.max(1, maxConnections) * baseLinkWidth;
+            nodeWidthMap.set(node.name, width);
+        } else {
+            nodeWidthMap.set(node.name, baseLinkWidth);
+        }
+    });
+
+    return nodeWidthMap;
 }
 
 /**

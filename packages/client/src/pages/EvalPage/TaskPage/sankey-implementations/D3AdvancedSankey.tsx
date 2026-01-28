@@ -1,5 +1,5 @@
 /**
- * D3-based Sankey Chart with precise control over node and link positions
+ * D3-based Advanced Sankey Chart with precise control over node and link positions
  * Features:
  * - Custom link ordering per node (input/output sorted by repeatId)
  * - Node labels
@@ -9,16 +9,18 @@
  */
 import { sankey, SankeyNode, SankeyLink } from 'd3-sankey';
 import { memo, useCallback, useMemo, useState } from 'react';
+import { SankeyChartProps } from './types';
+import { formatNodeLabel } from './utils';
 
-// Types for our Sankey data
-export interface SankeyNodeData {
+// Internal types for D3 Sankey
+interface InternalNodeData {
     id: string;
     label: string;
     color: string;
     layer?: number;
 }
 
-export interface SankeyLinkData {
+interface InternalLinkData {
     source: string;
     target: string;
     value: number;
@@ -26,21 +28,21 @@ export interface SankeyLinkData {
     color: string;
 }
 
-interface D3SankeyChartProps {
-    nodes: SankeyNodeData[];
-    links: SankeyLinkData[];
+interface D3InternalSankeyProps {
+    nodes: InternalNodeData[];
+    links: InternalLinkData[];
     width: number;
     height: number;
     nodeWidth?: number;
     nodePadding?: number;
     linkWidth?: number;
     selectedRepeats?: string[];
-    onNodeClick?: (node: SankeyNodeData) => void;
-    onLinkClick?: (link: SankeyLinkData) => void;
+    onNodeClick?: (node: InternalNodeData) => void;
+    onLinkClick?: (link: InternalLinkData) => void;
 }
 
 // Vertical node after coordinate transformation
-interface VerticalNode extends SankeyNodeData {
+interface VerticalNode extends InternalNodeData {
     vx0: number;  // left edge (horizontal)
     vx1: number;  // right edge (horizontal)
     vy0: number;  // top edge (vertical)
@@ -62,10 +64,11 @@ interface VerticalLink {
     targetX: number;
 }
 
-type D3Node = SankeyNode<SankeyNodeData, SankeyLinkData>;
-type D3Link = SankeyLink<SankeyNodeData, SankeyLinkData>;
+type D3Node = SankeyNode<InternalNodeData, InternalLinkData>;
+type D3Link = SankeyLink<InternalNodeData, InternalLinkData>;
 
-const D3SankeyChart = memo(({
+// Internal component
+const D3AdvancedSankeyInternal = memo(({
     nodes,
     links,
     width,
@@ -76,7 +79,7 @@ const D3SankeyChart = memo(({
     selectedRepeats = [],
     onNodeClick,
     onLinkClick,
-}: D3SankeyChartProps) => {
+}: D3InternalSankeyProps) => {
     const [highlightedRepeat, setHighlightedRepeat] = useState<string | null>(null);
 
     // Combine selectedRepeats and highlightedRepeat for highlighting
@@ -94,7 +97,7 @@ const D3SankeyChart = memo(({
 
         // ========== Barycenter ordering to minimize link crossings ==========
         // Group nodes by layer
-        const nodesByLayer = new Map<number, SankeyNodeData[]>();
+        const nodesByLayer = new Map<number, InternalNodeData[]>();
         nodes.forEach(n => {
             const layer = n.layer ?? 0;
             if (!nodesByLayer.has(layer)) {
@@ -130,7 +133,7 @@ const D3SankeyChart = memo(({
         });
 
         // Calculate weighted barycenter considering both predecessors and successors
-        const calcBarycenter = (node: SankeyNodeData, usePreds: boolean, useSuccs: boolean): number => {
+        const calcBarycenter = (node: InternalNodeData, usePreds: boolean, useSuccs: boolean): number => {
             const preds = usePreds ? (predecessors.get(node.id) || []) : [];
             const succs = useSuccs ? (successors.get(node.id) || []) : [];
 
@@ -277,7 +280,7 @@ const D3SankeyChart = memo(({
         }
 
         // Flatten the reordered nodes
-        const orderedNodes: SankeyNodeData[] = [];
+        const orderedNodes: InternalNodeData[] = [];
         layers.forEach(layer => {
             orderedNodes.push(...(nodesByLayer.get(layer) || []));
         });
@@ -287,24 +290,24 @@ const D3SankeyChart = memo(({
         orderedNodes.forEach((n, i) => nodeIndexById.set(n.id, i));
 
         // Create sankey generator
-        const sankeyGenerator = sankey<SankeyNodeData, SankeyLinkData>()
+        const sankeyGenerator = sankey<InternalNodeData, InternalLinkData>()
             .nodeId((d: D3Node) => {
-                const nodeData = d as unknown as SankeyNodeData;
+                const nodeData = d as unknown as InternalNodeData;
                 return nodeIndexById.get(nodeData.id) ?? 0;
             })
             .nodeWidth(nodeWidth)
             .nodePadding(nodePadding)
             .nodeSort((a: D3Node, b: D3Node) => {
                 // Use the pre-calculated positions
-                const aNode = a as unknown as SankeyNodeData;
-                const bNode = b as unknown as SankeyNodeData;
+                const aNode = a as unknown as InternalNodeData;
+                const bNode = b as unknown as InternalNodeData;
                 const posA = nodePosition.get(aNode.id) ?? 0;
                 const posB = nodePosition.get(bNode.id) ?? 0;
                 return posA - posB;
             })
             .linkSort((a: D3Link, b: D3Link) => {
-                const aLink = a as unknown as SankeyLinkData;
-                const bLink = b as unknown as SankeyLinkData;
+                const aLink = a as unknown as InternalLinkData;
+                const bLink = b as unknown as InternalLinkData;
                 const repeatA = parseInt(aLink.repeatId || '0', 10);
                 const repeatB = parseInt(bLink.repeatId || '0', 10);
                 return repeatA - repeatB;
@@ -540,14 +543,14 @@ const D3SankeyChart = memo(({
         setHighlightedRepeat(link.repeatId);
     }, []);
 
-    const handleNodeMouseEnter = useCallback((node: VerticalNode) => {
+    const handleNodeMouseEnter = (node: VerticalNode) => {
         const nodeLinks = verticalLinks.filter(l =>
             l.source.id === node.id || l.target.id === node.id
         );
         if (nodeLinks.length > 0) {
             setHighlightedRepeat(nodeLinks[0].repeatId);
         }
-    }, [verticalLinks]);
+    };
 
     const handleMouseLeave = useCallback(() => {
         setHighlightedRepeat(null);
@@ -558,13 +561,13 @@ const D3SankeyChart = memo(({
         return activeRepeats.has(link.repeatId);
     }, [activeRepeats]);
 
-    const isNodeHighlighted = useCallback((node: VerticalNode): boolean => {
+    const isNodeHighlighted = (node: VerticalNode): boolean => {
         if (activeRepeats.size === 0) return true;
         const nodeLinks = verticalLinks.filter(l =>
             l.source.id === node.id || l.target.id === node.id
         );
         return nodeLinks.some(l => activeRepeats.has(l.repeatId));
-    }, [activeRepeats, verticalLinks]);
+    };
 
     if (verticalNodes.length === 0) {
         return (
@@ -656,6 +659,71 @@ const D3SankeyChart = memo(({
     );
 });
 
-D3SankeyChart.displayName = 'D3SankeyChart';
+D3AdvancedSankeyInternal.displayName = 'D3AdvancedSankeyInternal';
 
-export default D3SankeyChart;
+// Wrapper component that adapts SankeyChartProps to internal format
+export const D3AdvancedSankey: React.FC<SankeyChartProps> = ({
+    data,
+    width = 800,
+    height = 600,
+    selectedRepeats = [],
+    onNodeClick,
+    onLinkClick,
+    layerSpacing = 80,
+}) => {
+    // Convert to internal format
+    const internalNodes: InternalNodeData[] = useMemo(() => {
+        return data.nodes.map((node) => ({
+            id: node.name,
+            label: formatNodeLabel(node.name),
+            color: node.color,
+            layer: node.layer || 0,
+        }));
+    }, [data.nodes]);
+
+    const internalLinks: InternalLinkData[] = useMemo(() => {
+        return data.links.map((link) => ({
+            source: link.source,
+            target: link.target,
+            value: link.value,
+            repeatId: link.repeatId || '',
+            color: link.color,
+        }));
+    }, [data.links]);
+
+    // Handle callbacks
+    const handleNodeClick = useCallback((node: InternalNodeData) => {
+        if (onNodeClick) {
+            onNodeClick(node.id);
+        }
+    }, [onNodeClick]);
+
+    const handleLinkClick = useCallback((link: InternalLinkData) => {
+        if (onLinkClick && link.repeatId) {
+            onLinkClick(link.repeatId);
+        }
+    }, [onLinkClick]);
+
+    const chartWidth = typeof width === 'number' ? width : 800;
+    const chartHeight = typeof height === 'number' ? height : 600;
+
+    // Calculate nodePadding based on layerSpacing
+    const nodePadding = Math.max(12, layerSpacing / 6);
+
+    return (
+        <D3AdvancedSankeyInternal
+            nodes={internalNodes}
+            links={internalLinks}
+            width={chartWidth}
+            height={chartHeight}
+            nodeWidth={20}
+            nodePadding={nodePadding}
+            linkWidth={10}
+            selectedRepeats={selectedRepeats}
+            onNodeClick={handleNodeClick}
+            onLinkClick={handleLinkClick}
+        />
+    );
+};
+
+D3AdvancedSankey.displayName = 'D3AdvancedSankey';

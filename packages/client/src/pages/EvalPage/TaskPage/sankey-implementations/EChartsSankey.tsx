@@ -8,10 +8,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { SankeyChartProps } from './types';
 import {
     calculateHighlightNodeSet,
-    calculateNodeValues,
     formatNodeLabel,
-    getNodeColors,
-    processLinks,
 } from './utils';
 
 echarts.use([TooltipComponent, EChartsSankeyChart, CanvasRenderer]);
@@ -19,12 +16,14 @@ echarts.use([TooltipComponent, EChartsSankeyChart, CanvasRenderer]);
 export const EChartsSankey: React.FC<SankeyChartProps> = ({
     data,
     width = '100%',
-    height,
+    height = 600,
     selectedRepeats = [],
     repeatNodeNames,
     hoveredRepeat,
     onNodeClick,
+    onLinkClick,
     onRepeatHover,
+    layerSpacing = 80,
 }) => {
     const chartRef = useRef<HTMLDivElement | null>(null);
     const echartInstanceRef = useRef<ECharts | null>(null);
@@ -42,43 +41,59 @@ export const EChartsSankey: React.FC<SankeyChartProps> = ({
         [effectiveRepeats, repeatNodeNames],
     );
 
-    const nodeMap = useMemo(() => {
-        const map = new Map<string, number>();
-        data.nodes.forEach((node, index) => {
-            map.set(node.name, index);
-        });
-        return map;
-    }, [data.nodes]);
-
-    const nodeLabels = useMemo(() => {
-        const MAX_LABEL_LENGTH = 15;
-        return data.nodes.map((n) => {
-            const fullLabel = formatNodeLabel(n.name);
-            return fullLabel.length > MAX_LABEL_LENGTH
-                ? fullLabel.substring(0, MAX_LABEL_LENGTH) + '...'
-                : fullLabel;
-        });
-    }, [data.nodes]);
-
-    const nodeColors = useMemo(
-        () => getNodeColors(data.nodes, highlightNodeSet),
-        [data.nodes, highlightNodeSet],
-    );
-
-    const nodeValues = useMemo(
-        () => calculateNodeValues(data.nodes, data.links),
-        [data.nodes, data.links],
-    );
-
-    const { sources, targets, values, colors } = useMemo(
-        () => processLinks(data.links, effectiveRepeats, nodeMap),
-        [data.links, effectiveRepeats, nodeMap],
-    );
-
     const option = useMemo<EChartsOption>(() => {
         if (!data || !data.nodes || !data.links || data.nodes.length === 0) {
             return {};
         }
+
+        // Prepare nodes with styles
+        const nodes = data.nodes.map((node) => {
+            const isHighlighted = highlightNodeSet && highlightNodeSet.has(node.name);
+            const opacity = isHighlighted ? 1 : highlightNodeSet ? 0.3 : 1;
+
+            return {
+                name: node.name,
+                itemStyle: {
+                    color: node.color,
+                    opacity: opacity,
+                    borderColor: '#fff',
+                    borderWidth: 2,
+                },
+                label: {
+                    show: true,
+                    position: 'center',  // Display label above node
+                    // formatter: formatNodeLabel(node.name),
+                    color: '#ffffff',
+                    fontSize: 12,
+                    fontWeight: 500,
+                    distance: 0,  // Distance from node
+                    overflow: 'truncate'
+                },
+            };
+        });
+
+        // Prepare links with colors and opacity
+        const links = data.links.map((link) => {
+            const isHighlighted = link.repeatId && effectiveRepeats.includes(link.repeatId);
+            const opacity = !effectiveRepeats.length ? 0.4 : isHighlighted ? 0.6 : 0.15;
+
+            return {
+                source: link.source,
+                target: link.target,
+                value: link.value,
+                repeatId: link.repeatId,
+                lineStyle: {
+                    color: link.color || '#94a3b8',
+                    opacity: opacity,
+                    curveness: 0.5,
+                },
+                emphasis: {
+                    lineStyle: {
+                        opacity: 0.8,
+                    },
+                },
+            };
+        });
 
         return {
             animation: false,
@@ -98,130 +113,43 @@ export const EChartsSankey: React.FC<SankeyChartProps> = ({
                 {
                     type: 'sankey',
                     orient: 'vertical',
+                    layout: 'none',
                     emphasis: {
-                        disabled: true,
+                        focus: 'adjacency',
                     },
-                    nodeWidth: 4,
-                    nodeGap: 80,
-                    draggable: false,
-                    left: '5%',
-                    right: '5%',
-                    top: '2%',
-                    bottom: '2%',
-                    layoutIterations: 32,
-                    data: data.nodes.map((n, i) => ({
-                        name: n.name,
-                        value: nodeValues[i],
-                        itemStyle: {
-                            color: nodeColors[i],
-                            opacity:
-                                highlightNodeSet && highlightNodeSet.has(n.name)
-                                    ? 1
-                                    : highlightNodeSet
-                                        ? 0.3
-                                        : 1,
-                            borderWidth: 0,
-                            borderColor: 'transparent',
-                        },
-                        label: {
-                            show: true,
-                            formatter: nodeLabels[i],
-                            color: '#ffffff',
-                            fontSize: 12,
-                            fontWeight: 'normal',
-                            position: 'right',
-                        },
-                    })),
-                    links: data.links
-                        .map((l, idx) => {
-                            const sourceIdx = nodeMap.get(l.source);
-                            const targetIdx = nodeMap.get(l.target);
-                            if (sourceIdx === undefined || targetIdx === undefined)
-                                return null;
-                            return {
-                                source: sourceIdx,
-                                target: targetIdx,
-                                value: values[idx],
-                                lineStyle: {
-                                    color: colors[idx],
-                                    opacity: 0.5,
-                                    curveness: 0.5,
-                                },
-                            };
-                        })
-                        .filter((l) => l !== null),
+                    data: nodes,
+                    links: links,
+                    nodeGap: 40, // Fixed horizontal spacing between nodes in same layer
+                    nodeWidth: 15,
+                    layoutIterations: 32, // Limited iterations: preserves first layer order while allowing some optimization
+                    nodeAlign: 'left', // Align nodes to left for vertical layout
+                    lineStyle: {
+                        color: 'gradient',
+                        curveness: 0.5,
+                    },
                     label: {
-                        fontSize: 11,
-                        fontFamily: 'system-ui, -apple-system, sans-serif',
+                        show: true,
+                        position: 'left',  // Display labels above nodes
                         color: '#ffffff',
+                        fontSize: 8,
+                        fontWeight: 500,
+                        distance: 5,  // Distance from node
                     },
+                    left: 150,
+                    right: 150,
+                    top: 40, // Fixed top margin
+                    bottom: Math.max(40, height - (data.nodes.length * layerSpacing)), // Dynamic bottom based on layerSpacing
                 },
             ],
         };
-    }, [
-        data,
-        nodeLabels,
-        nodeColors,
-        nodeValues,
-        sources,
-        targets,
-        values,
-        colors,
-        highlightNodeSet,
-        nodeMap,
-        effectiveRepeats,
-    ]);
+    }, [data, highlightNodeSet, effectiveRepeats, layerSpacing, height]);
 
+    // 初始化图表（只执行一次）
     useEffect(() => {
         if (!chartRef.current) return;
 
         const chart = echarts.init(chartRef.current);
         echartInstanceRef.current = chart;
-
-        chart.setOption(option);
-
-        // 点击事件
-        chart.on('click', (params: any) => {
-            if (params.dataType === 'node' && onNodeClick) {
-                const nodeName = params.name;
-                if (nodeName && nodeName.startsWith('repeat:')) {
-                    const repeatId = nodeName.split(':')[1];
-                    onNodeClick(repeatId);
-                }
-            }
-        });
-
-        // 鼠标悬停事件
-        if (onRepeatHover) {
-            chart.on('mouseover', (params: any) => {
-                if (params.dataType === 'node') {
-                    const nodeName = params.name;
-                    const link = data.links.find(
-                        (l) => l.source === nodeName || l.target === nodeName,
-                    );
-                    if (link?.repeatId) {
-                        onRepeatHover(link.repeatId);
-                    }
-                } else if (params.dataType === 'edge') {
-                    const sourceIdx = params.data.source;
-                    const targetIdx = params.data.target;
-                    const link = data.links.find((l) => {
-                        const sourceIndex = nodeMap.get(l.source);
-                        const targetIndex = nodeMap.get(l.target);
-                        return sourceIndex === sourceIdx && targetIndex === targetIdx;
-                    });
-                    if (link?.repeatId) {
-                        onRepeatHover(link.repeatId);
-                    }
-                }
-            });
-
-            chart.on('mouseout', (params: any) => {
-                if (params.dataType === 'node' || params.dataType === 'edge') {
-                    onRepeatHover(null);
-                }
-            });
-        }
 
         const handleResize = () => {
             chart.resize();
@@ -232,17 +160,89 @@ export const EChartsSankey: React.FC<SankeyChartProps> = ({
         return () => {
             window.removeEventListener('resize', handleResize);
             chart.dispose();
+            echartInstanceRef.current = null;
         };
-    }, [option, onNodeClick, onRepeatHover, data.links, nodeMap]);
+    }, []);
 
-    const autoHeight = height || Math.max(600, data.nodes.length * 80 + 200);
+    // 更新图表配置
+    useEffect(() => {
+        if (echartInstanceRef.current) {
+            echartInstanceRef.current.setOption(option);
+        }
+    }, [option]);
+
+    // 设置事件监听器
+    useEffect(() => {
+        const chart = echartInstanceRef.current;
+        if (!chart) return;
+
+        // 清除所有旧的事件监听器
+        chart.off('click');
+        chart.off('mouseover');
+        chart.off('mouseout');
+
+        // 点击事件
+        const handleClick = (params: any) => {
+            if (params.dataType === 'node' && onNodeClick) {
+                const nodeName = params.name;
+                if (nodeName && nodeName.startsWith('repeat:')) {
+                    onNodeClick(nodeName);
+                }
+            } else if (params.dataType === 'edge' && onLinkClick) {
+                // 点击连线 - params.data 包含 repeatId
+                if (params.data?.repeatId) {
+                    onLinkClick(params.data.repeatId);
+                }
+            }
+        };
+
+        // 鼠标悬停事件
+        const handleMouseOver = (params: any) => {
+            if (!onRepeatHover) return;
+
+            if (params.dataType === 'node') {
+                const nodeName = params.name;
+                const link = data.links.find(
+                    (l) => l.source === nodeName || l.target === nodeName,
+                );
+                if (link?.repeatId) {
+                    onRepeatHover(link.repeatId);
+                }
+            } else if (params.dataType === 'edge') {
+                // 悬停连线 - params.data 包含 repeatId
+                if (params.data?.repeatId) {
+                    onRepeatHover(params.data.repeatId);
+                }
+            }
+        };
+
+        // 鼠标离开事件
+        const handleMouseOut = (params: any) => {
+            if (onRepeatHover && (params.dataType === 'node' || params.dataType === 'edge')) {
+                onRepeatHover(null);
+            }
+        };
+
+        chart.on('click', handleClick);
+        chart.on('mouseover', handleMouseOver);
+        chart.on('mouseout', handleMouseOut);
+
+        return () => {
+            chart.off('click', handleClick);
+            chart.off('mouseover', handleMouseOver);
+            chart.off('mouseout', handleMouseOut);
+        };
+    }, [onNodeClick, onLinkClick, onRepeatHover, data.links]);
 
     return (
         <div
             ref={chartRef}
             style={{
                 width: typeof width === 'string' ? width : `${width}px`,
-                height: `${autoHeight}px`,
+                height: `${height}px`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
             }}
         />
     );

@@ -5,17 +5,17 @@ import { SankeyChartProps } from './types';
 import {
     calculateHighlightNodeSet,
     formatNodeLabel,
-    getNodeColors,
 } from './utils';
 
 export const D3Sankey: React.FC<SankeyChartProps> = ({
     data,
     width = '100%',
-    height,
+    height = 600,
     selectedRepeats = [],
     repeatNodeNames,
     hoveredRepeat,
     onNodeClick,
+    onLinkClick,
     onRepeatHover,
 }) => {
     const svgRef = useRef<SVGSVGElement | null>(null);
@@ -49,7 +49,6 @@ export const D3Sankey: React.FC<SankeyChartProps> = ({
 
         const containerWidth =
             typeof width === 'string' ? container.clientWidth : width;
-        const chartHeight = height || Math.max(600, data.nodes.length * 80 + 200);
         const margin = { top: 40, right: 150, bottom: 40, left: 150 };
 
         if (typeof width === 'string' && (!containerWidth || containerWidth <= 0)) {
@@ -57,17 +56,17 @@ export const D3Sankey: React.FC<SankeyChartProps> = ({
         }
 
         const chartWidth = containerWidth;
-        const chartHeightTotal = chartHeight;
+        const chartHeight = height;
 
         const svg = d3.select(svgRef.current);
         svg.selectAll('*').remove();
 
         const chartWidthInner = chartWidth - margin.left - margin.right;
-        const chartHeightInner = chartHeightTotal - margin.top - margin.bottom;
+        const chartHeightInner = chartHeight - margin.top - margin.bottom;
 
         const g = svg
             .attr('width', chartWidth)
-            .attr('height', chartHeightTotal)
+            .attr('height', chartHeight)
             .append('g')
             .attr('transform', `translate(${margin.left},${margin.top})`);
 
@@ -89,16 +88,34 @@ export const D3Sankey: React.FC<SankeyChartProps> = ({
                 return {
                     source: sourceIndex,
                     target: targetIndex,
-                    value: link.value * 0.25,
+                    value: link.value,
                     repeatId: link.repeatId,
-                    color: link.lineStyle?.color || '#94a3b8',
+                    color: link.color,
                 };
             })
             .filter((link): link is NonNullable<typeof link> => link !== null);
 
+        // Use D3 sankey with optimization settings to avoid crossings and maintain repeat continuity
         const sankeyGenerator = sankey()
-            .nodeWidth(4)
-            .nodePadding(80)
+            .nodeWidth(15)
+            .nodePadding(50) // Increased padding to reduce link overlap
+            .nodeSort(null) // Let D3 automatically optimize node positions
+            .linkSort((a: any, b: any) => {
+                // Primary sort: by repeatId to keep same-repeat links together
+                const repeatA = parseInt(a.repeatId || '999999', 10);
+                const repeatB = parseInt(b.repeatId || '999999', 10);
+                if (repeatA !== repeatB) {
+                    return repeatA - repeatB;
+                }
+
+                // Secondary sort: within same repeat, maintain source/target order
+                // This ensures links don't cross at nodes
+                if (a.source !== b.source) {
+                    return a.source - b.source;
+                }
+                return a.target - b.target;
+            })
+            .iterations(32) // More iterations for better layout optimization
             .extent([
                 [0, 0],
                 [chartHeightInner, chartWidthInner],
@@ -109,8 +126,15 @@ export const D3Sankey: React.FC<SankeyChartProps> = ({
             links: sankeyLinks.map((d) => ({ ...d })),
         });
 
-        const nodeColors = getNodeColors(data.nodes, highlightNodeSet);
+        // Preserve custom link properties (color, repeatId) after sankey processing
+        sankeyData.links.forEach((link: any, i: number) => {
+            if (sankeyLinks[i]) {
+                link.customColor = sankeyLinks[i].color;
+                link.customRepeatId = sankeyLinks[i].repeatId;
+            }
+        });
 
+        // Draw nodes
         g.append('g')
             .selectAll('rect')
             .data(sankeyData.nodes)
@@ -120,18 +144,13 @@ export const D3Sankey: React.FC<SankeyChartProps> = ({
             .attr('height', (d: any) => d.x1 - d.x0)
             .attr('width', (d: any) => d.y1 - d.y0)
             .attr('fill', (_d: any, i: number) => {
-                const nodeName = data.nodes[i]?.name;
-                if (!nodeName) return '#3b82f6';
-                const color = nodeColors[i] || '#3b82f6';
-                const isHighlighted = highlightNodeSet && highlightNodeSet.has(nodeName);
+                const node = data.nodes[i];
+                if (!node) return '#3b82f6';
+                const isHighlighted = highlightNodeSet && highlightNodeSet.has(node.name);
                 const opacity = isHighlighted ? 1 : highlightNodeSet ? 0.3 : 1;
 
-                if (color.startsWith('rgba')) {
-                    return color.replace(
-                        /rgba\(([\d\s,]+),\s*[\d.]+\)/,
-                        `rgba($1, ${opacity})`,
-                    );
-                } else if (color.startsWith('#')) {
+                const color = node.color;
+                if (color.startsWith('#')) {
                     const r = parseInt(color.slice(1, 3), 16);
                     const g = parseInt(color.slice(3, 5), 16);
                     const b = parseInt(color.slice(5, 7), 16);
@@ -139,15 +158,14 @@ export const D3Sankey: React.FC<SankeyChartProps> = ({
                 }
                 return color;
             })
-            .attr('stroke', 'transparent')
-            .attr('stroke-width', 0)
             .style('cursor', 'pointer')
+            .attr('stroke', '#fff')
+            .attr('stroke-width', 2)
             .on('click', function (_event: any, d: any) {
                 const nodeIndex = (d as any).index;
                 const nodeName = data.nodes[nodeIndex]?.name;
                 if (onNodeClick && nodeName && nodeName.startsWith('repeat:')) {
-                    const repeatId = nodeName.split(':')[1];
-                    onNodeClick(repeatId);
+                    onNodeClick(nodeName);
                 }
             })
             .on('mouseover', function (_event: any, d: any) {
@@ -168,58 +186,50 @@ export const D3Sankey: React.FC<SankeyChartProps> = ({
                 }
             });
 
-        const sankeyLinkVertical = () => {
-            return (d: any) => {
-                const sourceX = d.source.y0 + (d.source.y1 - d.source.y0) / 2;
-                const sourceY = d.source.x1;
-                const targetX = d.target.y0 + (d.target.y1 - d.target.y0) / 2;
-                const targetY = d.target.x0;
+        // Custom vertical link path generator with swapped coordinates
+        // Since we swap x/y for vertical layout, we need a custom path generator
+        const customVerticalLink = (d: any) => {
+            // In our swapped coordinate system:
+            // - d.y0/y1 represents horizontal position (what we render as x)
+            // - d.x0/x1 represents vertical position (what we render as y)
+            // - d.source/target have x0/x1/y0/y1 in the same swapped system
 
-                const curvature = 0.5;
-                const dy = targetY - sourceY;
-                const controlY1 = sourceY + dy * curvature;
-                const controlY2 = targetY - dy * curvature;
+            const sourceX = d.y0;           // Horizontal position at source node
+            const sourceY = d.source.x1;    // Bottom of source node (vertical position)
+            const targetX = d.y1;           // Horizontal position at target node
+            const targetY = d.target.x0;    // Top of target node (vertical position)
 
-                return `M${sourceX},${sourceY}C${sourceX},${controlY1} ${targetX},${controlY2} ${targetX},${targetY}`;
-            };
+            // Create vertical bezier curve
+            const curvature = 0.5;
+            const dy = targetY - sourceY;
+            const controlY1 = sourceY + dy * curvature;
+            const controlY2 = targetY - dy * curvature;
+
+            return `M${sourceX},${sourceY}C${sourceX},${controlY1} ${targetX},${controlY2} ${targetX},${targetY}`;
         };
 
+        // Draw links with vertical layout using custom link generator
         g.append('g')
             .attr('fill', 'none')
             .selectAll('path')
             .data(sankeyData.links)
             .join('path')
-            .attr('d', sankeyLinkVertical() as any)
-            .attr('stroke', (d: any) => {
-                const linkIndex = sankeyLinks.findIndex(
-                    (l) => l.source === d.source.index && l.target === d.target.index,
-                );
-                return linkIndex >= 0 ? sankeyLinks[linkIndex].color : '#94a3b8';
-            })
-            .attr('stroke-width', (d: any) => Math.max(0.5, d.width || 0.5))
+            .attr('d', customVerticalLink)
+            .attr('stroke', (d: any) => d.customColor || '#94a3b8')
+            .attr('stroke-width', (d: any) => Math.max(1, d.width)) // Reduce link width to prevent overlap
             .attr('opacity', (d: any) => {
-                const linkIndex = sankeyLinks.findIndex(
-                    (l) => l.source === d.source.index && l.target === d.target.index,
-                );
-                if (linkIndex < 0) return 0.5;
-                const linkData = sankeyLinks[linkIndex];
-                if (!effectiveRepeats.length) return 0.5;
-                return linkData.repeatId && effectiveRepeats.includes(linkData.repeatId)
-                    ? 0.8
-                    : 0.2;
+                if (!effectiveRepeats.length) return 0.4;
+                return d.customRepeatId && effectiveRepeats.includes(d.customRepeatId) ? 0.6 : 0.15;
             })
             .style('cursor', 'pointer')
+            .on('click', function (_event: any, d: any) {
+                if (onLinkClick && d.customRepeatId) {
+                    onLinkClick(d.customRepeatId);
+                }
+            })
             .on('mouseover', function (_event: any, d: any) {
-                if (onRepeatHover) {
-                    const linkIndex = sankeyLinks.findIndex(
-                        (l) => l.source === d.source.index && l.target === d.target.index,
-                    );
-                    if (linkIndex >= 0) {
-                        const linkData = sankeyLinks[linkIndex];
-                        if (linkData.repeatId) {
-                            onRepeatHover(linkData.repeatId);
-                        }
-                    }
+                if (onRepeatHover && d.customRepeatId) {
+                    onRepeatHover(d.customRepeatId);
                 }
             })
             .on('mouseout', function () {
@@ -228,26 +238,19 @@ export const D3Sankey: React.FC<SankeyChartProps> = ({
                 }
             });
 
+        // Draw labels
         g.append('g')
             .selectAll('text')
             .data(sankeyData.nodes)
             .join('text')
             .attr('x', (d: any) => (d.y1 + d.y0) / 2)
             .attr('y', (d: any) => d.x0 - 5)
-            .attr('dy', '0')
             .attr('text-anchor', 'middle')
             .attr('font-size', '12px')
-            .attr('font-family', 'system-ui, -apple-system, sans-serif')
-            .attr('font-weight', 'normal')
             .attr('fill', '#ffffff')
             .text((_d: any, i: number) => {
                 const nodeName = data.nodes[i]?.name;
-                if (!nodeName) return '';
-                const label = formatNodeLabel(nodeName);
-                const MAX_LABEL_LENGTH = 15;
-                return label.length > MAX_LABEL_LENGTH
-                    ? label.substring(0, MAX_LABEL_LENGTH) + '...'
-                    : label;
+                return nodeName ? formatNodeLabel(nodeName) : '';
             })
             .style('pointer-events', 'none');
     }, [
@@ -257,19 +260,18 @@ export const D3Sankey: React.FC<SankeyChartProps> = ({
         width,
         height,
         onNodeClick,
+        onLinkClick,
         onRepeatHover,
     ]);
 
     if (!data || !data.nodes || !data.links) return null;
-
-    const autoHeight = height || Math.max(600, data.nodes.length * 80 + 200);
 
     return (
         <div
             ref={containerRef}
             style={{
                 width: typeof width === 'string' ? width : `${width}px`,
-                height: `${autoHeight}px`,
+                height: `${height}px`,
                 position: 'relative',
             }}
         >

@@ -1,6 +1,6 @@
-import D3SankeyChart, { SankeyNodeData, SankeyLinkData } from './sankey-implementations/D3SankeyChart';
 import { SankeyChartFactory, ChartLibrary } from './sankey-implementations';
 import { SankeyNode, SankeyLink } from './sankey-implementations/types';
+import { buildRepeatNodeNames } from './sankey-implementations/utils';
 import {
     Select,
     SelectContent,
@@ -66,8 +66,8 @@ const buildSankeyData = (
     selectedMetric: string | null,
     metricMeta?: MetricMeta,
 ) => {
-    const nodeMap = new Map<string, SankeyNodeData>();
-    const links: SankeyLinkData[] = [];
+    const nodeMap = new Map<string, SankeyNode>();
+    const links: SankeyLink[] = [];
     const layerLabels: LayerLabel[] = [];
 
     const repeats = Object.entries(task.repeats);
@@ -101,8 +101,7 @@ const buildSankeyData = (
         const nodeId = `repeat:${id}`;
         const color = repeatColors.get(id) || REPEAT_COLORS[0];
         nodeMap.set(nodeId, {
-            id: nodeId,
-            label: `Repeat ${id}`,
+            name: nodeId,
             color,
             layer: 0,
         });
@@ -114,8 +113,7 @@ const buildSankeyData = (
             const nodeId = `step${step}:${n}`;
             const color = toolColors.get(n) || TOOL_COLORS[0];
             nodeMap.set(nodeId, {
-                id: nodeId,
-                label: n,
+                name: nodeId,
                 color,
                 layer: step + 1,
             });
@@ -192,8 +190,7 @@ const buildSankeyData = (
         const nodeId = `metric:${result}`;
         const color = metricColors.get(result) || '#8c8c8c';
         nodeMap.set(nodeId, {
-            id: nodeId,
-            label: result,
+            name: nodeId,
             color,
             layer: metricLayer,
         });
@@ -205,12 +202,6 @@ const buildSankeyData = (
         layerLabels.push({ label: `Step ${i}`, layer: i + 1 });
     }
     layerLabels.push({ label: selectedMetric || 'Metrics', layer: metricLayer });
-
-    // Build repeatNodeNames map for highlighting
-    const repeatNodeNames = new Map<string, Set<string>>();
-    repeats.forEach(([repeatId]) => {
-        repeatNodeNames.set(repeatId, new Set());
-    });
 
     // Build links
     repeats.forEach(([repeatId, data]) => {
@@ -230,9 +221,6 @@ const buildSankeyData = (
         const repeatNode = `repeat:${repeatId}`;
 
         // Track all nodes associated with this repeat
-        const repeatNodes = repeatNodeNames.get(repeatId)!;
-        repeatNodes.add(repeatNode);
-        repeatNodes.add(metricNode);
 
         if (tools.length === 0) {
             links.push({
@@ -244,8 +232,6 @@ const buildSankeyData = (
             });
         } else {
             // First link: repeat -> first tool
-            const firstToolNode = `step0:${tools[0].name}`;
-            repeatNodes.add(firstToolNode);
             links.push({
                 source: repeatNode,
                 target: `step0:${tools[0].name}`,
@@ -258,44 +244,39 @@ const buildSankeyData = (
             for (let i = 0; i < tools.length - 1; i++) {
                 const sourceNode = `step${i}:${tools[i].name}`;
                 const targetNode = `step${i + 1}:${tools[i + 1].name}`;
-                repeatNodes.add(sourceNode);
-                repeatNodes.add(targetNode);
-                const sourceColor = toolColors.get(tools[i].name) || TOOL_COLORS[0];
                 links.push({
                     source: sourceNode,
                     target: targetNode,
                     value: 1,
                     repeatId,
-                    color: sourceColor,
+                    color: repeatColor,
                 });
             }
 
             // Last link: last tool -> metric
             const lastToolNode = `step${tools.length - 1}:${tools[tools.length - 1].name}`;
-            repeatNodes.add(lastToolNode);
-            const lastToolColor = toolColors.get(tools[tools.length - 1].name) || TOOL_COLORS[0];
             links.push({
                 source: lastToolNode,
                 target: metricNode,
                 value: 1,
                 repeatId,
-                color: lastToolColor,
+                color: repeatColor,
             });
         }
     });
 
-    // Convert nodeMap to array and sort by layer, then by id for consistent ordering
+    // Convert nodeMap to array and sort by layer, then by name for consistent ordering
     const nodes = Array.from(nodeMap.values()).sort((a, b) => {
         if ((a.layer ?? 0) !== (b.layer ?? 0)) {
             return (a.layer ?? 0) - (b.layer ?? 0);
         }
         // Within same layer, sort by repeat ID if applicable
-        if (a.id.startsWith('repeat:') && b.id.startsWith('repeat:')) {
-            const aId = parseInt(a.id.split(':')[1], 10);
-            const bId = parseInt(b.id.split(':')[1], 10);
+        if (a.name.startsWith('repeat:') && b.name.startsWith('repeat:')) {
+            const aId = parseInt(a.name.split(':')[1], 10);
+            const bId = parseInt(b.name.split(':')[1], 10);
             return aId - bId;
         }
-        return a.id.localeCompare(b.id);
+        return a.name.localeCompare(b.name);
     });
 
     return {
@@ -304,34 +285,6 @@ const buildSankeyData = (
         maxSteps,
         layerLabels,
         repeatIds: repeats.map(([id]) => id),
-        repeatNodeNames,
-    };
-};
-
-/**
- * 转换 D3SankeyChart 的数据格式到其他图表库的格式
- */
-const convertToCommonFormat = (
-    nodes: SankeyNodeData[],
-    links: SankeyLinkData[],
-): { nodes: SankeyNode[]; links: SankeyLink[] } => {
-    return {
-        nodes: nodes.map((node) => ({
-            name: node.id,
-            itemStyle: {
-                color: node.color,
-            },
-        })),
-        links: links.map((link) => ({
-            source: link.source,
-            target: link.target,
-            value: link.value,
-            repeatId: link.repeatId,
-            lineStyle: {
-                color: link.color,
-                opacity: 0.5,
-            },
-        })),
     };
 };
 
@@ -352,8 +305,17 @@ const ChartPage: React.FC = () => {
     // Selected repeats state for highlighting
     const [selectedRepeats, setSelectedRepeats] = useState<Set<string>>(new Set());
 
+    // Hovered repeat state
+    const [hoveredRepeat, setHoveredRepeat] = useState<string | null>(null);
+
     // Selected chart library
     const [chartLibrary, setChartLibrary] = useState<ChartLibrary>('d3sankey');
+
+    // Layer spacing parameter (only affects D3Advanced)
+    const [layerSpacing, setLayerSpacing] = useState<number>(80);
+
+    // Link width parameter (only affects D3Advanced)
+    const [linkWidth, setLinkWidth] = useState<number>(10);
 
     // Initialize selected metric when available metrics change
     useEffect(() => {
@@ -367,18 +329,17 @@ const ChartPage: React.FC = () => {
         return availableMetrics.find((m) => m.name === selectedMetric);
     }, [availableMetrics, selectedMetric]);
 
-    const { nodes, links, maxSteps, layerLabels, repeatIds, repeatNodeNames } = useMemo(
+    const { nodes, links, maxSteps, layerLabels, repeatIds } = useMemo(
         () => buildSankeyData(task, selectedMetric, selectedMetricMeta),
         [task, selectedMetric, selectedMetricMeta],
     );
 
-    // 转换数据格式以适配其他图表库
-    const commonFormatData = useMemo(
-        () => convertToCommonFormat(nodes, links),
-        [nodes, links],
-    );
+    const sankeyData = useMemo(() => ({ nodes, links }), [nodes, links]);
 
-    const chartHeight = Math.max(400, (maxSteps + 3) * 80);
+    // Build repeatNodeNames map
+    const repeatNodeNames = useMemo(() => buildRepeatNodeNames(links), [links]);
+
+    const chartHeight = Math.max(400, (maxSteps + 3) * layerSpacing);
 
     // Observe container size
     useEffect(() => {
@@ -411,34 +372,27 @@ const ChartPage: React.FC = () => {
     }, []);
 
     // Handle node click
-    const handleNodeClick = useCallback((nodeOrName: SankeyNodeData | string) => {
-        // 兼容两种参数类型
-        let repeatId: string | undefined;
-
-        if (typeof nodeOrName === 'string') {
-            // 来自其他图表库，是字符串
-            if (nodeOrName.startsWith('repeat:')) {
-                repeatId = nodeOrName.split(':')[1];
-            }
-        } else {
-            // 来自 D3SankeyChart，是对象
-            if (nodeOrName.id && nodeOrName.id.startsWith('repeat:')) {
-                repeatId = nodeOrName.id.split(':')[1];
-            }
-        }
-
-        if (repeatId) {
+    const handleNodeClick = useCallback((nodeName: string) => {
+        // 从节点名称提取 repeatId
+        if (nodeName.startsWith('repeat:')) {
+            const repeatId = nodeName.split(':')[1];
             handleRepeatToggle(repeatId);
         }
     }, [handleRepeatToggle]);
 
     // Handle link click
-    const handleLinkClick = useCallback((link: SankeyLinkData) => {
-        // If clicking a link, highlight its repeat
-        if (link.repeatId) {
-            handleRepeatToggle(link.repeatId);
-        }
-    }, [handleRepeatToggle]);
+    const handleLinkClick = useCallback(
+        (repeatId: string) => {
+            // If clicking a link, toggle its repeat
+            handleRepeatToggle(repeatId);
+        },
+        [handleRepeatToggle],
+    );
+
+    // Handle repeat hover
+    const handleRepeatHover = useCallback((repeatId: string | null) => {
+        setHoveredRepeat(repeatId);
+    }, []);
 
     if (nodes.length === 0) {
         return (
@@ -463,6 +417,44 @@ const ChartPage: React.FC = () => {
                         {t('common.trajectory')} Workflow
                     </h3>
                     <div className="flex gap-3">
+                        {/* Layer Spacing Control */}
+                        <div className="flex items-center gap-2">
+                            <label className="text-xs text-muted-foreground whitespace-nowrap">
+                                Layer:
+                            </label>
+                            <input
+                                type="range"
+                                min="40"
+                                max="150"
+                                step="10"
+                                value={layerSpacing}
+                                onChange={(e) => setLayerSpacing(Number(e.target.value))}
+                                className="w-20"
+                                title="Vertical spacing between nodes"
+                            />
+                            <span className="text-xs text-muted-foreground w-8">
+                                {layerSpacing}
+                            </span>
+                        </div>
+                        {/* Link Width Control */}
+                        <div className="flex items-center gap-2">
+                            <label className="text-xs text-muted-foreground whitespace-nowrap">
+                                Link:
+                            </label>
+                            <input
+                                type="range"
+                                min="2"
+                                max="30"
+                                step="2"
+                                value={linkWidth}
+                                onChange={(e) => setLinkWidth(Number(e.target.value))}
+                                className="w-20"
+                                title="Link width"
+                            />
+                            <span className="text-xs text-muted-foreground w-8">
+                                {linkWidth}
+                            </span>
+                        </div>
                         {/* Chart Library Selector */}
                         <Select
                             value={chartLibrary}
@@ -474,9 +466,9 @@ const ChartPage: React.FC = () => {
                             <SelectContent>
                                 <SelectItem value="d3sankey">D3 Sankey (Advanced)</SelectItem>
                                 <SelectItem value="echarts">ECharts</SelectItem>
+                                <SelectItem value="reactecharts">ReactECharts</SelectItem>
                                 <SelectItem value="plotly">Plotly</SelectItem>
                                 <SelectItem value="d3">D3 Simple</SelectItem>
-                                <SelectItem value="google">Google Charts</SelectItem>
                             </SelectContent>
                         </Select>
                         {/* Metric Selector */}
@@ -555,29 +547,20 @@ const ChartPage: React.FC = () => {
                     </div>
                     {/* Chart rendering based on selected library */}
                     <div className="flex-1">
-                        {chartLibrary === 'd3sankey' ? (
-                            <D3SankeyChart
-                                nodes={nodes}
-                                links={links}
-                                width={dimensions.width - 64}
-                                height={chartHeight}
-                                nodeWidth={20}
-                                nodePadding={15}
-                                linkWidth={10}
-                                selectedRepeats={Array.from(selectedRepeats)}
-                                onNodeClick={handleNodeClick}
-                                onLinkClick={handleLinkClick}
-                            />
-                        ) : (
-                            <SankeyChartFactory
-                                library={chartLibrary}
-                                data={commonFormatData}
-                                width={dimensions.width - 64}
-                                selectedRepeats={Array.from(selectedRepeats)}
-                                repeatNodeNames={repeatNodeNames}
-                                onNodeClick={handleNodeClick}
-                            />
-                        )}
+                        <SankeyChartFactory
+                            library={chartLibrary}
+                            data={sankeyData}
+                            width={dimensions.width - 64}
+                            height={chartHeight}
+                            selectedRepeats={Array.from(selectedRepeats)}
+                            repeatNodeNames={repeatNodeNames}
+                            hoveredRepeat={hoveredRepeat}
+                            onNodeClick={handleNodeClick}
+                            onLinkClick={handleLinkClick}
+                            onRepeatHover={handleRepeatHover}
+                            layerSpacing={layerSpacing}
+                            linkWidth={linkWidth}
+                        />
                     </div>
                 </div>
             </div>
