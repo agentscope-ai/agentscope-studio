@@ -1,10 +1,16 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, {
+    createContext,
+    useContext,
+    useState,
+    ReactNode,
+    useEffect,
+} from 'react';
 import i18n from 'i18next';
 
 type Language = 'en' | 'zh';
 interface I18nContextType {
-  currentLanguage: Language;
-  setCurrentLanguage: (lang: Language) => void;
+    currentLanguage: Language;
+    setCurrentLanguage: (lang: Language) => void;
 }
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
 export const I18nProvider: React.FC<{ children: ReactNode }> = ({
@@ -21,9 +27,7 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({
     }, [currentLanguage]);
 
     return (
-        <I18nContext.Provider
-            value={{ currentLanguage, setCurrentLanguage }}
-        >
+        <I18nContext.Provider value={{ currentLanguage, setCurrentLanguage }}>
             {children}
         </I18nContext.Provider>
     );

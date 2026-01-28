@@ -292,7 +292,10 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                                                     item.value,
                                                                 )
                                                             }
-                                                            isActive={activeKey === item.value}
+                                                            isActive={
+                                                                activeKey ===
+                                                                item.value
+                                                            }
                                                         >
                                                             <Icon className="mr-2 size-4" />
                                                             <span>
