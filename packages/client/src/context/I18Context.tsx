@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import i18n from 'i18next';
 
 const I18nContext = createContext({
@@ -9,20 +9,26 @@ const I18nContext = createContext({
 export const I18nProvider: React.FC<{ children: ReactNode }> = ({
     children,
 }) => {
-    const [english, setEnglish] = useState<boolean>(true);
+    const [currentLanguage, setCurrentLanguage] = useState<string>(() => {
+        const savedLanguage = localStorage.getItem('language');
+        return savedLanguage || 'en';
+    });
+
+    useEffect(() => {
+        i18n.changeLanguage(currentLanguage).then();
+        localStorage.setItem('language', currentLanguage);
+    }, [currentLanguage]);
 
     const changeLanguage = () => {
-        if (english) {
-            i18n.changeLanguage('zh').then();
-        } else {
-            i18n.changeLanguage('en').then();
-        }
-        setEnglish(!english);
+        const newLanguage = currentLanguage === 'en' ? 'zh' : 'en';
+        i18n.changeLanguage(newLanguage).then();
+        setCurrentLanguage(newLanguage);
+        localStorage.setItem('language', newLanguage);
     };
 
     return (
         <I18nContext.Provider
-            value={{ changeLanguage, currentLanguage: english ? 'en' : 'zh' }}
+            value={{ changeLanguage, currentLanguage }}
         >
             {children}
         </I18nContext.Provider>
