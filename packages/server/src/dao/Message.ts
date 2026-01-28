@@ -13,6 +13,10 @@ export class MessageDao {
             if (message) {
                 // Cover the old one
                 message.msg = data.msg;
+                // Update speech if provided (cumulative audio data)
+                if (data.speech) {
+                    message.speech = data.speech;
+                }
                 await message.save();
             } else {
                 // Create a new one

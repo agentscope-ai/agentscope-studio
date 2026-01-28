@@ -18,7 +18,20 @@ import { EmptyRunPage, ProjectNotFoundPage } from '../../DefaultPage';
 const RunContentPage = () => {
     const [displayedReply, setDisplayedReply] = useState<Reply | null>(null);
     const [activateTab, setActiveTab] = useState<string>('statistics');
-    const { replies, sendUserInputToServer, inputRequests } = useRunRoom();
+    const {
+        replies,
+        sendUserInputToServer,
+        inputRequests,
+        speechStates,
+        playSpeech,
+        stopSpeech,
+        setPlaybackRate,
+        setVolume,
+        globalPlaybackRate,
+        globalVolume,
+        setAutoPlayNext,
+        autoPlayNext,
+    } = useRunRoom();
     const [currentInputRequest, setCurrentInputRequest] =
         useState<InputRequestData | null>(null);
     const { t } = useTranslation();
@@ -129,6 +142,15 @@ const RunContentPage = () => {
                         onError={async (error) => {
                             messageApi.error(error);
                         }}
+                        speechStates={speechStates}
+                        playSpeech={playSpeech}
+                        stopSpeech={stopSpeech}
+                        setPlaybackRate={setPlaybackRate}
+                        setVolume={setVolume}
+                        globalPlaybackRate={globalPlaybackRate}
+                        globalVolume={globalVolume}
+                        autoPlayNext={autoPlayNext}
+                        setAutoPlayNext={setAutoPlayNext}
                     />
                 </Splitter.Panel>
                 <Splitter.Panel

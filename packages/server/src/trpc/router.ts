@@ -1,8 +1,9 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import {
-    BlockType,
+    AudioBlock,
     ContentBlocks,
+    BlockType,
     GetTraceParamsSchema,
     GetTraceStatisticParamsSchema,
     InputRequestData,
@@ -219,6 +220,11 @@ export const appRouter = t.router({
                 // The name and role here are deprecated, use replyName and replyRole instead
                 name: z.string().optional().nullable(),
                 role: z.string().optional().nullable(),
+                // Speech audio data for real-time playback
+                speech: z
+                    .union([audioBlock, z.array(audioBlock)])
+                    .optional()
+                    .nullable(),
             }),
         )
         .mutation(async ({ input }) => {
@@ -246,6 +252,14 @@ export const appRouter = t.router({
                 } as RegisterReplyParams);
             }
 
+            // Normalize speech to array if provided
+            let speechArray: AudioBlock[] | null = null;
+            if (input.speech) {
+                speechArray = Array.isArray(input.speech)
+                    ? (input.speech as AudioBlock[])
+                    : [input.speech as AudioBlock];
+            }
+
             // Save the message to the database
             const msgFormData = {
                 id: input.msg.id,
@@ -258,6 +272,7 @@ export const appRouter = t.router({
                     metadata: input.msg.metadata,
                     timestamp: input.msg.timestamp,
                 },
+                speech: speechArray,
             } as MessageForm;
 
             // Save the message
@@ -286,6 +301,17 @@ export const appRouter = t.router({
                     console.error(error);
                     throw error;
                 });
+
+            // Broadcast speech data if provided (for real-time audio playback)
+            if (input.speech !== null && input.speech !== undefined) {
+                // Type assertion needed because Zod infers literal strings
+                // while AudioBlock uses SourceType enum
+                SocketManager.broadcastSpeechToRunRoom(
+                    input.runId,
+                    replyId,
+                    input.speech as AudioBlock | AudioBlock[],
+                );
+            }
         }),
 
     pushMessageToFridayApp: t.procedure
