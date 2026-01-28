@@ -44,7 +44,7 @@ interface SettingsProps {
 
 const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
     const { t } = useTranslation();
-    const { changeLanguage, currentLanguage } = useI18n();
+    const { setCurrentLanguage, currentLanguage } = useI18n();
     const { messageApi } = useMessageApi();
     const {
         clearDataDialogOpen,
@@ -55,13 +55,9 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
         setClearDataDialogOpen,
         setLatestVersion,
     } = useStudioSidebar();
-    const [selectedLanguage, setSelectedLanguage] = useState(currentLanguage);
     const [copyedPath, setCopyedPath] = useState('');
     const [activeTab, setActiveTab] = useState(settingsMenuItems[0].value);
     // Update selected language when current language changes
-    useEffect(() => {
-        setSelectedLanguage(currentLanguage);
-    }, [currentLanguage]);
 
     // Fetch latest version when dialog opens and there's an update
     useEffect(() => {
@@ -74,10 +70,6 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
         }
         setCopyedPath('');
     }, [open, hasUpdate]);
-
-    const handleLanguageChange = () => {
-        changeLanguage();
-    };
 
     const handleClearData = () => {
         setClearDataDialogOpen(true);
@@ -150,13 +142,8 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                 {t('settings.language-settings')}
                             </span>
                             <Select
-                                value={selectedLanguage}
-                                onValueChange={(value) => {
-                                    if (value && value !== currentLanguage) {
-                                        setSelectedLanguage(value);
-                                        handleLanguageChange();
-                                    }
-                                }}
+                                value={currentLanguage}
+                                onValueChange={setCurrentLanguage}
                             >
                                 <SelectTrigger className="w-[120px] h-8 text-xs">
                                     <SelectValue placeholder="Select language" />
