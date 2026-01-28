@@ -56,7 +56,7 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
         setLatestVersion,
     } = useStudioSidebar();
     const [copyedPath, setCopyedPath] = useState('');
-    const [activeTab, setActiveTab] = useState(settingsMenuItems[0].value);
+    const [activeKey, setActiveKey] = useState(settingsMenuItems[0].value);
     // Update selected language when current language changes
 
     // Fetch latest version when dialog opens and there's an update
@@ -112,9 +112,9 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
         );
     };
 
-    const renderActiveTabContent = () => {
+    const renderActiveContent = () => {
         const activeItem = settingsMenuItems.find(
-            (item) => item.value === activeTab,
+            (item) => item.value === activeKey,
         );
         if (!activeItem) return null;
 
@@ -135,7 +135,7 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                         {t(activeItem.descriptionKey)}
                     </div>
                 </div>
-                {activeTab === 'language' && (
+                {activeKey === 'language' && (
                     <div className="flex flex-col bg-muted/50 rounded-lg p-4">
                         <div className="flex justify-between items-center text-sm">
                             <span className="text-muted-foreground">
@@ -160,7 +160,7 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                         </div>
                     </div>
                 )}
-                {activeTab === 'data' && (
+                {activeKey === 'data' && (
                     <div className="flex flex-col gap-4">
                         <div className="flex flex-col bg-muted/50 rounded-lg p-4">
                             <div className="flex justify-between items-center text-sm mb-2">
@@ -208,7 +208,7 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                     </div>
                 )}
 
-                {activeTab === 'version' && (
+                {activeKey === 'version' && (
                     <div className="flex flex-col gap-4">
                         <div className="flex flex-col bg-muted/50 rounded-lg p-4">
                             <div className="flex justify-between items-center text-sm">
@@ -288,11 +288,11 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                                         <SidebarMenuButton
                                                             className="px-3"
                                                             onClick={() =>
-                                                                setActiveTab(
+                                                                setActiveKey(
                                                                     item.value,
                                                                 )
                                                             }
-                                                            isActive={activeTab === item.value}
+                                                            isActive={activeKey === item.value}
                                                         >
                                                             <Icon className="mr-2 size-4" />
                                                             <span>
@@ -320,7 +320,7 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
 
                         {/* right content */}
                         <div className="flex-1 overflow-y-auto p-4">
-                            {renderActiveTabContent()}
+                            {renderActiveContent()}
                         </div>
                     </div>
                 </DialogContent>
