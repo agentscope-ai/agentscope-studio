@@ -46,13 +46,14 @@ export const EChartsSankey: React.FC<SankeyChartProps> = ({
             return {};
         }
 
-        // Prepare nodes with styles
+        // Prepare nodes with styles and depth (layer) for alignment
         const nodes = data.nodes.map((node) => {
             const isHighlighted = highlightNodeSet && highlightNodeSet.has(node.name);
             const opacity = isHighlighted ? 1 : highlightNodeSet ? 0.3 : 1;
 
             return {
                 name: node.name,
+                depth: node.layer ?? 0,  // Force layer alignment by depth
                 itemStyle: {
                     color: node.color,
                     opacity: opacity,
@@ -61,13 +62,12 @@ export const EChartsSankey: React.FC<SankeyChartProps> = ({
                 },
                 label: {
                     show: true,
-                    position: 'center',  // Display label above node
-                    // formatter: formatNodeLabel(node.name),
+                    position: 'top',  // Display label above node
+                    formatter: formatNodeLabel(node.name),
                     color: '#ffffff',
                     fontSize: 12,
                     fontWeight: 500,
                     distance: 0,  // Distance from node
-                    overflow: 'truncate'
                 },
             };
         });
@@ -121,7 +121,7 @@ export const EChartsSankey: React.FC<SankeyChartProps> = ({
                     links: links,
                     nodeGap: 40, // Fixed horizontal spacing between nodes in same layer
                     nodeWidth: 15,
-                    layoutIterations: 32, // Limited iterations: preserves first layer order while allowing some optimization
+                    layoutIterations: 0, // Disable iterations to strictly follow depth-based layer alignment
                     nodeAlign: 'left', // Align nodes to left for vertical layout
                     lineStyle: {
                         color: 'gradient',
@@ -129,11 +129,11 @@ export const EChartsSankey: React.FC<SankeyChartProps> = ({
                     },
                     label: {
                         show: true,
-                        position: 'left',  // Display labels above nodes
+                        position: 'top',  // Display labels above nodes
                         color: '#ffffff',
-                        fontSize: 8,
+                        fontSize: 12,
                         fontWeight: 500,
-                        distance: 5,  // Distance from node
+                        distance: 0,  // Distance from node
                     },
                     left: 150,
                     right: 150,
