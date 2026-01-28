@@ -150,21 +150,20 @@ const StudioSidebar = () => {
             {/* Footer with version information */}
             <SidebarFooter>
                 <SidebarMenuItem className="list-none">
-                    <div className="relative inline-flex">
-                        <SidebarMenuButton
-                            tooltip={t('common.settings')}
-                            onClick={() => setSettingsDialogOpen(true)}
-                        >
-                            <SettingsIcon />
-                            <span>{t('common.settings')}</span>
-                        </SidebarMenuButton>
+                    <SidebarMenuButton
+                        className="relative"
+                        tooltip={t('common.settings')}
+                        onClick={() => setSettingsDialogOpen(true)}
+                    >
+                        <SettingsIcon />
+                        <span>{t('common.settings')}</span>
                         {hasUpdate && (
                             <Badge
                                 variant="destructive"
-                                className="absolute top-1.5 -right-1 h-1.5 w-1.5 p-0 z-10"
+                                className="absolute top-1.5 right-0 h-1.5 w-1.5 p-0"
                             />
                         )}
-                    </div>
+                    </SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarFooter>
 

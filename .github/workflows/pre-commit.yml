@@ -1,0 +1,54 @@
+name: Pre-commit Checks
+
+on: [push, pull_request]
+
+jobs:
+    format-check:
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: true
+            matrix:
+                os: [ubuntu-latest]
+        env:
+            OS: ${{ matrix.os }}
+            NODE_VERSION: '20'
+        steps:
+            - uses: actions/checkout@master
+
+            - name: Setup Node.js
+              uses: actions/setup-node@master
+              with:
+                  node-version: '20'
+
+            - name: Install dependencies
+              run: |
+                  npm ci
+
+            - name: Run code formatting
+              run: |
+                  echo "🔍 Running code formatter..."
+                  npm run format > format.log 2>&1 || true
+                  cat format.log
+                  if ! npm run format; then
+                    echo ""
+                    echo "::error::❌ Code formatting check failed!"
+                    echo "::error::Please run 'npm run format' locally to fix formatting issues."
+                    exit 1
+                  fi
+                  echo "✅ Code formatting check passed"
+
+            - name: Verify no formatting changes
+              run: |
+                  if [[ -n $(git status --porcelain) ]]; then
+                    echo ""
+                    echo "::error::❌ Code formatting produced uncommitted changes!"
+                    echo "::error::The formatter modified some files. Please review and commit the changes."
+                    echo ""
+                    echo "📋 Modified files:"
+                    git status --short
+                    echo ""
+                    echo "📝 Changes:"
+                    git diff
+                    exit 1
+                  fi
+                  echo "✅ All checks passed! No formatting changes detected."
