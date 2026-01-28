@@ -11,7 +11,9 @@
         "import": "导入评测",
         "ok": "确认",
         "search": "搜索",
+        "select-folder": "选择文件夹",
         "update-now": "立即更新",
+        "uploading": "上传中...",
         "updating": "更新中...",
         "view-update": "查看更新"
     },
@@ -172,10 +174,15 @@
     },
     "hint": {
         "empty-trace": "数据为空",
+        "file-count": "文件数量",
+        "folder-must-contain-meta": "文件夹必须包含 evaluation_meta.json 文件",
         "messages": "AgentScope 一次回复（reply）可能包含多个消息，每条消息有对应的 role 和 name 字段",
         "select-run": "点击运行实例以查看详细数据",
         "select-message": "点击消息以查看详细数据",
-        "select-trace": "点击运行实例以查看跟踪数据"
+        "select-trace": "点击运行实例以查看跟踪数据",
+        "selected-folder": "已选择文件夹",
+        "upload-evaluation-folder": "上传评测文件夹",
+        "upload-folder-description": "选择包含评测数据的文件夹，需包含 evaluation_meta.json 文件"
     },
     "home": {
         "as-friday-description": "Working in progress ...",
@@ -250,7 +257,8 @@
         "path": "存储路径",
         "friday-history": "对话历史",
         "database-usage": "大小",
-        "config-path": "配置文件"
+        "config-path": "配置文件",
+        "evaluation-data": "评测数据"
     },
     "table": {
         "column": {

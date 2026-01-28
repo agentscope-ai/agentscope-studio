@@ -11,7 +11,9 @@
         "import": "Import",
         "ok": "OK",
         "search": "Search",
+        "select-folder": "Select Folder",
         "update-now": "Update Now",
+        "uploading": "Uploading...",
         "updating": "Updating...",
         "view-update": "View"
     },
@@ -173,10 +175,15 @@
     },
     "hint": {
         "empty-data": "No data available",
+        "file-count": "File count",
+        "folder-must-contain-meta": "Folder must contain evaluation_meta.json file",
         "messages": "In AgentScope, a reply consists of multiple messages with different roles and names",
         "select-run": "Click on a run to view details",
         "select-message": "Click on a message to view details",
-        "select-trace": "Click on a run to view trace data"
+        "select-trace": "Click on a run to view trace data",
+        "selected-folder": "Selected folder",
+        "upload-evaluation-folder": "Upload Evaluation Folder",
+        "upload-folder-description": "Select a folder containing evaluation data including evaluation_meta.json"
     },
     "home": {
         "as-friday-description": "A local deployed agent that helps you with your daily tasks and development with AgentScope",
@@ -257,7 +264,8 @@
         "path": "Storage Path",
         "friday-history": "Conversation History",
         "database-usage": "Size",
-        "config-path": "Config File"
+        "config-path": "Config File",
+        "evaluation-data": "Evaluation Data"
     },
     "table": {
         "column": {

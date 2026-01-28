@@ -19,7 +19,9 @@ interface EvaluationListContextType {
     ) => void;
     total: number;
     deleteEvaluations: (evaluationIds: string[]) => void;
-    importEvaluation: (evaluationDir: string) => Promise<boolean>;
+    uploadEvaluation: (
+        files: Array<{ relativePath: string; content: string }>,
+    ) => Promise<boolean>;
 }
 
 const EvaluationListContext = createContext<EvaluationListContextType | null>(
@@ -80,12 +82,15 @@ export function EvaluationListContextProvider({
         }
     };
 
-    const importEvaluation = async (evaluationDir: string) => {
+    const uploadEvaluation = async (
+        files: Array<{ relativePath: string; content: string }>,
+    ) => {
         try {
-            const result = await trpcClient.importEvaluation.mutate({
-                evaluationDir,
+            const result = await trpcClient.uploadEvaluation.mutate({
+                files,
             });
             if (result.success) {
+                messageApi.success(result.message);
                 refetch();
                 return true;
             } else {
@@ -107,7 +112,7 @@ export function EvaluationListContextProvider({
                 tableRequestParams,
                 setTableRequestParams,
                 deleteEvaluations,
-                importEvaluation,
+                uploadEvaluation,
             }}
         >
             {children}

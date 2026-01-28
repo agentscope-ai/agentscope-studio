@@ -497,6 +497,7 @@ export const appRouter = t.router({
                     formattedSize: dbStats.formattedSize,
                     fridayConfigPath: dbStats.fridayConfigPath,
                     fridayHistoryPath: dbStats.fridayHistoryPath,
+                    evaluationDataPath: dbStats.evaluationDataPath,
                 },
             } as ResponseBody<{
                 path: string;
@@ -504,6 +505,7 @@ export const appRouter = t.router({
                 formattedSize: string;
                 fridayConfigPath: string;
                 fridayHistoryPath: string;
+                evaluationDataPath: string;
             }>;
         } catch (error) {
             console.error('Error get database info:', error);
@@ -516,71 +518,111 @@ export const appRouter = t.router({
             });
         }
     }),
-    importEvaluation: t.procedure
+
+    /**
+     * Upload evaluation folder - accept files and reconstruct directory structure
+     * Files are stored in a secure directory managed by ConfigManager
+     * If evaluation with same ID exists, it will be replaced and old directory cleaned up
+     */
+    uploadEvaluation: t.procedure
         .input(
             z.object({
-                evaluationDir: z.string(),
+                files: z.array(
+                    z.object({
+                        relativePath: z.string(),
+                        content: z.string(), // base64 encoded content
+                    }),
+                ),
             }),
         )
         .mutation(async ({ input }) => {
+            let tempDir: string | null = null;
+
             try {
-                // Check if the directory exists
-                if (
-                    fs.existsSync(input.evaluationDir) &&
-                    fs.lstatSync(input.evaluationDir).isDirectory()
-                ) {
-                    // Read the evaluation_meta.json file in the directory
-                    const metaFile = `${input.evaluationDir}/evaluation_meta.json`;
-                    if (fs.existsSync(metaFile)) {
-                        // Read and parse the meta.json file
-                        const metaData = JSON.parse(
-                            fs.readFileSync(metaFile, 'utf-8'),
-                        );
-                        // First the metaData should be an object
-                        if (typeof metaData === 'object') {
-                            // verify the metadata by version
-                            verifyMetadataByVersion(metaData);
+                // Get secure evaluation data directory from ConfigManager
+                const configManager = ConfigManager.getInstance();
+                const evaluationBaseDir = configManager.getEvaluationDataDir();
 
-                            // Convert metadata from snake_case to camelCase and add evaluationDir field
-                            await EvaluationDao.saveEvaluation({
-                                id: `${metaData.benchmark.name}-${metaData.createdAt}`,
-                                evaluationName: metaData.evaluation_name,
-                                createdAt: metaData.created_at,
-                                totalRepeats: metaData.total_repeats,
-                                schemaVersion: metaData.schema_version,
-                                evaluationDir: input.evaluationDir,
-                                benchmarkName: metaData.benchmark.name,
-                                benchmarkDescription:
-                                    metaData.benchmark.description,
-                                benchmarkTotalTasks:
-                                    metaData.benchmark.total_tasks,
-                            } as Evaluation);
+                // Create a unique directory for this evaluation using timestamp
+                const timestamp = Date.now();
+                tempDir = path.join(
+                    evaluationBaseDir,
+                    `eval_${timestamp}`,
+                );
+                fs.mkdirSync(tempDir, { recursive: true });
 
-                            return {
-                                success: true,
-                                message: 'Import evaluation successfully!',
-                                data: metaData,
-                            };
-                        } else {
-                            return {
-                                success: false,
-                                message:
-                                    'evaluation_meta is not a valid json object',
-                            };
-                        }
-                    } else {
-                        return {
-                            success: false,
-                            message: `evaluation_meta.json file not found in ${input.evaluationDir}`,
-                        };
+                // Write all uploaded files to the temp directory
+                for (const file of input.files) {
+                    const filePath = path.join(tempDir, file.relativePath);
+                    const fileDir = path.dirname(filePath);
+
+                    // Create directory structure if not exists
+                    if (!fs.existsSync(fileDir)) {
+                        fs.mkdirSync(fileDir, { recursive: true });
                     }
-                } else {
+
+                    // Decode base64 content and write to file
+                    const content = Buffer.from(file.content, 'base64');
+                    fs.writeFileSync(filePath, content);
+                }
+
+                // Check if evaluation_meta.json exists
+                const metaFile = path.join(tempDir, 'evaluation_meta.json');
+                if (!fs.existsSync(metaFile)) {
+                    // Clean up temp directory
+                    fs.rmSync(tempDir, { recursive: true, force: true });
                     return {
                         success: false,
-                        message: 'Directory not found or is not a directory',
+                        message: 'evaluation_meta.json file not found in uploaded folder',
                     };
                 }
+
+                // Read and parse the meta.json file
+                const metaData = JSON.parse(
+                    fs.readFileSync(metaFile, 'utf-8'),
+                );
+
+                if (typeof metaData !== 'object') {
+                    // Clean up temp directory
+                    fs.rmSync(tempDir, { recursive: true, force: true });
+                    return {
+                        success: false,
+                        message: 'evaluation_meta is not a valid json object',
+                    };
+                }
+
+                // verify the metadata by version
+                verifyMetadataByVersion(metaData);
+
+                // Convert metadata from snake_case to camelCase and add evaluationDir field
+                await EvaluationDao.saveEvaluation({
+                    id: `${metaData.benchmark.name}-${metaData.created_at}`,
+                    evaluationName: metaData.evaluation_name,
+                    createdAt: metaData.created_at,
+                    totalRepeats: metaData.total_repeats,
+                    schemaVersion: metaData.schema_version,
+                    evaluationDir: tempDir,
+                    benchmarkName: metaData.benchmark.name,
+                    benchmarkDescription: metaData.benchmark.description,
+                    benchmarkTotalTasks: metaData.benchmark.total_tasks,
+                } as Evaluation);
+
+                return {
+                    success: true,
+                    message: 'Upload and import evaluation successfully!',
+                    data: metaData,
+                };
             } catch (error) {
+                // Clean up the directory we created if something went wrong
+                if (tempDir && fs.existsSync(tempDir)) {
+                    try {
+                        fs.rmSync(tempDir, { recursive: true, force: true });
+                        console.debug(`Cleaned up failed upload directory: ${tempDir}`);
+                    } catch (cleanupError) {
+                        console.error(`Failed to cleanup directory ${tempDir}:`, cleanupError);
+                    }
+                }
+
                 console.error(error);
                 return { success: false, message: `Error: ${error}` };
             }
@@ -592,6 +634,9 @@ export const appRouter = t.router({
      *
      * NOTE: This interface should be protected to only allow requests from
      * localhost for security reasons.
+     *
+     * @deprecated This method is deprecated. Use uploadEvaluation instead
+     * for better security and user experience.
      *
      * TODO: implement the security check
      */

@@ -1,16 +1,23 @@
 import { Key, memo, MouseEvent, useCallback, useEffect, useState } from 'react';
 
-import LocalFilePicker from '@/components/picker/LocalFilePicker';
+import FolderUploader from '@/components/picker/FolderUploader';
 import PageTitleSpan from '@/components/spans/PageTitleSpan.tsx';
 import AsTable from '@/components/tables/AsTable';
 import { NumberCell, TextCell } from '@/components/tables/utils.tsx';
 import { Button } from '@/components/ui/button.tsx';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { useEvaluationList } from '@/context/EvaluationListContext.tsx';
 import { useMessageApi } from '@/context/MessageApiContext.tsx';
 import { EmptyPage } from '@/pages/DefaultPage';
 import { formatDateTime } from '@/utils/common';
 import { Evaluation } from '@shared/types/evaluation.ts';
-import { Modal, TableColumnsType } from 'antd';
+import { TableColumnsType } from 'antd';
 import { Trash2Icon, UploadIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -23,14 +30,13 @@ const OverviewPage = () => {
         tableRequestParams,
         setTableRequestParams,
         deleteEvaluations,
-        importEvaluation,
+        uploadEvaluation,
     } = useEvaluationList();
     const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
     const { t } = useTranslation();
     const navigate = useNavigate();
     const [open, setOpen] = useState<boolean>(false);
-    const [importDir, setImportDir] = useState<string | null>(null);
-    const [importing, setImporting] = useState<boolean>(false);
+    const [uploading, setUploading] = useState<boolean>(false);
     const { messageApi } = useMessageApi();
 
     // Update selected evaluations when table data source changes
@@ -95,23 +101,22 @@ const OverviewPage = () => {
         },
     ];
 
-    const handleImport = useCallback(async () => {
-        if (importDir === null) {
-            messageApi.error(t('error.select-directory'));
-        } else {
-            setImporting(true);
-            importEvaluation(importDir)
-                .then((success) => {
-                    if (success) {
-                        setOpen(false);
-                    }
-                })
-                .catch((error) => messageApi.error(`Error: ${error.message}`))
-                .finally(() => {
-                    setImporting(false);
-                });
-        }
-    }, [importDir]);
+    const handleUpload = useCallback(
+        async (files: Array<{ relativePath: string; content: string }>) => {
+            setUploading(true);
+            try {
+                const success = await uploadEvaluation(files);
+                if (success) {
+                    setOpen(false);
+                }
+            } catch (error) {
+                messageApi.error(`Error: ${(error as Error).message}`);
+            } finally {
+                setUploading(false);
+            }
+        },
+        [uploadEvaluation, messageApi],
+    );
 
     const handleDelete = async (evaluationIds: string[]) => {
         deleteEvaluations(evaluationIds);
@@ -120,20 +125,22 @@ const OverviewPage = () => {
 
     return (
         <div className="flex flex-col w-full h-full py-8 px-12 gap-4">
-            <Modal
-                className="h-[calc(100vh-200px)]"
-                classNames={{
-                    content: 'max-h-[calc(100vh-200px)] overflow-hidden',
-                    body: 'max-h-[calc(100vh-40px-200px-76px)] h-[calc(100vh-40px-200px-76px)]',
-                }}
-                title={t('modal.title-import-evaluation')}
-                open={open}
-                onOk={handleImport}
-                loading={importing}
-                onCancel={() => setOpen(false)}
-            >
-                <LocalFilePicker type="directory" onSelect={setImportDir} />
-            </Modal>
+            <Dialog open={open} onOpenChange={(isOpen) => !uploading && setOpen(isOpen)}>
+                <DialogContent
+                    className="max-w-2xl"
+                    showCloseButton={!uploading}
+                    onPointerDownOutside={(e) => uploading && e.preventDefault()}
+                    onEscapeKeyDown={(e) => uploading && e.preventDefault()}
+                >
+                    <DialogHeader>
+                        <DialogTitle>{t('modal.title-import-evaluation')}</DialogTitle>
+                        <DialogDescription>
+                            {t('hint.upload-folder-description')}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <FolderUploader onUpload={handleUpload} uploading={uploading} />
+                </DialogContent>
+            </Dialog>
 
             <PageTitleSpan
                 title={t('common.evaluation')}

@@ -2,19 +2,59 @@ import { EvaluationTable } from '@/models/evaluation';
 import { FindOptionsWhere, In, Like } from 'typeorm';
 import { TableData, TableRequestParams } from '../../../shared/src';
 import { Evaluation } from '../../../shared/src/types/evaluation';
+import fs from 'fs';
+import { ConfigManager, PATHS } from '../../../shared/src/config';
 
 export class EvaluationDao {
+
     static async saveEvaluation(data: Evaluation) {
         const newEval = EvaluationTable.create({ ...data });
         await newEval.save();
     }
 
     static async deleteEvaluations(evaluationIds: string[]) {
-        const conditions: FindOptionsWhere<EvaluationTable> = {
-            id: In(evaluationIds),
-        };
-        const result = await EvaluationTable.delete(conditions);
-        return result.affected;
+        try {
+            const evaluations = await EvaluationTable.find({
+                where: { id: In(evaluationIds) },
+            });
+
+            const conditions: FindOptionsWhere<EvaluationTable> = {
+                id: In(evaluationIds),
+            };
+            const result = await EvaluationTable.delete(conditions);
+
+            const configManager = ConfigManager.getInstance();
+            const safeEvalDataDir = configManager.getEvaluationDataDir();
+
+            for (const evaluation of evaluations) {
+                try {
+                    const evalDir = evaluation.evaluationDir;
+
+                    if (evalDir && evalDir.startsWith(safeEvalDataDir)) {
+                        if (fs.existsSync(evalDir)) {
+                            fs.rmSync(evalDir, { recursive: true, force: true });
+                            console.debug(`Deleted evaluation directory: ${evalDir}`);
+                        } else {
+                            console.warn(`Evaluation directory not found: ${evalDir}`);
+                        }
+                    } else {
+                        console.debug(
+                            `Skipping directory deletion (outside safe zone): ${evalDir}`,
+                        );
+                    }
+                } catch (dirError) {
+                    console.error(
+                        `Failed to delete directory for evaluation ${evaluation.id}:`,
+                        dirError,
+                    );
+                }
+            }
+
+            return result.affected;
+        } catch (error) {
+            console.error('Error in deleteEvaluations:', error);
+            throw error;
+        }
     }
 
     static async getEvaluation(evaluationId: string) {
