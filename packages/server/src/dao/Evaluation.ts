@@ -3,10 +3,9 @@ import { FindOptionsWhere, In, Like } from 'typeorm';
 import { TableData, TableRequestParams } from '../../../shared/src';
 import { Evaluation } from '../../../shared/src/types/evaluation';
 import fs from 'fs';
-import { ConfigManager, PATHS } from '../../../shared/src/config';
+import { ConfigManager } from '../../../shared/src/config';
 
 export class EvaluationDao {
-
     static async saveEvaluation(data: Evaluation) {
         const newEval = EvaluationTable.create({ ...data });
         await newEval.save();
@@ -32,10 +31,17 @@ export class EvaluationDao {
 
                     if (evalDir && evalDir.startsWith(safeEvalDataDir)) {
                         if (fs.existsSync(evalDir)) {
-                            fs.rmSync(evalDir, { recursive: true, force: true });
-                            console.debug(`Deleted evaluation directory: ${evalDir}`);
+                            fs.rmSync(evalDir, {
+                                recursive: true,
+                                force: true,
+                            });
+                            console.debug(
+                                `Deleted evaluation directory: ${evalDir}`,
+                            );
                         } else {
-                            console.warn(`Evaluation directory not found: ${evalDir}`);
+                            console.warn(
+                                `Evaluation directory not found: ${evalDir}`,
+                            );
                         }
                     } else {
                         console.debug(

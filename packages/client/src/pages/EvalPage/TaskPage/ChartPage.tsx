@@ -1,4 +1,8 @@
-import { PlotlySankey, SankeyNode, SankeyLink } from '@/components/charts/PlotlySankey';
+import {
+    PlotlySankey,
+    SankeyNode,
+    SankeyLink,
+} from '@/components/charts/PlotlySankey';
 import {
     Select,
     SelectContent,
@@ -6,12 +10,20 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select.tsx';
-import { Checkbox } from '@/components/ui/checkbox';
+import {
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useEvaluationTaskContext } from '@/context/EvaluationTaskContext';
 import { BlockType, ToolUseBlock } from '@shared/types';
 import { EvalTask, EvalTrajectory } from '@shared/types/evaluation.ts';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ChevronDownIcon, XIcon } from 'lucide-react';
 
 const REPEAT_COLORS = [
     '#4a90c2',
@@ -47,7 +59,9 @@ interface LayerLabel {
     layer: number;
 }
 
-const buildRepeatNodeNames = (links: SankeyLink[]): Map<string, Set<string>> => {
+const buildRepeatNodeNames = (
+    links: SankeyLink[],
+): Map<string, Set<string>> => {
     const repeatNodeNames = new Map<string, Set<string>>();
 
     links.forEach((link) => {
@@ -77,10 +91,7 @@ const getMetricResult = (
     return 'N/A';
 };
 
-const buildSankeyData = (
-    task: EvalTask,
-    selectedMetric: string,
-) => {
+const buildSankeyData = (task: EvalTask, selectedMetric: string) => {
     const nodeMap = new Map<string, SankeyNode>();
     const links: SankeyLink[] = [];
     const repeats = Object.entries(task.repeats);
@@ -105,7 +116,7 @@ const buildSankeyData = (
             nodeMap.set(name, {
                 name,
                 label: formatLabel(name),
-                color
+                color,
             });
         }
         return name;
@@ -113,7 +124,7 @@ const buildSankeyData = (
 
     const repeatColors = new Map<string, string>();
     repeats.forEach(([id], i) =>
-        repeatColors.set(id, REPEAT_COLORS[i % REPEAT_COLORS.length])
+        repeatColors.set(id, REPEAT_COLORS[i % REPEAT_COLORS.length]),
     );
 
     const toolColors = new Map<string, string>();
@@ -132,12 +143,15 @@ const buildSankeyData = (
         let previousNode = repeatNode;
         tools.forEach((tool, stepIndex) => {
             if (!toolColors.has(tool.name)) {
-                toolColors.set(tool.name, TOOL_COLORS[toolColorIndex++ % TOOL_COLORS.length]);
+                toolColors.set(
+                    tool.name,
+                    TOOL_COLORS[toolColorIndex++ % TOOL_COLORS.length],
+                );
             }
 
             const stepNode = getOrCreateNode(
                 `step${stepIndex}:${tool.name}`,
-                toolColors.get(tool.name)!
+                toolColors.get(tool.name)!,
             );
 
             links.push({
@@ -158,7 +172,7 @@ const buildSankeyData = (
 
         const metricNode = getOrCreateNode(
             `metric:${metricResult}`,
-            metricColors.get(metricResult)!
+            metricColors.get(metricResult)!,
         );
 
         links.push({
@@ -174,7 +188,10 @@ const buildSankeyData = (
     for (let i = 0; i < maxSteps; i++) {
         layerLabels.push({ label: `Step ${i}`, layer: i + 1 });
     }
-    layerLabels.push({ label: selectedMetric || 'Metrics', layer: maxSteps + 1 });
+    layerLabels.push({
+        label: selectedMetric || 'Metrics',
+        layer: maxSteps + 1,
+    });
 
     return {
         nodes: Array.from(nodeMap.values()),
@@ -201,11 +218,13 @@ const ChartPage: React.FC = () => {
 
     const [selectedMetric, setSelectedMetric] = useState<string>('');
 
-    const [selectedRepeats, setSelectedRepeats] = useState<Set<string>>(new Set());
+    const [selectedRepeats, setSelectedRepeats] = useState<Set<string>>(
+        new Set(),
+    );
 
     const [hoveredRepeat, setHoveredRepeat] = useState<string | null>(null);
 
-    const [layerSpacing, setLayerSpacing] = useState<number>(80);
+    const [scale, setScale] = useState<number>(1);
 
     useEffect(() => {
         if (availableMetrics.length > 0 && !selectedMetric) {
@@ -245,17 +264,23 @@ const ChartPage: React.FC = () => {
         return nodes.map((node) => ({
             ...node,
             opacity: highlightedNodes
-                ? highlightedNodes.has(node.name) ? 1 : 0.3
+                ? highlightedNodes.has(node.name)
+                    ? 1
+                    : 0.3
                 : 1,
         }));
     }, [nodes, highlightedNodes]);
 
     const enhancedLinks = useMemo(() => {
         return links.map((link) => {
-            const isHighlighted = link.repeatId && effectiveRepeats.includes(link.repeatId);
-            const opacity = effectiveRepeats.length === 0
-                ? 0.4
-                : isHighlighted ? 0.6 : 0.15;
+            const isHighlighted =
+                link.repeatId && effectiveRepeats.includes(link.repeatId);
+            const opacity =
+                effectiveRepeats.length === 0
+                    ? 0.4
+                    : isHighlighted
+                        ? 0.6
+                        : 0.15;
 
             return {
                 ...link,
@@ -269,7 +294,8 @@ const ChartPage: React.FC = () => {
         [enhancedNodes, enhancedLinks],
     );
 
-    const chartHeight = Math.max(400, (maxSteps + 3) * layerSpacing);
+    const baseHeight = 400;
+    const chartHeight = Math.max(baseHeight, (maxSteps + 3) * 80 * scale);
 
     useEffect(() => {
         if (!containerRef.current) return;
@@ -354,80 +380,121 @@ const ChartPage: React.FC = () => {
 
     return (
         <div className="col-span-full rounded-xl border shadow">
-            <div className="p-6 pb-2">
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-medium">
+            {/* Sticky control panel */}
+            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b">
+                {/* Header row - Title and Controls */}
+                <div className="flex items-center justify-between gap-4 px-6 pt-6 pb-4 border-b">
+                    <h3 className="text-base font-semibold">
                         {t('common.trajectory')} Workflow
                     </h3>
-                    <div className="flex gap-3">
-                        {/* Layer Spacing Control */}
+                    <div className="flex items-center gap-4">
+                        {/* Scale Control */}
                         <div className="flex items-center gap-2">
                             <label className="text-xs text-muted-foreground whitespace-nowrap">
-                                Layer:
+                                Scale:
                             </label>
                             <input
                                 type="range"
-                                min="40"
-                                max="150"
-                                step="10"
-                                value={layerSpacing}
-                                onChange={(e) => setLayerSpacing(Number(e.target.value))}
-                                className="w-20"
-                                title="Vertical spacing between nodes"
+                                min="0.5"
+                                max="3"
+                                step="0.1"
+                                value={scale}
+                                onChange={(e) =>
+                                    setScale(Number(e.target.value))
+                                }
+                                className="w-24"
+                                title="Chart scale"
                             />
-                            <span className="text-xs text-muted-foreground w-8">
-                                {layerSpacing}
+                            <span className="text-xs text-muted-foreground font-medium w-9 text-right">
+                                {scale.toFixed(1)}x
                             </span>
                         </div>
                         {/* Metric Selector */}
                         {availableMetrics.length > 1 && (
-                            <Select
-                                value={selectedMetric}
-                                onValueChange={setSelectedMetric}
-                            >
-                                <SelectTrigger size="sm" className="w-48">
-                                    <SelectValue
-                                        placeholder={t('placeholder.select-metric')}
-                                    />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {availableMetrics.map((metric) => (
-                                        <SelectItem key={metric.name} value={metric.name}>
-                                            {metric.name}
-                                            <span className="ml-2 text-xs text-muted-foreground">
-                                                ({metric.metric_type})
-                                            </span>
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        )}
-                    </div>
-                </div>
-
-                {/* Repeat selection checkboxes */}
-                <div className="flex flex-wrap gap-3 mb-4">
-                    {repeatIds.map((repeatId, index) => {
-                        const isChecked = selectedRepeats.has(repeatId);
-                        const color = REPEAT_COLORS[index % REPEAT_COLORS.length];
-                        return (
-                            <label
-                                key={repeatId}
-                                className="flex items-center gap-2 cursor-pointer group"
-                            >
-                                <Checkbox
-                                    checked={isChecked}
-                                    onCheckedChange={() => handleRepeatToggle(repeatId)}
-                                />
-                                <span
-                                    className="text-sm font-medium transition-colors group-hover:opacity-80"
-                                    style={{ color: color }}
+                            <div className="flex items-center gap-2">
+                                <label className="text-xs text-muted-foreground whitespace-nowrap">
+                                    Metric:
+                                </label>
+                                <Select
+                                    value={selectedMetric}
+                                    onValueChange={setSelectedMetric}
                                 >
-                                    Repeat {repeatId}
-                                </span>
-                            </label>
-                        );
-                    })}
+                                    <SelectTrigger size="sm" className="w-40">
+                                        <SelectValue
+                                            placeholder={t(
+                                                'placeholder.select-metric',
+                                            )}
+                                        />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {availableMetrics.map((metric) => (
+                                            <SelectItem
+                                                key={metric.name}
+                                                value={metric.name}
+                                            >
+                                                {metric.name}
+                                                <span className="ml-2 text-xs text-muted-foreground">
+                                                    ({metric.metric_type})
+                                                </span>
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
+
+                        <label className="text-xs text-muted-foreground whitespace-nowrap">
+                            Repeats:
+                        </label>
+                        {/* Dropdown trigger */}
+                        <DropdownMenu modal={false}>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 text-xs"
+                                >
+                                    <span>
+                                        {selectedRepeats.size > 0
+                                            ? `${selectedRepeats.size} selected`
+                                            : 'Select repeats'}
+                                    </span>
+                                    <ChevronDownIcon className="h-3.5 w-3.5 ml-1.5" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                                align="start"
+                                className="max-h-[300px] overflow-y-auto"
+                                onCloseAutoFocus={(e) => e.preventDefault()}
+                            >
+                                {repeatIds.map((repeatId, index) => {
+                                    const isChecked =
+                                        selectedRepeats.has(repeatId);
+                                    const color =
+                                        REPEAT_COLORS[
+                                        index % REPEAT_COLORS.length
+                                        ];
+                                    return (
+                                        <DropdownMenuCheckboxItem
+                                            key={repeatId}
+                                            checked={isChecked}
+                                            onCheckedChange={() =>
+                                                handleRepeatToggle(repeatId)
+                                            }
+                                            onSelect={(e) => e.preventDefault()}
+                                        >
+                                            <span
+                                                className="font-medium"
+                                                style={{ color: color }}
+                                            >
+                                                Repeat {repeatId}
+                                            </span>
+                                        </DropdownMenuCheckboxItem>
+                                    );
+                                })}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
                 </div>
             </div>
 
@@ -444,7 +511,11 @@ const ChartPage: React.FC = () => {
                                 key={idx}
                                 className="absolute text-xs text-muted-foreground whitespace-nowrap"
                                 style={{
-                                    top: 40 + item.layer * ((chartHeight - 80) / (maxSteps + 1)),
+                                    top:
+                                        40 +
+                                        item.layer *
+                                        ((chartHeight - 80) /
+                                            (maxSteps + 1)),
                                     left: 0,
                                     transform: 'translateY(-50%)',
                                 }}

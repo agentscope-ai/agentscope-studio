@@ -125,20 +125,30 @@ const OverviewPage = () => {
 
     return (
         <div className="flex flex-col w-full h-full py-8 px-12 gap-4">
-            <Dialog open={open} onOpenChange={(isOpen) => !uploading && setOpen(isOpen)}>
+            <Dialog
+                open={open}
+                onOpenChange={(isOpen) => !uploading && setOpen(isOpen)}
+            >
                 <DialogContent
                     className="max-w-2xl"
                     showCloseButton={!uploading}
-                    onPointerDownOutside={(e) => uploading && e.preventDefault()}
+                    onPointerDownOutside={(e) =>
+                        uploading && e.preventDefault()
+                    }
                     onEscapeKeyDown={(e) => uploading && e.preventDefault()}
                 >
                     <DialogHeader>
-                        <DialogTitle>{t('modal.title-import-evaluation')}</DialogTitle>
+                        <DialogTitle>
+                            {t('modal.title-import-evaluation')}
+                        </DialogTitle>
                         <DialogDescription>
                             {t('hint.upload-folder-description')}
                         </DialogDescription>
                     </DialogHeader>
-                    <FolderUploader onUpload={handleUpload} uploading={uploading} />
+                    <FolderUploader
+                        onUpload={handleUpload}
+                        uploading={uploading}
+                    />
                 </DialogContent>
             </Dialog>
 

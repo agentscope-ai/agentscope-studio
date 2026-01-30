@@ -88,7 +88,9 @@ export const PlotlySankey: React.FC<SankeyChartProps> = ({
                 const b = parseInt(baseColor.slice(5, 7), 16);
                 return `rgba(${r}, ${g}, ${b}, ${opacity})`;
             } else if (baseColor.startsWith('rgb(')) {
-                return baseColor.replace('rgb(', 'rgba(').replace(')', `, ${opacity})`);
+                return baseColor
+                    .replace('rgb(', 'rgba(')
+                    .replace(')', `, ${opacity})`);
             } else if (baseColor.startsWith('rgba(')) {
                 return baseColor.replace(/[\d.]+\)$/, `${opacity})`);
             }
@@ -123,28 +125,28 @@ export const PlotlySankey: React.FC<SankeyChartProps> = ({
 
     const handleClick = (eventData: any) => {
         console.log('click eventData', eventData);
-        if (!onClick || !eventData?.points || eventData.points.length === 0) return;
+        if (!onClick || !eventData?.points || eventData.points.length === 0)
+            return;
 
         const point = eventData.points[0];
         if (point.source !== undefined && point.target !== undefined) {
             const linkIndex = point.pointNumber;
             onClick('link', linkIndex);
-        }
-        else if (point.pointNumber !== undefined) {
+        } else if (point.pointNumber !== undefined) {
             const nodeIndex = point.pointNumber;
             onClick('node', nodeIndex);
         }
     };
 
     const handleHover = (eventData: any) => {
-        if (!onHover || !eventData?.points || eventData.points.length === 0) return;
+        if (!onHover || !eventData?.points || eventData.points.length === 0)
+            return;
 
         const point = eventData.points[0];
         if (point.source !== undefined && point.target !== undefined) {
             const linkIndex = point.pointNumber;
             onHover('link', linkIndex);
-        }
-        else if (point.pointNumber !== undefined) {
+        } else if (point.pointNumber !== undefined) {
             const nodeIndex = point.pointNumber;
 
             onHover('node', nodeIndex);

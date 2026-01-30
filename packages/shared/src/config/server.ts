@@ -46,7 +46,7 @@ export const ServerConfig = {
     port: parseInt(process.env.PORT || DEFAULT_CONFIG.server.port.toString()),
     otelGrpcPort: parseInt(
         process.env.OTEL_GRPC_PORT ||
-        DEFAULT_CONFIG.server.otelGrpcPort.toString(),
+            DEFAULT_CONFIG.server.otelGrpcPort.toString(),
     ),
     database: {
         type: 'better-sqlite3' as const,

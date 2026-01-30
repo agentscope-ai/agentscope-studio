@@ -5,7 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 
 interface Props {
-    onUpload: (files: Array<{ relativePath: string; content: string }>) => Promise<void>;
+    onUpload: (
+        files: Array<{ relativePath: string; content: string }>,
+    ) => Promise<void>;
     uploading?: boolean;
 }
 
@@ -50,16 +52,20 @@ const FolderUploader = ({ onUpload, uploading = false }: Props) => {
 
             try {
                 // Convert all files to base64
-                const fileDataPromises = Array.from(files).map(async (file, index) => {
-                    const base64Content = await fileToBase64(file);
-                    setUploadProgress(Math.round(((index + 1) / files.length) * 100));
-                    return {
-                        relativePath: file.webkitRelativePath.substring(
-                            folderName.length + 1,
-                        ), // Remove folder name from path
-                        content: base64Content,
-                    };
-                });
+                const fileDataPromises = Array.from(files).map(
+                    async (file, index) => {
+                        const base64Content = await fileToBase64(file);
+                        setUploadProgress(
+                            Math.round(((index + 1) / files.length) * 100),
+                        );
+                        return {
+                            relativePath: file.webkitRelativePath.substring(
+                                folderName.length + 1,
+                            ), // Remove folder name from path
+                            content: base64Content,
+                        };
+                    },
+                );
 
                 const fileData = await Promise.all(fileDataPromises);
 
@@ -113,10 +119,16 @@ const FolderUploader = ({ onUpload, uploading = false }: Props) => {
             {selectedFolder && (
                 <div className="w-full max-w-md space-y-2">
                     <p className="text-sm text-muted-foreground">
-                        {t('hint.selected-folder')}: <strong className="font-semibold text-foreground">{selectedFolder}</strong>
+                        {t('hint.selected-folder')}:{' '}
+                        <strong className="font-semibold text-foreground">
+                            {selectedFolder}
+                        </strong>
                     </p>
                     <p className="text-sm text-muted-foreground">
-                        {t('hint.file-count')}: <strong className="font-semibold text-foreground">{fileCount}</strong>
+                        {t('hint.file-count')}:{' '}
+                        <strong className="font-semibold text-foreground">
+                            {fileCount}
+                        </strong>
                     </p>
                     {uploadProgress > 0 && uploadProgress < 100 && (
                         <div className="space-y-1">

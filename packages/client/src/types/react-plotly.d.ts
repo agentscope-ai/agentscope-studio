@@ -20,5 +20,5 @@ declare module 'react-plotly.js' {
         revision?: number;
     }
 
-    export default class Plot extends Component<PlotParams> {}
+    export default class Plot extends Component<PlotParams> { }
 }

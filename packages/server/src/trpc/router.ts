@@ -545,10 +545,7 @@ export const appRouter = t.router({
 
                 // Create a unique directory for this evaluation using timestamp
                 const timestamp = Date.now();
-                tempDir = path.join(
-                    evaluationBaseDir,
-                    `eval_${timestamp}`,
-                );
+                tempDir = path.join(evaluationBaseDir, `eval_${timestamp}`);
                 fs.mkdirSync(tempDir, { recursive: true });
 
                 // Write all uploaded files to the temp directory
@@ -573,14 +570,13 @@ export const appRouter = t.router({
                     fs.rmSync(tempDir, { recursive: true, force: true });
                     return {
                         success: false,
-                        message: 'evaluation_meta.json file not found in uploaded folder',
+                        message:
+                            'evaluation_meta.json file not found in uploaded folder',
                     };
                 }
 
                 // Read and parse the meta.json file
-                const metaData = JSON.parse(
-                    fs.readFileSync(metaFile, 'utf-8'),
-                );
+                const metaData = JSON.parse(fs.readFileSync(metaFile, 'utf-8'));
 
                 if (typeof metaData !== 'object') {
                     // Clean up temp directory
@@ -617,9 +613,14 @@ export const appRouter = t.router({
                 if (tempDir && fs.existsSync(tempDir)) {
                     try {
                         fs.rmSync(tempDir, { recursive: true, force: true });
-                        console.debug(`Cleaned up failed upload directory: ${tempDir}`);
+                        console.debug(
+                            `Cleaned up failed upload directory: ${tempDir}`,
+                        );
                     } catch (cleanupError) {
-                        console.error(`Failed to cleanup directory ${tempDir}:`, cleanupError);
+                        console.error(
+                            `Failed to cleanup directory ${tempDir}:`,
+                            cleanupError,
+                        );
                     }
                 }
 
