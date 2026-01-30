@@ -10,6 +10,7 @@ interface DatabaseInfoType {
     size: number;
     formattedSize: string;
     path: string;
+    evaluationDataPath: string;
     fridayConfigPath: string;
     fridayHistoryPath: string;
 }
