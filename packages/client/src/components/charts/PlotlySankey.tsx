@@ -2,46 +2,54 @@
 // @ts-ignore - react-plotly.js types may not be available
 import Plot from 'react-plotly.js';
 import { useMemo } from 'react';
-import { SankeyChartProps } from './types';
-import {
-    calculateHighlightNodeSet,
-    formatNodeLabel,
-} from './utils';
+
+/**
+ * Pure presentation component for rendering Plotly Sankey diagram
+ * Renders pre-processed data with opacity and colors, triggers event callbacks
+ */
+
+export interface SankeyNode {
+    name: string;
+    label: string;
+    color: string;
+    opacity?: number;
+}
+
+export interface SankeyLink {
+    source: string;
+    target: string;
+    value: number;
+    color: string;
+    opacity?: number;
+    repeatId?: string;
+}
+
+export interface SankeyChartProps {
+    data: { nodes: SankeyNode[]; links: SankeyLink[] };
+    width?: number | string;
+    height?: number;
+    onClick?: (type: 'node' | 'link', index: number) => void;
+    onHover?: (type: 'node' | 'link', index: number) => void;
+    onUnhover?: () => void;
+}
 
 export const PlotlySankey: React.FC<SankeyChartProps> = ({
     data,
     width = '100%',
     height = 600,
-    selectedRepeats = [],
-    repeatNodeNames,
-    hoveredRepeat,
-    onNodeClick,
-    onLinkClick,
-    onRepeatHover,
+    onClick,
+    onHover,
+    onUnhover,
 }) => {
-    const effectiveRepeats = useMemo(() => {
-        if (hoveredRepeat) {
-            return [...selectedRepeats, hoveredRepeat];
-        }
-        return selectedRepeats;
-    }, [selectedRepeats, hoveredRepeat]);
-
-    const highlightNodeSet = useMemo(
-        () => calculateHighlightNodeSet(effectiveRepeats, repeatNodeNames),
-        [effectiveRepeats, repeatNodeNames],
-    );
-
     const plotData = useMemo(() => {
         if (!data || !data.nodes || !data.links || data.nodes.length === 0) {
             return null;
         }
 
-        const nodeLabels = data.nodes.map((node) => formatNodeLabel(node.name));
+        const nodeLabels = data.nodes.map((node) => node.label);
 
-        // Node colors with opacity based on highlight
         const nodeColors = data.nodes.map((node) => {
-            const isHighlighted = highlightNodeSet && highlightNodeSet.has(node.name);
-            const opacity = isHighlighted ? 1 : highlightNodeSet ? 0.3 : 1;
+            const opacity = node.opacity ?? 1;
             const color = node.color;
 
             if (color.startsWith('#')) {
@@ -53,13 +61,11 @@ export const PlotlySankey: React.FC<SankeyChartProps> = ({
             return color;
         });
 
-        // Create node name to index map
         const nodeMap = new Map<string, number>();
         data.nodes.forEach((node, index) => {
             nodeMap.set(node.name, index);
         });
 
-        // Map link sources and targets to node indices
         const linkSources = data.links.map((link) => {
             const index = nodeMap.get(link.source);
             return index !== undefined ? index : 0;
@@ -73,9 +79,8 @@ export const PlotlySankey: React.FC<SankeyChartProps> = ({
         const linkValues = data.links.map((link) => link.value);
 
         const linkColors = data.links.map((link) => {
+            const opacity = link.opacity ?? 0.4;
             const baseColor = link.color || '#94a3b8';
-            const isHighlighted = link.repeatId && effectiveRepeats.includes(link.repeatId);
-            const opacity = !effectiveRepeats.length ? 0.4 : isHighlighted ? 0.6 : 0.15;
 
             if (baseColor.startsWith('#')) {
                 const r = parseInt(baseColor.slice(1, 3), 16);
@@ -95,7 +100,7 @@ export const PlotlySankey: React.FC<SankeyChartProps> = ({
             {
                 type: 'sankey' as const,
                 orientation: 'v' as const,
-                arrangement: 'snap' as const, // Auto-optimize while respecting constraints
+                arrangement: 'snap' as const,
                 node: {
                     pad: 40,
                     thickness: 15,
@@ -114,64 +119,41 @@ export const PlotlySankey: React.FC<SankeyChartProps> = ({
                 },
             },
         ];
-    }, [data, highlightNodeSet, effectiveRepeats]);
+    }, [data]);
 
-    // Click handler - simplified approach using link index
     const handleClick = (eventData: any) => {
-        if (!eventData?.points || eventData.points.length === 0) return;
+        console.log('click eventData', eventData);
+        if (!onClick || !eventData?.points || eventData.points.length === 0) return;
 
         const point = eventData.points[0];
-
-        // Check if it's a link click (has source and target)
-        if (point.source !== undefined && point.target !== undefined && onLinkClick) {
-            // Get the link index from the point
-            const linkIndex = point.pointNumber;
-            const link = data.links[linkIndex];
-            if (link?.repeatId) {
-                onLinkClick(link.repeatId);
-            }
-        }
-        // Check if it's a node click
-        else if (point.pointNumber !== undefined && onNodeClick) {
-            const nodeIndex = point.pointNumber;
-            const nodeName = data.nodes[nodeIndex]?.name;
-            if (nodeName && nodeName.startsWith('repeat:')) {
-                onNodeClick(nodeName);
-            }
-        }
-    };
-
-    // Hover handler - simplified approach using link index
-    const handleHover = (eventData: any) => {
-        if (!onRepeatHover || !eventData?.points || eventData.points.length === 0) return;
-
-        const point = eventData.points[0];
-
-        // Check if it's hovering over a link
         if (point.source !== undefined && point.target !== undefined) {
             const linkIndex = point.pointNumber;
-            const link = data.links[linkIndex];
-            if (link?.repeatId) {
-                onRepeatHover(link.repeatId);
-            }
+            onClick('link', linkIndex);
         }
-        // Check if it's hovering over a node
         else if (point.pointNumber !== undefined) {
             const nodeIndex = point.pointNumber;
-            const nodeName = data.nodes[nodeIndex]?.name;
-            const link = data.links.find(
-                (l) => l.source === nodeName || l.target === nodeName,
-            );
-            if (link?.repeatId) {
-                onRepeatHover(link.repeatId);
-            }
+            onClick('node', nodeIndex);
         }
     };
 
-    // Unhover handler
+    const handleHover = (eventData: any) => {
+        if (!onHover || !eventData?.points || eventData.points.length === 0) return;
+
+        const point = eventData.points[0];
+        if (point.source !== undefined && point.target !== undefined) {
+            const linkIndex = point.pointNumber;
+            onHover('link', linkIndex);
+        }
+        else if (point.pointNumber !== undefined) {
+            const nodeIndex = point.pointNumber;
+
+            onHover('node', nodeIndex);
+        }
+    };
+
     const handleUnhover = () => {
-        if (onRepeatHover) {
-            onRepeatHover(null);
+        if (onUnhover) {
+            onUnhover();
         }
     };
 
