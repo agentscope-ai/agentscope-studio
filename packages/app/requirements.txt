@@ -1,1 +1,1 @@
-agentscope
+agentscope[full]
