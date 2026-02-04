@@ -5,7 +5,6 @@ an agent assistant that helps users to deal with their daily tasks locally.
 import asyncio
 import os
 from datetime import datetime
-import inspect
 
 import json5
 from agentscope.agent import ReActAgent
