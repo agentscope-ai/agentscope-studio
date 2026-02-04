@@ -7,6 +7,7 @@ import { formatDurationWithUnit } from '@/utils/common';
 
 import SpanPanel from '@/pages/DashboardPage/RunPage/TracingComponent/TracePanel/SpanPanel';
 import { SpanData } from '@shared/types/trace.ts';
+import { getNestedValue } from '@shared/utils/objectUtils';
 
 interface TraceSpanNode extends SpanData {
     children: TraceSpanNode[];
@@ -14,24 +15,27 @@ interface TraceSpanNode extends SpanData {
 
 // Helper function to get display kind - extracted to avoid recalculation
 const getDisplayKind = (attributes: Record<string, unknown>): string => {
-    const genAi = attributes.gen_ai as Record<string, unknown> | undefined;
-    const agentscope = attributes.agentscope as
-        | Record<string, unknown>
-        | undefined;
-
-    const operationName = (genAi?.operation as Record<string, unknown>)
-        ?.name as string;
-    const agent_name = (genAi?.agent as Record<string, unknown>)?.name as
-        | string
-        | undefined;
-    const model_name = (genAi?.request as Record<string, unknown>)?.model as
-        | string
-        | undefined;
-    const tool_name = (genAi?.tool as Record<string, unknown>)?.name as
-        | string
-        | undefined;
-    const format_target = (agentscope?.format as Record<string, unknown>)
-        ?.target as string | undefined;
+    // Use getNestedValue to support both flat and nested structures
+    const operationName = getNestedValue(
+        attributes,
+        'gen_ai.operation.name',
+    ) as string | undefined;
+    const agent_name = getNestedValue(
+        attributes,
+        'gen_ai.agent.name',
+    ) as string | undefined;
+    const model_name = getNestedValue(
+        attributes,
+        'gen_ai.request.model',
+    ) as string | undefined;
+    const tool_name = getNestedValue(
+        attributes,
+        'gen_ai.tool.name',
+    ) as string | undefined;
+    const format_target = getNestedValue(
+        attributes,
+        'agentscope.format.target',
+    ) as string | undefined;
 
     if (operationName === 'invoke_agent' && agent_name) {
         return operationName + ': ' + String(agent_name);
@@ -75,11 +79,11 @@ export const TraceTree = ({ spans }: Props) => {
     const spanTitleDataMap = useMemo(() => {
         const map = new Map<string, SpanTitleData>();
         spans.forEach((span) => {
-            const agentscope = span.attributes.agentscope as
-                | Record<string, unknown>
-                | undefined;
-            const funcName = (agentscope?.function as Record<string, unknown>)
-                ?.name as string | undefined;
+            // Use getNestedValue to support both flat and nested structures
+            const funcName = getNestedValue(
+                span.attributes,
+                'agentscope.function.name',
+            ) as string | undefined;
             map.set(span.spanId, {
                 name: funcName || span.name,
                 startTimeUnixNano: span.startTimeUnixNano,
