@@ -20,18 +20,15 @@ const getDisplayKind = (attributes: Record<string, unknown>): string => {
         attributes,
         'gen_ai.operation.name',
     ) as string | undefined;
-    const agent_name = getNestedValue(
-        attributes,
-        'gen_ai.agent.name',
-    ) as string | undefined;
-    const model_name = getNestedValue(
-        attributes,
-        'gen_ai.request.model',
-    ) as string | undefined;
-    const tool_name = getNestedValue(
-        attributes,
-        'gen_ai.tool.name',
-    ) as string | undefined;
+    const agent_name = getNestedValue(attributes, 'gen_ai.agent.name') as
+        | string
+        | undefined;
+    const model_name = getNestedValue(attributes, 'gen_ai.request.model') as
+        | string
+        | undefined;
+    const tool_name = getNestedValue(attributes, 'gen_ai.tool.name') as
+        | string
+        | undefined;
     const format_target = getNestedValue(
         attributes,
         'agentscope.format.target',
