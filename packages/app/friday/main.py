@@ -139,13 +139,13 @@ The solution/code to the user query may already exist in the AgentScope resource
     )
 
     path_dialog_history = get_local_file_path("")
-    if 'session_id' in inspect.signature(JSONSession).parameters:
+    try:
         session = JSONSession(
-            session_id=FRIDAY_SESSION_ID,
             save_dir=path_dialog_history
         )
-    else:
+    except TypeError:
         session = JSONSession(
+            session_id=FRIDAY_SESSION_ID,
             save_dir=path_dialog_history
         )
 
