@@ -7,10 +7,16 @@ export function getNestedValue(
         return undefined;
     }
 
-    const keys: string[] = Array.isArray(path)
-        ? path.flatMap((k) => k.split(separator))
-        : path.split(separator);
+    // Convert path to string if it's an array
+    const pathString = Array.isArray(path) ? path.join(separator) : path;
 
+    // First, try direct access for flat structure (e.g., "gen_ai.input.messages" as a key)
+    if (pathString in obj) {
+        return obj[pathString];
+    }
+
+    // If not found, try nested access (for nested structure)
+    const keys: string[] = pathString.split(separator);
     return keys.reduce<unknown>((acc, key) => {
         if (acc && typeof acc === 'object' && key in acc) {
             return (acc as Record<string, unknown>)[key];

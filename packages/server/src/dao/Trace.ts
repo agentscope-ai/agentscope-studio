@@ -190,14 +190,24 @@ export class SpanDao {
         attributes: Record<string, unknown>,
     ): number | undefined {
         const value = getNestedValue(attributes, 'gen_ai.usage.input_tokens');
-        return typeof value === 'number' ? value : undefined;
+        if (typeof value === 'number' && !Number.isNaN(value)) return value;
+        if (typeof value === 'string') {
+            const n = Number(value);
+            return Number.isNaN(n) ? undefined : n;
+        }
+        return undefined;
     }
 
     private static extractOutputTokens(
         attributes: Record<string, unknown>,
     ): number | undefined {
         const value = getNestedValue(attributes, 'gen_ai.usage.output_tokens');
-        return typeof value === 'number' ? value : undefined;
+        if (typeof value === 'number' && !Number.isNaN(value)) return value;
+        if (typeof value === 'string') {
+            const n = Number(value);
+            return Number.isNaN(n) ? undefined : n;
+        }
+        return undefined;
     }
 
     // Trace listing and filtering methods
