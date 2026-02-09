@@ -1,5 +1,6 @@
 {
     "action": {
+        "back-to-evaluation": "Back to Evaluation",
         "cancel": "Cancel",
         "clean-history": "Clean History",
         "clear-data": "Clear Data",
@@ -7,9 +8,12 @@
         "confirm": "Confirm",
         "delete": "Delete",
         "focus-on-latest-run": "Focus on latest",
+        "import": "Import",
         "ok": "OK",
         "search": "Search",
+        "select-folder": "Select Folder",
         "update-now": "Update Now",
+        "uploading": "Uploading...",
         "updating": "Updating...",
         "view-update": "View"
     },
@@ -38,6 +42,8 @@
         "apps": "Apps",
         "average": "Average",
         "benchmark": "Benchmark",
+        "categorical": "Categorical",
+        "categorical-metric": "Categorical Metric",
         "completion": "Completion",
         "completion-average": "Completion(Avg)",
         "contact": "Contact",
@@ -60,13 +66,17 @@
         "input-tokens": "Input Tokens",
         "settings": "Settings",
         "latency": "Latency",
+        "llm": "LLM",
         "llm-invocation": "Invocation",
         "llm-invocations": "Invocations",
         "message": "Message",
         "messages": "Messages",
         "metadata": "Metadata",
+        "metric": "Metric",
         "model-category": "Model Category",
         "name": "Name",
+        "numerical": "Numerical",
+        "numerical-metric": "Numerical Metric",
         "output": "Output",
         "output-tokens": "Output Tokens",
         "overview": "Overview",
@@ -76,9 +86,12 @@
         "projects": "Projects",
         "prompt": "Prompt",
         "prompt-average": "Prompt(Avg)",
+        "repeat": "Repeat",
+        "result": "Result",
         "run": "Run",
         "runs": "Runs",
         "run-name": "Name",
+        "task": "Task",
         "thinking": "Thinking",
         "times": "Times",
         "timestamp": "Timestamp",
@@ -86,6 +99,9 @@
         "traces": "Traces",
         "trace-details": "Trace Details",
         "tracing": "Tracing",
+        "trajectory": "Trajectory",
+        "token-usage": "Token Usage",
+        "tool": "Tool",
         "total": "Total",
         "total-times": "Total Times",
         "total-tokens": "Tokens",
@@ -98,12 +114,28 @@
         "start-time": "Start Time",
         "end-time": "End Time",
         "statistics": "Statistics",
-        "status": "Status"
+        "status": "Status",
+        "step": "Step"
     },
     "default-page": {
         "no-data-available": "No data available"
     },
     "description": {
+        "eval": {
+            "benchmark-subtitle": "Evaluation on Benchmark {{benchmarkName}}",
+            "categorical-bar-footer": "The {{metricName}} category distribution across different repeats",
+            "categorical-metric-description": "The distribution and category-wise scores for the selected metric",
+            "categorical-pie-footer": "The aggregated {{metricName}} category distribution",
+            "llm": "The distribution of the LLM invocations",
+            "llm-footer": "{{kind}} different LLM(s) were invoked for {{count}} time(s) in total",
+            "numerical-metric-bar-footer": "The {{metricName}} scores across different repeats",
+            "numerical-metric-cdf-footer": "The cumulative distribution function (CDF) of {{metricName}}",
+            "numerical-metric-description": "The distribution and repeat-wise scores for the selected metric",
+            "showing-repeats": "Showing {{count}} repeats",
+            "title": "The evaluation records from different benchmarks",
+            "tool": "The Top-10 tools used in your solution",
+            "tool-footer": "{{kind}} different tool(s) were used for {{count}} time(s) in total"
+        },
         "settings": "Manage application settings, including language preferences and data management",
         "trace": {
             "input": "The tracing span input, organized in a JSON format with \"args\" and \"kwargs\" fields",
@@ -117,6 +149,7 @@
         "invalid-url": "Invalid URL: cannot get file extension",
         "project-not-found": "Project not found",
         "run-not-found": "Run not found",
+        "select-directory": "Please select a directory",
         "socket-not-connected": "Not connected to server"
     },
     "help": {
@@ -141,11 +174,16 @@
         }
     },
     "hint": {
-        "empty-trace": "No data available",
+        "empty-data": "No data available",
+        "file-count": "File count",
+        "folder-must-contain-meta": "Folder must contain evaluation_meta.json file",
         "messages": "In AgentScope, a reply consists of multiple messages with different roles and names",
         "select-run": "Click on a run to view details",
         "select-message": "Click on a message to view details",
-        "select-trace": "Click on a run to view trace data"
+        "select-trace": "Click on a run to view trace data",
+        "selected-folder": "Selected folder",
+        "upload-evaluation-folder": "Upload Evaluation Folder",
+        "upload-folder-description": "Select a folder containing evaluation data including evaluation_meta.json"
     },
     "home": {
         "as-friday-description": "A local deployed agent that helps you with your daily tasks and development with AgentScope",
@@ -161,6 +199,7 @@
         "overview-description": "The number of runs in the last each month"
     },
     "modal": {
+        "title-import-evaluation": "Import Evaluation",
         "title-input-url": "Please input the file URL"
     },
     "message": {
@@ -186,6 +225,7 @@
     },
     "placeholder": {
         "input-as-user": "Type your message in voice of {{name}}",
+        "input-directory-path": "Input the directory path",
         "input-disable": "Currently no user input is needed",
         "input-friday-afternoon": "Good afternoon, how can I help you today?",
         "input-friday-evening": "Good evening, how can I help you today?",
@@ -193,10 +233,12 @@
         "input-url": "A local or web URL to the image/video/audio file (press enter to confirm)",
         "search-benchmark": "Search benchmarks",
         "search-evaluation": "Search evaluation history",
+        "search-evaluation-task": "Search evaluation tasks",
         "search-project": "Search projects in the table",
         "search-run": "Search runs in the table",
         "search-span": "Search spans in the trace",
-        "search-trace": "Search traces in the table"
+        "search-trace": "Search traces in the table",
+        "select-metric": "Select a metric"
     },
     "status": {
         "done": "Done",
@@ -222,16 +264,24 @@
         "path": "Storage Path",
         "friday-history": "Conversation History",
         "database-usage": "Size",
-        "config-path": "Config File"
+        "config-path": "Config File",
+        "evaluation-data": "Evaluation Data"
     },
     "table": {
         "column": {
             "benchmark": "Benchmark",
+            "benchmarkName": "Benchmark Name",
+            "completed": "Completed",
             "createdAt": "Created At",
             "duration": "Duration",
+            "evaluationDir": "Evaluation Directory",
+            "evaluationName": "Evaluation Name",
             "finished": "Finished",
             "ground-truth": "Ground Truth",
             "id": "ID",
+            "incomplete": "Incomplete",
+            "input": "Input",
+            "metrics": "% Metrics",
             "name": "Name",
             "pending": "Pending",
             "progress": "Progress",
@@ -242,8 +292,10 @@
             "spanCount": "Span Count",
             "startTime": "Start Time",
             "status": "Status",
+            "tags": "Tags",
             "time": "Time",
             "total": "Total",
+            "totalRepeats": "Total Repeats",
             "totalTokens": "Tokens",
             "traceId": "Trace ID",
             "traceName": "Trace Name"

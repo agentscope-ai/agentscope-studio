@@ -38,6 +38,8 @@ export const PATHS = {
         path.join(PATHS.getAppDataDir(), 'Friday', 'config.json'),
     getFridayDialogHistoryPath: () =>
         path.join(PATHS.getAppDataDir(), 'Friday', 'session.json'),
+    getEvaluationDataDir: () =>
+        path.join(PATHS.getAppDataDir(), 'EvaluationData'),
 } as const;
 
 export const ServerConfig = {
@@ -157,6 +159,7 @@ export class ConfigManager {
         size: number; // in bytes
         formattedSize: string; // formatted size with appropriate unit
         fridayHistoryPath: string;
+        evaluationDataPath: string;
     } {
         const dbPath = this.getDatabasePath();
         const size = this.getDatabaseSize();
@@ -167,6 +170,19 @@ export class ConfigManager {
             formattedSize,
             fridayConfigPath: PATHS.getFridayConfigPath(),
             fridayHistoryPath: PATHS.getFridayDialogHistoryPath(),
+            evaluationDataPath: PATHS.getEvaluationDataDir(),
         };
+    }
+
+    /**
+     * Get the evaluation data directory path
+     * Create the directory if it doesn't exist
+     */
+    getEvaluationDataDir(): string {
+        const evalDir = PATHS.getEvaluationDataDir();
+        if (!fs.existsSync(evalDir)) {
+            fs.mkdirSync(evalDir, { recursive: true });
+        }
+        return evalDir;
     }
 }

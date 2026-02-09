@@ -10,9 +10,12 @@ interface Props {
     title: string;
 }
 
-const BaseDefaultPage = ({ icon, title }: Props) => {
+const BaseDefaultPage = ({ icon, title, ...rest }: Props) => {
     return (
-        <div className="flex flex-col items-center justify-center h-full w-full">
+        <div
+            className="flex flex-col items-center justify-center h-full w-full"
+            {...rest}
+        >
             {icon}
             <div className="text-primary/40 text-sm">{title}</div>
         </div>
@@ -84,11 +87,12 @@ export const WipPage = memo(() => {
 });
 
 export const EmptyPage = memo(
-    ({ size, title }: { size: number; title: string }) => {
+    ({ size, title, ...rest }: { size: number; title: string }) => {
         return (
             <BaseDefaultPage
                 icon={<EmptyIcon width={size} height={size} />}
                 title={title}
+                {...rest}
             />
         );
     },

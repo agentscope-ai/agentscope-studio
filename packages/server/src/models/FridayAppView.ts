@@ -18,7 +18,7 @@ import { ContentBlocks } from '../../../shared/src';
                     return `(
                 SELECT json_group_array(json(content))
                 FROM (
-                    SELECT content 
+                    SELECT content
                     FROM friday_app_message_table
                     WHERE reply_id = r.id
                     ORDER BY timestamp ASC

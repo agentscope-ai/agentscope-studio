@@ -26,6 +26,9 @@ import { FridayAppMessageDao } from '../dao/FridayAppMessage';
 import { InputRequestDao } from '../dao/InputRequest';
 import { SpanDao } from '../dao/Trace';
 import { ReplyingStateManager } from '../services/ReplyingStateManager';
+import path from 'path';
+import { FileDao } from '@/dao/File';
+import { EvalResult } from '../../../shared/src/types/evaluation';
 
 export class SocketManager {
     private static io: Server;
@@ -96,6 +99,55 @@ export class SocketManager {
                         throw error;
                     });
             });
+
+            socket.on(
+                SocketEvents.client.listDir,
+                async (dirPath: string, callback) => {
+                    console.debug(`${socket.id}: listDir: ${dirPath}`);
+
+                    try {
+                        if (fs.existsSync(dirPath)) {
+                            // 获取该目录下所有的文件和文件夹，只获取他们的名字，是否是文件夹，修改时间
+                            const fileNames = fs
+                                .readdirSync(dirPath)
+                                .map((fileName) => {
+                                    const filePath = path.join(
+                                        dirPath,
+                                        fileName,
+                                    );
+                                    const stats = fs.statSync(filePath);
+
+                                    callback({
+                                        success: true,
+                                        message:
+                                            'Directory listed successfully',
+                                        data: {
+                                            title: fileName,
+                                            isDirectory: stats.isDirectory(),
+                                            modifiedTime: stats.mtime,
+                                        },
+                                    } as ResponseBody);
+                                });
+                            callback({
+                                success: true,
+                                message: 'Directory listed successfully',
+                                data: fileNames,
+                            } as ResponseBody);
+                        } else {
+                            callback({
+                                success: false,
+                                message: 'Directory not exists',
+                            } as ResponseBody);
+                        }
+                    } catch (error) {
+                        console.error(error);
+                        callback({
+                            success: false,
+                            message: `Error: ${error}`,
+                        } as ResponseBody);
+                    }
+                },
+            );
 
             socket.on(
                 SocketEvents.client.joinProjectRoom,
@@ -530,6 +582,32 @@ export class SocketManager {
                     this.broadcastReplyToFridayAppRoom(undefined, true);
                 });
             });
+
+            // Evaluation
+            socket.on(
+                SocketEvents.client.getEvaluationResult,
+                async (
+                    evaluationDir: string,
+                    callback: (res: ResponseBody) => void,
+                ) => {
+                    try {
+                        const data = await FileDao.getJSONFile<EvalResult>(
+                            path.join(evaluationDir, 'evaluation_result.json'),
+                        );
+                        callback({
+                            success: true,
+                            message: 'Get evaluation result successfully',
+                            data: data,
+                        } as ResponseBody);
+                    } catch (error) {
+                        console.error(error);
+                        callback({
+                            success: false,
+                            message: `Error: ${error}`,
+                        } as ResponseBody);
+                    }
+                },
+            );
 
             socket.on('disconnect', () => {
                 console.debug('Client disconnected');

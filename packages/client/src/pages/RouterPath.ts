@@ -14,5 +14,5 @@ export enum RouterPath {
     FRIDAY_SETTING = '/setting',
 
     EVAL_EVALUATION = ':evalId',
-    EVAL_TASK = ':evalId/task/:taskId',
+    EVAL_TASK = ':evalId/:taskId',
 }

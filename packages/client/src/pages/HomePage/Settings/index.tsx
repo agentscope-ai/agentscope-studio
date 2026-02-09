@@ -161,7 +161,7 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                     </div>
                 )}
                 {activeKey === 'data' && (
-                    <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-4 overflow-y-auto max-h-[400px]">
                         <div className="flex flex-col bg-muted/50 rounded-lg p-4">
                             <div className="flex justify-between items-center text-sm mb-2">
                                 <span className="font-medium">Friday</span>
@@ -201,6 +201,19 @@ const Settings = ({ open, hasUpdate, onOpenChange }: SettingsProps) => {
                                 </div>
                                 <PathRender
                                     path={databaseInfo?.path}
+                                    title={t('settings.path')}
+                                />
+                            </div>
+                        )}
+                        {databaseInfo && (
+                            <div className="flex flex-col bg-muted/50 rounded-lg p-4">
+                                <div className="flex justify-between items-center text-sm mb-2">
+                                    <span className="font-medium">
+                                        {t('settings.evaluation-data')}
+                                    </span>
+                                </div>
+                                <PathRender
+                                    path={databaseInfo?.evaluationDataPath}
                                     title={t('settings.path')}
                                 />
                             </div>
