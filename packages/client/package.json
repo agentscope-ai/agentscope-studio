@@ -9,6 +9,7 @@
         "preview": "vite preview"
     },
     "dependencies": {
+        "@agentscope-ai/chat": "^1",
         "@ant-design/icons": "^5.0.0",
         "@antv/util": "^3.3.10",
         "@radix-ui/react-accordion": "^1.2.12",

@@ -8,6 +8,7 @@ import {
     RouteIcon,
     UnplugIcon,
     Tag,
+    MessageSquareIcon,
 } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 import { ComponentType, SVGProps } from 'react';
@@ -103,6 +104,16 @@ export const getSidebarItems = (t: (key: string) => string): SidebarGroup[] => [
                 title: t('common.friday'),
                 icon: BotIcon,
                 url: RouterPath.FRIDAY,
+            },
+        ],
+    },
+    {
+        title: t('common.services'),
+        items: [
+            {
+                title: t('common.runtime-chat'),
+                icon: MessageSquareIcon,
+                url: `${RouterPath.SERVICES}${RouterPath.SERVICES_RUNTIME_CHAT}`,
             },
         ],
     },

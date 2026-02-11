@@ -30,7 +30,7 @@ const MarkdownRender = ({ text }: Props) => {
             components={{
                 p: ({ ...props }) => (
                     <p
-                        className="leading-7 [&:not(:first-child)]:mt-6"
+                        className="leading-7 [&:not(:first-of-type)]:mt-6"
                         {...props}
                     />
                 ),

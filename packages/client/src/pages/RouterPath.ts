@@ -4,6 +4,7 @@ export enum RouterPath {
     TRACING = '/tracing',
     FRIDAY = '/friday',
     EVAL = '/eval',
+    SERVICES = '/services',
     TUTORIAL = 'https://doc.agentscope.io',
     API = 'https://doc.agentscope.io/api/agentscope.html',
     GITHUB = 'https://github.com/agentscope-ai/agentscope',
@@ -15,4 +16,6 @@ export enum RouterPath {
 
     EVAL_EVALUATION = ':evalId',
     EVAL_TASK = ':evalId/task/:taskId',
+
+    SERVICES_RUNTIME_CHAT = '/runtime-chat',
 }
