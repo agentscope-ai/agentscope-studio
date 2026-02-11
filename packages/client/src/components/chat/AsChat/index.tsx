@@ -43,7 +43,11 @@ import Character1Icon from '@/assets/svgs/avatar/character/018-waiter.svg?react'
 import Character2Icon from '@/assets/svgs/avatar/character/035-daughter.svg?react';
 import Character3Icon from '@/assets/svgs/avatar/character/050-woman.svg?react';
 import { Avatar } from '@/components/ui/avatar.tsx';
-import { AsAvatar, AvatarSet } from '@/components/chat/AsChat/avatar.tsx';
+import {
+    AsAvatar,
+    AvatarSet,
+    assignUniqueAvatars,
+} from '@/components/chat/AsChat/avatar.tsx';
 
 interface Props {
     /** List of chat replies to display */
@@ -195,6 +199,22 @@ const AsChat = ({
         return flattedReplies;
     }, [replies, byReplyId]);
 
+    // Precompute unique avatar assignments for all agent names
+    // This ensures different agents always get different avatars (when possible)
+    const avatarAssignmentMap = useMemo(() => {
+        if (avatarSet === AvatarSet.LETTER) {
+            return new Map<string, string>();
+        }
+        const uniqueNames = [
+            ...new Set(
+                organizedReplies
+                    .filter((r) => r.replyRole.toLowerCase() !== 'system')
+                    .map((r) => r.replyName),
+            ),
+        ];
+        return assignUniqueAvatars(uniqueNames, randomSeed, avatarSet);
+    }, [organizedReplies, randomSeed, avatarSet]);
+
     // When new replies arrive, auto-scroll to bottom if user is at bottom
     useEffect(() => {
         if (bubbleListRef.current && isAtBottom) {
@@ -296,8 +316,9 @@ const AsChat = ({
                                 <AsAvatar
                                     name={reply.replyName}
                                     role={reply.replyRole}
-                                    avatarSet={avatarSet}
-                                    seed={randomSeed}
+                                    avatarPath={avatarAssignmentMap.get(
+                                        reply.replyName,
+                                    )}
                                 />
                             }
                             key={reply.replyId}
