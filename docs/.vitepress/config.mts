@@ -65,6 +65,12 @@ export default defineConfig({
                         text: 'Agent',
                         items: [{ text: 'Friday', link: '/agent/friday' }],
                     },
+                    {
+                        text: 'Services',
+                        items: [
+                            { text: 'Runtime Chat', link: '/services/runtime-chat' },
+                        ],
+                    },
                 ],
             },
         },

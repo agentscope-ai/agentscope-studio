@@ -56,6 +56,7 @@ AgentScope Studio is a powerful **local visualization toolkit** designed for dev
 - **Tracing**: OpenTelemetry-based trace visualization for LLM calls, token usage, and agent invocations
 - **Agent Evaluation**: Evaluation-oriented analysis from a statistical perspective
 - **Built-in Copilot (Friday)**: A development assistant, playground for rapid secondary development, and integration hub for advanced features
+- **Runtime Chat (Services)**: Integrate with [AgentScope Runtime](https://github.com/agentscope-ai/agentscope-runtime) to chat with deployed agents directly in Studio
 
 <p align="center">
     <img
@@ -147,6 +148,24 @@ agentscope.init(
 # ...
 ```
 
+## 💬 Runtime Chat
+
+AgentScope Studio includes a built-in **Runtime Chat** service that connects to [AgentScope Runtime](https://github.com/agentscope-ai/agentscope-runtime) backends. To use it:
+
+1. **Start an AgentScope Runtime backend** (see [AgentScope Runtime Quick Start](https://github.com/agentscope-ai/agentscope-runtime#-quick-start)):
+
+```bash
+pip install agentscope-runtime
+# Create and run your agent app (see docs for full example)
+python app.py  # Starts on http://localhost:8090
+```
+
+2. **Connect from AgentScope Studio**: Navigate to **Services > Runtime Chat**, click the ⚙️ Settings icon, and set `baseURL` to your runtime endpoint (e.g., `http://localhost:8090`)
+
+3. **Start chatting** with your deployed agent!
+
+> For detailed configuration and full usage examples, see the [Runtime Chat documentation](./docs/tutorial/en/services/runtime-chat.md).
+
 ## 📚 Documentation
 
 For more details, please refer to our documentation:
@@ -156,6 +175,7 @@ For more details, please refer to our documentation:
 - [Project Management](./docs/tutorial/en/develop/project.md) - Managing projects and runs
 - [Tracing](./docs/tutorial/en/develop/tracing.md) - OpenTelemetry integration and semantic conventions
 - [Friday](./docs/tutorial/en/agent/friday.md) - Built-in Copilot guide
+- [Runtime Chat](./docs/tutorial/en/services/runtime-chat.md) - Integrated chat service guide
 - [Contributing](./docs/tutorial/en/tutorial/contributing.md) - How to contribute
 
 ## ⚖️ License
