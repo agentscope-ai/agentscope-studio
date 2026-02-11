@@ -68,7 +68,10 @@ export default defineConfig({
                     {
                         text: 'Services',
                         items: [
-                            { text: 'Runtime Chat', link: '/services/runtime-chat' },
+                            {
+                                text: 'Runtime Chat',
+                                link: '/services/runtime-chat',
+                            },
                         ],
                     },
                 ],
@@ -123,6 +126,15 @@ export default defineConfig({
                         text: '智能体',
                         items: [
                             { text: 'Friday', link: '/zh_CN/agent/friday' },
+                        ],
+                    },
+                    {
+                        text: '服务',
+                        items: [
+                            {
+                                text: 'Runtime Chat',
+                                link: '/zh_CN/services/runtime-chat',
+                            },
                         ],
                     },
                 ],

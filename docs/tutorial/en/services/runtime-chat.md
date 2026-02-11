@@ -115,34 +115,34 @@ Click the **⚙️ Settings** icon to open the configuration panel.
 
 ### Theme
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `colorPrimary` | Primary theme color | `#615CED` |
-| `colorBgBase` | Background color | — |
-| `colorTextBase` | Text color | — |
-| `darkMode` | Enable dark mode | `false` |
-| `leftHeader.logo` | Logo image URL | AgentScope logo |
-| `leftHeader.title` | Header title text | `Runtime Chat` |
+| Option             | Description         | Default         |
+| ------------------ | ------------------- | --------------- |
+| `colorPrimary`     | Primary theme color | `#615CED`       |
+| `colorBgBase`      | Background color    | —               |
+| `colorTextBase`    | Text color          | —               |
+| `darkMode`         | Enable dark mode    | `false`         |
+| `leftHeader.logo`  | Logo image URL      | AgentScope logo |
+| `leftHeader.title` | Header title text   | `Runtime Chat`  |
 
 ### Sender
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `disclaimer` | Disclaimer text below input | AI disclaimer text |
-| `maxLength` | Maximum input character length | `10000` |
+| Option       | Description                    | Default            |
+| ------------ | ------------------------------ | ------------------ |
+| `disclaimer` | Disclaimer text below input    | AI disclaimer text |
+| `maxLength`  | Maximum input character length | `10000`            |
 
 ### Welcome
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `greeting` | Welcome greeting text | `Hello, how can I help you today?` |
-| `description` | Welcome description | `I am a helpful assistant...` |
-| `avatar` | Welcome avatar URL | AgentScope logo |
-| `prompts` | Quick-start prompt suggestions | `Hello`, `How are you?`, `What can you do?` |
+| Option        | Description                    | Default                                     |
+| ------------- | ------------------------------ | ------------------------------------------- |
+| `greeting`    | Welcome greeting text          | `Hello, how can I help you today?`          |
+| `description` | Welcome description            | `I am a helpful assistant...`               |
+| `avatar`      | Welcome avatar URL             | AgentScope logo                             |
+| `prompts`     | Quick-start prompt suggestions | `Hello`, `How are you?`, `What can you do?` |
 
 ### API
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `baseURL` | AgentScope Runtime API base URL | — |
-| `token` | API authentication token | — |
+| Option    | Description                     | Default |
+| --------- | ------------------------------- | ------- |
+| `baseURL` | AgentScope Runtime API base URL | —       |
+| `token`   | API authentication token        | —       |

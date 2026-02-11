@@ -115,34 +115,34 @@ python app.py
 
 ### 主题 (Theme)
 
-| 选项 | 说明 | 默认值 |
-|------|------|--------|
-| `colorPrimary` | 主题主色调 | `#615CED` |
-| `colorBgBase` | 背景颜色 | — |
-| `colorTextBase` | 文字颜色 | — |
-| `darkMode` | 启用深色模式 | `false` |
-| `leftHeader.logo` | Logo 图片 URL | AgentScope 图标 |
-| `leftHeader.title` | 标题栏文字 | `Runtime Chat` |
+| 选项               | 说明          | 默认值          |
+| ------------------ | ------------- | --------------- |
+| `colorPrimary`     | 主题主色调    | `#615CED`       |
+| `colorBgBase`      | 背景颜色      | —               |
+| `colorTextBase`    | 文字颜色      | —               |
+| `darkMode`         | 启用深色模式  | `false`         |
+| `leftHeader.logo`  | Logo 图片 URL | AgentScope 图标 |
+| `leftHeader.title` | 标题栏文字    | `Runtime Chat`  |
 
 ### 发送器 (Sender)
 
-| 选项 | 说明 | 默认值 |
-|------|------|--------|
+| 选项         | 说明                     | 默认值      |
+| ------------ | ------------------------ | ----------- |
 | `disclaimer` | 输入框下方的免责声明文字 | AI 免责声明 |
-| `maxLength` | 最大输入字符数 | `10000` |
+| `maxLength`  | 最大输入字符数           | `10000`     |
 
 ### 欢迎页 (Welcome)
 
-| 选项 | 说明 | 默认值 |
-|------|------|--------|
-| `greeting` | 欢迎问候语 | `Hello, how can I help you today?` |
-| `description` | 欢迎描述文字 | `I am a helpful assistant...` |
-| `avatar` | 欢迎页头像 URL | AgentScope 图标 |
-| `prompts` | 快捷提示词建议 | `Hello`、`How are you?`、`What can you do?` |
+| 选项          | 说明           | 默认值                                      |
+| ------------- | -------------- | ------------------------------------------- |
+| `greeting`    | 欢迎问候语     | `Hello, how can I help you today?`          |
+| `description` | 欢迎描述文字   | `I am a helpful assistant...`               |
+| `avatar`      | 欢迎页头像 URL | AgentScope 图标                             |
+| `prompts`     | 快捷提示词建议 | `Hello`、`How are you?`、`What can you do?` |
 
 ### API 配置
 
-| 选项 | 说明 | 默认值 |
-|------|------|--------|
-| `baseURL` | AgentScope Runtime API 的 Base URL | — |
-| `token` | API 认证 Token | — |
+| 选项      | 说明                               | 默认值 |
+| --------- | ---------------------------------- | ------ |
+| `baseURL` | AgentScope Runtime API 的 Base URL | —      |
+| `token`   | API 认证 Token                     | —      |
