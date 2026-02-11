@@ -574,7 +574,7 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                                                 </Button>
                                             </div>
                                             <div className="bg-muted p-3 rounded-md overflow-auto max-h-[300px] text-xs">
-                                                <ReactJson src={extractInput(displaySpan) as object} name={false} displayDataTypes={false} />
+                                                <ReactJson src={extractOutput(displaySpan) as object} name={false} displayDataTypes={false} />
                                             </div>
                                         </div>
                                     </div>
