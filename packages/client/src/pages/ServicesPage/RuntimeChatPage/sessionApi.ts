@@ -13,9 +13,7 @@ class SessionApi implements IAgentScopeRuntimeWebUISessionAPI {
     }
 
     async getSessionList() {
-        this.sessionList = JSON.parse(
-            localStorage.getItem(this.lsKey) || '[]',
-        );
+        this.sessionList = JSON.parse(localStorage.getItem(this.lsKey) || '[]');
         return [...this.sessionList];
     }
 
@@ -34,10 +32,7 @@ class SessionApi implements IAgentScopeRuntimeWebUISessionAPI {
                 ...this.sessionList[index],
                 ...session,
             };
-            localStorage.setItem(
-                this.lsKey,
-                JSON.stringify(this.sessionList),
-            );
+            localStorage.setItem(this.lsKey, JSON.stringify(this.sessionList));
         }
         return [...this.sessionList];
     }

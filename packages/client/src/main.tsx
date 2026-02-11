@@ -10,16 +10,10 @@ import './i18n/config';
 const _origConsoleError = console.error;
 console.error = (...args: unknown[]) => {
     const msg = typeof args[0] === 'string' ? args[0] : '';
-    if (
-        msg.includes(':first-child') &&
-        msg.includes('potentially unsafe')
-    ) {
+    if (msg.includes(':first-child') && msg.includes('potentially unsafe')) {
         return;
     }
-    if (
-        msg.includes('flushSync') &&
-        msg.includes('lifecycle')
-    ) {
+    if (msg.includes('flushSync') && msg.includes('lifecycle')) {
         return;
     }
     _origConsoleError.apply(console, args);

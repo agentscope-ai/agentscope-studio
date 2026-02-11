@@ -16,7 +16,8 @@ interface OptionsEditorProps {
 /** Get a nested value from an object using a dot-separated path */
 function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
     return path.split('.').reduce<unknown>((o, k) => {
-        if (o && typeof o === 'object') return (o as Record<string, unknown>)[k];
+        if (o && typeof o === 'object')
+            return (o as Record<string, unknown>)[k];
         return undefined;
     }, obj);
 }
@@ -31,10 +32,7 @@ function setNestedValue(
     const keys = path.split('.');
     let current: Record<string, unknown> = clone;
     for (let i = 0; i < keys.length - 1; i++) {
-        if (
-            !current[keys[i]] ||
-            typeof current[keys[i]] !== 'object'
-        ) {
+        if (!current[keys[i]] || typeof current[keys[i]] !== 'object') {
             current[keys[i]] = {};
         }
         current = current[keys[i]] as Record<string, unknown>;
@@ -64,8 +62,8 @@ const OptionsEditor: React.FC<OptionsEditorProps> = ({
     onChange,
     onClose,
 }) => {
-    const [formData, setFormData] = useState<Record<string, unknown>>(
-        () => structuredClone(value ?? {}),
+    const [formData, setFormData] = useState<Record<string, unknown>>(() =>
+        structuredClone(value ?? {}),
     );
 
     useEffect(() => {
@@ -86,11 +84,10 @@ const OptionsEditor: React.FC<OptionsEditorProps> = ({
     };
 
     // --- prompts helpers ---
-    const prompts = (
-        getNestedValue(formData, 'welcome.prompts') as
-        | { value: string }[]
-        | undefined
-    ) ?? [];
+    const prompts =
+        (getNestedValue(formData, 'welcome.prompts') as
+            | { value: string }[]
+            | undefined) ?? [];
 
     const addPrompt = () => {
         update('welcome.prompts', [...prompts, { value: '' }]);
@@ -193,7 +190,10 @@ const OptionsEditor: React.FC<OptionsEditorProps> = ({
                                     ) as string) || '#000000'
                                 }
                                 onChange={(e) =>
-                                    update('theme.colorTextBase', e.target.value)
+                                    update(
+                                        'theme.colorTextBase',
+                                        e.target.value,
+                                    )
                                 }
                                 className="h-9 w-12 rounded border cursor-pointer"
                             />
@@ -206,7 +206,10 @@ const OptionsEditor: React.FC<OptionsEditorProps> = ({
                                     ) as string) || ''
                                 }
                                 onChange={(e) =>
-                                    update('theme.colorTextBase', e.target.value)
+                                    update(
+                                        'theme.colorTextBase',
+                                        e.target.value,
+                                    )
                                 }
                             />
                         </div>
@@ -220,9 +223,7 @@ const OptionsEditor: React.FC<OptionsEditorProps> = ({
                             checked={
                                 !!getNestedValue(formData, 'theme.darkMode')
                             }
-                            onCheckedChange={(v) =>
-                                update('theme.darkMode', v)
-                            }
+                            onCheckedChange={(v) => update('theme.darkMode', v)}
                         />
                     </div>
 

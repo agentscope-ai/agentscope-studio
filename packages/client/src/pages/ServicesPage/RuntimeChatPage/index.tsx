@@ -74,8 +74,9 @@ export default function RuntimeChatPage() {
         );
 
         // Build a custom leftHeader React element so we can control logo/title size
-        const leftHeaderConfig = (optionsConfig as Record<string, any>)?.theme
-            ?.leftHeader as { logo?: string; title?: string } | undefined;
+        const leftHeaderConfig = (
+            optionsConfig as Record<string, Record<string, unknown>>
+        )?.theme?.leftHeader as { logo?: string; title?: string } | undefined;
 
         const leftHeader = (
             <LeftHeader
