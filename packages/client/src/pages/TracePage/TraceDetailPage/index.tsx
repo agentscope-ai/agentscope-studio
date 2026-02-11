@@ -38,10 +38,7 @@ interface SpanTreeNode {
     children?: SpanTreeNode[];
 }
 
-const GEN_AI_OPERATION_COLORS: Record<
-    string,
-    string
-> = {
+const GEN_AI_OPERATION_COLORS: Record<string, string> = {
     invoke_agent: 'hsl(217 91% 60% / 0.8)',
     chat: 'hsl(142 71% 45% / 0.8)',
     create_agent: 'hsl(271 91% 65% / 0.8)',
@@ -55,9 +52,7 @@ const GEN_AI_OPERATION_COLORS: Record<
 const getFlameBarColor = (span: SpanData): string => {
     const attrs = span.attributes || {};
     const op = (getNestedValue(attrs, 'gen_ai.operation.name') ??
-        attrs['gen_ai.operation.name']) as
-        | string
-        | undefined;
+        attrs['gen_ai.operation.name']) as string | undefined;
     return (op && GEN_AI_OPERATION_COLORS[op]) ?? 'hsl(0 0% 60% / 0.6)';
 };
 
@@ -259,10 +254,8 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
         const start = BigInt(span.startTimeUnixNano);
         const end = BigInt(span.endTimeUnixNano);
         const { min, range } = flameGraphTimeRange;
-        const leftPercent =
-            Number((start - min) * 10000n / range) / 100;
-        const widthPercent =
-            Number((end - start) * 10000n / range) / 100;
+        const leftPercent = Number(((start - min) * 10000n) / range) / 100;
+        const widthPercent = Number(((end - start) * 10000n) / range) / 100;
         return { left: leftPercent, width: Math.max(widthPercent, 1) };
     };
 
@@ -273,7 +266,7 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
         const duration =
             Number(
                 BigInt(node.span.endTimeUnixNano) -
-                BigInt(node.span.startTimeUnixNano),
+                    BigInt(node.span.startTimeUnixNano),
             ) / 1e9;
         const isSelected = selectedSpanId === node.span.spanId;
         const hasChildren = node.children && node.children.length > 0;
@@ -282,8 +275,9 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
         return (
             <div key={node.span.spanId} className="w-full">
                 <div
-                    className={`relative flex items-center gap-2 p-2 rounded-md cursor-pointer hover:bg-muted overflow-hidden ${isSelected ? 'bg-muted' : ''
-                        }`}
+                    className={`relative flex items-center gap-2 p-2 rounded-md cursor-pointer hover:bg-muted overflow-hidden ${
+                        isSelected ? 'bg-muted' : ''
+                    }`}
                     style={{ paddingLeft: `${level * 16 + 8}px` }}
                     onClick={() => setSelectedSpanId(node.span.spanId)}
                 >
@@ -347,7 +341,9 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                                 style={{
                                     left: `${flameStyle.left}%`,
                                     width: `${flameStyle.width}%`,
-                                    backgroundColor: getFlameBarColor(node.span),
+                                    backgroundColor: getFlameBarColor(
+                                        node.span,
+                                    ),
                                 }}
                             />
                         </div>
@@ -489,9 +485,9 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                                             BigInt(
                                                 displaySpan.endTimeUnixNano,
                                             ) -
-                                            BigInt(
-                                                displaySpan.startTimeUnixNano,
-                                            ),
+                                                BigInt(
+                                                    displaySpan.startTimeUnixNano,
+                                                ),
                                         ) / 1e9,
                                     )}
                                 </div>
@@ -545,7 +541,15 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                                                 </Button>
                                             </div>
                                             <div className="bg-muted p-3 rounded-md overflow-auto max-h-[300px] text-xs">
-                                                <ReactJson src={extractInput(displaySpan) as object} name={false} displayDataTypes={false} />
+                                                <ReactJson
+                                                    src={
+                                                        extractInput(
+                                                            displaySpan,
+                                                        ) as object
+                                                    }
+                                                    name={false}
+                                                    displayDataTypes={false}
+                                                />
                                             </div>
                                         </div>
                                         <Separator />
@@ -574,7 +578,15 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                                                 </Button>
                                             </div>
                                             <div className="bg-muted p-3 rounded-md overflow-auto max-h-[300px] text-xs">
-                                                <ReactJson src={extractOutput(displaySpan) as object} name={false} displayDataTypes={false} />
+                                                <ReactJson
+                                                    src={
+                                                        extractOutput(
+                                                            displaySpan,
+                                                        ) as object
+                                                    }
+                                                    name={false}
+                                                    displayDataTypes={false}
+                                                />
                                             </div>
                                         </div>
                                     </div>
@@ -607,7 +619,13 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                                         </Button>
                                     </div>
                                     <div className="bg-muted p-3 rounded-md overflow-auto text-xs">
-                                        <ReactJson src={displaySpan.attributes as object} name={false} displayDataTypes={false} />
+                                        <ReactJson
+                                            src={
+                                                displaySpan.attributes as object
+                                            }
+                                            name={false}
+                                            displayDataTypes={false}
+                                        />
                                     </div>
                                 </AccordionContent>
                             </AccordionItem>
