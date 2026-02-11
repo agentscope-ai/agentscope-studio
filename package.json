@@ -59,6 +59,7 @@
         "opener": "^1.5.2",
         "portfinder": "^1.0.36",
         "protobufjs": "^7.5.3",
+        "react-json-view": "^1.21.3",
         "socket.io": "^4.8.1",
         "strip-ansi": "^7.1.0",
         "typeorm": "^0.3.21",
