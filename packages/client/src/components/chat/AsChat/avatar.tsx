@@ -66,10 +66,11 @@ export const assignUniqueAvatars = (
     }
 
     const shuffledPaths = seededShuffle(filteredPaths, seed);
-    const sortedNames = [...names].sort();
 
-    for (let i = 0; i < sortedNames.length; i++) {
-        assignment.set(sortedNames[i], shuffledPaths[i % shuffledPaths.length]);
+    // Assign in first-appearance order (preserved by Set in the caller)
+    // so that existing agents keep their avatars when new agents join.
+    for (let i = 0; i < names.length; i++) {
+        assignment.set(names[i], shuffledPaths[i % shuffledPaths.length]);
     }
 
     return assignment;
