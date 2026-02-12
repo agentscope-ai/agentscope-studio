@@ -122,10 +122,11 @@ export const AsAvatar = ({
     > | null>(null);
 
     useEffect(() => {
+        let stale = false;
         if (avatarPath && role.toLowerCase() !== 'system') {
             loadAvatarComponent(avatarPath)
                 .then((component) => {
-                    if (component) {
+                    if (!stale && component) {
                         setAvatarComponent(() => component);
                     }
                 })
@@ -133,6 +134,9 @@ export const AsAvatar = ({
         } else {
             setAvatarComponent(null);
         }
+        return () => {
+            stale = true;
+        };
     }, [role, avatarPath]);
 
     let avatarComponent;
