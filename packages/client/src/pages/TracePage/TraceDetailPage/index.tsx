@@ -31,7 +31,7 @@ import {
 } from '@/utils/common';
 import { SpanData } from '@shared/types/trace';
 import { getNestedValue } from '@shared/utils/objectUtils';
-import ReactJson from 'react-json-view';
+import JsonView from '@uiw/react-json-view';
 
 interface SpanTreeNode {
     span: SpanData;
@@ -541,15 +541,7 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                                                 </Button>
                                             </div>
                                             <div className="bg-muted p-3 rounded-md overflow-auto max-h-[300px] text-xs">
-                                                <ReactJson
-                                                    src={
-                                                        extractInput(
-                                                            displaySpan,
-                                                        ) as object
-                                                    }
-                                                    name={false}
-                                                    displayDataTypes={false}
-                                                />
+                                                <JsonView value={extractInput(displaySpan) as object} displayDataTypes={false} displayObjectSize={false} />
                                             </div>
                                         </div>
                                         <Separator />
@@ -578,15 +570,7 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                                                 </Button>
                                             </div>
                                             <div className="bg-muted p-3 rounded-md overflow-auto max-h-[300px] text-xs">
-                                                <ReactJson
-                                                    src={
-                                                        extractOutput(
-                                                            displaySpan,
-                                                        ) as object
-                                                    }
-                                                    name={false}
-                                                    displayDataTypes={false}
-                                                />
+                                                <JsonView value={extractOutput(displaySpan) as object} displayDataTypes={false} displayObjectSize={false} />
                                             </div>
                                         </div>
                                     </div>
@@ -619,13 +603,7 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                                         </Button>
                                     </div>
                                     <div className="bg-muted p-3 rounded-md overflow-auto text-xs">
-                                        <ReactJson
-                                            src={
-                                                displaySpan.attributes as object
-                                            }
-                                            name={false}
-                                            displayDataTypes={false}
-                                        />
+                                        <JsonView value={displaySpan.attributes as object} displayDataTypes={false} displayObjectSize={false} />
                                     </div>
                                 </AccordionContent>
                             </AccordionItem>
