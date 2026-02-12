@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { SpanData } from '@shared/types/trace.ts';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { materialDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { getNestedValue } from '@shared/utils/objectUtils';
 
 interface SpanSectionProps {
     title: string;
@@ -52,10 +53,21 @@ const SpanPanel = ({ span }: Props) => {
         return null;
     }
 
-    const attributes = span.attributes?.agentscope
-        ?.function as unknown as Record<string, unknown>;
-    const operation_name = span.attributes?.gen_ai?.operation
-        ?.name as unknown as string;
+    // Use getNestedValue to support both flat and nested structures
+    // For flat structure, we need to get input/output directly
+    // For nested structure, we can get the function object first
+    const agentscopeInput = getNestedValue(
+        span.attributes,
+        'agentscope.function.input',
+    ) as Record<string, unknown> | undefined;
+    const agentscopeOutput = getNestedValue(
+        span.attributes,
+        'agentscope.function.output',
+    ) as Record<string, unknown> | undefined;
+    const operation_name = getNestedValue(
+        span.attributes,
+        'gen_ai.operation.name',
+    ) as string | undefined;
     const renderCol = (title: string, value: string | ReactNode) => {
         return (
             <div className="flex col-span-1 pt-4 pb-4 pl-4">
@@ -97,16 +109,12 @@ const SpanPanel = ({ span }: Props) => {
             <SpanSection
                 title={t('common.input')}
                 description={t('description.trace.input')}
-                content={
-                    attributes?.input as unknown as Record<string, unknown>
-                }
+                content={agentscopeInput || {}}
             />
             <SpanSection
                 title={t('common.output')}
                 description={t('description.trace.output')}
-                content={
-                    attributes?.output as unknown as Record<string, unknown>
-                }
+                content={agentscopeOutput || {}}
             />
         </div>
     );

@@ -31,11 +31,30 @@ import {
 } from '@/utils/common';
 import { SpanData } from '@shared/types/trace';
 import { getNestedValue } from '@shared/utils/objectUtils';
+import JsonView from '@uiw/react-json-view';
 
 interface SpanTreeNode {
     span: SpanData;
     children?: SpanTreeNode[];
 }
+
+const GEN_AI_OPERATION_COLORS: Record<string, string> = {
+    invoke_agent: 'hsl(217 91% 60% / 0.8)',
+    chat: 'hsl(142 71% 45% / 0.8)',
+    create_agent: 'hsl(271 91% 65% / 0.8)',
+    embeddings: 'hsl(25 95% 53% / 0.8)',
+    execute_tool: 'hsl(174 72% 45% / 0.8)',
+    generate_content: 'hsl(239 84% 67% / 0.8)',
+    retrieval: 'hsl(43 96% 56% / 0.8)',
+    text_completion: 'hsl(350 89% 60% / 0.8)',
+};
+
+const getFlameBarColor = (span: SpanData): string => {
+    const attrs = span.attributes || {};
+    const op = (getNestedValue(attrs, 'gen_ai.operation.name') ??
+        attrs['gen_ai.operation.name']) as string | undefined;
+    return (op && GEN_AI_OPERATION_COLORS[op]) ?? 'hsl(0 0% 60% / 0.6)';
+};
 
 const getStatusIcon = (statusCode: number) => {
     if (statusCode === 2) {
@@ -135,6 +154,19 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
         return Number(latestEnd - earliestStart) / 1e9;
     }, [filteredSpans]);
 
+    // Time range for flame graph: min = earliest start, max = latest end
+    const flameGraphTimeRange = useMemo(() => {
+        if (!filteredSpans.length) return null;
+        const startTimes = filteredSpans.map((s) =>
+            BigInt(s.startTimeUnixNano),
+        );
+        const endTimes = filteredSpans.map((s) => BigInt(s.endTimeUnixNano));
+        const min = startTimes.reduce((a, b) => (a < b ? a : b));
+        const max = endTimes.reduce((a, b) => (a > b ? a : b));
+        const range = max - min;
+        return { min, max, range: range > 0n ? range : 1n };
+    }, [filteredSpans]);
+
     // Display span (selected or root)
     const displaySpan = selectedSpan || rootSpan;
 
@@ -217,6 +249,19 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
         return undefined;
     };
 
+    const getFlameBarStyle = (span: SpanData) => {
+        if (!flameGraphTimeRange) return { left: 0, width: 0 };
+        const start = BigInt(span.startTimeUnixNano);
+        const end = BigInt(span.endTimeUnixNano);
+        const { min, range } = flameGraphTimeRange;
+        const leftPercent = Number(((start - min) * 10000n) / range) / 100;
+        const widthPercent = Number(((end - start) * 10000n) / range) / 100;
+        return { left: leftPercent, width: Math.max(widthPercent, 1) };
+    };
+
+    // 火焰图条左边缘与行内容区对齐，不随层级缩进，便于时间轴对比
+    const FLAME_BAR_LEFT_OFFSET_PX = 8;
+
     const renderTreeNode = (node: SpanTreeNode, level = 0): React.ReactNode => {
         const duration =
             Number(
@@ -225,11 +270,12 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
             ) / 1e9;
         const isSelected = selectedSpanId === node.span.spanId;
         const hasChildren = node.children && node.children.length > 0;
+        const flameStyle = getFlameBarStyle(node.span);
 
         return (
             <div key={node.span.spanId} className="w-full">
                 <div
-                    className={`flex items-center gap-2 p-2 rounded-md cursor-pointer hover:bg-muted overflow-hidden ${
+                    className={`relative flex items-center gap-2 p-2 rounded-md cursor-pointer hover:bg-muted overflow-hidden ${
                         isSelected ? 'bg-muted' : ''
                     }`}
                     style={{ paddingLeft: `${level * 16 + 8}px` }}
@@ -267,12 +313,41 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                             <span className="text-xs break-all max-w-[400px]">
                                 {node.span.name}
                             </span>
+                            {flameGraphTimeRange && (
+                                <>
+                                    <br />
+                                    <span className="text-xs text-muted-foreground">
+                                        {formatDurationWithUnit(duration)}
+                                    </span>
+                                </>
+                            )}
                         </TooltipContent>
                     </Tooltip>
                     <span className="text-xs text-muted-foreground shrink-0">
                         {formatDurationWithUnit(duration)}
                     </span>
                     {getStatusIcon(node.span.status?.code || 0)}
+                    {/* 火焰图条：绝对定位，左边缘固定不随层级缩进 */}
+                    {flameGraphTimeRange && (
+                        <div
+                            className="absolute bottom-0 h-1 bg-muted overflow-hidden pointer-events-none"
+                            style={{
+                                left: `${FLAME_BAR_LEFT_OFFSET_PX}px`,
+                                right: 8,
+                            }}
+                        >
+                            <div
+                                className="absolute top-0 bottom-0 rounded-sm transition-colors"
+                                style={{
+                                    left: `${flameStyle.left}%`,
+                                    width: `${flameStyle.width}%`,
+                                    backgroundColor: getFlameBarColor(
+                                        node.span,
+                                    ),
+                                }}
+                            />
+                        </div>
+                    )}
                 </div>
                 {hasChildren &&
                     expandedNodes.has(node.span.spanId) &&
@@ -465,13 +540,9 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                                                     <CopyIcon className="size-3" />
                                                 </Button>
                                             </div>
-                                            <pre className="bg-muted p-3 rounded-md overflow-auto max-h-[300px] text-xs">
-                                                {JSON.stringify(
-                                                    extractInput(displaySpan),
-                                                    null,
-                                                    2,
-                                                )}
-                                            </pre>
+                                            <div className="bg-muted p-3 rounded-md overflow-auto max-h-[300px] text-xs">
+                                                <JsonView value={extractInput(displaySpan) as object} displayDataTypes={false} displayObjectSize={false} />
+                                            </div>
                                         </div>
                                         <Separator />
                                         <div>
@@ -498,13 +569,9 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                                                     <CopyIcon className="size-3" />
                                                 </Button>
                                             </div>
-                                            <pre className="bg-muted p-3 rounded-md overflow-auto max-h-[300px] text-xs">
-                                                {JSON.stringify(
-                                                    extractOutput(displaySpan),
-                                                    null,
-                                                    2,
-                                                )}
-                                            </pre>
+                                            <div className="bg-muted p-3 rounded-md overflow-auto max-h-[300px] text-xs">
+                                                <JsonView value={extractOutput(displaySpan) as object} displayDataTypes={false} displayObjectSize={false} />
+                                            </div>
                                         </div>
                                     </div>
                                 </AccordionContent>
@@ -535,13 +602,9 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                                             <CopyIcon className="size-3" />
                                         </Button>
                                     </div>
-                                    <pre className="bg-muted p-3 rounded-md overflow-auto text-xs">
-                                        {JSON.stringify(
-                                            displaySpan.attributes,
-                                            null,
-                                            2,
-                                        )}
-                                    </pre>
+                                    <div className="bg-muted p-3 rounded-md overflow-auto text-xs">
+                                        <JsonView value={displaySpan.attributes as object} displayDataTypes={false} displayObjectSize={false} />
+                                    </div>
                                 </AccordionContent>
                             </AccordionItem>
                         </Accordion>

@@ -7,10 +7,7 @@ import {
     SpanResource,
     SpanScope,
 } from '../../../shared/src/types/trace';
-import {
-    getNestedValue,
-    unflattenObject,
-} from '../../../shared/src/utils/objectUtils';
+import { getNestedValue } from '../../../shared/src/utils/objectUtils';
 import {
     decodeUnixNano,
     getTimeDifferenceNano,
@@ -127,8 +124,9 @@ export class SpanProcessor {
 
     private static decodeAttributes(attributes: unknown): Attributes {
         const attrs = Array.isArray(attributes) ? attributes : [];
-        return this.unflattenAttributes(
-            this.loadJsonStrings(this.decodeKeyValues(attrs)),
+        // Keep attributes in original structure (no unflatten) - preserve as-is from OTLP
+        return this.loadJsonStrings(
+            this.decodeKeyValues(attrs),
         ) as unknown as Attributes;
     }
 
@@ -188,7 +186,11 @@ export class SpanProcessor {
         }
 
         // Check if already in new format by looking for gen_ai attributes
-        if (getNestedValue(attributes, 'gen_ai')) {
+        // Support both flat structure (e.g., "gen_ai.conversation.id") and nested structure
+        const hasGenAi =
+            Object.keys(attributes).some((key) => key.startsWith('gen_ai.')) ||
+            getNestedValue(attributes, 'gen_ai') !== undefined;
+        if (hasGenAi) {
             return { span_name: span.name || '', attributes: attributes };
         }
 
@@ -312,14 +314,7 @@ export class SpanProcessor {
 
     private static decodeAnyValue(value: unknown): unknown {
         const valueObj = value as Record<string, unknown>;
-        if (valueObj.bool_value !== false && valueObj.bool_value !== undefined)
-            return valueObj.bool_value;
-        if (valueObj.int_value !== 0 && valueObj.int_value !== undefined)
-            return valueObj.int_value;
-        if (valueObj.double_value !== 0 && valueObj.double_value !== undefined)
-            return valueObj.double_value;
-        if (valueObj.string_value !== '' && valueObj.string_value !== undefined)
-            return valueObj.string_value;
+        // Prefer complex types first so nested structure is preserved
         const arrayValue = valueObj.array_value as
             | { values?: unknown[] }
             | undefined;
@@ -328,14 +323,12 @@ export class SpanProcessor {
                 this.decodeAnyValue(v),
             );
         }
-
         const kvlistValue = valueObj.kvlist_value as
             | { values?: unknown[] }
             | undefined;
         if (kvlistValue?.values) {
             return this.decodeKeyValues(kvlistValue.values);
         }
-
         if (
             valueObj.bytes_value &&
             typeof valueObj.bytes_value === 'object' &&
@@ -343,10 +336,40 @@ export class SpanProcessor {
         ) {
             return valueObj.bytes_value;
         }
-
+        // Check primitive fields in priority order: string > int > double > bool
+        // Handle protobuf defaults: bool_value=false might be default (unset),
+        // so we check string/int/double first, then bool only if others are not set
+        // For string/int/double, we skip empty/zero values initially, then fallback
+        if (
+            valueObj.string_value !== undefined &&
+            valueObj.string_value !== null &&
+            valueObj.string_value !== ''
+        ) {
+            return valueObj.string_value;
+        }
+        if (
+            valueObj.int_value !== undefined &&
+            valueObj.int_value !== null &&
+            valueObj.int_value !== 0
+        ) {
+            return valueObj.int_value;
+        }
+        if (
+            valueObj.double_value !== undefined &&
+            valueObj.double_value !== null &&
+            valueObj.double_value !== 0
+        ) {
+            return valueObj.double_value;
+        }
+        // bool_value: only return true (false might be default)
+        if (valueObj.bool_value === true) {
+            return valueObj.bool_value;
+        }
+        // Fallback: return any remaining values (including false, 0, "")
+        // This handles cases where false/0/"" are actual values
+        if (valueObj.string_value !== undefined) return valueObj.string_value;
         if (valueObj.int_value !== undefined) return valueObj.int_value;
         if (valueObj.double_value !== undefined) return valueObj.double_value;
-        if (valueObj.string_value !== undefined) return valueObj.string_value;
         if (valueObj.bool_value !== undefined) return valueObj.bool_value;
         return null;
     }
@@ -391,28 +414,43 @@ export class SpanProcessor {
         };
     }
 
-    private static unflattenAttributes(
-        flat: Record<string, unknown>,
-    ): Record<string, unknown> {
-        return unflattenObject(flat);
-    }
-
+    /**
+     * Recursively parse JSON strings in attributes so nested values (e.g. from
+     * kvlist_value or SDK) are usable. Only plain objects are recursed; arrays
+     * and primitives are left as-is to avoid breaking OTLP array/bytes.
+     */
     private static loadJsonStrings(
         attributes: Record<string, unknown>,
     ): Record<string, unknown> {
         const result: Record<string, unknown> = {};
         for (const [key, value] of Object.entries(attributes)) {
-            if (typeof value === 'string') {
-                try {
-                    result[key] = JSON.parse(value);
-                } catch {
-                    result[key] = value;
-                }
-            } else {
-                result[key] = value;
-            }
+            result[key] = this.parseJsonValue(value);
         }
         return result;
+    }
+
+    private static parseJsonValue(value: unknown): unknown {
+        if (typeof value === 'string') {
+            try {
+                return this.parseJsonValue(JSON.parse(value));
+            } catch {
+                return value;
+            }
+        }
+        if (
+            value !== null &&
+            typeof value === 'object' &&
+            !Array.isArray(value) &&
+            !(value instanceof Uint8Array)
+        ) {
+            const obj = value as Record<string, unknown>;
+            const out: Record<string, unknown> = {};
+            for (const [k, v] of Object.entries(obj)) {
+                out[k] = this.parseJsonValue(v);
+            }
+            return out;
+        }
+        return value;
     }
 
     private static decodeResource(resource: unknown): SpanResource {
