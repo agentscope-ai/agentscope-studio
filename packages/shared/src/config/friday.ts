@@ -5,6 +5,22 @@ import path from 'path';
 import { runPythonScript } from '../../../server/src/trpc/socket';
 import { execSync } from 'child_process';
 
+export interface MCPServer {
+    name: string;
+    type: 'local' | 'remote';
+    enabled: boolean;
+    // Local MCP fields
+    command?: string;
+    args?: string[];
+    env?: Record<string, string>;
+    // Local MCP JSON config (new format)
+    config?: string; // JSON string for local MCP configuration
+    // Remote MCP fields
+    url?: string;
+    transportType?: 'streamable_http' | 'sse';
+    apiKey?: string;
+}
+
 export interface FridayConfig {
     pythonEnv: string;
     mainScriptPath?: string;
@@ -12,6 +28,7 @@ export interface FridayConfig {
     modelName: string;
     writePermission: boolean;
     baseUrl?: string;
+    mcpServers?: MCPServer[];
 }
 
 export class FridayConfigManager {

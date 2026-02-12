@@ -35,6 +35,7 @@ from utils.common import get_local_file_path
 from utils.connect import StudioConnect
 from utils.constants import FRIDAY_SESSION_ID
 
+from mcp_manager import connect_mcp_servers, close_mcp_connections
 
 async def main():
     args = get_args()
@@ -87,6 +88,10 @@ The solution/code to the user query may already exist in the AgentScope resource
     toolkit.register_tool_function(
         view_agentscope_faq, group_name="agentscope_tools"
     )
+
+    # Get MCP servers configuration and connect
+    mcp_servers = args.mcpServers if hasattr(args, 'mcpServers') else []
+    local_mcp_clients = await connect_mcp_servers(mcp_servers, toolkit)
 
     # get model from args
     model = get_model(args.llmProvider, args.modelName, args.apiKey, args.clientKwargs, args.generateKwargs)
@@ -164,6 +169,9 @@ The solution/code to the user query may already exist in the AgentScope resource
         session_id=FRIDAY_SESSION_ID,
         friday=agent
     )
+    
+    # Close local MCP connections
+    await close_mcp_connections(local_mcp_clients)
 
 if __name__ == '__main__':
     asyncio.run(main())

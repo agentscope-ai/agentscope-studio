@@ -112,6 +112,41 @@
         },
         "friday": "一个基于 LLM 构建的本地 AI 助手，在用户的日常生活和开发工作中提供帮助"
     },
+    "mcp": {
+        "title": "MCP 服务器管理",
+        "description": "添加和管理 Model Context Protocol (MCP) 服务器配置",
+        "empty-description": "暂无 MCP 服务器，点击下方按钮添加",
+        "server": "服务器",
+        "server-name": "服务器名称",
+        "server-name-placeholder": "例如：filesystem, github",
+        "type": "类型",
+        "local": "本地",
+        "remote": "远程",
+        "config": "服务配置",
+        "config-placeholder": "{\n  \"mcpServers\": {\n    \"your-service-name\": {\n      \"command\": \"your-command\",\n      \"args\": [\n        \"arg1\",\n        \"arg2\"\n      ]\n    }\n  }\n}",
+        "config-hint": "请输入符合 MCP 规范的 JSON 配置，包含 mcpServers 字段",
+        "config-invalid": "JSON 格式错误，请检查配置",
+        "command": "命令",
+        "command-placeholder": "例如：node, python",
+        "args": "参数",
+        "args-placeholder": "例如：/path/to/server.js --port 3000",
+        "env": "环境变量",
+        "env-placeholder": "每行一个，格式：KEY=VALUE\n例如：API_KEY=your_key",
+        "url": "服务器地址",
+        "url-placeholder": "例如：https://api.example.com/mcp",
+        "transport-type": "传输类型",
+        "api-key": "API 密钥",
+        "api-key-placeholder": "输入 API 密钥（可选）",
+        "add-server": "添加 MCP 服务器",
+        "delete-confirm-title": "确认删除",
+        "delete-confirm-message": "你确定要删除这个 MCP 服务器吗？",
+        "required": "是必填项"
+    },
+    "button": {
+        "cancel": "取消",
+        "save": "保存",
+        "delete": "删除"
+    },
     "error": {
         "empty-input": "输入不能为空",
         "invalid-url": "URL 无效：无法获取文件扩展名",
@@ -171,6 +206,12 @@
             "update-success": "更新成功！已安装版本 {{version}}",
             "update-failed": "更新失败：{{error}}",
             "restart-required": "请重启应用以使用新版本"
+        },
+        "friday": {
+            "success-install-requirements": "依赖安装成功",
+            "success-save-config": "配置保存成功",
+            "info-install-requirements": "正在为 Friday 安装 Python 依赖，请稍候...",
+            "info-save-config": "正在保存 Friday 配置，请稍候..."
         }
     },
     "notification": {
@@ -267,7 +308,8 @@
             "send-message": "发送消息",
             "send-message-disable": "当前输入请求为空",
             "scroll-to-bottom": "滚动到最底部",
-            "voice-button": "录音"
+            "voice-button": "录音",
+            "mcp-management": "管理 MCP 服务器"
         },
         "chart": {
             "invocation": "调用次数"
