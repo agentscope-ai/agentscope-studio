@@ -110,13 +110,13 @@ async def _connect_local_server(
             
             try:
                 # Create StdIOStatefulClient for local MCP service
-                # 只传递前端提供的参数，其他使用默认值
+                # Only pass parameters provided by frontend, others use default values
                 client_kwargs = {
                     'name': service_name,
                     'command': command,
                 }
                 
-                # 添加可选参数（只有当前端提供了才添加）
+                # Add optional parameters (only if provided by frontend)
                 if args_list is not None:
                     client_kwargs['args'] = args_list
                 if env_vars is not None:
@@ -160,7 +160,7 @@ async def _connect_remote_server(
     """
     print(f"\n[Remote MCP] {server.get('name', 'Unknown')}")
     
-    # 读取 remoteConfig 字段
+    # Read remoteConfig field
     remote_config = server.get('remoteConfig', '')
     if not remote_config:
         print(f"  - Error: Remote config is empty")
@@ -169,22 +169,28 @@ async def _connect_remote_server(
     try:
         config = json5.loads(remote_config)
         
-        # 解析 mcpServers 嵌套格式
+        # Parse mcpServers nested format
         if 'mcpServers' not in config:
             print(f"  - Error: Invalid config format, mcpServers field required")
             return
         
         mcp_servers = config['mcpServers']
-        # 取第一个服务器配置
-        first_server_key = next(iter(mcp_servers.keys()), None)
-        if not first_server_key:
+        # Each remoteConfig should contain exactly one server
+        # Get the first server configuration (expected to be the only one)
+        if len(mcp_servers) == 0:
             print(f"  - Error: No server found in mcpServers")
             return
+        
+        if len(mcp_servers) > 1:
+            print(f"  - Warning: Multiple servers found in mcpServers, only the first will be used")
+            print(f"    Found servers: {list(mcp_servers.keys())}")
+        
+        first_server_key = next(iter(mcp_servers.keys()))
         
         server_config = mcp_servers[first_server_key]
         url = server_config.get('url', '')
         transport_type = server_config.get('type', 'streamablehttp')
-        # 转换为后端所需的格式：streamablehttp -> streamable_http
+        # Convert to backend required format: streamablehttp -> streamable_http
         transport = 'streamable_http' if transport_type == 'streamablehttp' else transport_type
         headers = server_config.get('headers')
         timeout = server_config.get('timeout')
@@ -213,14 +219,14 @@ async def _connect_remote_server(
     
     try:
         # Create HttpStatelessClient for remote MCP service
-        # 只传递前端提供的参数，其他使用默认值
+        # Only pass parameters provided by frontend, others use default values
         client_params = {
             'name': server.get('name', 'MCP Client'),
             'transport': transport,
             'url': url,
         }
         
-        # 添加可选参数（只有当前端提供了才添加）
+        # Add optional parameters (only if provided by frontend)
         if headers is not None:
             client_params['headers'] = headers
         if timeout is not None:
@@ -228,7 +234,7 @@ async def _connect_remote_server(
         if sse_read_timeout is not None:
             client_params['sse_read_timeout'] = sse_read_timeout
         
-        # 合并额外的 client_kwargs
+        # Merge additional client_kwargs
         if client_kwargs:
             client_params.update(client_kwargs)
         

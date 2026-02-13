@@ -1,7 +1,7 @@
 import { memo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { SettingsIcon, Trash2Icon, ServerIcon } from 'lucide-react';
+import { SettingsIcon, Trash2Icon, Plug2Icon } from 'lucide-react';
 
 import { RouterPath } from '@/pages/RouterPath';
 import { useFridayAppRoom } from '@/context/FridayAppRoomContext.tsx';
@@ -144,10 +144,10 @@ const ChatPage = () => {
                             variant="ghost"
                             size="icon-sm"
                             onClick={() => setMcpSheetOpen(true)}
-                            className="relative"
+                            className="flex flex-col items-center justify-center gap-0 hover:bg-accent p-1"
                         >
-                            <ServerIcon width={15} height={15} />
-                            <span className="absolute bottom-0 right-0 text-[8px] font-bold text-primary bg-background px-0.5 rounded">
+                            <Plug2Icon className="w-3 h-3 text-muted-foreground" />
+                            <span className="text-[10px] font-semibold tracking-tight text-foreground leading-none">
                                 MCP
                             </span>
                         </Button>

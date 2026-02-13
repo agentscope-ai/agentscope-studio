@@ -20,7 +20,10 @@ interface MCPContextType {
     ) => void;
     saveServer: (index: number) => Promise<boolean>;
     cancelServer: () => void;
-    validateServer: (server: MCPServer) => { valid: boolean; message?: string };
+    validateServer: (
+        server: MCPServer,
+        index: number,
+    ) => { valid: boolean; message?: string };
     updateAndSaveEnabled: (index: number, enabled: boolean) => void;
 }
 
@@ -92,15 +95,14 @@ export const MCPProvider: React.FC<MCPProviderProps> = ({
 
     // 验证服务器配置
     const validateServer = useCallback(
-        (server: MCPServer) => {
+        (server: MCPServer, index: number) => {
             if (!server.name) {
                 return { valid: false, message: 'mcp.server-name' };
             }
 
             // 验证服务器名称唯一性
             const duplicateNames = servers.filter(
-                (s, idx) =>
-                    s.name === server.name && servers.indexOf(server) !== idx,
+                (s, idx) => s.name === server.name && index !== idx,
             );
             if (duplicateNames.length > 0) {
                 return { valid: false, message: 'mcp.server-name-duplicate' };
@@ -171,7 +173,7 @@ export const MCPProvider: React.FC<MCPProviderProps> = ({
     const saveServer = useCallback(
         async (index: number): Promise<boolean> => {
             const server = servers[index];
-            const validation = validateServer(server);
+            const validation = validateServer(server, index);
 
             if (!validation.valid) {
                 return false;

@@ -159,7 +159,9 @@
         "delete-confirm-title": "Confirm Delete",
         "delete-confirm-message": "Are you sure you want to delete this MCP server?",
         "validation-error": "Validation Error",
-        "required": "is required"
+        "required": "is required",
+        "json-parse-error": "JSON parse error",
+        "name-sync-failed": "Failed to sync name to JSON configuration"
     },
     "button": {
         "cancel": "Cancel",

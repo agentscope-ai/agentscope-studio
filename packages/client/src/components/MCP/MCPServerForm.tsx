@@ -108,7 +108,7 @@ export const MCPServerForm: React.FC<MCPServerFormProps> = ({
     };
 
     const handleSave = () => {
-        const validation = validateServer(server);
+        const validation = validateServer(server, index);
         if (!validation.valid && validation.message) {
             setErrorMessage(t(validation.message) + ' ' + t('mcp.required'));
             return;
@@ -166,8 +166,19 @@ export const MCPServerForm: React.FC<MCPServerFormProps> = ({
                         );
                     }
                 }
-            } catch {
-                // JSON 解析失败，忽略
+            } catch (error) {
+                // JSON 解析失败，显示警告但不阻止名称修改
+                console.warn(
+                    'Failed to sync name to local config JSON:',
+                    error,
+                );
+                setErrorMessage(
+                    t('mcp.json-parse-error') +
+                        ': ' +
+                        t('mcp.name-sync-failed'),
+                );
+                // 清除错误消息（3秒后）
+                setTimeout(() => setErrorMessage(''), 3000);
             }
         } else if (server.type === 'remote' && server.remoteConfig) {
             try {
@@ -190,8 +201,19 @@ export const MCPServerForm: React.FC<MCPServerFormProps> = ({
                         );
                     }
                 }
-            } catch {
-                // JSON 解析失败，忽略
+            } catch (error) {
+                // JSON 解析失败，显示警告但不阻止名称修改
+                console.warn(
+                    'Failed to sync name to remote config JSON:',
+                    error,
+                );
+                setErrorMessage(
+                    t('mcp.json-parse-error') +
+                        ': ' +
+                        t('mcp.name-sync-failed'),
+                );
+                // 清除错误消息（3秒后）
+                setTimeout(() => setErrorMessage(''), 3000);
             }
         }
     };
