@@ -85,8 +85,11 @@ async def _connect_local_server(
         # Register each service in the mcpServers object
         for service_name, service_config in mcp_servers_config.items():
             command = service_config.get('command', '')
-            args_list = service_config.get('args', [])
-            env_vars = service_config.get('env', {})
+            args_list = service_config.get('args')
+            env_vars = service_config.get('env')
+            cwd = service_config.get('cwd')
+            encoding = service_config.get('encoding', 'utf-8')
+            encoding_error_handler = service_config.get('encoding_error_handler', 'strict')
             
             if not command:
                 print(f"  - Error: Service '{service_name}' missing 'command' field")
@@ -94,18 +97,38 @@ async def _connect_local_server(
             
             print(f"  - Registering service: {service_name}")
             print(f"    Command: {command}")
-            print(f"    Args: {args_list}")
+            if args_list:
+                print(f"    Args: {args_list}")
             if env_vars:
                 print(f"    Environment variables: {len(env_vars)} vars")
+            if cwd:
+                print(f"    Working directory: {cwd}")
+            if encoding != 'utf-8':
+                print(f"    Encoding: {encoding}")
+            if encoding_error_handler != 'strict':
+                print(f"    Encoding error handler: {encoding_error_handler}")
             
             try:
                 # Create StdIOStatefulClient for local MCP service
-                client = StdIOStatefulClient(
-                    name=service_name,
-                    command=command,
-                    args=args_list,
-                    env=env_vars if env_vars else None
-                )
+                # 只传递前端提供的参数，其他使用默认值
+                client_kwargs = {
+                    'name': service_name,
+                    'command': command,
+                }
+                
+                # 添加可选参数（只有当前端提供了才添加）
+                if args_list is not None:
+                    client_kwargs['args'] = args_list
+                if env_vars is not None:
+                    client_kwargs['env'] = env_vars
+                if cwd is not None:
+                    client_kwargs['cwd'] = cwd
+                if encoding != 'utf-8':
+                    client_kwargs['encoding'] = encoding
+                if encoding_error_handler != 'strict':
+                    client_kwargs['encoding_error_handler'] = encoding_error_handler
+                
+                client = StdIOStatefulClient(**client_kwargs)
                 
                 await client.connect()
                 # Register the MCP client with toolkit
@@ -129,26 +152,87 @@ async def _connect_remote_server(
 ) -> None:
     """
     Connect to a remote MCP server.
+    Reads from remoteConfig field which stores mcpServers format JSON.
     
     Args:
         server: Server configuration
         toolkit: AgentScope toolkit
     """
-    url = server.get('url', '')
-    transport = server.get('transportType', 'streamable_http')
-    api_key = server.get('apiKey', '')
+    print(f"\n[Remote MCP] {server.get('name', 'Unknown')}")
     
-    print(f"  - URL: {url}")
-    print(f"  - Transport: {transport}")
-    print(f"  - API Key: {api_key}")
+    # 读取 remoteConfig 字段
+    remote_config = server.get('remoteConfig', '')
+    if not remote_config:
+        print(f"  - Error: Remote config is empty")
+        return
     
     try:
-        stateless_client = HttpStatelessClient(
-            name=server.get('name', 'MCP Client'),
-            transport=transport,
-            url=url,
-            headers={"Authorization": f"Bearer {api_key}"}
-        )
+        config = json5.loads(remote_config)
+        
+        # 解析 mcpServers 嵌套格式
+        if 'mcpServers' not in config:
+            print(f"  - Error: Invalid config format, mcpServers field required")
+            return
+        
+        mcp_servers = config['mcpServers']
+        # 取第一个服务器配置
+        first_server_key = next(iter(mcp_servers.keys()), None)
+        if not first_server_key:
+            print(f"  - Error: No server found in mcpServers")
+            return
+        
+        server_config = mcp_servers[first_server_key]
+        url = server_config.get('url', '')
+        transport_type = server_config.get('type', 'streamablehttp')
+        # 转换为后端所需的格式：streamablehttp -> streamable_http
+        transport = 'streamable_http' if transport_type == 'streamablehttp' else transport_type
+        headers = server_config.get('headers')
+        timeout = server_config.get('timeout')
+        sse_read_timeout = server_config.get('sse_read_timeout')
+        client_kwargs = server_config.get('client_kwargs', {})
+        
+        if not url:
+            print(f"  - Error: URL is required")
+            return
+        
+        print(f"  - Server Key: {first_server_key}")
+        print(f"  - URL: {url}")
+        print(f"  - Transport: {transport}")
+        if headers:
+            print(f"  - Headers: {headers}")
+        if timeout:
+            print(f"  - Timeout: {timeout}s")
+        if sse_read_timeout:
+            print(f"  - SSE Read Timeout: {sse_read_timeout}s")
+        if client_kwargs:
+            print(f"  - Additional client kwargs: {client_kwargs}")
+        
+    except Exception as e:
+        print(f"  - Error parsing remote config: {e}")
+        return
+    
+    try:
+        # Create HttpStatelessClient for remote MCP service
+        # 只传递前端提供的参数，其他使用默认值
+        client_params = {
+            'name': server.get('name', 'MCP Client'),
+            'transport': transport,
+            'url': url,
+        }
+        
+        # 添加可选参数（只有当前端提供了才添加）
+        if headers is not None:
+            client_params['headers'] = headers
+        if timeout is not None:
+            client_params['timeout'] = timeout
+        if sse_read_timeout is not None:
+            client_params['sse_read_timeout'] = sse_read_timeout
+        
+        # 合并额外的 client_kwargs
+        if client_kwargs:
+            client_params.update(client_kwargs)
+        
+        stateless_client = HttpStatelessClient(**client_params)
         
         await toolkit.register_mcp_client(stateless_client)
         print(f"  ✓ Successfully registered remote server")

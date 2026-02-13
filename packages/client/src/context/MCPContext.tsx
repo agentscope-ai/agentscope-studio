@@ -6,6 +6,7 @@ import React, {
     useEffect,
 } from 'react';
 import { MCPServer } from '@shared/config/friday';
+import json5 from 'json5';
 
 interface MCPContextType {
     servers: MCPServer[];
@@ -90,28 +91,81 @@ export const MCPProvider: React.FC<MCPProviderProps> = ({
     );
 
     // 验证服务器配置
-    const validateServer = useCallback((server: MCPServer) => {
-        if (!server.name) {
-            return { valid: false, message: 'mcp.server-name' };
-        }
-
-        if (server.type === 'local') {
-            if (!server.config) {
-                return { valid: false, message: 'mcp.config' };
+    const validateServer = useCallback(
+        (server: MCPServer) => {
+            if (!server.name) {
+                return { valid: false, message: 'mcp.server-name' };
             }
-            try {
-                JSON.parse(server.config);
-            } catch {
-                return { valid: false, message: 'mcp.config-invalid' };
+
+            // 验证服务器名称唯一性
+            const duplicateNames = servers.filter(
+                (s, idx) =>
+                    s.name === server.name && servers.indexOf(server) !== idx,
+            );
+            if (duplicateNames.length > 0) {
+                return { valid: false, message: 'mcp.server-name-duplicate' };
             }
-        }
 
-        if (server.type === 'remote' && !server.url) {
-            return { valid: false, message: 'mcp.url' };
-        }
+            if (server.type === 'local') {
+                if (!server.config) {
+                    return { valid: false, message: 'mcp.config' };
+                }
+                try {
+                    json5.parse(server.config);
+                } catch {
+                    return { valid: false, message: 'mcp.config-invalid' };
+                }
+            }
 
-        return { valid: true };
-    }, []);
+            if (server.type === 'remote') {
+                const mode = server.remoteConfigMode || 'simple';
+
+                if (mode === 'simple') {
+                    // 简单模式验证
+                    if (!server.url) {
+                        return { valid: false, message: 'mcp.url' };
+                    }
+                    // transportType 有默认值，不需要验证
+                    // headers 为对象类型，不需要 JSON 验证
+                } else {
+                    // JSON 模式验证
+                    if (!server.remoteConfig) {
+                        return { valid: false, message: 'mcp.remote-config' };
+                    }
+                    try {
+                        const config = json5.parse(server.remoteConfig);
+                        // 验证 mcpServers 格式
+                        if (!config.mcpServers) {
+                            return {
+                                valid: false,
+                                message:
+                                    'mcp.remote-config-mcpservers-required',
+                            };
+                        }
+                        const mcpServers = config.mcpServers;
+                        const firstServerKey = Object.keys(mcpServers)[0];
+                        if (
+                            !firstServerKey ||
+                            !mcpServers[firstServerKey].url
+                        ) {
+                            return {
+                                valid: false,
+                                message: 'mcp.remote-config-url-required',
+                            };
+                        }
+                    } catch {
+                        return {
+                            valid: false,
+                            message: 'mcp.remote-config-invalid',
+                        };
+                    }
+                }
+            }
+
+            return { valid: true };
+        },
+        [servers],
+    );
 
     // 保存服务器
     const saveServer = useCallback(
@@ -121,6 +175,47 @@ export const MCPProvider: React.FC<MCPProviderProps> = ({
 
             if (!validation.valid) {
                 return false;
+            }
+
+            // 根据类型清空另一类型的配置
+            if (server.type === 'local') {
+                // 本地模式：清空远程配置
+                server.remoteConfig = '';
+                server.remoteConfigMode = 'simple';
+                server.url = '';
+                server.transportType = 'streamablehttp';
+                server.headers = {};
+            } else if (server.type === 'remote') {
+                // 远程模式：清空本地配置
+                server.config = '';
+
+                // 确保 remoteConfig 存在
+                const mode = server.remoteConfigMode || 'simple';
+
+                if (mode === 'simple') {
+                    // 普通模式：转换为 mcpServers 格式并存储
+                    const serverName = server.name || 'mcp-server';
+                    const serverConfig: {
+                        type: string;
+                        url: string;
+                        headers?: Record<string, string>;
+                    } = {
+                        type: server.transportType || 'streamablehttp',
+                        url: server.url || '',
+                    };
+                    if (
+                        server.headers &&
+                        Object.keys(server.headers).length > 0
+                    ) {
+                        serverConfig.headers = server.headers;
+                    }
+                    const config = {
+                        mcpServers: {
+                            [serverName]: serverConfig,
+                        },
+                    };
+                    server.remoteConfig = JSON.stringify(config, null, 2);
+                }
             }
 
             onSave(servers);

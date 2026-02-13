@@ -9,16 +9,16 @@ export interface MCPServer {
     name: string;
     type: 'local' | 'remote';
     enabled: boolean;
-    // Local MCP fields
-    command?: string;
-    args?: string[];
-    env?: Record<string, string>;
-    // Local MCP JSON config (new format)
+    // Local MCP configuration
     config?: string; // JSON string for local MCP configuration
-    // Remote MCP fields
+    // Remote MCP configuration
+    remoteConfigMode?: 'simple' | 'advanced'; // Configuration mode
+    // Simple mode fields
     url?: string;
-    transportType?: 'streamable_http' | 'sse';
-    apiKey?: string;
+    transportType?: 'streamablehttp' | 'sse';
+    headers?: Record<string, string>; // Key-value pairs for headers
+    // Advanced mode field
+    remoteConfig?: string; // Complete JSON configuration (url, transport, headers, etc.)
 }
 
 export interface FridayConfig {
