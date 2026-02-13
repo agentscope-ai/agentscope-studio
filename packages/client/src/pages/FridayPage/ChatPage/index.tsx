@@ -162,7 +162,6 @@ const ChatPage = () => {
                 onOpenChange={setMcpSheetOpen}
                 mcpServers={fridayConfig?.mcpServers || []}
                 onSave={handleMcpSave}
-                onEnabledChange={handleMcpSave}
             />
         </div>
     );
