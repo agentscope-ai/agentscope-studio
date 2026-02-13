@@ -6,14 +6,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { PlusIcon, Trash2Icon } from 'lucide-react';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
-import {
     Select,
     SelectContent,
     SelectItem,
@@ -22,6 +14,7 @@ import {
 } from '@/components/ui/select';
 import { useMCP } from '@/context/MCPContext';
 import { MCPServer } from '@shared/config/friday';
+import { ValidationErrorDialog } from './ValidationErrorDialog';
 
 interface MCPServerFormProps {
     server: MCPServer;
@@ -667,24 +660,11 @@ export const MCPServerForm: React.FC<MCPServerFormProps> = ({
             </div>
 
             {/* 错误提示弹框 */}
-            <Dialog
-                open={!!errorMessage}
-                onOpenChange={() => setErrorMessage('')}
-            >
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>{t('mcp.validation-error')}</DialogTitle>
-                    </DialogHeader>
-                    <DialogDescription className="py-4">
-                        {errorMessage}
-                    </DialogDescription>
-                    <DialogFooter>
-                        <Button onClick={() => setErrorMessage('')}>
-                            {t('button.ok')}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <ValidationErrorDialog
+                isOpen={!!errorMessage}
+                errorMessage={errorMessage}
+                onClose={() => setErrorMessage('')}
+            />
         </div>
     );
 };

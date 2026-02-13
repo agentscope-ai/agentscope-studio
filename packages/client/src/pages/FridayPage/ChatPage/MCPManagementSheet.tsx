@@ -38,6 +38,13 @@ const MCPManagementSheetContent = memo(() => {
     const [serverToDelete, setServerToDelete] = useState<number | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
 
+    const handleAddServer = () => {
+        const newIndex = addServer();
+        // 默认展开新增的卡片
+        const itemValue = `server-${newIndex}`;
+        setOpenItems([...openItems, itemValue]);
+    };
+
     const handleDeleteClick = (index: number) => {
         setServerToDelete(index);
         setDeleteDialogOpen(true);
@@ -174,7 +181,7 @@ const MCPManagementSheetContent = memo(() => {
                 <Button
                     variant="outline"
                     className="w-full"
-                    onClick={addServer}
+                    onClick={handleAddServer}
                 >
                     <PlusIcon className="h-4 w-4 mr-2" />
                     {t('mcp.add-server')}

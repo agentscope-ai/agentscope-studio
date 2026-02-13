@@ -11,7 +11,7 @@ import json5 from 'json5';
 interface MCPContextType {
     servers: MCPServer[];
     setServers: (servers: MCPServer[]) => void;
-    addServer: () => void;
+    addServer: () => number;
     deleteServer: (index: number) => void;
     updateServer: (
         index: number,
@@ -59,6 +59,7 @@ export const MCPProvider: React.FC<MCPProviderProps> = ({
             config: '',
         };
         setServers([...servers, newServer]);
+        return servers.length; // 返回新服务器的索引
     }, [servers]);
 
     // 删除服务器
