@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 from argparse import ArgumentParser, Namespace
+from typing import List, Dict, Any
 
 
 def json_type(value: str) -> dict:
@@ -11,6 +12,19 @@ def json_type(value: str) -> dict:
         result = json.loads(value)
         if not isinstance(result, dict):
             raise ValueError("JSON must be an object/dictionary")
+        return result
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON string: {e}")
+
+
+def json_list_type(value: str) -> List[Dict[str, Any]]:
+    """Parse a JSON string into a list of dictionaries."""
+    if not value or value == "":
+        return []
+    try:
+        result = json.loads(value)
+        if not isinstance(result, list):
+            raise ValueError("JSON must be an array/list")
         return result
     except json.JSONDecodeError as e:
         raise ValueError(f"Invalid JSON string: {e}")
@@ -60,6 +74,12 @@ def get_args() -> Namespace:
         type=json_type,
         default={},
         help="A JSON string representing a dictionary of keyword arguments to pass to the LLM generate method.",
+    )
+    parser.add_argument(
+        "--mcpServers",
+        type=json_list_type,
+        default=[],
+        help="A JSON string representing a list of MCP server configurations.",
     )
     args = parser.parse_args()
     return args
