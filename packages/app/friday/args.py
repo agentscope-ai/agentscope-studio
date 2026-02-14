@@ -64,6 +64,52 @@ def get_args() -> Namespace:
         required=True,
     )
     parser.add_argument(
+        "--longTermMemory",
+        type=bool,
+        default=False,
+        help="Whether to enable long-term memory and embedding support.",
+    )
+    parser.add_argument(
+        "--embeddingProvider",
+        type=str,
+        choices=["dashscope", "openai", "gemini", "ollama"],
+        help="Embedding provider name, e.g. openai/dashscope/gemini/ollama.",
+    )
+    parser.add_argument(
+        "--embeddingModelName",
+        type=str,
+        help="Embedding model name, e.g. text-embedding-3-small or text-embedding-v1.",
+    )
+    parser.add_argument(
+        "--embeddingApiKey",
+        type=str,
+        help="API key for the embedding provider; falls back to --apiKey if not set.",
+    )
+    parser.add_argument(
+        "--embeddingKwargs",
+        type=json_type,
+        default={},
+        help="A JSON string for extra kwargs passed to the embedding model (e.g. host, dimensions).",
+    )
+    parser.add_argument(
+        "--saveToLocal",
+        type=bool,
+        default=False,
+        help="Whether to save long-term memory to local disk.",
+    )
+    parser.add_argument(
+        "--localStoragePath",
+        type=str,
+        default="",
+        help="Local storage path for long-term memory.",
+    )
+    parser.add_argument(
+        "--vectorStoreProvider",
+        type=str,
+        default="qdrant",
+        help="Vector store provider for long-term memory (e.g. qdrant, chroma, faiss).",
+    )
+    parser.add_argument(
         "--clientKwargs",
         type=json_type,
         default={},

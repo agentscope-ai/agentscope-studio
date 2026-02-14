@@ -11,7 +11,11 @@ import { FridayConfig } from '@shared/config/friday.ts';
 import { useMessageApi } from '@/context/MessageApiContext.tsx';
 import { RouterPath } from '@/pages/RouterPath.ts';
 import { useFridaySettingRoom } from '@/context/FridaySettingRoomContext.tsx';
-import { llmProviderOptions } from '../config';
+import {
+    llmProviderOptions,
+    embeddingProviderOptions,
+    vectorStoreProviderOptions,
+} from '../config';
 
 // Form format for kwargs
 interface KwargsFormItem {
@@ -77,12 +81,14 @@ const convertKwargsFromBackendFormat = (
 interface FridayConfigForm extends FridayConfig {
     clientKwargs?: KwargsFormItem[];
     generateKwargs?: KwargsFormItem[];
+    embeddingKwargs?: KwargsFormItem[];
 }
 
 // Extended FridayConfig for backend (includes kwargs in backend format)
 interface FridayConfigBackend extends FridayConfig {
     clientKwargs?: KwargsBackendItem;
     generateKwargs?: KwargsBackendItem;
+    embeddingKwargs?: KwargsBackendItem;
 }
 
 const SettingPage = () => {
@@ -125,6 +131,9 @@ const SettingPage = () => {
                 generateKwargs: convertKwargsFromBackendFormat(
                     backendConfig.generateKwargs,
                 ),
+                embeddingKwargs: convertKwargsFromBackendFormat(
+                    backendConfig.embeddingKwargs,
+                ),
             };
             form.setFieldsValue(formData);
         }
@@ -144,9 +153,50 @@ const SettingPage = () => {
     };
 
     const llmProvider = Form.useWatch('llmProvider', form);
+    const longTermMemory = Form.useWatch('longTermMemory', form);
+    const embeddingProvider = Form.useWatch('embeddingProvider', form);
+    const saveToLocal = Form.useWatch('saveToLocal', form);
+
+    // Get default storage path based on OS
+    const getDefaultStoragePath = () => {
+        const platform = navigator.platform.toLowerCase();
+        const appName = 'AgentScope-Studio';
+        const fridayName = 'Friday';
+
+        if (platform.includes('win')) {
+            // Windows: %APPDATA%\AgentScope-Studio\Friday
+            return `%APPDATA%\\${appName}\\${fridayName}`;
+        } else if (platform.includes('mac')) {
+            // macOS: ~/Library/Application Support/AgentScope-Studio/Friday
+            return `~/Library/Application Support/${appName}/${fridayName}`;
+        } else {
+            // Linux: ~/.local/share/AgentScope-Studio/Friday
+            return `~/.local/share/${appName}/${fridayName}`;
+        }
+    };
+
+    const defaultStoragePath = getDefaultStoragePath();
+
+    // Auto-fill default storage path when long-term memory is enabled
+    useEffect(() => {
+        if (longTermMemory) {
+            const currentPath = form.getFieldValue('localStoragePath');
+            // Only set default path if field is empty
+            if (!currentPath) {
+                form.setFieldValue('localStoragePath', defaultStoragePath);
+            }
+        }
+    }, [longTermMemory, defaultStoragePath, form]);
+
     const requiredAPIKey = useMemo(() => {
         return !llmProvider || !llmProvider.startsWith('ollama');
     }, [llmProvider]);
+    const requiredEmbeddingAPIKey = useMemo(() => {
+        return (
+            longTermMemory &&
+            (!embeddingProvider || !embeddingProvider.startsWith('ollama'))
+        );
+    }, [longTermMemory, embeddingProvider]);
 
     return (
         <div className="flex flex-col w-full h-full pl-12 pr-12 pt-8 pb-8 gap-13">
@@ -164,8 +214,23 @@ const SettingPage = () => {
                     form={form}
                     initialValues={{
                         writePermission: false,
+                        longTermMemory: false,
+                        saveToLocal: false,
                     }}
                     onFinish={async (config: FridayConfigForm) => {
+                        // If saveToLocal is enabled and localStoragePath is empty, use default path
+                        if (
+                            config.saveToLocal &&
+                            !config.localStoragePath?.trim()
+                        ) {
+                            config.localStoragePath = defaultStoragePath;
+                            // Also update the form field to show the default path
+                            form.setFieldValue(
+                                'localStoragePath',
+                                defaultStoragePath,
+                            );
+                        }
+
                         // Convert form format to backend format
                         const backendConfig: FridayConfigBackend = {
                             ...config,
@@ -174,6 +239,9 @@ const SettingPage = () => {
                             ),
                             generateKwargs: convertKwargsToBackendFormat(
                                 config.generateKwargs,
+                            ),
+                            embeddingKwargs: convertKwargsToBackendFormat(
+                                config.embeddingKwargs,
                             ),
                         };
                         setLoading(true);
@@ -223,10 +291,11 @@ const SettingPage = () => {
                                     setTimeout(resolve, 2000),
                                 );
 
+                                // Reset button text and icon after success
+                                setBtnText("Let's Go!");
+                                setBtnIcon(null);
                                 setLoading(false);
-                                navigate(
-                                    `${RouterPath.FRIDAY}/${RouterPath.FRIDAY_CHAT}`,
-                                );
+                                // Don't navigate automatically, let user click "Back to Chat" button
                             } else {
                                 messageApi.error(saveFridayConfigRes.message);
                                 setLoading(false);
@@ -299,20 +368,113 @@ const SettingPage = () => {
                         <Switch size="small" />
                     </Form.Item>
 
+                    <Form.Item
+                        name="longTermMemory"
+                        label="Long-term Memory"
+                        help={t('help.friday.long-term-memory')}
+                    >
+                        <Switch size="small" />
+                    </Form.Item>
+
+                    {longTermMemory && (
+                        <>
+                            <Form.Item
+                                name="embeddingProvider"
+                                label="Embedding Provider"
+                                required
+                                help={t('help.friday.embedding-provider')}
+                            >
+                                <Select options={embeddingProviderOptions} />
+                            </Form.Item>
+
+                            <Form.Item
+                                name="embeddingModelName"
+                                label="Embedding Model Name"
+                                required
+                                help={t('help.friday.embedding-model-name', {
+                                    embeddingProvider:
+                                        embeddingProvider || 'embedding',
+                                })}
+                            >
+                                <Input />
+                            </Form.Item>
+
+                            <Form.Item
+                                name="embeddingApiKey"
+                                label="Embedding API Key"
+                                required={requiredEmbeddingAPIKey}
+                                help={t('help.friday.embedding-api-key', {
+                                    embeddingProvider:
+                                        embeddingProvider || 'embedding',
+                                })}
+                            >
+                                <Input type="password" />
+                            </Form.Item>
+
+                            <Form.Item
+                                name="vectorStoreProvider"
+                                label="Vector Store Provider"
+                                required
+                                help={t('help.friday.vector-store-provider')}
+                            >
+                                <Select
+                                    showSearch
+                                    optionFilterProp="label"
+                                    options={vectorStoreProviderOptions}
+                                />
+                            </Form.Item>
+
+                            <Form.Item
+                                label="Save to Local"
+                                help={t('help.friday.save-to-local')}
+                            >
+                                <div className="flex flex-row items-center gap-x-4">
+                                    <Form.Item
+                                        name="saveToLocal"
+                                        noStyle
+                                        valuePropName="checked"
+                                    >
+                                        <Switch size="small" />
+                                    </Form.Item>
+                                    <Form.Item name="localStoragePath" noStyle>
+                                        <Input
+                                            placeholder="Enter custom path or use default"
+                                            disabled={!saveToLocal}
+                                            className="flex-1"
+                                        />
+                                    </Form.Item>
+                                </div>
+                            </Form.Item>
+
+                            <KwargsFormList name="embeddingKwargs" />
+                        </>
+                    )}
+
                     <Form.Item {...tailFormItemLayout}>
-                        <Button
-                            type="primary"
-                            htmlType="submit"
-                            loading={
-                                loading
-                                    ? btnIcon
-                                        ? { icon: btnIcon }
-                                        : true
-                                    : false
-                            }
-                        >
-                            {btnText}
-                        </Button>
+                        <div className="flex flex-row gap-x-4">
+                            <Button
+                                type="primary"
+                                htmlType="submit"
+                                loading={
+                                    loading
+                                        ? btnIcon
+                                            ? { icon: btnIcon }
+                                            : true
+                                        : false
+                                }
+                            >
+                                {btnText}
+                            </Button>
+                            <Button
+                                onClick={() =>
+                                    navigate(
+                                        `${RouterPath.FRIDAY}/${RouterPath.FRIDAY_CHAT}`,
+                                    )
+                                }
+                            >
+                                Back to Chat
+                            </Button>
+                        </div>
                     </Form.Item>
                 </Form>
             </Spin>

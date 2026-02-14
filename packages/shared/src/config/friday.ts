@@ -29,6 +29,16 @@ export interface FridayConfig {
     writePermission: boolean;
     baseUrl?: string;
     mcpServers?: MCPServer[];
+    // Long-term memory configuration
+    longTermMemory?: boolean;
+    embeddingProvider?: string;
+    embeddingModelName?: string;
+    embeddingApiKey?: string;
+    embeddingKwargs?: { [key: string]: string | number | boolean };
+    // Local storage configuration
+    saveToLocal?: boolean;
+    localStoragePath?: string;
+    vectorStoreProvider?: string;
 }
 
 export class FridayConfigManager {
