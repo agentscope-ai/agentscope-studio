@@ -1,4 +1,4 @@
-import { memo, useState, useMemo } from 'react';
+import { memo, useState, useMemo, useEffect, useCallback } from 'react';
 import { PlusIcon, SearchIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -37,6 +37,7 @@ const MCPManagementSheetContent = memo(() => {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [serverToDelete, setServerToDelete] = useState<number | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [isContentOverflowing, setIsContentOverflowing] = useState(false);
 
     const handleAddServer = () => {
         const newIndex = addServer();
@@ -88,10 +89,78 @@ const MCPManagementSheetContent = memo(() => {
             .filter(({ server }) => server.name.toLowerCase().includes(query));
     }, [servers, searchQuery]);
 
+    // Check if content is overflowing
+    const checkOverflow = useCallback(() => {
+        const container = document.querySelector(
+            '.mcp-content-container',
+        ) as HTMLElement;
+        if (container) {
+            const isOverflowing =
+                container.scrollHeight > container.clientHeight;
+            setIsContentOverflowing(isOverflowing);
+        }
+    }, []);
+
+    // Check overflow on mount and when content changes
+    useEffect(() => {
+        // Initial check after a short delay to ensure DOM is ready
+        const timer = setTimeout(checkOverflow, 100);
+        return () => clearTimeout(timer);
+    }, [checkOverflow]);
+
+    // Check overflow when servers or openItems change
+    useEffect(() => {
+        checkOverflow();
+    }, [servers, openItems, filteredServers, checkOverflow]);
+
+    // Use ResizeObserver to detect content size changes
+    useEffect(() => {
+        const container = document.querySelector(
+            '.mcp-content-container',
+        ) as HTMLElement;
+        if (!container) return;
+
+        const resizeObserver = new ResizeObserver(() => {
+            checkOverflow();
+        });
+
+        resizeObserver.observe(container);
+
+        return () => {
+            resizeObserver.disconnect();
+        };
+    }, [checkOverflow]);
+
+    // Use MutationObserver to detect DOM changes (accordion expand/collapse)
+    useEffect(() => {
+        const container = document.querySelector(
+            '.mcp-content-container',
+        ) as HTMLElement;
+        if (!container) return;
+
+        const mutationObserver = new MutationObserver(() => {
+            checkOverflow();
+        });
+
+        mutationObserver.observe(container, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['class', 'style'],
+        });
+
+        return () => {
+            mutationObserver.disconnect();
+        };
+    }, [checkOverflow]);
+
     return (
         <div className="flex flex-col h-full">
             {/* 可滚动内容区 */}
-            <div className="flex-1 overflow-y-auto px-6 pt-4 pb-4">
+            <div
+                className="flex-1 overflow-y-auto px-6 pt-4 pb-4 mcp-content-container"
+                onScroll={checkOverflow}
+            >
                 {/* 搜索框 - 始终显示 */}
                 <div className="relative mb-4">
                     <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -174,19 +243,35 @@ const MCPManagementSheetContent = memo(() => {
                         })}
                     </Accordion>
                 )}
+
+                {/* 当内容不溢出时，按钮跟随内容流动 */}
+                {!isContentOverflowing && (
+                    <div className="mt-4">
+                        <Button
+                            variant="outline"
+                            className="w-full"
+                            onClick={handleAddServer}
+                        >
+                            <PlusIcon className="h-4 w-4 mr-2" />
+                            {t('mcp.add-server')}
+                        </Button>
+                    </div>
+                )}
             </div>
 
-            {/* 固定在底部的按钮 */}
-            <div className="flex-shrink-0 px-6 py-4 border-t border-gray-200 bg-white">
-                <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={handleAddServer}
-                >
-                    <PlusIcon className="h-4 w-4 mr-2" />
-                    {t('mcp.add-server')}
-                </Button>
-            </div>
+            {/* 当内容溢出时，按钮固定在底部 */}
+            {isContentOverflowing && (
+                <div className="flex-shrink-0 px-6 py-4 border-t border-gray-200 bg-white">
+                    <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={handleAddServer}
+                    >
+                        <PlusIcon className="h-4 w-4 mr-2" />
+                        {t('mcp.add-server')}
+                    </Button>
+                </div>
+            )}
 
             <DeleteConfirmDialog
                 isOpen={deleteDialogOpen}
