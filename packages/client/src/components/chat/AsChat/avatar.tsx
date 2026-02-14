@@ -42,15 +42,14 @@ const getFilteredPaths = (avatarSet: AvatarSet): string[] => {
     return filteredPaths;
 };
 
-const seededShuffle = <T,>(arr: T[], seed: number): T[] => {
-    const result = [...arr];
-    let s = seed;
-    for (let i = result.length - 1; i > 0; i--) {
-        s = (s * 1664525 + 1013904223) & 0xffffffff;
-        const j = Math.abs(s) % (i + 1);
-        [result[i], result[j]] = [result[j], result[i]];
+const hashString = (str: string, seed: number): number => {
+    let hash = seed;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = (hash << 5) - hash + char;
+        hash = hash & hash;
     }
-    return result;
+    return Math.abs(hash);
 };
 
 export const assignUniqueAvatars = (
@@ -65,12 +64,18 @@ export const assignUniqueAvatars = (
         return assignment;
     }
 
-    const shuffledPaths = seededShuffle(filteredPaths, seed);
+    const N = filteredPaths.length;
+    const usedIndices = new Set<number>();
 
-    // Assign in first-appearance order (preserved by Set in the caller)
-    // so that existing agents keep their avatars when new agents join.
-    for (let i = 0; i < names.length; i++) {
-        assignment.set(names[i], shuffledPaths[i % shuffledPaths.length]);
+    for (const name of names) {
+        const preferred = hashString(name, seed) % N;
+        let index = preferred;
+        while (usedIndices.has(index)) {
+            index = (index + 1) % N;
+            if (index === preferred) break;
+        }
+        usedIndices.add(index);
+        assignment.set(name, filteredPaths[index]);
     }
 
     return assignment;
