@@ -25,7 +25,7 @@ from hook import (
     studio_post_reply_hook,
 )
 from args import get_args
-from model import get_model, get_formatter, get_embedding_model, get_memory_model
+from model import get_model, get_formatter, get_embedding_model
 from tool.utils import (
     view_agentscope_library,
     view_agentscope_readme,
@@ -108,12 +108,14 @@ The solution/code to the user query may already exist in the AgentScope resource
     # Initialize long-term memory if enabled
     long_term_memory = None
     if args.longTermMemory:
-        memory_model = get_memory_model(
+        # Create non-streaming model for long-term memory operations
+        memory_model = get_model(
             args.llmProvider,
             args.modelName,
             args.apiKey,
             args.clientKwargs,
             args.generateKwargs,
+            stream=False,
         )
         embedding_model = get_embedding_model(
             embeddingProvider=args.embeddingProvider,
@@ -129,8 +131,8 @@ The solution/code to the user query may already exist in the AgentScope resource
         }
 
         # Add embedding_model_dims for vector stores that need it (e.g., Qdrant)
-        if hasattr(embedding_model, 'dimensions'):
-            vector_store_config_dict["embedding_model_dims"] = embedding_model.dimensions
+        if (dimensions := getattr(embedding_model, 'dimensions', None)) is not None:
+            vector_store_config_dict["embedding_model_dims"] = dimensions
 
         long_term_memory = Mem0LongTermMemory(
             agent_name="Friday",

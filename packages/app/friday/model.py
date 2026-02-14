@@ -69,22 +69,35 @@ def get_model(
     apiKey: str,
     client_kwargs: dict = {},
     generate_kwargs: dict = {},
+    stream: bool = True,
 ) -> ChatModelBase:
-    """Get the chat model instance based on the input arguments."""
+    """Get the chat model instance based on the input arguments.
+    
+    Args:
+        llmProvider: The model provider (dashscope, openai, ollama, gemini, anthropic)
+        modelName: The model name
+        apiKey: The API key for authentication
+        client_kwargs: Additional client configuration parameters
+        generate_kwargs: Additional generation parameters
+        stream: Whether to enable streaming mode (default: True)
+    
+    Returns:
+        ChatModelBase: The instantiated chat model
+    """
 
     match llmProvider.lower():
         case "dashscope":
             return DashScopeChatModel(
                 model_name=modelName,
                 api_key=apiKey,
-                stream=True,
+                stream=stream,
                 generate_kwargs=generate_kwargs,
             )
         case "openai":
             return OpenAIChatModel(
                 model_name=modelName,
                 api_key=apiKey,
-                stream=True,
+                stream=stream,
                 client_kwargs=client_kwargs,
                 generate_kwargs=generate_kwargs,
             )
@@ -93,7 +106,7 @@ def get_model(
                 # For agentscope >= 1.0.9
                 return OllamaChatModel(
                     model_name=modelName,
-                    stream=True,
+                    stream=stream,
                     client_kwargs=client_kwargs,
                     generate_kwargs=generate_kwargs,
                 )
@@ -101,14 +114,14 @@ def get_model(
                 # For agentscope < 1.0.9
                 return OllamaChatModel(
                     model_name=modelName,
-                    stream=True,
+                    stream=stream,
                     **client_kwargs,
                 )
         case "gemini":
             return GeminiChatModel(
                 model_name=modelName,
                 api_key=apiKey,
-                stream=True,
+                stream=stream,
                 client_kwargs=client_kwargs,
                 generate_kwargs=generate_kwargs,
             )
@@ -116,69 +129,7 @@ def get_model(
             return AnthropicChatModel(
                 model_name=modelName,
                 api_key=apiKey,
-                stream=True,
-                client_kwargs=client_kwargs,
-                generate_kwargs=generate_kwargs,
-            )
-        case _:
-            raise ValueError(
-                f"Unsupported model provider: {llmProvider}. "
-            )
-
-def get_memory_model(
-    llmProvider: str,
-    modelName: str,
-    apiKey: str,
-    client_kwargs: dict = {},
-    generate_kwargs: dict = {},
-) -> ChatModelBase:
-    """Get the chat model instance based on the input arguments."""
-
-    match llmProvider.lower():
-        case "dashscope":
-            return DashScopeChatModel(
-                model_name=modelName,
-                api_key=apiKey,
-                stream=False,
-                generate_kwargs=generate_kwargs,
-            )
-        case "openai":
-            return OpenAIChatModel(
-                model_name=modelName,
-                api_key=apiKey,
-                stream=False,
-                client_kwargs=client_kwargs,
-                generate_kwargs=generate_kwargs,
-            )
-        case "ollama":
-            if is_agentscope_version_ge((1, 0, 9)):
-                # For agentscope >= 1.0.9
-                return OllamaChatModel(
-                    model_name=modelName,
-                    stream=False,
-                    client_kwargs=client_kwargs,
-                    generate_kwargs=generate_kwargs,
-                )
-            else:
-                # For agentscope < 1.0.9
-                return OllamaChatModel(
-                    model_name=modelName,
-                    stream=False,
-                    **client_kwargs,
-                )
-        case "gemini":
-            return GeminiChatModel(
-                model_name=modelName,
-                api_key=apiKey,
-                stream=False,
-                client_kwargs=client_kwargs,
-                generate_kwargs=generate_kwargs,
-            )
-        case "anthropic":
-            return AnthropicChatModel(
-                model_name=modelName,
-                api_key=apiKey,
-                stream=False,
+                stream=stream,
                 client_kwargs=client_kwargs,
                 generate_kwargs=generate_kwargs,
             )
