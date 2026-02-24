@@ -16,13 +16,17 @@ const KwargsFormList = ({ name }: { name: string }) => {
             ? 'Client Kwargs'
             : name === 'generateKwargs'
               ? 'Generate Kwargs'
-              : 'Embedding Kwargs';
+              : name === 'vectorStoreKwargs'
+                ? 'Vector Store Kwargs'
+                : 'Embedding Kwargs';
     const help =
         name === 'clientKwargs'
             ? t('help.friday.client-kwargs')
             : name === 'generateKwargs'
               ? t('help.friday.generate-kwargs')
-              : t('help.friday.embedding-kwargs');
+              : name === 'vectorStoreKwargs'
+                ? t('help.friday.vector-store-kwargs')
+                : t('help.friday.embedding-kwargs');
 
     return (
         <Form.Item label={label} shouldUpdate help={help}>

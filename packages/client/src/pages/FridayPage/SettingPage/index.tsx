@@ -155,6 +155,7 @@ const SettingPage = () => {
     const llmProvider = Form.useWatch('llmProvider', form);
     const longTermMemory = Form.useWatch('longTermMemory', form);
     const embeddingProvider = Form.useWatch('embeddingProvider', form);
+    const vectorStoreProvider = Form.useWatch('vectorStoreProvider', form);
     const saveToLocal = Form.useWatch('saveToLocal', form);
 
     // Get default storage path based on OS
@@ -411,6 +412,8 @@ const SettingPage = () => {
                                 <Input type="password" />
                             </Form.Item>
 
+                            <KwargsFormList name="embeddingKwargs" />
+
                             <Form.Item
                                 name="vectorStoreProvider"
                                 label="Vector Store Provider"
@@ -424,29 +427,34 @@ const SettingPage = () => {
                                 />
                             </Form.Item>
 
-                            <Form.Item
-                                label="Save to Local"
-                                help={t('help.friday.save-to-local')}
-                            >
-                                <div className="flex flex-row items-center gap-x-4">
-                                    <Form.Item
-                                        name="saveToLocal"
-                                        noStyle
-                                        valuePropName="checked"
-                                    >
-                                        <Switch size="small" />
-                                    </Form.Item>
-                                    <Form.Item name="localStoragePath" noStyle>
-                                        <Input
-                                            placeholder="Enter custom path or use default"
-                                            disabled={!saveToLocal}
-                                            className="flex-1"
-                                        />
-                                    </Form.Item>
-                                </div>
-                            </Form.Item>
+                            {vectorStoreProvider === 'qdrant' && (
+                                <Form.Item
+                                    label="Save to Local"
+                                    help={t('help.friday.save-to-local')}
+                                >
+                                    <div className="flex flex-row items-center gap-x-4">
+                                        <Form.Item
+                                            name="saveToLocal"
+                                            noStyle
+                                            valuePropName="checked"
+                                        >
+                                            <Switch size="small" />
+                                        </Form.Item>
+                                        <Form.Item
+                                            name="localStoragePath"
+                                            noStyle
+                                        >
+                                            <Input
+                                                placeholder="Enter custom path or use default"
+                                                disabled={!saveToLocal}
+                                                className="flex-1"
+                                            />
+                                        </Form.Item>
+                                    </div>
+                                </Form.Item>
+                            )}
 
-                            <KwargsFormList name="embeddingKwargs" />
+                            <KwargsFormList name="vectorStoreKwargs" />
                         </>
                     )}
 

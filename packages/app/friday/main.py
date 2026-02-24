@@ -125,14 +125,20 @@ The solution/code to the user query may already exist in the AgentScope resource
         )
 
         # Prepare vector store config with embedding dimensions
-        vector_store_config_dict = {
-            "on_disk": args.saveToLocal,
-            "path": args.localStoragePath,
-        }
+        vector_store_config_dict = {}
+
+        # Add Qdrant-specific configuration
+        if args.vectorStoreProvider == "qdrant":
+            vector_store_config_dict["on_disk"] = args.saveToLocal
+            vector_store_config_dict["path"] = args.localStoragePath
 
         # Add embedding_model_dims for vector stores that need it (e.g., Qdrant)
         if (dimensions := getattr(embedding_model, 'dimensions', None)) is not None:
             vector_store_config_dict["embedding_model_dims"] = dimensions
+
+        # Merge vectorStoreKwargs into the config
+        if args.vectorStoreKwargs:
+            vector_store_config_dict.update(args.vectorStoreKwargs)
 
         long_term_memory = Mem0LongTermMemory(
             agent_name="Friday",

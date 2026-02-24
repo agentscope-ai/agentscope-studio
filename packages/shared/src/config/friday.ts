@@ -35,10 +35,12 @@ export interface FridayConfig {
     embeddingModelName?: string;
     embeddingApiKey?: string;
     embeddingKwargs?: { [key: string]: string | number | boolean };
-    // Local storage configuration
+    // Vector store configuration
+    vectorStoreProvider?: string;
+    vectorStoreKwargs?: { [key: string]: string | number | boolean };
+    // Local storage configuration (for Qdrant only)
     saveToLocal?: boolean;
     localStoragePath?: string;
-    vectorStoreProvider?: string;
 }
 
 export class FridayConfigManager {

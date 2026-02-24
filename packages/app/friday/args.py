@@ -110,6 +110,12 @@ def get_args() -> Namespace:
         help="Vector store provider for long-term memory (e.g. qdrant, chroma, faiss).",
     )
     parser.add_argument(
+        "--vectorStoreKwargs",
+        type=json_type,
+        default={},
+        help="A JSON string for extra kwargs passed to the vector store configuration.",
+    )
+    parser.add_argument(
         "--clientKwargs",
         type=json_type,
         default={},
