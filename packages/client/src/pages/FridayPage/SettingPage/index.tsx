@@ -78,17 +78,25 @@ const convertKwargsFromBackendFormat = (
 };
 
 // Extended FridayConfig for form (includes kwargs in form format)
-interface FridayConfigForm extends FridayConfig {
+interface FridayConfigForm extends Omit<
+    FridayConfig,
+    'clientKwargs' | 'generateKwargs' | 'embeddingKwargs' | 'vectorStoreKwargs'
+> {
     clientKwargs?: KwargsFormItem[];
     generateKwargs?: KwargsFormItem[];
     embeddingKwargs?: KwargsFormItem[];
+    vectorStoreKwargs?: KwargsFormItem[];
 }
 
 // Extended FridayConfig for backend (includes kwargs in backend format)
-interface FridayConfigBackend extends FridayConfig {
+interface FridayConfigBackend extends Omit<
+    FridayConfig,
+    'clientKwargs' | 'generateKwargs' | 'embeddingKwargs' | 'vectorStoreKwargs'
+> {
     clientKwargs?: KwargsBackendItem;
     generateKwargs?: KwargsBackendItem;
     embeddingKwargs?: KwargsBackendItem;
+    vectorStoreKwargs?: KwargsBackendItem;
 }
 
 const SettingPage = () => {
@@ -133,6 +141,9 @@ const SettingPage = () => {
                 ),
                 embeddingKwargs: convertKwargsFromBackendFormat(
                     backendConfig.embeddingKwargs,
+                ),
+                vectorStoreKwargs: convertKwargsFromBackendFormat(
+                    backendConfig.vectorStoreKwargs,
                 ),
             };
             form.setFieldsValue(formData);
@@ -243,6 +254,9 @@ const SettingPage = () => {
                             ),
                             embeddingKwargs: convertKwargsToBackendFormat(
                                 config.embeddingKwargs,
+                            ),
+                            vectorStoreKwargs: convertKwargsToBackendFormat(
+                                config.vectorStoreKwargs,
                             ),
                         };
                         setLoading(true);

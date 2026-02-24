@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import json
+import json5
 from argparse import ArgumentParser, Namespace
 from typing import List, Dict, Any
 
@@ -9,11 +9,11 @@ def json_type(value: str) -> dict:
     if not value or value == "":
         return {}
     try:
-        result = json.loads(value)
+        result = json5.loads(value)
         if not isinstance(result, dict):
             raise ValueError("JSON must be an object/dictionary")
         return result
-    except json.JSONDecodeError as e:
+    except ValueError as e:
         raise ValueError(f"Invalid JSON string: {e}")
 
 
@@ -22,11 +22,13 @@ def json_list_type(value: str) -> List[Dict[str, Any]]:
     if not value or value == "":
         return []
     try:
-        result = json.loads(value)
-        if not isinstance(result, list):
-            raise ValueError("JSON must be an array/list")
+        result = json5.loads(value)
+        if not isinstance(result, list) or not all(
+            isinstance(item, dict) for item in result
+        ):
+            raise ValueError("JSON must be an array/list of objects")
         return result
-    except json.JSONDecodeError as e:
+    except ValueError as e:
         raise ValueError(f"Invalid JSON string: {e}")
 
 

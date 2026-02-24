@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import json5 from 'json5';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -57,7 +58,7 @@ export const MCPServerForm: React.FC<MCPServerFormProps> = ({
             // JSON 模式切换到普通模式：解析 JSON 并回填
             if (server.remoteConfig) {
                 try {
-                    const config = JSON.parse(server.remoteConfig);
+                    const config = json5.parse(server.remoteConfig);
                     const mcpServers = config.mcpServers || {};
                     const firstServerKey = Object.keys(mcpServers)[0];
                     if (firstServerKey) {
@@ -140,7 +141,7 @@ export const MCPServerForm: React.FC<MCPServerFormProps> = ({
         // 同步更新 JSON 配置中的 key
         if (server.type === 'local' && server.config) {
             try {
-                const config = JSON.parse(server.config);
+                const config = json5.parse(server.config);
                 if (config.mcpServers) {
                     const oldKeys = Object.keys(config.mcpServers);
                     if (oldKeys.length > 0) {
@@ -175,7 +176,7 @@ export const MCPServerForm: React.FC<MCPServerFormProps> = ({
             }
         } else if (server.type === 'remote' && server.remoteConfig) {
             try {
-                const config = JSON.parse(server.remoteConfig);
+                const config = json5.parse(server.remoteConfig);
                 if (config.mcpServers) {
                     const oldKeys = Object.keys(config.mcpServers);
                     if (oldKeys.length > 0) {
@@ -222,7 +223,7 @@ export const MCPServerForm: React.FC<MCPServerFormProps> = ({
         updateServer(index, 'config', newConfig);
 
         try {
-            const config = JSON.parse(newConfig);
+            const config = json5.parse(newConfig);
             if (config.mcpServers) {
                 const keys = Object.keys(config.mcpServers);
                 if (keys.length > 0) {
@@ -243,7 +244,7 @@ export const MCPServerForm: React.FC<MCPServerFormProps> = ({
         updateServer(index, 'remoteConfig', newConfig);
 
         try {
-            const config = JSON.parse(newConfig);
+            const config = json5.parse(newConfig);
             if (config.mcpServers) {
                 const keys = Object.keys(config.mcpServers);
                 if (keys.length > 0) {
@@ -327,7 +328,7 @@ export const MCPServerForm: React.FC<MCPServerFormProps> = ({
         }
 
         try {
-            const config = JSON.parse(server.remoteConfig);
+            const config = json5.parse(server.remoteConfig);
             if (config.mcpServers) {
                 const keys = Object.keys(config.mcpServers);
                 if (keys.length > 0) {
