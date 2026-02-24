@@ -8,7 +8,7 @@ from datetime import datetime
 
 import json5
 from agentscope.agent import ReActAgent
-from agentscope.memory import InMemoryMemory
+from agentscope.memory import InMemoryMemory, Mem0LongTermMemory
 from agentscope.message import Msg
 from agentscope.session import JSONSession
 from agentscope.tool import (
@@ -25,7 +25,7 @@ from hook import (
     studio_post_reply_hook,
 )
 from args import get_args
-from model import get_model, get_formatter
+from model import get_model, get_formatter, get_embedding_model
 from tool.utils import (
     view_agentscope_library,
     view_agentscope_readme,
@@ -34,6 +34,9 @@ from tool.utils import (
 from utils.common import get_local_file_path
 from utils.connect import StudioConnect
 from utils.constants import FRIDAY_SESSION_ID
+
+from mcp_manager import connect_mcp_servers, close_mcp_connections
+from mem0.vector_stores.configs import VectorStoreConfig
 
 
 async def main():
@@ -88,14 +91,68 @@ The solution/code to the user query may already exist in the AgentScope resource
         view_agentscope_faq, group_name="agentscope_tools"
     )
 
+    # Get MCP servers configuration and connect
+    mcp_servers = args.mcpServers if hasattr(args, 'mcpServers') else []
+    local_mcp_clients = await connect_mcp_servers(mcp_servers, toolkit)
+
     # get model from args
-    model = get_model(args.llmProvider, args.modelName, args.apiKey, args.clientKwargs, args.generateKwargs)
+    model = get_model(
+        args.llmProvider,
+        args.modelName,
+        args.apiKey,
+        args.clientKwargs,
+        args.generateKwargs,
+    )
     formatter = get_formatter(args.llmProvider)
 
-    # Create the ReAct agent
-    agent = ReActAgent(
-        name="Friday",
-        sys_prompt="""You're Friday, a helpful assistant specialized in daily task management and AgentScope framework support.
+    # Initialize long-term memory if enabled
+    long_term_memory = None
+    if args.longTermMemory:
+        # Create non-streaming model for long-term memory operations
+        memory_model = get_model(
+            args.llmProvider,
+            args.modelName,
+            args.apiKey,
+            args.clientKwargs,
+            args.generateKwargs,
+            stream=False,
+        )
+        embedding_model = get_embedding_model(
+            embeddingProvider=args.embeddingProvider,
+            embeddingModelName=args.embeddingModelName,
+            embeddingApiKey=args.embeddingApiKey,
+            embedding_kwargs=args.embeddingKwargs,
+        )
+
+        # Prepare vector store config with embedding dimensions
+        vector_store_config_dict = {}
+
+        # Add Qdrant-specific configuration
+        if args.vectorStoreProvider == "qdrant":
+            vector_store_config_dict["on_disk"] = args.saveToLocal
+            vector_store_config_dict["path"] = args.localStoragePath
+
+        # Add embedding_model_dims for vector stores that need it (e.g., Qdrant)
+        if (dimensions := getattr(embedding_model, 'dimensions', None)) is not None:
+            vector_store_config_dict["embedding_model_dims"] = dimensions
+
+        # Merge vectorStoreKwargs into the config
+        if args.vectorStoreKwargs:
+            vector_store_config_dict.update(args.vectorStoreKwargs)
+
+        long_term_memory = Mem0LongTermMemory(
+            agent_name="Friday",
+            user_name="Studio",
+            model=memory_model,
+            embedding_model=embedding_model,
+            vector_store_config=VectorStoreConfig(
+                provider=args.vectorStoreProvider,
+                config=vector_store_config_dict,
+            ),
+        )
+
+    # Build system prompt
+    sys_prompt = """You're Friday, a helpful assistant specialized in daily task management and AgentScope framework support.
 
 # Core Objectives
 - Help users manage and complete daily tasks efficiently
@@ -125,7 +182,21 @@ The solution/code to the user query may already exist in the AgentScope resource
 - Never guess or make up implementations
 
 # Available Context
-- Current date and time: {current_time}""".format(
+- Current date and time: {current_time}"""
+
+    # Add long-term memory information if enabled
+    if args.longTermMemory:
+        sys_prompt += """
+
+# Long-term Memory
+- You have long-term memory enabled, which allows you to remember information across conversations
+- Use this capability to provide more personalized and context-aware assistance
+- You can reference past interactions and learned preferences to better serve the user"""
+
+    # Create the ReAct agent
+    agent = ReActAgent(
+        name="Friday",
+        sys_prompt=sys_prompt.format(
             current_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             max_turns=20,
         ),
@@ -135,6 +206,8 @@ The solution/code to the user query may already exist in the AgentScope resource
         memory=InMemoryMemory(),
         max_iters=50,
         enable_meta_tool=True,
+        long_term_memory=long_term_memory,
+        long_term_memory_mode='both'
     )
 
     path_dialog_history = get_local_file_path("")
@@ -164,6 +237,9 @@ The solution/code to the user query may already exist in the AgentScope resource
         session_id=FRIDAY_SESSION_ID,
         friday=agent
     )
+    
+    # Close local MCP connections
+    await close_mcp_connections(local_mcp_clients)
 
 if __name__ == '__main__':
     asyncio.run(main())

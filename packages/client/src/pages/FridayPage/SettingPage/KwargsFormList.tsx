@@ -11,11 +11,22 @@ const KwargsFormList = ({ name }: { name: string }) => {
     const form = Form.useFormInstance();
     const newlyAddedRef = useRef<Set<number>>(new Set());
 
-    const label = name === 'clientKwargs' ? 'Client Kwargs' : 'Generate Kwargs';
+    const label =
+        name === 'clientKwargs'
+            ? 'Client Kwargs'
+            : name === 'generateKwargs'
+              ? 'Generate Kwargs'
+              : name === 'vectorStoreKwargs'
+                ? 'Vector Store Kwargs'
+                : 'Embedding Kwargs';
     const help =
         name === 'clientKwargs'
             ? t('help.friday.client-kwargs')
-            : t('help.friday.generate-kwargs');
+            : name === 'generateKwargs'
+              ? t('help.friday.generate-kwargs')
+              : name === 'vectorStoreKwargs'
+                ? t('help.friday.vector-store-kwargs')
+                : t('help.friday.embedding-kwargs');
 
     return (
         <Form.Item label={label} shouldUpdate help={help}>

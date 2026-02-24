@@ -19,9 +19,11 @@ const FridayPage = () => {
                     <Route
                         path={RouterPath.FRIDAY_CHAT}
                         element={
-                            <FridayAppRoomContextProvider>
-                                <ChatPage />
-                            </FridayAppRoomContextProvider>
+                            <FridaySettingRoomContextProvider>
+                                <FridayAppRoomContextProvider>
+                                    <ChatPage />
+                                </FridayAppRoomContextProvider>
+                            </FridaySettingRoomContextProvider>
                         }
                     />
                     <Route
@@ -35,9 +37,11 @@ const FridayPage = () => {
                     <Route
                         path="*"
                         element={
-                            <FridayAppRoomContextProvider>
-                                <ChatPage />
-                            </FridayAppRoomContextProvider>
+                            <FridaySettingRoomContextProvider>
+                                <FridayAppRoomContextProvider>
+                                    <ChatPage />
+                                </FridayAppRoomContextProvider>
+                            </FridaySettingRoomContextProvider>
                         }
                     />
                 </Routes>
