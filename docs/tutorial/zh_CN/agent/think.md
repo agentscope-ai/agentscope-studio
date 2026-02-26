@@ -26,19 +26,7 @@ Friday 支持开启模型思考模式，并将模型思考内容进行展示。
 
 ### Anthropic (Claude)
 
-```python
-model = AnthropicChatModel(
-    model_name="claude-3.7-sonnet",
-    api_key="your_api_key",
-    stream=True,
-    generate_kwargs={
-        "thinking": {
-            "type": "enabled",
-            "budget_tokens": 16000
-        }
-    }
-)
-```
+![anthropic 参数配置](assets/anthropic.png)
 
 ### Google Gemini
 
