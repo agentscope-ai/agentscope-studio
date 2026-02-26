@@ -125,7 +125,10 @@ export default defineConfig({
                         text: '智能体',
                         items: [
                             { text: 'Friday', link: '/zh_CN/agent/friday' },
-                            { text: '思考模式', link: '/zh_CN/agent/Reasoning' },
+                            {
+                                text: '思考模式',
+                                link: '/zh_CN/agent/Reasoning',
+                            },
                             { text: 'MCP', link: '/zh_CN/agent/MCP' },
                             {
                                 text: '长期记忆',
