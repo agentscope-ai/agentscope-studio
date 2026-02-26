@@ -9,7 +9,7 @@ Friday支持用户动态管理 MCP 服务器
 ## 添加 MCP 服务器
 
 1.在Friday对话界面有边框点击MCP按钮打开MCP服务器管理界面
-![MCP 配置按钮](assets/mcp_botton.png)
+![MCP 配置按钮](assets/mcp_button.png)
 
 2.写 MCP 服务器配置，点击保存即可
 ![MCP 配置界面](assets/mcp_config.png)
