@@ -6,6 +6,8 @@ import { MinusCircleIcon, PlusCircleIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button.tsx';
 import { inputTypeOptions, booleanOptions } from '../config';
 
+const { TextArea } = Input;
+
 const KwargsFormList = ({ name }: { name: string }) => {
     const { t } = useTranslation();
     const form = Form.useFormInstance();
@@ -115,69 +117,137 @@ const KwargsFormList = ({ name }: { name: string }) => {
                                                 {...restField}
                                                 name={[fieldName, 'value']}
                                                 className="flex-1 min-w-0"
-                                                validateTrigger={
-                                                    isNewlyAdded
-                                                        ? ['onSubmit']
-                                                        : ['onBlur', 'onChange']
-                                                }
-                                                rules={
-                                                    getFieldValue([
-                                                        name,
-                                                        fieldName,
-                                                        'type',
-                                                    ]) === 'number'
-                                                        ? [
-                                                              {
-                                                                  pattern:
-                                                                      /^-?\d+(\.\d+)?$/,
-                                                                  required: true,
-                                                                  whitespace: true,
-                                                                  message: t(
-                                                                      'help.friday.check-only-number',
-                                                                  ),
-                                                              },
-                                                          ]
-                                                        : [
-                                                              {
-                                                                  required: true,
-                                                                  whitespace: true,
-                                                                  message: t(
-                                                                      'help.friday.missing-value-name',
-                                                                  ),
-                                                              },
-                                                          ]
-                                                }
+                                                validateTrigger={[
+                                                    'onBlur',
+                                                    'onChange',
+                                                ]}
+                                                rules={(() => {
+                                                    const fieldType =
+                                                        getFieldValue([
+                                                            name,
+                                                            fieldName,
+                                                            'type',
+                                                        ]);
+                                                    if (fieldType === 'number') {
+                                                        return [
+                                                            {
+                                                                pattern:
+                                                                    /^-?\d+(\.\d+)?$/,
+                                                                required: true,
+                                                                whitespace: true,
+                                                                message: t(
+                                                                    'help.friday.check-only-number',
+                                                                ),
+                                                            },
+                                                        ];
+                                                    } else if (
+                                                        fieldType === 'json'
+                                                    ) {
+                                                        return [
+                                                            {
+                                                                required: true,
+                                                                whitespace: true,
+                                                                message: t(
+                                                                    'help.friday.missing-value-name',
+                                                                ),
+                                                            },
+                                                            {
+                                                                validator: async (
+                                                                    _,
+                                                                    value,
+                                                                ) => {
+                                                                    if (!value)
+                                                                        return;
+                                                                    try {
+                                                                        JSON.parse(
+                                                                            value,
+                                                                        );
+                                                                    } catch (e) {
+                                                                        throw new Error(
+                                                                            t(
+                                                                                'help.friday.invalid-json',
+                                                                            ),
+                                                                        );
+                                                                    }
+                                                                },
+                                                            },
+                                                        ];
+                                                    } else {
+                                                        return [
+                                                            {
+                                                                required: true,
+                                                                whitespace: true,
+                                                                message: t(
+                                                                    'help.friday.missing-value-name',
+                                                                ),
+                                                            },
+                                                        ];
+                                                    }
+                                                })()}
                                             >
-                                                {getFieldValue([
-                                                    name,
-                                                    fieldName,
-                                                    'type',
-                                                ]) === 'boolean' ? (
-                                                    <Select
-                                                        placeholder={t(
-                                                            'help.friday.value-name',
-                                                        )}
-                                                        className="w-full"
-                                                        options={booleanOptions}
-                                                        onFocus={() => {
-                                                            newlyAddedRef.current.delete(
-                                                                fieldName,
-                                                            );
-                                                        }}
-                                                    />
-                                                ) : (
-                                                    <Input
-                                                        placeholder={t(
-                                                            'help.friday.value-name',
-                                                        )}
-                                                        className="w-full"
-                                                        onFocus={() => {
-                                                            newlyAddedRef.current.delete(
-                                                                fieldName,
-                                                            );
-                                                        }}
-                                                    />
-                                                )}
+                                                {(() => {
+                                                    const fieldType =
+                                                        getFieldValue([
+                                                            name,
+                                                            fieldName,
+                                                            'type',
+                                                        ]);
+                                                    if (
+                                                        fieldType === 'boolean'
+                                                    ) {
+                                                        return (
+                                                            <Select
+                                                                placeholder={t(
+                                                                    'help.friday.value-name',
+                                                                )}
+                                                                className="w-full"
+                                                                options={
+                                                                    booleanOptions
+                                                                }
+                                                                onFocus={() => {
+                                                                    newlyAddedRef.current.delete(
+                                                                        fieldName,
+                                                                    );
+                                                                }}
+                                                            />
+                                                        );
+                                                    } else if (
+                                                        fieldType === 'json'
+                                                    ) {
+                                                        return (
+                                                            <TextArea
+                                                                placeholder={t(
+                                                                    'help.friday.json-value-placeholder',
+                                                                )}
+                                                                className="w-full font-mono text-xs"
+                                                                rows={4}
+                                                                autoSize={{
+                                                                    minRows: 4,
+                                                                    maxRows: 8,
+                                                                }}
+                                                                onFocus={() => {
+                                                                    newlyAddedRef.current.delete(
+                                                                        fieldName,
+                                                                    );
+                                                                }}
+                                                            />
+                                                        );
+                                                    } else {
+                                                        return (
+                                                            <Input
+                                                                placeholder={t(
+                                                                    'help.friday.value-name',
+                                                                )}
+                                                                className="w-full"
+                                                                onFocus={() => {
+                                                                    newlyAddedRef.current.delete(
+                                                                        fieldName,
+                                                                    );
+                                                                }}
+                                                            />
+                                                        );
+                                                    }
+                                                })()}
                                             </Form.Item>
 
                                             <Button

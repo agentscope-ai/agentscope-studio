@@ -39,6 +39,7 @@ export const inputTypeOptions: InputTypeOption[] = [
     { label: 'string', value: 'string' },
     { label: 'number', value: 'number' },
     { label: 'bool', value: 'boolean' },
+    { label: 'json', value: 'json' },
 ];
 
 export const llmProviderOptions: LlmProviderOption[] = [

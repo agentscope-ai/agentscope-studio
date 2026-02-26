@@ -21,7 +21,7 @@ interface KwargsFormItem {
 }
 
 // Backend format for kwargs
-type KwargsBackendItem = { [key: string]: string | number | boolean };
+type KwargsBackendItem = { [key: string]: string | number | boolean | object };
 
 // Convert kwargs from form format [{type, key, value}] to backend format {key1: value1, key2: value2}
 const convertKwargsToBackendFormat = (
@@ -33,12 +33,20 @@ const convertKwargsToBackendFormat = (
     const result: KwargsBackendItem = {};
     kwargs.forEach((item) => {
         if (!item.key) return; // Skip items without key
-        let convertedValue: string | number | boolean = item.value;
+        let convertedValue: string | number | boolean | object = item.value;
         // Convert value based on type
         if (item.type === 'number') {
             convertedValue = Number(item.value);
         } else if (item.type === 'boolean') {
             convertedValue = item.value === 'true';
+        } else if (item.type === 'json') {
+            try {
+                convertedValue = JSON.parse(item.value);
+            } catch (e) {
+                // If JSON parsing fails, keep as string
+                console.error(`Failed to parse JSON for key "${item.key}":`, e);
+                convertedValue = item.value;
+            }
         }
         result[item.key] = convertedValue;
     });
@@ -62,6 +70,9 @@ const convertKwargsFromBackendFormat = (
         } else if (typeof value === 'number') {
             type = 'number';
             stringValue = String(value);
+        } else if (typeof value === 'object' && value !== null) {
+            type = 'json';
+            stringValue = JSON.stringify(value, null, 2);
         } else if (value === 'true' || value === 'false') {
             type = 'boolean';
         } else if (/^[0-9]+$/.test(String(value))) {
