@@ -128,7 +128,9 @@ const KwargsFormList = ({ name }: { name: string }) => {
                                                             fieldName,
                                                             'type',
                                                         ]);
-                                                    if (fieldType === 'number') {
+                                                    if (
+                                                        fieldType === 'number'
+                                                    ) {
                                                         return [
                                                             {
                                                                 pattern:
@@ -152,24 +154,27 @@ const KwargsFormList = ({ name }: { name: string }) => {
                                                                 ),
                                                             },
                                                             {
-                                                                validator: async (
-                                                                    _,
-                                                                    value,
-                                                                ) => {
-                                                                    if (!value)
-                                                                        return;
-                                                                    try {
-                                                                        JSON.parse(
-                                                                            value,
-                                                                        );
-                                                                    } catch (e) {
-                                                                        throw new Error(
-                                                                            t(
-                                                                                'help.friday.invalid-json',
-                                                                            ),
-                                                                        );
-                                                                    }
-                                                                },
+                                                                validator:
+                                                                    async (
+                                                                        _,
+                                                                        value,
+                                                                    ) => {
+                                                                        if (
+                                                                            !value
+                                                                        )
+                                                                            return;
+                                                                        try {
+                                                                            JSON.parse(
+                                                                                value,
+                                                                            );
+                                                                        } catch {
+                                                                            throw new Error(
+                                                                                t(
+                                                                                    'help.friday.invalid-json',
+                                                                                ),
+                                                                            );
+                                                                        }
+                                                                    },
                                                             },
                                                         ];
                                                     } else {
