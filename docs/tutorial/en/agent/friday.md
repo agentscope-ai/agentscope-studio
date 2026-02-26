@@ -43,7 +43,7 @@ We are continuously integrating more features into Friday. The current and upcom
 - [x] Support meta tool
 - [x] Support realtime steering/interruption
 - [x] Support state/Session management
+- [x] Support long-term memory
+- [x] Support user to add MCP server dynamically
 - [ ] 🚧 Support planning and plan visualization
-- [ ] 🚧 Support long-term memory
 - [ ] Support anthropic agent skill
-- [ ] Support user to add MCP server dynamically
