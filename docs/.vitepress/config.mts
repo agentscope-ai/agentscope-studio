@@ -67,7 +67,10 @@ export default defineConfig({
                             { text: 'Friday', link: '/agent/friday' },
                             { text: 'Reasoning', link: '/agent/think' },
                             { text: 'MCP', link: '/agent/MCP' },
-                            { text: 'Long-Term Memory', link: '/agent/LongTermMemory' },
+                            {
+                                text: 'Long-Term Memory',
+                                link: '/agent/LongTermMemory',
+                            },
                         ],
                     },
                 ],
@@ -124,7 +127,10 @@ export default defineConfig({
                             { text: 'Friday', link: '/zh_CN/agent/friday' },
                             { text: '思考模式', link: '/zh_CN/agent/think' },
                             { text: 'MCP', link: '/zh_CN/agent/MCP' },
-                            { text: '长期记忆', link: '/zh_CN/agent/LongTermMemory' },
+                            {
+                                text: '长期记忆',
+                                link: '/zh_CN/agent/LongTermMemory',
+                            },
                         ],
                     },
                 ],
