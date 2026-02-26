@@ -137,6 +137,8 @@
             "value-name": "Value Name",
             "missing-value-name": "Missing value name",
             "check-only-number": "Only numbers can be entered",
+            "invalid-json": "Invalid JSON format",
+            "json-value-placeholder": "Enter JSON value, e.g. {\"key\": \"value\"}",
             "add-form-list-btn": "Add keyword argument"
         }
     },
