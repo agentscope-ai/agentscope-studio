@@ -20,6 +20,12 @@ Friday 支持开启模型思考模式，并将模型思考内容进行展示。
 
 所有思考模式相关参数都通过 **`generate_kwargs`** 传递：
 
+### DashScope (阿里云)
+
+![dashscope 参数配置](assets/dashscope.png)
+
+> **注意**: 非流式调用时必须设置 `enable_thinking=False`，否则会报错
+
 ### OpenAI
 
 ![openai 参数配置](assets/openai.png)
@@ -30,47 +36,13 @@ Friday 支持开启模型思考模式，并将模型思考内容进行展示。
 
 ### Google Gemini
 
-```python
-model = GeminiChatModel(
-    model_name="gemini-3.1-pro-preview",
-    api_key="your_api_key",
-    stream=True,
-    generate_kwargs={
-        "thinking_config": {
-            "thinking_level": "medium"  # low / medium / high
-        }
-    }
-)
-```
+![gemini 参数配置](assets/gemini.png)
 
 > **注意**: Gemini 2.5 版本使用 `thinking_budget` 参数（整数值），Gemini 3+ 版本使用 `thinking_level`
 
 ### Ollama
 
-```python
-model = OllamaChatModel(
-    model_name="deepseek-r1",
-    stream=True,
-    generate_kwargs={
-        "think": True
-    }
-)
-```
-
-### DashScope (阿里云)
-
-```python
-model = DashScopeChatModel(
-    model_name="qwen-plus",
-    api_key="your_api_key",
-    stream=True,  # 思考模式必须使用流式输出
-    generate_kwargs={
-        "enable_thinking": True
-    }
-)
-```
-
-> **注意**: 非流式调用时必须设置 `enable_thinking=False`，否则会报错
+![ollama 参数配置](assets/ollama.png)
 
 ## 参数选择建议
 
@@ -79,5 +51,3 @@ model = DashScopeChatModel(
 | 简单任务（翻译、分类、数据提取） | `low` | 快速响应，低成本 |
 | 日常开发（代码生成、内容写作、调试） | `medium` | 平衡性能与成本 |
 | 复杂推理（数学证明、科学分析、算法设计） | `high` | 深度推理，高质量输出 |
-
-![思考模式开启](assets/think_switch.png)
