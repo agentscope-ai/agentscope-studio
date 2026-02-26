@@ -2,7 +2,7 @@
 
 Friday 支持开启模型思考模式，并将模型思考内容进行展示。
 
-![思考模式展示](assets/think_show.png)
+![思考模式展示](assets/reasoning_show.png)
 
 ## 如何开启思考模式
 

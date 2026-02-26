@@ -9,12 +9,12 @@ Friday supports dynamic management of MCP servers:
 ## Adding MCP Servers
 
 1. Click the MCP button on the right side of the Friday chat interface to open the MCP server management interface
-   ![MCP Configuration Button](../../zh_CN/agent/assets/mcp_button.png)
+   ![MCP Configuration Button](assets/mcp_button.png)
 
 2. Write the MCP server configuration and click Save
-   ![MCP Configuration Interface](../../zh_CN/agent/assets/mcp_config.png)
+   ![MCP Configuration Interface](assets/mcp_config.png)
 
 ## Enabling and Disabling MCP Servers
 
 During usage, you can enable or disable specific MCP servers through this switch
-![MCP Switch Button](../../zh_CN/agent/assets/mcp_switch.png)
+![MCP Switch Button](assets/mcp_switch.png)

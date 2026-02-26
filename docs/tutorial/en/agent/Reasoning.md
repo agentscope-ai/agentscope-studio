@@ -2,7 +2,7 @@
 
 Friday supports enabling model reasoning mode and displaying the model's reasoning process.
 
-![Reasoning Mode Display](../../zh_CN/agent/assets/think_show.png)
+![Reasoning Mode Display](assets/reasoning_show.png)
 
 ## How to Enable Reasoning Mode
 
