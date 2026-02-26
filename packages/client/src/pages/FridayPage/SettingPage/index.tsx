@@ -40,13 +40,7 @@ const convertKwargsToBackendFormat = (
         } else if (item.type === 'boolean') {
             convertedValue = item.value === 'true';
         } else if (item.type === 'json') {
-            try {
-                convertedValue = JSON.parse(item.value);
-            } catch (e) {
-                // If JSON parsing fails, keep as string
-                console.error(`Failed to parse JSON for key "${item.key}":`, e);
-                convertedValue = item.value;
-            }
+            convertedValue = JSON.parse(item.value);
         }
         result[item.key] = convertedValue;
     });
