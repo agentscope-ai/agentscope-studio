@@ -19,10 +19,12 @@ from agentscope.tool import (
     insert_text_file,
     view_text_file,
 )
+from agentscope.plan import PlanNotebook, Plan, SubTask
 
 from hook import (
     studio_pre_print_hook,
     studio_post_reply_hook,
+    push_plan_hook,
 )
 from args import get_args
 from model import get_model, get_formatter
@@ -31,14 +33,18 @@ from tool.utils import (
     view_agentscope_readme,
     view_agentscope_faq,
 )
-from utils.common import get_local_file_path
+from utils.common import get_local_file_path, save_studio_url
 from utils.connect import StudioConnect
 from utils.constants import FRIDAY_SESSION_ID
+from plan_manager import JSONPlanStorage
 
 
 async def main():
     args = get_args()
 
+    # Save studio URL to config file for API access
+    save_studio_url(args.studio_url)
+    
     studio_pre_print_hook.url = args.studio_url
 
     # Forward message to the studio
@@ -92,6 +98,18 @@ The solution/code to the user query may already exist in the AgentScope resource
     model = get_model(args.llmProvider, args.modelName, args.apiKey, args.clientKwargs, args.generateKwargs)
     formatter = get_formatter(args.llmProvider)
 
+    # Create PlanNotebook with JSON storage
+    plan_storage = JSONPlanStorage()
+    plan_notebook = PlanNotebook(storage=plan_storage)
+
+    # Register plan change hook to push plan updates to frontend
+    # When plan is finished (plan=None), it also pushes historical plans in the same request
+    push_plan_hook.url = args.studio_url
+    plan_notebook.register_plan_change_hook(
+        "push_plan",
+        push_plan_hook,
+    )
+
     # Create the ReAct agent
     agent = ReActAgent(
         name="Friday",
@@ -135,6 +153,7 @@ The solution/code to the user query may already exist in the AgentScope resource
         memory=InMemoryMemory(),
         max_iters=50,
         enable_meta_tool=True,
+        plan_notebook=plan_notebook,
     )
 
     path_dialog_history = get_local_file_path("")
@@ -150,7 +169,8 @@ The solution/code to the user query may already exist in the AgentScope resource
 
     await session.load_session_state(
         session_id=FRIDAY_SESSION_ID,
-        friday=agent
+        friday=agent,
+        plan_notebook=plan_notebook
     )
 
     # The socket is used for realtime steering
@@ -159,10 +179,11 @@ The solution/code to the user query may already exist in the AgentScope resource
     await agent(Msg("user", json5.loads(args.query), "user"))
     await socket.disconnect()
 
-    # Save dialog history
+    # Save dialog history and plan notebook state
     await session.save_session_state(
         session_id=FRIDAY_SESSION_ID,
-        friday=agent
+        friday=agent,
+        plan_notebook=plan_notebook
     )
 
 if __name__ == '__main__':

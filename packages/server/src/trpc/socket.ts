@@ -12,6 +12,7 @@ import {
     SocketEvents,
     SocketRoomName,
 } from '../../../shared/src/types/trpc';
+import { Plan } from '../../../shared/src/types/plan';
 import { RunDao } from '../dao/Run';
 
 import dayjs from 'dayjs';
@@ -526,7 +527,9 @@ export class SocketManager {
                     } else {
                         console.warn(`File not found: ${filePath}`);
                     }
-                    // TODO: 告知client
+
+                    // Notify frontend to clear plans and messages
+                    this.broadcastCurrentPlanToFridayAppRoom(null, []);
                     this.broadcastReplyToFridayAppRoom(undefined, true);
                 });
             });
@@ -709,6 +712,32 @@ export class SocketManager {
                 SocketEvents.server.pushReplyingState,
                 replyingManager.getReplyingState(),
             );
+    }
+
+    static broadcastCurrentPlanToFridayAppRoom(
+        currentPlan: Plan | null,
+        historicalPlans?: Plan[],
+    ) {
+        this.io
+            .of('/client')
+            .to(SocketRoomName.FridayAppRoom)
+            .emit(SocketEvents.server.pushCurrentPlan, {
+                currentPlan,
+                historicalPlans,
+            });
+    }
+
+    static broadcastPlanToFridayAppRoom(
+        currentPlan: Plan | null,
+        historicalPlans: Plan[],
+    ) {
+        this.io
+            .of('/client')
+            .to(SocketRoomName.FridayAppRoom)
+            .emit(SocketEvents.server.pushPlan, {
+                currentPlan,
+                historicalPlans,
+            });
     }
 }
 

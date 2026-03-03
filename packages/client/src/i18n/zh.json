@@ -8,6 +8,8 @@
         "delete": "删除",
         "focus-on-latest-run": "自动切换到最新运行",
         "ok": "确认",
+        "save": "保存",
+        "add": "添加",
         "search": "搜索",
         "update-now": "立即更新",
         "updating": "更新中...",
@@ -267,7 +269,9 @@
             "send-message": "发送消息",
             "send-message-disable": "当前输入请求为空",
             "scroll-to-bottom": "滚动到最底部",
-            "voice-button": "录音"
+            "voice-button": "录音",
+            "enable-plan-mode": "开启计划模式",
+            "disable-plan-mode": "关闭计划模式"
         },
         "chart": {
             "invocation": "调用次数"
@@ -320,6 +324,50 @@
             "week": "最近 7 天"
         },
         "traceId": "Trace ID"
+    },
+    "plan": {
+        "title": "任务计划",
+        "current_plan": "当前计划",
+        "history_plans": "历史计划 ({{count}})",
+        "add_subtask": "添加子任务",
+        "edit_subtask": "编辑子任务",
+        "finish_subtask": "完成子任务",
+        "delete_subtask": "删除子任务",
+        "insert_subtask": "在此处下方插入子任务",
+        "collapse_sidebar": "折叠侧边栏",
+        "empty_title": "暂无任务计划",
+        "empty_desc": "Agent 会在需要时创建任务计划",
+        "completed_stats": "{{completed}}/{{total}} 完成 ({{percentage}}%)",
+        "expected_outcome": "预期结果",
+        "actual_outcome": "实际结果",
+        "subtask_name": "任务名称",
+        "subtask_name_required": "任务名称 *",
+        "subtask_desc": "任务描述",
+        "subtask_desc_required": "任务描述 *",
+        "subtask_name_placeholder": "输入任务名称",
+        "subtask_name_placeholder2": "请输入任务名称",
+        "subtask_desc_placeholder": "输入任务描述",
+        "subtask_desc_placeholder2": "请输入任务描述",
+        "expected_outcome_placeholder": "输入预期结果（可选）",
+        "expected_outcome_placeholder2": "请输入预期结果",
+        "actual_outcome_required": "实际结果 *",
+        "actual_outcome_placeholder": "请输入子任务的实际完成结果（具体的数据、信息或文件路径）",
+        "actual_outcome_hint": "请详细描述任务完成的具体结果，例如生成的文件、数据或达成的目标",
+        "edit_disabled": "已完成的子任务不支持修改",
+        "current_status": "当前",
+        "finish_action": "完成",
+        "status": {
+            "todo": "待处理",
+            "in_progress": "执行中",
+            "done": "已完成",
+            "abandoned": "已放弃"
+        },
+        "subtask_status": {
+            "todo": "待执行",
+            "in_progress": "执行中",
+            "done": "已完成",
+            "abandoned": "已废弃"
+        }
     },
     "unit": {
         "character": "字符",

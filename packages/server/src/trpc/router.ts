@@ -342,6 +342,335 @@ export const appRouter = t.router({
                 });
         }),
 
+    pushCurrentPlanToFridayApp: t.procedure
+        .input(
+            z.object({
+                currentPlan: z.any().nullable(),
+                historicalPlans: z.array(z.any()).optional(),
+            }),
+        )
+        .mutation(async ({ input }) => {
+            try {
+                // Always broadcast via pushCurrentPlan event
+                // Frontend will handle both currentPlan and historicalPlans
+                SocketManager.broadcastCurrentPlanToFridayAppRoom(
+                    input.currentPlan,
+                    input.historicalPlans,
+                );
+            } catch (error) {
+                console.error(error);
+                throw error;
+            }
+        }),
+
+    getFridayPlans: t.procedure.query(async () => {
+        try {
+            const { exec } = await import('child_process');
+            const { promisify } = await import('util');
+            const path = await import('path');
+            const fs = await import('fs');
+            const execAsync = promisify(exec);
+
+            // Get Friday config
+            const fridayConfig = FridayConfigManager.getInstance().getConfig();
+            if (!fridayConfig || !fridayConfig.pythonEnv) {
+                throw new Error('Friday config not found');
+            }
+
+            // Get the Friday app path (packages/app/friday)
+            const fridayAppPath = path.resolve(
+                __dirname,
+                '../../../app/friday',
+            );
+
+            // Create a temporary Python script to query plans via PlanNotebook
+            const tmpScript = path.join(fridayAppPath, '.get_friday_plans.py');
+            const scriptContent = [
+                'import sys, json',
+                `sys.path.insert(0, '${fridayAppPath.replace(/\\/g, '/')}' )`,
+                'from plan_manager.api import get_plans_from_storage',
+                'result = get_plans_from_storage()',
+                'print(json.dumps(result))',
+                '',
+            ].join('\n');
+
+            fs.writeFileSync(tmpScript, scriptContent);
+
+            try {
+                const { stdout } = await execAsync(
+                    `${fridayConfig.pythonEnv} "${tmpScript}"`,
+                );
+
+                const trimmed = stdout.trim();
+                if (!trimmed) {
+                    return {
+                        currentPlan: null,
+                        historicalPlans: [],
+                    };
+                }
+
+                const data = JSON.parse(trimmed);
+
+                return {
+                    currentPlan: data.currentPlan ?? null,
+                    historicalPlans: data.historicalPlans ?? [],
+                };
+            } finally {
+                // Clean up temporary script
+                try {
+                    fs.unlinkSync(tmpScript);
+                } catch {
+                    // Ignore cleanup errors
+                }
+            }
+        } catch (error) {
+            console.error(
+                '[getFridayPlans] Failed to get Friday plans:',
+                error,
+            );
+            return {
+                currentPlan: null,
+                historicalPlans: [],
+            };
+        }
+    }),
+
+    reviseFridayPlan: t.procedure
+        .input(
+            z.object({
+                subtaskIdx: z.number(),
+                action: z.enum(['add', 'revise', 'delete']),
+                subtask: z.any().optional(),
+            }),
+        )
+        .mutation(async ({ input }) => {
+            try {
+                const { exec } = await import('child_process');
+                const { promisify } = await import('util');
+                const path = await import('path');
+                const fs = await import('fs');
+                const execAsync = promisify(exec);
+
+                const fridayConfig =
+                    FridayConfigManager.getInstance().getConfig();
+                if (!fridayConfig || !fridayConfig.pythonEnv) {
+                    throw new Error('Friday config not found');
+                }
+
+                const fridayAppPath = path.resolve(
+                    __dirname,
+                    '../../../app/friday',
+                );
+                const tmpScript = path.join(
+                    fridayAppPath,
+                    '.revise_friday_plan.py',
+                );
+
+                const subtaskJson = input.subtask
+                    ? JSON.stringify(input.subtask)
+                    : 'None';
+                const scriptContent = [
+                    'import sys, json',
+                    `sys.path.insert(0, '${fridayAppPath.replace(/\\/g, '/')}' )`,
+                    'from plan_manager.api import revise_plan',
+                    // Use json.loads to properly parse JavaScript JSON to Python dict
+                    input.subtask
+                        ? `subtask_data = json.loads('''${subtaskJson}''')`
+                        : 'subtask_data = None',
+                    `result = revise_plan('${input.action}', ${input.subtaskIdx}, subtask_data)`,
+                    'print(json.dumps(result))',
+                    '',
+                ].join('\n');
+
+                fs.writeFileSync(tmpScript, scriptContent);
+
+                try {
+                    const { stdout } = await execAsync(
+                        `${fridayConfig.pythonEnv} "${tmpScript}"`,
+                    );
+
+                    const trimmed = stdout.trim();
+                    const data = trimmed ? JSON.parse(trimmed) : {};
+
+                    return {
+                        success: true,
+                        message: data.message || 'Plan revised successfully',
+                    };
+                } finally {
+                    try {
+                        fs.unlinkSync(tmpScript);
+                    } catch {
+                        // Ignore cleanup errors
+                    }
+                }
+            } catch (error) {
+                console.error(
+                    '[reviseFridayPlan] Failed to revise plan:',
+                    error,
+                );
+                return {
+                    success: false,
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : 'Failed to revise plan',
+                };
+            }
+        }),
+
+    updateFridaySubtaskState: t.procedure
+        .input(
+            z.object({
+                subtaskIdx: z.number(),
+                state: z.enum(['todo', 'in_progress', 'abandoned']),
+            }),
+        )
+        .mutation(async ({ input }) => {
+            try {
+                const { exec } = await import('child_process');
+                const { promisify } = await import('util');
+                const path = await import('path');
+                const fs = await import('fs');
+                const execAsync = promisify(exec);
+
+                const fridayConfig =
+                    FridayConfigManager.getInstance().getConfig();
+                if (!fridayConfig || !fridayConfig.pythonEnv) {
+                    throw new Error('Friday config not found');
+                }
+
+                const fridayAppPath = path.resolve(
+                    __dirname,
+                    '../../../app/friday',
+                );
+                const tmpScript = path.join(
+                    fridayAppPath,
+                    '.update_friday_subtask.py',
+                );
+
+                const scriptContent = [
+                    'import sys, json',
+                    `sys.path.insert(0, '${fridayAppPath.replace(/\\/g, '/')}' )`,
+                    'from plan_manager.api import update_subtask_state',
+                    `result = update_subtask_state(${input.subtaskIdx}, '${input.state}')`,
+                    'print(json.dumps(result))',
+                    '',
+                ].join('\n');
+
+                fs.writeFileSync(tmpScript, scriptContent);
+
+                try {
+                    const { stdout } = await execAsync(
+                        `${fridayConfig.pythonEnv} "${tmpScript}"`,
+                    );
+
+                    const trimmed = stdout.trim();
+                    const data = trimmed ? JSON.parse(trimmed) : {};
+
+                    return {
+                        success: true,
+                        message:
+                            data.message ||
+                            'Subtask state updated successfully',
+                    };
+                } finally {
+                    try {
+                        fs.unlinkSync(tmpScript);
+                    } catch {
+                        // Ignore cleanup errors
+                    }
+                }
+            } catch (error) {
+                console.error(
+                    '[updateFridaySubtaskState] Failed to update subtask state:',
+                    error,
+                );
+                return {
+                    success: false,
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : 'Failed to update subtask state',
+                };
+            }
+        }),
+
+    finishFridaySubtask: t.procedure
+        .input(
+            z.object({
+                subtaskIdx: z.number(),
+                outcome: z.string(),
+            }),
+        )
+        .mutation(async ({ input }) => {
+            try {
+                const { exec } = await import('child_process');
+                const { promisify } = await import('util');
+                const path = await import('path');
+                const fs = await import('fs');
+                const execAsync = promisify(exec);
+
+                const fridayConfig =
+                    FridayConfigManager.getInstance().getConfig();
+                if (!fridayConfig || !fridayConfig.pythonEnv) {
+                    throw new Error('Friday config not found');
+                }
+
+                const fridayAppPath = path.resolve(
+                    __dirname,
+                    '../../../app/friday',
+                );
+                const tmpScript = path.join(
+                    fridayAppPath,
+                    '.finish_friday_subtask.py',
+                );
+
+                const scriptContent = [
+                    'import sys, json',
+                    `sys.path.insert(0, '${fridayAppPath.replace(/\\/g, '/')}' )`,
+                    'from plan_manager.api import finish_subtask',
+                    `result = finish_subtask(${input.subtaskIdx}, '${input.outcome.replace(/'/g, "\\'")}')`,
+                    'print(json.dumps(result))',
+                    '',
+                ].join('\n');
+
+                fs.writeFileSync(tmpScript, scriptContent);
+
+                try {
+                    const { stdout } = await execAsync(
+                        `${fridayConfig.pythonEnv} "${tmpScript}"`,
+                    );
+
+                    const trimmed = stdout.trim();
+                    const data = trimmed ? JSON.parse(trimmed) : {};
+
+                    return {
+                        success: true,
+                        message:
+                            data.message || 'Subtask finished successfully',
+                    };
+                } finally {
+                    try {
+                        fs.unlinkSync(tmpScript);
+                    } catch {
+                        // Ignore cleanup errors
+                    }
+                }
+            } catch (error) {
+                console.error(
+                    '[finishFridaySubtask] Failed to finish subtask:',
+                    error,
+                );
+                return {
+                    success: false,
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : 'Failed to finish subtask',
+                };
+            }
+        }),
+
     clientGetFridayConfig: t.procedure.query(async () => {
         return FridayConfigManager.getInstance().getConfig();
     }),

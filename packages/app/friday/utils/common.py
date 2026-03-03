@@ -2,6 +2,7 @@
 """Utility functions for file path management in AgentScope Studio."""
 import platform
 import os
+import json
 
 from utils.constants import NAME_STUDIO, NAME_APP
 
@@ -26,3 +27,34 @@ def get_local_file_path(filename: str) -> str:
         os.makedirs(os.path.join(local_path, NAME_APP), exist_ok=True)
 
     return os.path.join(local_path, NAME_APP, filename)
+
+
+def save_studio_url(url: str) -> None:
+    """Save the studio URL to a config file.
+    
+    Args:
+        url: The studio URL to save
+    """
+    config_path = get_local_file_path(".studio_config.json")
+    config = {"studio_url": url}
+    with open(config_path, "w", encoding="utf-8") as f:
+        json.dump(config, f)
+
+
+def get_studio_url() -> str | None:
+    """Get the studio URL from the config file.
+    
+    Returns:
+        The studio URL if exists, otherwise None
+    """
+    config_path = get_local_file_path(".studio_config.json")
+    
+    if not os.path.exists(config_path):
+        return None
+    
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            config = json.load(f)
+            return config.get("studio_url")
+    except Exception:
+        return None
