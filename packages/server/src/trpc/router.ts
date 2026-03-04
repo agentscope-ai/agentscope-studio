@@ -351,8 +351,6 @@ export const appRouter = t.router({
         )
         .mutation(async ({ input }) => {
             try {
-                // Always broadcast via pushCurrentPlan event
-                // Frontend will handle both currentPlan and historicalPlans
                 SocketManager.broadcastCurrentPlanToFridayAppRoom(
                     input.currentPlan,
                     input.historicalPlans,
@@ -369,6 +367,7 @@ export const appRouter = t.router({
             const { promisify } = await import('util');
             const path = await import('path');
             const fs = await import('fs');
+            const crypto = await import('crypto');
             const execAsync = promisify(exec);
 
             // Get Friday config
@@ -383,8 +382,11 @@ export const appRouter = t.router({
                 '../../../app/friday',
             );
 
-            // Create a temporary Python script to query plans via PlanNotebook
-            const tmpScript = path.join(fridayAppPath, '.get_friday_plans.py');
+            // Create a temporary Python script with unique name to avoid race conditions
+            const tmpScript = path.join(
+                fridayAppPath,
+                `.get_friday_plans_${crypto.randomUUID()}.py`,
+            );
             const scriptContent = [
                 'import sys, json',
                 `sys.path.insert(0, '${fridayAppPath.replace(/\\/g, '/')}' )`,
@@ -461,13 +463,14 @@ export const appRouter = t.router({
                     __dirname,
                     '../../../app/friday',
                 );
+                const requestId = crypto.randomUUID();
                 const tmpScript = path.join(
                     fridayAppPath,
-                    '.revise_friday_plan.py',
+                    `.revise_friday_plan_${requestId}.py`,
                 );
                 const tmpInput = path.join(
                     fridayAppPath,
-                    '.revise_friday_plan_input.json',
+                    `.revise_friday_plan_input_${requestId}.json`,
                 );
 
                 // Write user data to a separate JSON file to avoid code injection
@@ -545,6 +548,7 @@ export const appRouter = t.router({
                 const { promisify } = await import('util');
                 const path = await import('path');
                 const fs = await import('fs');
+                const crypto = await import('crypto');
                 const execAsync = promisify(exec);
 
                 const fridayConfig =
@@ -557,13 +561,14 @@ export const appRouter = t.router({
                     __dirname,
                     '../../../app/friday',
                 );
+                const requestId = crypto.randomUUID();
                 const tmpScript = path.join(
                     fridayAppPath,
-                    '.update_friday_subtask.py',
+                    `.update_friday_subtask_${requestId}.py`,
                 );
                 const tmpInput = path.join(
                     fridayAppPath,
-                    '.update_friday_subtask_input.json',
+                    `.update_friday_subtask_input_${requestId}.json`,
                 );
 
                 // Write user data to a separate JSON file to avoid code injection
@@ -642,6 +647,7 @@ export const appRouter = t.router({
                 const { promisify } = await import('util');
                 const path = await import('path');
                 const fs = await import('fs');
+                const crypto = await import('crypto');
                 const execAsync = promisify(exec);
 
                 const fridayConfig =
@@ -654,13 +660,14 @@ export const appRouter = t.router({
                     __dirname,
                     '../../../app/friday',
                 );
+                const requestId = crypto.randomUUID();
                 const tmpScript = path.join(
                     fridayAppPath,
-                    '.finish_friday_subtask.py',
+                    `.finish_friday_subtask_${requestId}.py`,
                 );
                 const tmpInput = path.join(
                     fridayAppPath,
-                    '.finish_friday_subtask_input.json',
+                    `.finish_friday_subtask_input_${requestId}.json`,
                 );
 
                 // Write user data to a separate JSON file to avoid code injection
@@ -738,6 +745,7 @@ export const appRouter = t.router({
                 const { promisify } = await import('util');
                 const path = await import('path');
                 const fs = await import('fs');
+                const crypto = await import('crypto');
                 const execAsync = promisify(exec);
 
                 const fridayConfig =
@@ -750,13 +758,14 @@ export const appRouter = t.router({
                     __dirname,
                     '../../../app/friday',
                 );
+                const requestId = crypto.randomUUID();
                 const tmpScript = path.join(
                     fridayAppPath,
-                    '.reorder_friday_subtasks.py',
+                    `.reorder_friday_subtasks_${requestId}.py`,
                 );
                 const tmpInput = path.join(
                     fridayAppPath,
-                    '.reorder_friday_subtasks_input.json',
+                    `.reorder_friday_subtasks_input_${requestId}.json`,
                 );
 
                 // Write user data to a separate JSON file to avoid code injection

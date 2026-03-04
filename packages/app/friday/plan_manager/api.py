@@ -68,9 +68,9 @@ def get_plans_from_storage() -> dict:
                 plan_notebook=plan_notebook,
             )
         )
-    except Exception:
+    except Exception as e:
         # If no session yet, just continue with empty notebook
-        pass
+        print(f"No existing session found, starting fresh: {e}")
 
     # Load all plans from storage (these are historical plans only)
     try:
@@ -96,72 +96,107 @@ def get_plans_from_storage() -> dict:
     }
 
 
+def _init_plan_notebook() -> tuple[PlanNotebook, JSONPlanStorage]:
+    """Initialize PlanNotebook with storage, session, and hooks.
+
+    Returns:
+        tuple of (plan_notebook, plan_storage)
+    """
+    import asyncio
+    from agentscope.session import JSONSession
+
+    path_dialog_history = get_local_file_path("")
+    plan_storage = JSONPlanStorage()
+    plan_notebook = PlanNotebook(storage=plan_storage)
+
+    # Register plan change hook to push updates to frontend
+    studio_url = get_studio_url()
+    if studio_url:
+        push_plan_hook.url = studio_url
+        plan_notebook.register_plan_change_hook("push_plan", push_plan_hook)
+
+    # Load the notebook state from session
+    try:
+        session = JSONSession(save_dir=path_dialog_history)
+    except TypeError:
+        session = JSONSession(
+            session_id=FRIDAY_SESSION_ID,
+            save_dir=path_dialog_history,
+        )
+
+    try:
+        asyncio.run(
+            session.load_session_state(
+                session_id=FRIDAY_SESSION_ID,
+                plan_notebook=plan_notebook,
+            )
+        )
+    except Exception as e:
+        print(f"No existing session found, starting fresh: {e}")
+
+    return plan_notebook, plan_storage
+
+
+def _save_plan_state(
+    plan_notebook: PlanNotebook,
+    plan_storage: JSONPlanStorage,
+) -> None:
+    """Save plan state to storage and session."""
+    import asyncio
+    from agentscope.session import JSONSession
+
+    path_dialog_history = get_local_file_path("")
+
+    try:
+        session = JSONSession(save_dir=path_dialog_history)
+    except TypeError:
+        session = JSONSession(
+            session_id=FRIDAY_SESSION_ID,
+            save_dir=path_dialog_history,
+        )
+
+    if plan_notebook.current_plan:
+        # Only save completed or abandoned plans to storage
+        # In-progress plans should only exist in session
+        if plan_notebook.current_plan.state in ['done', 'abandoned']:
+            asyncio.run(plan_storage.add_plan(plan_notebook.current_plan, override=True))
+
+    asyncio.run(
+        session.save_session_state(
+            session_id=FRIDAY_SESSION_ID,
+            plan_notebook=plan_notebook,
+        )
+    )
+
+
 def revise_plan(
-    action: str,  # 'add', 'revise', 'delete'
+    action: str,
     subtask_idx: int,
     subtask_data: dict = None,
 ) -> dict:
     """Revise the current plan.
-    
+
     Args:
         action: The action to perform ('add', 'revise', 'delete')
         subtask_idx: The index of the subtask
         subtask_data: The subtask data (for add/revise actions)
-        
+
     Returns:
         dict with 'success' and 'message' keys
     """
     try:
         import asyncio
-        from agentscope.session import JSONSession
-        
-        # Load the plan storage
-        path_dialog_history = get_local_file_path("")
-        plan_storage = JSONPlanStorage()
-        
-        # Create a new PlanNotebook instance
-        plan_notebook = PlanNotebook(storage=plan_storage)
-        
-        # Register plan change hook to push updates to frontend
-        # Get studio_url from config file saved by main.py
-        studio_url = get_studio_url()
-        if studio_url:
-            push_plan_hook.url = studio_url
-            plan_notebook.register_plan_change_hook("push_plan", push_plan_hook)
-        
-        # Load the notebook state from session
-        try:
-            session = JSONSession(save_dir=path_dialog_history)
-        except TypeError:
-            session = JSONSession(
-                session_id=FRIDAY_SESSION_ID,
-                save_dir=path_dialog_history,
-            )
-        asyncio.run(
-            session.load_session_state(
-                session_id=FRIDAY_SESSION_ID,
-                plan_notebook=plan_notebook
-            )
-        )
-        
-        # If no current plan loaded from session, try to get from storage
-        if plan_notebook.current_plan is None:
-            plans = asyncio.run(plan_storage.get_plans())
-            if plans:
-                # Find a plan in progress or pending as current plan
-                for plan in reversed(plans):
-                    if plan.state in ['in_progress', 'todo']:
-                        plan_notebook.current_plan = plan
-                        break
-        
+
+        plan_notebook, plan_storage = _init_plan_notebook()
+
         if plan_notebook.current_plan is None:
             return {"success": False, "message": "No current plan found"}
-        
+
         # Create SubTask object if needed
         subtask = None
         if subtask_data and action in ['add', 'revise']:
             subtask = SubTask(**subtask_data)
-        
+
         # Call the revise method (hook will be triggered automatically)
         result = asyncio.run(
             plan_notebook.revise_current_plan(
@@ -170,25 +205,16 @@ def revise_plan(
                 subtask=subtask,
             )
         )
-        
-        # Save the updated plan back to storage
-        if plan_notebook.current_plan:
-            asyncio.run(plan_storage.add_plan(plan_notebook.current_plan, override=True))
-        
-        # Save the notebook state back to session
-        asyncio.run(
-            session.save_session_state(
-                session_id=FRIDAY_SESSION_ID,
-                plan_notebook=plan_notebook
-            )
-        )
-        
+
+        # Save the updated plan back to storage and session
+        _save_plan_state(plan_notebook, plan_storage)
+
         return {
             "success": True,
             "message": _extract_message_from_tool_response(result),
             "plan": plan_notebook.current_plan.model_dump() if plan_notebook.current_plan else None
         }
-        
+
     except Exception as e:
         import traceback
         print(traceback.format_exc())
@@ -203,60 +229,22 @@ def update_subtask_state(
     state: str,
 ) -> dict:
     """Update the state of a subtask.
-    
+
     Args:
         subtask_idx: The index of the subtask
         state: The new state
-        
+
     Returns:
         dict with 'success' and 'message' keys
     """
     try:
         import asyncio
-        from agentscope.session import JSONSession
-        
-        # Load the plan storage
-        path_dialog_history = get_local_file_path("")
-        plan_storage = JSONPlanStorage()
-        
-        # Create a new PlanNotebook instance
-        plan_notebook = PlanNotebook(storage=plan_storage)
-        
-        # Register plan change hook to push updates to frontend
-        # Get studio_url from config file saved by main.py
-        studio_url = get_studio_url()
-        if studio_url:
-            push_plan_hook.url = studio_url
-            plan_notebook.register_plan_change_hook("push_plan", push_plan_hook)
-        
-        # Load the notebook state from session
-        try:
-            session = JSONSession(save_dir=path_dialog_history)
-        except TypeError:
-            session = JSONSession(
-                session_id=FRIDAY_SESSION_ID,
-                save_dir=path_dialog_history,
-            )
-        asyncio.run(
-            session.load_session_state(
-                session_id=FRIDAY_SESSION_ID,
-                plan_notebook=plan_notebook
-            )
-        )
-        
-        # If no current plan loaded from session, try to get from storage
-        if plan_notebook.current_plan is None:
-            plans = asyncio.run(plan_storage.get_plans())
-            if plans:
-                # Find a plan in progress or pending as current plan
-                for plan in reversed(plans):
-                    if plan.state in ['in_progress', 'todo']:
-                        plan_notebook.current_plan = plan
-                        break
-        
+
+        plan_notebook, plan_storage = _init_plan_notebook()
+
         if plan_notebook.current_plan is None:
             return {"success": False, "message": "No current plan found"}
-        
+
         # Call the update method (hook will be triggered automatically)
         result = asyncio.run(
             plan_notebook.update_subtask_state(
@@ -264,25 +252,16 @@ def update_subtask_state(
                 state=state,
             )
         )
-        
-        # Save the updated plan back to storage
-        if plan_notebook.current_plan:
-            asyncio.run(plan_storage.add_plan(plan_notebook.current_plan, override=True))
-        
-        # Save the notebook state back to session
-        asyncio.run(
-            session.save_session_state(
-                session_id=FRIDAY_SESSION_ID,
-                plan_notebook=plan_notebook
-            )
-        )
-        
+
+        # Save the updated plan back to storage and session
+        _save_plan_state(plan_notebook, plan_storage)
+
         return {
             "success": True,
             "message": _extract_message_from_tool_response(result),
             "plan": plan_notebook.current_plan.model_dump() if plan_notebook.current_plan else None
         }
-        
+
     except Exception as e:
         import traceback
         print(traceback.format_exc())
@@ -297,60 +276,22 @@ def finish_subtask(
     outcome: str,
 ) -> dict:
     """Finish a subtask with the given outcome.
-    
+
     Args:
         subtask_idx: The index of the subtask
         outcome: The specific outcome of the subtask
-        
+
     Returns:
         dict with 'success' and 'message' keys
     """
     try:
         import asyncio
-        from agentscope.session import JSONSession
-        
-        # Load the plan storage
-        path_dialog_history = get_local_file_path("")
-        plan_storage = JSONPlanStorage()
-        
-        # Create a new PlanNotebook instance
-        plan_notebook = PlanNotebook(storage=plan_storage)
-        
-        # Register plan change hook to push updates to frontend
-        # Get studio_url from config file saved by main.py
-        studio_url = get_studio_url()
-        if studio_url:
-            push_plan_hook.url = studio_url
-            plan_notebook.register_plan_change_hook("push_plan", push_plan_hook)
-        
-        # Load the notebook state from session
-        try:
-            session = JSONSession(save_dir=path_dialog_history)
-        except TypeError:
-            session = JSONSession(
-                session_id=FRIDAY_SESSION_ID,
-                save_dir=path_dialog_history,
-            )
-        asyncio.run(
-            session.load_session_state(
-                session_id=FRIDAY_SESSION_ID,
-                plan_notebook=plan_notebook
-            )
-        )
-        
-        # If no current plan loaded from session, try to get from storage
-        if plan_notebook.current_plan is None:
-            plans = asyncio.run(plan_storage.get_plans())
-            if plans:
-                # Find a plan in progress or pending as current plan
-                for plan in reversed(plans):
-                    if plan.state in ['in_progress', 'todo']:
-                        plan_notebook.current_plan = plan
-                        break
-        
+
+        plan_notebook, plan_storage = _init_plan_notebook()
+
         if plan_notebook.current_plan is None:
             return {"success": False, "message": "No current plan found"}
-        
+
         # Call the finish method (hook will be triggered automatically)
         result = asyncio.run(
             plan_notebook.finish_subtask(
@@ -358,25 +299,16 @@ def finish_subtask(
                 subtask_outcome=outcome,
             )
         )
-        
-        # Save the updated plan back to storage
-        if plan_notebook.current_plan:
-            asyncio.run(plan_storage.add_plan(plan_notebook.current_plan, override=True))
-        
-        # Save the notebook state back to session
-        asyncio.run(
-            session.save_session_state(
-                session_id=FRIDAY_SESSION_ID,
-                plan_notebook=plan_notebook
-            )
-        )
-        
+
+        # Save the updated plan back to storage and session
+        _save_plan_state(plan_notebook, plan_storage)
+
         return {
             "success": True,
             "message": _extract_message_from_tool_response(result),
             "plan": plan_notebook.current_plan.model_dump() if plan_notebook.current_plan else None
         }
-        
+
     except Exception as e:
         import traceback
         print(traceback.format_exc())
@@ -401,39 +333,8 @@ def reorder_subtasks(
     """
     try:
         import asyncio
-        from agentscope.session import JSONSession
 
-        path_dialog_history = get_local_file_path("")
-        plan_storage = JSONPlanStorage()
-        plan_notebook = PlanNotebook(storage=plan_storage)
-
-        studio_url = get_studio_url()
-        if studio_url:
-            push_plan_hook.url = studio_url
-            plan_notebook.register_plan_change_hook("push_plan", push_plan_hook)
-
-        try:
-            session = JSONSession(save_dir=path_dialog_history)
-        except TypeError:
-            session = JSONSession(
-                session_id=FRIDAY_SESSION_ID,
-                save_dir=path_dialog_history,
-            )
-        asyncio.run(
-            session.load_session_state(
-                session_id=FRIDAY_SESSION_ID,
-                plan_notebook=plan_notebook,
-            )
-        )
-
-        if plan_notebook.current_plan is None:
-            plans = asyncio.run(plan_storage.get_plans())
-            if plans:
-                # Find a plan in progress or pending as current plan
-                for plan in reversed(plans):
-                    if plan.state in ['in_progress', 'todo']:
-                        plan_notebook.current_plan = plan
-                        break
+        plan_notebook, plan_storage = _init_plan_notebook()
 
         if plan_notebook.current_plan is None:
             return {"success": False, "message": "No current plan found"}
@@ -458,13 +359,8 @@ def reorder_subtasks(
         # Trigger push hook manually (direct list mutation bypasses notebook hooks)
         asyncio.run(push_plan_hook(plan_notebook, plan_notebook.current_plan))
 
-        asyncio.run(plan_storage.add_plan(plan_notebook.current_plan, override=True))
-        asyncio.run(
-            session.save_session_state(
-                session_id=FRIDAY_SESSION_ID,
-                plan_notebook=plan_notebook,
-            )
-        )
+        # Save the updated plan back to storage and session
+        _save_plan_state(plan_notebook, plan_storage)
 
         return {
             "success": True,

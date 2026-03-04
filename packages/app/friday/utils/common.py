@@ -56,5 +56,6 @@ def get_studio_url() -> str | None:
         with open(config_path, "r", encoding="utf-8") as f:
             config = json.load(f)
             return config.get("studio_url")
-    except Exception:
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        print(f"Warning: Failed to read studio config {config_path}: {e}")
         return None

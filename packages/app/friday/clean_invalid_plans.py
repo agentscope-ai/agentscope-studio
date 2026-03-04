@@ -9,8 +9,18 @@ Storage should only contain completed ('done' or 'abandoned') plans.
 import asyncio
 import sys
 import os
+import logging
 
-# Add parent directory to path
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+logger = logging.getLogger(__name__)
+
+# Add parent directory to path to enable direct execution
+# Recommended: Run as module from project root: python -m packages.app.friday.clean_invalid_plans
 sys.path.insert(0, os.path.dirname(__file__))
 
 from plan_manager import JSONPlanStorage
@@ -23,28 +33,28 @@ async def clean_invalid_plans():
     # Get all plans
     plans = await plan_storage.get_plans()
     
-    print(f"Found {len(plans)} plans in storage")
+    logger.info(f"Found {len(plans)} plans in storage")
     
     # Find invalid plans (not done or abandoned)
     invalid_plans = [p for p in plans if p.state not in ['done', 'abandoned']]
     
     if not invalid_plans:
-        print("No invalid plans found. Storage is clean!")
+        logger.info("No invalid plans found. Storage is clean!")
         return
     
-    print(f"\nFound {len(invalid_plans)} invalid plans:")
+    logger.info(f"\nFound {len(invalid_plans)} invalid plans:")
     for plan in invalid_plans:
-        print(f"  - {plan.name} (state: {plan.state}, id: {plan.id})")
+        logger.info(f"  - {plan.name} (state: {plan.state}, id: {plan.id})")
     
     # Remove invalid plans
     for plan in invalid_plans:
         try:
             await plan_storage.delete_plan(plan.id)
-            print(f"✓ Deleted: {plan.name}")
+            logger.info(f"✓ Deleted: {plan.name}")
         except Exception as e:
-            print(f"✗ Failed to delete {plan.name}: {e}")
+            logger.error(f"✗ Failed to delete {plan.name}: {e}")
     
-    print(f"\nCleaning complete. Removed {len(invalid_plans)} invalid plans.")
+    logger.info(f"\nCleaning complete. Removed {len(invalid_plans)} invalid plans.")
 
 
 if __name__ == "__main__":

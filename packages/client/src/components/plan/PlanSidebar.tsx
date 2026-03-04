@@ -47,8 +47,8 @@ const PlanSidebar = ({
     // 当前计划默认展开
     const [isCurrentPlanExpanded, setIsCurrentPlanExpanded] = useState(true);
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-    // 侧边栏宽度，默认 288px (w-72)，可拖拽调整
-    const [sidebarWidth, setSidebarWidth] = useState(288);
+    // 侧边栏宽度，默认 360px (w-90)，可拖拽调整
+    const [sidebarWidth, setSidebarWidth] = useState(320);
 
     const handleResizeMouseDown = useCallback(
         (e: React.MouseEvent) => {
@@ -371,11 +371,9 @@ const PlanSidebar = ({
 
                                     {isHistoryExpanded && (
                                         <div className="space-y-3">
-                                            {[...historicalPlans]
-                                                .reverse()
-                                                .map((p) =>
-                                                    renderPlanCard(p, true),
-                                                )}
+                                            {historicalPlans.map((p) =>
+                                                renderPlanCard(p, true),
+                                            )}
                                         </div>
                                     )}
                                 </div>

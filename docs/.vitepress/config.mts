@@ -65,7 +65,7 @@ export default defineConfig({
                         text: 'Agent',
                         items: [
                             { text: 'Friday', link: '/agent/friday' },
-                            { text: 'Planning', link: '/agent/Planning' },
+                            { text: 'Planning', link: '/agent/planning' },
                         ],
                     },
                 ],
@@ -120,7 +120,7 @@ export default defineConfig({
                         text: '智能体',
                         items: [
                             { text: 'Friday', link: '/zh_CN/agent/friday' },
-                            { text: '计划管理', link: '/zh_CN/agent/Planning' },
+                            { text: '计划管理', link: '/zh_CN/agent/planning' },
                         ],
                     },
                 ],

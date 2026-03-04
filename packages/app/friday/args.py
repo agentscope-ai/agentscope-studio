@@ -61,5 +61,5 @@ def get_args() -> Namespace:
         default={},
         help="A JSON string representing a dictionary of keyword arguments to pass to the LLM generate method.",
     )
-    args = parser.parse_args()
+    args, _ = parser.parse_known_args()
     return args

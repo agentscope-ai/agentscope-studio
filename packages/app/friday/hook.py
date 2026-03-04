@@ -79,8 +79,8 @@ async def push_plan_hook(
         try:
             historical_plans = await notebook.storage.get_plans()
             historical_plans_data = [p.model_dump() for p in historical_plans]
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Error fetching historical plans: {e}")
     
     n_retry = 0
     while True:
@@ -95,8 +95,9 @@ async def push_plan_hook(
             )
             res.raise_for_status()
             break
-        except Exception:
+        except Exception as e:
             if n_retry < 3:
                 n_retry += 1
                 continue
+            print(f"Failed to push plan after {n_retry} retries: {e}")
             break

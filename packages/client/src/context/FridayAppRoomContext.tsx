@@ -137,24 +137,10 @@ export function FridayAppRoomContextProvider({ children }: Props) {
 
     useEffect(() => {
         if (plansData) {
-            // Only set current plan from backend if we don't already have one
-            // This prevents overwriting WebSocket updates
-            if (!currentPlan && plansData.currentPlan) {
-                setCurrentPlan(plansData.currentPlan as Plan);
-            }
-
-            // Only set historical plans if we haven't received any yet
-            // This ensures WebSocket pushes take priority over tRPC initial load
-            setHistoricalPlans((prev) => {
-                // If prev is empty and we have data from tRPC, use tRPC data
-                if (prev.length === 0 && plansData.historicalPlans) {
-                    return plansData.historicalPlans as Plan[];
-                }
-                // Otherwise keep existing (possibly from WebSocket)
-                return prev;
-            });
+            setCurrentPlan(plansData.currentPlan as Plan | null);
+            setHistoricalPlans(plansData.historicalPlans as Plan[]);
         }
-    }, [plansData, currentPlan]);
+    }, [plansData]);
 
     useEffect(() => {
         if (!socket) {
@@ -212,7 +198,7 @@ export function FridayAppRoomContextProvider({ children }: Props) {
             },
         );
 
-        // Handle plan updates (current plan changes, and historical plans when finished)
+        // Handle plan updates from backend
         socket.on(
             SocketEvents.server.pushCurrentPlan,
             (planData: {
@@ -220,18 +206,8 @@ export function FridayAppRoomContextProvider({ children }: Props) {
                 historicalPlans?: Plan[];
             }) => {
                 setCurrentPlan(planData.currentPlan);
-
-                // If historicalPlans is provided (when plan is finished), update it directly
                 if (planData.historicalPlans !== undefined) {
                     setHistoricalPlans(planData.historicalPlans);
-                }
-
-                // If current plan becomes null (finished) and no historical plans provided, fetch them
-                if (
-                    planData.currentPlan === null &&
-                    !planData.historicalPlans
-                ) {
-                    refetchPlans();
                 }
             },
         );
@@ -341,13 +317,12 @@ export function FridayAppRoomContextProvider({ children }: Props) {
         // - finish_subtask: for marking as done (requires outcome)
         // - update_subtask_state: for todo/in_progress/abandoned
         if (newStatus === SubTaskStatus.DONE) {
-            // Should have been handled with prompt in UI, but just in case
-            const outcome = subtask.outcome || prompt('请输入子任务完成结果:');
-            if (outcome) {
+            // If outcome is not set, do nothing (UI should handle this via FinishSubtaskDialog)
+            if (subtask.outcome) {
                 finishSubtaskMutation.mutate(
                     {
                         subtaskIdx: subtaskIndex,
-                        outcome: outcome,
+                        outcome: subtask.outcome,
                     },
                     {
                         onSuccess: (data) => {

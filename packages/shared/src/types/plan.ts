@@ -12,13 +12,13 @@ export enum SubTaskStatus {
  * SubTask interface (matching backend SubTask model)
  */
 export interface SubTask {
-    name: string; // 子任务名称
-    description: string; // 子任务描述
-    expected_outcome: string; // 预期结果
-    outcome: string | null; // 实际结果
-    state: SubTaskStatus; // 状态
-    created_at: string; // 创建时间
-    finished_at: string | null; // 完成时间
+    name: string; // Name of the subtask
+    description: string; // Description of the subtask
+    expected_outcome: string; // Expected outcome
+    outcome: string | null; // Actual outcome
+    state: SubTaskStatus; // State
+    created_at: string; // Creation timestamp
+    finished_at: string | null; // Finish timestamp
 }
 
 /**

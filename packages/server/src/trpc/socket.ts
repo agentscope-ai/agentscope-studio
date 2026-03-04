@@ -726,19 +726,6 @@ export class SocketManager {
                 historicalPlans,
             });
     }
-
-    static broadcastPlanToFridayAppRoom(
-        currentPlan: Plan | null,
-        historicalPlans: Plan[],
-    ) {
-        this.io
-            .of('/client')
-            .to(SocketRoomName.FridayAppRoom)
-            .emit(SocketEvents.server.pushPlan, {
-                currentPlan,
-                historicalPlans,
-            });
-    }
 }
 
 interface PythonResult {

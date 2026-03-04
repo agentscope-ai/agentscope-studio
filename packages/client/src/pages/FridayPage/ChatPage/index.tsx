@@ -218,7 +218,9 @@ const ChatPage = () => {
                 mode="add"
                 customTitle={
                     insertAfterIndex !== undefined
-                        ? `在第 ${insertAfterIndex + 1} 个子任务后插入`
+                        ? t('plan.insert_subtask_title', {
+                              index: insertAfterIndex + 1,
+                          })
                         : undefined
                 }
             />
