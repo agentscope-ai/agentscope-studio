@@ -191,10 +191,10 @@ def revise_plan(
         
     except Exception as e:
         import traceback
+        print(traceback.format_exc())
         return {
-            "success": False, 
+            "success": False,
             "message": str(e),
-            "traceback": traceback.format_exc()
         }
 
 
@@ -285,10 +285,10 @@ def update_subtask_state(
         
     except Exception as e:
         import traceback
+        print(traceback.format_exc())
         return {
-            "success": False, 
+            "success": False,
             "message": str(e),
-            "traceback": traceback.format_exc()
         }
 
 
@@ -379,10 +379,105 @@ def finish_subtask(
         
     except Exception as e:
         import traceback
+        print(traceback.format_exc())
         return {
-            "success": False, 
+            "success": False,
             "message": str(e),
-            "traceback": traceback.format_exc()
+        }
+
+
+def reorder_subtasks(
+    from_index: int,
+    to_index: int,
+) -> dict:
+    """Reorder subtasks by atomically moving one from from_index to to_index.
+
+    Args:
+        from_index: The current index of the subtask to move
+        to_index: The target index to insert the subtask at
+
+    Returns:
+        dict with 'success', 'message', and 'plan' keys
+    """
+    try:
+        import asyncio
+        from agentscope.session import JSONSession
+
+        path_dialog_history = get_local_file_path("")
+        plan_storage = JSONPlanStorage()
+        plan_notebook = PlanNotebook(storage=plan_storage)
+
+        studio_url = get_studio_url()
+        if studio_url:
+            push_plan_hook.url = studio_url
+            plan_notebook.register_plan_change_hook("push_plan", push_plan_hook)
+
+        try:
+            session = JSONSession(save_dir=path_dialog_history)
+        except TypeError:
+            session = JSONSession(
+                session_id=FRIDAY_SESSION_ID,
+                save_dir=path_dialog_history,
+            )
+        asyncio.run(
+            session.load_session_state(
+                session_id=FRIDAY_SESSION_ID,
+                plan_notebook=plan_notebook,
+            )
+        )
+
+        if plan_notebook.current_plan is None:
+            plans = asyncio.run(plan_storage.get_plans())
+            if plans:
+                # Find a plan in progress or pending as current plan
+                for plan in reversed(plans):
+                    if plan.state in ['in_progress', 'todo']:
+                        plan_notebook.current_plan = plan
+                        break
+
+        if plan_notebook.current_plan is None:
+            return {"success": False, "message": "No current plan found"}
+
+        subtasks = plan_notebook.current_plan.subtasks
+        n = len(subtasks)
+        if from_index < 0 or from_index >= n:
+            return {"success": False, "message": f"Invalid from_index: {from_index}"}
+        if to_index < 0 or to_index >= n:
+            return {"success": False, "message": f"Invalid to_index: {to_index}"}
+        if from_index == to_index:
+            return {
+                "success": True,
+                "message": "No change needed",
+                "plan": plan_notebook.current_plan.model_dump(),
+            }
+
+        # Atomically move: remove then insert at target position
+        subtask_to_move = subtasks.pop(from_index)
+        subtasks.insert(to_index, subtask_to_move)
+
+        # Trigger push hook manually (direct list mutation bypasses notebook hooks)
+        asyncio.run(push_plan_hook(plan_notebook, plan_notebook.current_plan))
+
+        asyncio.run(plan_storage.add_plan(plan_notebook.current_plan, override=True))
+        asyncio.run(
+            session.save_session_state(
+                session_id=FRIDAY_SESSION_ID,
+                plan_notebook=plan_notebook,
+            )
+        )
+
+        return {
+            "success": True,
+            "message": "Subtasks reordered successfully",
+            "plan": plan_notebook.current_plan.model_dump(),
+        }
+
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        return {
+            "success": False,
+            "message": str(e),
         }
 
 

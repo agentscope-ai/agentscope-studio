@@ -465,19 +465,28 @@ export const appRouter = t.router({
                     fridayAppPath,
                     '.revise_friday_plan.py',
                 );
+                const tmpInput = path.join(
+                    fridayAppPath,
+                    '.revise_friday_plan_input.json',
+                );
 
-                const subtaskJson = input.subtask
-                    ? JSON.stringify(input.subtask)
-                    : 'None';
+                // Write user data to a separate JSON file to avoid code injection
+                fs.writeFileSync(
+                    tmpInput,
+                    JSON.stringify({
+                        action: input.action,
+                        subtaskIdx: input.subtaskIdx,
+                        subtask: input.subtask ?? null,
+                    }),
+                );
+
+                // Script contains only static code - no user data embedded
                 const scriptContent = [
                     'import sys, json',
-                    `sys.path.insert(0, '${fridayAppPath.replace(/\\/g, '/')}' )`,
+                    `sys.path.insert(0, '${fridayAppPath.replace(/\\/g, '/')}')`,
                     'from plan_manager.api import revise_plan',
-                    // Use json.loads to properly parse JavaScript JSON to Python dict
-                    input.subtask
-                        ? `subtask_data = json.loads('''${subtaskJson}''')`
-                        : 'subtask_data = None',
-                    `result = revise_plan('${input.action}', ${input.subtaskIdx}, subtask_data)`,
+                    'with open(sys.argv[1]) as f: data = json.load(f)',
+                    'result = revise_plan(data["action"], data["subtaskIdx"], data.get("subtask"))',
                     'print(json.dumps(result))',
                     '',
                 ].join('\n');
@@ -486,7 +495,7 @@ export const appRouter = t.router({
 
                 try {
                     const { stdout } = await execAsync(
-                        `${fridayConfig.pythonEnv} "${tmpScript}"`,
+                        `${fridayConfig.pythonEnv} "${tmpScript}" "${tmpInput}"`,
                     );
 
                     const trimmed = stdout.trim();
@@ -499,6 +508,11 @@ export const appRouter = t.router({
                 } finally {
                     try {
                         fs.unlinkSync(tmpScript);
+                    } catch {
+                        // Ignore cleanup errors
+                    }
+                    try {
+                        fs.unlinkSync(tmpInput);
                     } catch {
                         // Ignore cleanup errors
                     }
@@ -547,12 +561,27 @@ export const appRouter = t.router({
                     fridayAppPath,
                     '.update_friday_subtask.py',
                 );
+                const tmpInput = path.join(
+                    fridayAppPath,
+                    '.update_friday_subtask_input.json',
+                );
 
+                // Write user data to a separate JSON file to avoid code injection
+                fs.writeFileSync(
+                    tmpInput,
+                    JSON.stringify({
+                        subtaskIdx: input.subtaskIdx,
+                        state: input.state,
+                    }),
+                );
+
+                // Script contains only static code - no user data embedded
                 const scriptContent = [
                     'import sys, json',
-                    `sys.path.insert(0, '${fridayAppPath.replace(/\\/g, '/')}' )`,
+                    `sys.path.insert(0, '${fridayAppPath.replace(/\\/g, '/')}')`,
                     'from plan_manager.api import update_subtask_state',
-                    `result = update_subtask_state(${input.subtaskIdx}, '${input.state}')`,
+                    'with open(sys.argv[1]) as f: data = json.load(f)',
+                    'result = update_subtask_state(data["subtaskIdx"], data["state"])',
                     'print(json.dumps(result))',
                     '',
                 ].join('\n');
@@ -561,7 +590,7 @@ export const appRouter = t.router({
 
                 try {
                     const { stdout } = await execAsync(
-                        `${fridayConfig.pythonEnv} "${tmpScript}"`,
+                        `${fridayConfig.pythonEnv} "${tmpScript}" "${tmpInput}"`,
                     );
 
                     const trimmed = stdout.trim();
@@ -576,6 +605,11 @@ export const appRouter = t.router({
                 } finally {
                     try {
                         fs.unlinkSync(tmpScript);
+                    } catch {
+                        // Ignore cleanup errors
+                    }
+                    try {
+                        fs.unlinkSync(tmpInput);
                     } catch {
                         // Ignore cleanup errors
                     }
@@ -624,12 +658,27 @@ export const appRouter = t.router({
                     fridayAppPath,
                     '.finish_friday_subtask.py',
                 );
+                const tmpInput = path.join(
+                    fridayAppPath,
+                    '.finish_friday_subtask_input.json',
+                );
 
+                // Write user data to a separate JSON file to avoid code injection
+                fs.writeFileSync(
+                    tmpInput,
+                    JSON.stringify({
+                        subtaskIdx: input.subtaskIdx,
+                        outcome: input.outcome,
+                    }),
+                );
+
+                // Script contains only static code - no user data embedded
                 const scriptContent = [
                     'import sys, json',
-                    `sys.path.insert(0, '${fridayAppPath.replace(/\\/g, '/')}' )`,
+                    `sys.path.insert(0, '${fridayAppPath.replace(/\\/g, '/')}')`,
                     'from plan_manager.api import finish_subtask',
-                    `result = finish_subtask(${input.subtaskIdx}, '${input.outcome.replace(/'/g, "\\'")}')`,
+                    'with open(sys.argv[1]) as f: data = json.load(f)',
+                    'result = finish_subtask(data["subtaskIdx"], data["outcome"])',
                     'print(json.dumps(result))',
                     '',
                 ].join('\n');
@@ -638,7 +687,7 @@ export const appRouter = t.router({
 
                 try {
                     const { stdout } = await execAsync(
-                        `${fridayConfig.pythonEnv} "${tmpScript}"`,
+                        `${fridayConfig.pythonEnv} "${tmpScript}" "${tmpInput}"`,
                     );
 
                     const trimmed = stdout.trim();
@@ -655,6 +704,11 @@ export const appRouter = t.router({
                     } catch {
                         // Ignore cleanup errors
                     }
+                    try {
+                        fs.unlinkSync(tmpInput);
+                    } catch {
+                        // Ignore cleanup errors
+                    }
                 }
             } catch (error) {
                 console.error(
@@ -667,6 +721,102 @@ export const appRouter = t.router({
                         error instanceof Error
                             ? error.message
                             : 'Failed to finish subtask',
+                };
+            }
+        }),
+
+    reorderFridaySubtasks: t.procedure
+        .input(
+            z.object({
+                fromIndex: z.number(),
+                toIndex: z.number(),
+            }),
+        )
+        .mutation(async ({ input }) => {
+            try {
+                const { exec } = await import('child_process');
+                const { promisify } = await import('util');
+                const path = await import('path');
+                const fs = await import('fs');
+                const execAsync = promisify(exec);
+
+                const fridayConfig =
+                    FridayConfigManager.getInstance().getConfig();
+                if (!fridayConfig || !fridayConfig.pythonEnv) {
+                    throw new Error('Friday config not found');
+                }
+
+                const fridayAppPath = path.resolve(
+                    __dirname,
+                    '../../../app/friday',
+                );
+                const tmpScript = path.join(
+                    fridayAppPath,
+                    '.reorder_friday_subtasks.py',
+                );
+                const tmpInput = path.join(
+                    fridayAppPath,
+                    '.reorder_friday_subtasks_input.json',
+                );
+
+                // Write user data to a separate JSON file to avoid code injection
+                fs.writeFileSync(
+                    tmpInput,
+                    JSON.stringify({
+                        fromIndex: input.fromIndex,
+                        toIndex: input.toIndex,
+                    }),
+                );
+
+                // Script contains only static code - no user data embedded
+                const scriptContent = [
+                    'import sys, json',
+                    `sys.path.insert(0, '${fridayAppPath.replace(/\\/g, '/')}')`,
+                    'from plan_manager.api import reorder_subtasks',
+                    'with open(sys.argv[1]) as f: data = json.load(f)',
+                    'result = reorder_subtasks(data["fromIndex"], data["toIndex"])',
+                    'print(json.dumps(result))',
+                    '',
+                ].join('\n');
+
+                fs.writeFileSync(tmpScript, scriptContent);
+
+                try {
+                    const { stdout } = await execAsync(
+                        `${fridayConfig.pythonEnv} "${tmpScript}" "${tmpInput}"`,
+                    );
+
+                    const trimmed = stdout.trim();
+                    const data = trimmed ? JSON.parse(trimmed) : {};
+
+                    return {
+                        success: data.success ?? true,
+                        message:
+                            data.message || 'Subtasks reordered successfully',
+                    };
+                } finally {
+                    try {
+                        fs.unlinkSync(tmpScript);
+                    } catch {
+                        // Ignore cleanup errors
+                    }
+                    try {
+                        fs.unlinkSync(tmpInput);
+                    } catch {
+                        // Ignore cleanup errors
+                    }
+                }
+            } catch (error) {
+                console.error(
+                    '[reorderFridaySubtasks] Failed to reorder subtasks:',
+                    error,
+                );
+                return {
+                    success: false,
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : 'Failed to reorder subtasks',
                 };
             }
         }),

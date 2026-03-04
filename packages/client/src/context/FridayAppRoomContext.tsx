@@ -113,8 +113,6 @@ export function FridayAppRoomContextProvider({ children }: Props) {
     const finishSubtaskMutation = trpc.finishFridaySubtask.useMutation({
         onSuccess: (data) => {
             if (data.success) {
-                // Don't show backend message for finish operations
-                // messageApi.info(data.message);
                 refetchPlans();
             } else {
                 messageApi.error(data.message);
@@ -122,6 +120,18 @@ export function FridayAppRoomContextProvider({ children }: Props) {
         },
         onError: (error) => {
             messageApi.error(`完成子任务失败: ${error.message}`);
+        },
+    });
+
+    const reorderSubtasksMutation = trpc.reorderFridaySubtasks.useMutation({
+        onSuccess: (data) => {
+            if (!data.success) {
+                messageApi.error(data.message);
+            }
+            refetchPlans();
+        },
+        onError: (error) => {
+            messageApi.error(`重排序失败: ${error.message}`);
         },
     });
 
@@ -263,11 +273,10 @@ export function FridayAppRoomContextProvider({ children }: Props) {
                             duration: 0,
                         });
                     } else {
-                        // After agent finishes replying, refresh plans
-                        // This ensures we get the latest state including any completed plans
-                        setTimeout(() => {
-                            refetchPlans();
-                        }, 500); // Small delay to ensure storage is updated
+                        // After agent finishes, do a final sync to ensure
+                        // plan state is up to date (plan events arrive via socket
+                        // in real-time, this is a safety net)
+                        refetchPlans();
                     }
                 },
             );
@@ -500,66 +509,7 @@ export function FridayAppRoomContextProvider({ children }: Props) {
 
     const reorderSubtasks = (fromIndex: number, toIndex: number) => {
         if (!currentPlan || fromIndex === toIndex) return;
-
-        // Get the subtask to move
-        const subtaskToMove = currentPlan.subtasks[fromIndex];
-
-        // Step 1: Delete the subtask from the original position
-        // Step 2: Add it to the new position
-        // We need to do this sequentially
-
-        // First delete (silent operation - no message)
-        revisePlanMutation.mutate(
-            {
-                subtaskIdx: fromIndex,
-                action: 'delete',
-            },
-            {
-                onSuccess: (data) => {
-                    // Silent operation - only show errors
-                    if (!data.success) {
-                        messageApi.error(data.message);
-                        return;
-                    }
-                    refetchPlans();
-
-                    // After deletion, insert at new position
-                    // Note: If toIndex > fromIndex, we don't need to adjust
-                    // because deletion happens first
-                    const adjustedIndex =
-                        toIndex > fromIndex ? toIndex - 1 : toIndex;
-
-                    // Wait a bit for state to update
-                    setTimeout(() => {
-                        revisePlanMutation.mutate(
-                            {
-                                subtaskIdx: adjustedIndex,
-                                action: 'add',
-                                subtask: subtaskToMove,
-                            },
-                            {
-                                onSuccess: (data) => {
-                                    // Silent operation - only show errors
-                                    if (!data.success) {
-                                        messageApi.error(data.message);
-                                        return;
-                                    }
-                                    refetchPlans();
-                                },
-                                onError: (error) => {
-                                    messageApi.error(
-                                        `Failed to reorder: ${error.message}`,
-                                    );
-                                },
-                            },
-                        );
-                    }, 100);
-                },
-                onError: (error) => {
-                    messageApi.error(`Failed to reorder: ${error.message}`);
-                },
-            },
-        );
+        reorderSubtasksMutation.mutate({ fromIndex, toIndex });
     };
 
     return (

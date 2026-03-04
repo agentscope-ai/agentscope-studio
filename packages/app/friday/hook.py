@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """The hooks for the agent"""
+import asyncio
 from typing import Any
 
 import requests
@@ -84,7 +85,8 @@ async def push_plan_hook(
     n_retry = 0
     while True:
         try:
-            res = requests.post(
+            res = await asyncio.to_thread(
+                requests.post,
                 f"{push_plan_hook.url}/trpc/pushCurrentPlanToFridayApp",
                 json={
                     "currentPlan": current_plan_data,
