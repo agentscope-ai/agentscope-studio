@@ -541,7 +541,7 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                                                 </Button>
                                             </div>
                                             <div className="bg-muted p-3 rounded-md overflow-auto max-h-[300px] text-xs">
-                                                <JsonView value={extractInput(displaySpan) as object} displayDataTypes={false} displayObjectSize={false} />
+                                                <JsonView value={(extractInput(displaySpan) ?? {}) as object} displayDataTypes={false} displayObjectSize={false} />
                                             </div>
                                         </div>
                                         <Separator />
@@ -570,7 +570,7 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                                                 </Button>
                                             </div>
                                             <div className="bg-muted p-3 rounded-md overflow-auto max-h-[300px] text-xs">
-                                                <JsonView value={extractOutput(displaySpan) as object} displayDataTypes={false} displayObjectSize={false} />
+                                                <JsonView value={(extractOutput(displaySpan) ?? {}) as object} displayDataTypes={false} displayObjectSize={false} />
                                             </div>
                                         </div>
                                     </div>
@@ -603,7 +603,7 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                                         </Button>
                                     </div>
                                     <div className="bg-muted p-3 rounded-md overflow-auto text-xs">
-                                        <JsonView value={displaySpan.attributes as object} displayDataTypes={false} displayObjectSize={false} />
+                                        <JsonView value={(displaySpan.attributes ?? {}) as object} displayDataTypes={false} displayObjectSize={false} />
                                     </div>
                                 </AccordionContent>
                             </AccordionItem>

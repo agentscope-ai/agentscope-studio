@@ -353,6 +353,7 @@ const TraceListPage = () => {
             <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
                 <SheetContent
                     side="right"
+                    title={t('trace.nodeDetails')}
                     className="w-full sm:w-[80%] sm:max-w-[80%] p-0"
                 >
                     {selectedTraceId && (
