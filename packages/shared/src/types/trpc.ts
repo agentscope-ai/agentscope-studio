@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ContentBlocks, ContentType, Status } from './messageForm';
+import { AudioBlock, ContentBlocks, ContentType, Status } from './messageForm';
 import { Usage } from './usage';
 
 /**
@@ -140,6 +140,7 @@ export const SocketEvents = {
         pushInputRequests: 'pushInputRequests',
         clearInputRequests: 'clearInputRequests',
         pushMessages: 'pushMessages',
+        pushSpeech: 'pushSpeech',
         pushSpans: 'pushSpans',
         pushModelInvocationData: 'pushModelInvocationData',
         // Friday app room
@@ -226,6 +227,19 @@ export interface Message {
     content: ContentType;
     timestamp: string;
     metadata: object;
+    /** Speech audio data (optional, for TTS playback) */
+    speech?: AudioBlock[] | null;
+}
+
+/**
+ * Speech data for real-time audio playback.
+ * Sent via WebSocket when new audio data is available.
+ */
+export interface SpeechData {
+    /** The reply ID this speech data belongs to */
+    replyId: string;
+    /** Audio block(s) containing the speech data */
+    speech: AudioBlock | AudioBlock[];
 }
 
 export interface FridayReply {

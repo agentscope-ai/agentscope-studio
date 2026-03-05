@@ -1,7 +1,11 @@
 import { spawn } from 'child_process';
 import { Server as HttpServer } from 'http';
 import { Server } from 'socket.io';
-import { ContentBlocks, Status } from '../../../shared/src/types/messageForm';
+import {
+    AudioBlock,
+    ContentBlocks,
+    Status,
+} from '../../../shared/src/types/messageForm';
 import {
     ResponseBody,
     FridayReply,
@@ -9,6 +13,7 @@ import {
     OverviewData,
     Reply,
     RunData,
+    SpeechData,
     SocketEvents,
     SocketRoomName,
 } from '../../../shared/src/types/trpc';
@@ -578,6 +583,24 @@ export class SocketManager {
             .of('/client')
             .to(`run-${runId}`)
             .emit(SocketEvents.server.pushMessages, [reply] as Reply[]);
+    }
+
+    /**
+     * Broadcast speech data to the run room for real-time audio playback
+     */
+    static broadcastSpeechToRunRoom(
+        runId: string,
+        replyId: string,
+        speech: AudioBlock | AudioBlock[],
+    ) {
+        const speechData: SpeechData = {
+            replyId,
+            speech,
+        };
+        this.io
+            .of('/client')
+            .to(`run-${runId}`)
+            .emit(SocketEvents.server.pushSpeech, speechData);
     }
 
     static broadcastSpanDataToRunRoom(spanDataArray: SpanData[]) {
