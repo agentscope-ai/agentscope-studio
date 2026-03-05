@@ -147,6 +147,7 @@ export const SocketEvents = {
         pushReplies: 'pushReplies',
         pushReplyingState: 'pushReplyingState',
         interruptReply: 'interrupt',
+        pushCurrentPlan: 'pushCurrentPlan',
         // To python:
         //  send the user input
         forwardUserInput: 'forwardUserInput',
