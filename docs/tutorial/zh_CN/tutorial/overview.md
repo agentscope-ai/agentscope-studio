@@ -13,6 +13,7 @@ AgentScope-Studio 提供：
 - 基于 OpenTelemetry 的追踪可视化
 - 面向评估的分析和可视化
 - 内置智能体（AgentScope-Friday）用于快速二次开发
+- 集成 [AgentScope Runtime](https://github.com/agentscope-ai/agentscope-runtime)，在 Studio 中直接与已部署的智能体对话（[Runtime Chat](../services/runtime-chat.md)）
 
 ## _AgentScope-Studio 是如何工作的？_
 

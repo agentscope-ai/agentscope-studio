@@ -15,6 +15,7 @@ AgentScope-Studio provides:
 - OpenTelemetry-based tracing visualization
 - Evaluation-oriented analysis and visualization
 - A built-in agent (AgentScope-Friday) for quick secondary development
+- Integrate with [AgentScope Runtime](https://github.com/agentscope-ai/agentscope-runtime) to chat with deployed agents directly in Studio ([Runtime Chat](../services/runtime-chat.md))
 
 ## _How Does AgentScope-Studio Work?_
 

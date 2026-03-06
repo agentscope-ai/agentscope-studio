@@ -24,4 +24,8 @@ features:
       details: 提供面向智能体应用的评测、分析和归因，从统计的角度评估智能体性能
       link: /zh_CN/develop/evaluation
       linkText: 了解更多
+    - title: Runtime Chat
+      details: 集成 AgentScope Runtime，在 Studio 中直接与已部署的智能体对话
+      link: /zh_CN/services/runtime-chat
+      linkText: 了解更多
 ---

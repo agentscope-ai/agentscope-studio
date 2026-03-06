@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar.tsx';
 import EvalPage from '../EvalPage';
 import FridayPage from '../FridayPage';
+import ServicesPage from '../ServicesPage';
 import ContentPage from '../ContentPage';
 import DashboardPage from '../DashboardPage';
 
@@ -78,6 +79,10 @@ const HomePage = () => {
                     <Route
                         path={`${RouterPath.FRIDAY}/*`}
                         element={<FridayPage />}
+                    />
+                    <Route
+                        path={`${RouterPath.SERVICES}/*`}
+                        element={<ServicesPage />}
                     />
                     <Route
                         path="*"
