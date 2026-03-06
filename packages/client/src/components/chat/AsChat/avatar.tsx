@@ -19,40 +19,9 @@ const AVATAR_PATHS = Object.keys(avatarModules)
     })
     .filter(Boolean);
 
-/*
- * Simple hash function to convert a string to a number
- *
- * @param str - The input string to hash.
- * @param seed - The seed value for the hash function.
- *
- * @return A non-negative integer hash of the input string.
- */
-const hashString = (str: string, seed: number): number => {
-    let hash = seed;
-    for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
-        hash = (hash << 5) - hash + char;
-        hash = hash & hash; // Convert to 32bit integer
-    }
-    return Math.abs(hash);
-};
-
-/*
- * Get avatar path based on the hash of the name
- *
- * @param name - The name to hash for avatar selection.
- * @param seed - The seed value for the hash function.
- * @param avatarSet - The avatar set to select from.
- *
- * @return The selected avatar path.
- */
-const getAvatarPathByName = (
-    name: string,
-    seed: number,
-    avatarSet: AvatarSet,
-): string => {
+const getFilteredPaths = (avatarSet: AvatarSet): string[] => {
     if (AVATAR_PATHS.length === 0) {
-        return '';
+        return [];
     }
 
     // Filter avatar paths based on avatarSet
@@ -70,9 +39,46 @@ const getAvatarPathByName = (
         filteredPaths = AVATAR_PATHS;
     }
 
-    const hash = hashString(name, seed);
-    const index = hash % filteredPaths.length;
-    return filteredPaths[index];
+    return filteredPaths;
+};
+
+const hashString = (str: string, seed: number): number => {
+    let hash = seed;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = (hash << 5) - hash + char;
+        hash = hash & hash;
+    }
+    return Math.abs(hash);
+};
+
+export const assignUniqueAvatars = (
+    names: string[],
+    seed: number,
+    avatarSet: AvatarSet,
+): Map<string, string> => {
+    const assignment = new Map<string, string>();
+    const filteredPaths = getFilteredPaths(avatarSet);
+
+    if (filteredPaths.length === 0 || names.length === 0) {
+        return assignment;
+    }
+
+    const N = filteredPaths.length;
+    const usedIndices = new Set<number>();
+
+    for (const name of names) {
+        const preferred = hashString(name, seed) % N;
+        let index = preferred;
+        while (usedIndices.has(index)) {
+            index = (index + 1) % N;
+            if (index === preferred) break;
+        }
+        usedIndices.add(index);
+        assignment.set(name, filteredPaths[index]);
+    }
+
+    return assignment;
 };
 
 /*
@@ -103,50 +109,46 @@ const loadAvatarComponent = async (
  *
  * @param name - The name of the user.
  * @param role - The role of the user (e.g., 'system', 'user').
- * @param randomAvatar - Whether to use a random avatar or not.
- * @param seed - The seed value for random avatar selection.
- * @param renderAvatar - A render function for custom avatar rendering.
+ * @param avatarPath - Pre-assigned avatar path from assignUniqueAvatars.
+ *                             If undefined, displays initials (letter mode).
  *
  * @return The avatar JSX element.
  */
 export const AsAvatar = ({
     name,
     role,
-    avatarSet,
-    seed,
+    avatarPath,
 }: {
     name: string;
     role: string;
-    avatarSet: AvatarSet;
-    seed: number;
+    avatarPath?: string;
 }) => {
     const [AvatarComponent, setAvatarComponent] = useState<FC<
         SVGProps<SVGSVGElement>
     > | null>(null);
 
     useEffect(() => {
-        if (avatarSet !== AvatarSet.LETTER && role.toLowerCase() !== 'system') {
-            // TODO: 我需要这里根据 avatarSet 来在对应的集合中根据seed随机选择头像
-            //  avatarSet 决定了'../../../assets/svgs/avatar/**/*.svg'中**的字段
-            //  如果是 AvatarSet.RANDOM 则从所有头像中选择
-            //  如果是 AvatarSet.POKEMON 则从pokemon文件夹中选择，依此类推
-            const avatarPath = getAvatarPathByName(name, seed, avatarSet);
-            if (avatarPath) {
-                loadAvatarComponent(avatarPath)
-                    .then((component) => {
-                        if (component) {
-                            setAvatarComponent(() => component);
-                        }
-                    })
-                    .catch(console.error);
-            }
+        let stale = false;
+        if (avatarPath && role.toLowerCase() !== 'system') {
+            loadAvatarComponent(avatarPath)
+                .then((component) => {
+                    if (!stale && component) {
+                        setAvatarComponent(() => component);
+                    }
+                })
+                .catch(console.error);
+        } else {
+            setAvatarComponent(null);
         }
-    }, [name, role, avatarSet, seed]);
+        return () => {
+            stale = true;
+        };
+    }, [role, avatarPath]);
 
     let avatarComponent;
     if (role.toLowerCase() === 'system') {
         avatarComponent = <SystemAvatar />;
-    } else if (avatarSet !== AvatarSet.LETTER && AvatarComponent) {
+    } else if (AvatarComponent) {
         avatarComponent = <AvatarComponent />;
     } else {
         // Fallback: Display initials
