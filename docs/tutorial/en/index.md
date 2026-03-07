@@ -24,4 +24,8 @@ features:
       details: Evaluate your agent system from a new statistical perspective
       link: /develop/evaluation
       linkText: Learn more
+    - title: Runtime Chat
+      details: Integrate with AgentScope Runtime to chat with deployed agents directly in Studio
+      link: /services/runtime-chat
+      linkText: Learn more
 ---
