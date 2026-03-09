@@ -8,6 +8,8 @@
         "delete": "Delete",
         "focus-on-latest-run": "Focus on latest",
         "ok": "OK",
+        "save": "Save",
+        "add": "Add",
         "search": "Search",
         "update-now": "Update Now",
         "updating": "Updating...",
@@ -273,7 +275,9 @@
             "send-message": "Send your message",
             "send-message-disable": "No user input is requested",
             "scroll-to-bottom": "Scroll to the bottom",
-            "voice-button": "Record voice"
+            "voice-button": "Record voice",
+            "enable-plan-mode": "Enable plan mode",
+            "disable-plan-mode": "Disable plan mode"
         },
         "chart": {
             "invocation": "# of invocation"
@@ -326,6 +330,48 @@
             "week": "Last 7 days"
         },
         "traceId": "Trace ID"
+    },
+    "plan": {
+        "title": "Task Plan",
+        "current_plan": "Current Plan",
+        "history_plans": "History ({{count}})",
+        "add_subtask": "Add Subtask",
+        "edit_subtask": "Edit Subtask",
+        "finish_subtask": "Complete Subtask",
+        "delete_subtask": "Delete Subtask",
+        "insert_subtask": "Insert subtask below",
+        "insert_subtask_title": "Insert after subtask #{{index}}",
+        "collapse_sidebar": "Collapse sidebar",
+        "empty_title": "No task plan",
+        "empty_desc": "Agent will create a plan when needed",
+        "completed_stats": "{{completed}}/{{total}} done ({{percentage}}%)",
+        "expected_outcome": "Expected outcome",
+        "actual_outcome": "Actual outcome",
+        "subtask_name": "Task name",
+        "subtask_name_required": "Task name *",
+        "subtask_desc": "Task description",
+        "subtask_desc_required": "Task description *",
+        "subtask_name_placeholder": "Enter task name",
+        "subtask_desc_placeholder": "Enter task description",
+        "expected_outcome_placeholder": "Enter expected outcome (optional)",
+        "actual_outcome_required": "Actual outcome *",
+        "actual_outcome_placeholder": "Enter the actual result (specific data, information or file path)",
+        "actual_outcome_hint": "Describe the specific result in detail, e.g., generated files, data, or goals achieved",
+        "edit_disabled": "Completed subtasks cannot be edited",
+        "current_status": "Current",
+        "finish_action": "Finish",
+        "status": {
+            "todo": "Pending",
+            "in_progress": "In Progress",
+            "done": "Done",
+            "abandoned": "Abandoned"
+        },
+        "subtask_status": {
+            "todo": "To Do",
+            "in_progress": "In Progress",
+            "done": "Done",
+            "abandoned": "Abandoned"
+        }
     },
     "unit": {
         "character": "character",
