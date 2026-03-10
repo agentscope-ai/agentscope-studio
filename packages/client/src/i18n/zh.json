@@ -299,7 +299,11 @@
     "trace": {
         "attrsKey": "键",
         "attrsValue": "值",
+        "collapseValue": "收起",
+        "collapsedHint": "还有 {{count}} 行",
         "copyValue": "复制值",
+        "expandValue": "展开",
+        "viewInModal": "在弹窗中查看",
         "detail": {
             "loading": "加载中..."
         },
@@ -308,7 +312,7 @@
             "copySuccess": "已复制到剪贴板",
             "loadFailed": "加载 traces 失败"
         },
-        "nodeDetails": "节点详情",
+        "nodeDetails": "跟踪详情",
         "selectSpan": "选择一个 span 以查看详情",
         "spanId": "Span ID",
         "status": {
@@ -321,6 +325,8 @@
             "month": "最近 30 天",
             "week": "最近 7 天"
         },
+        "tabAttributes": "属性",
+        "tabChatHistory": "对话历史",
         "traceId": "Trace ID"
     },
     "unit": {

@@ -5,11 +5,14 @@ import {
     CheckCircle2Icon,
     ChevronDownIcon,
     ChevronRightIcon,
+    ChevronUpIcon,
     Circle,
     CopyIcon,
     EyeIcon,
+    Expand,
     FileText,
     Layers,
+    Maximize2,
     Palette,
     PhoneCall,
     Wrench,
@@ -22,6 +25,12 @@ import { Tabs } from 'antd';
 
 import PageTitleSpan from '@/components/spans/PageTitleSpan';
 import { Button } from '@/components/ui/button.tsx';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog.tsx';
 import { Separator } from '@/components/ui/separator.tsx';
 import {
     Tooltip,
@@ -116,12 +125,31 @@ function flattenAttributes(
         .map(([key, value]) => ({ key, value }));
 }
 
+const VALUE_LINE_LIMIT = 5;
+
 /** Format value for display in key-value list */
 function formatAttributeValue(value: unknown): string {
     if (value === null || value === undefined) return '—';
     if (typeof value === 'string') return value;
     if (typeof value === 'number' || typeof value === 'boolean') return String(value);
     return JSON.stringify(value, null, 2);
+}
+
+/** Try parse string as JSON, return parsed object or null */
+function tryParseJson(str: string): object | null {
+    const trimmed = str.trim();
+    if (
+        (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+        (trimmed.startsWith('[') && trimmed.endsWith(']'))
+    ) {
+        try {
+            const parsed = JSON.parse(str);
+            return typeof parsed === 'object' && parsed !== null ? parsed : null;
+        } catch {
+            return null;
+        }
+    }
+    return null;
 }
 
 interface AttributesKeyValueListProps {
@@ -134,10 +162,28 @@ const AttributesKeyValueList = memo(function AttributesKeyValueList({
     onCopy,
 }: AttributesKeyValueListProps) {
     const { t } = useTranslation();
+    const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+    const [modalValue, setModalValue] = useState<{
+        key: string;
+        displayValue: string;
+    } | null>(null);
+
     const rows = useMemo(
         () => flattenAttributes(attributes),
         [attributes],
     );
+
+    const toggleExpand = (rowKey: string) => {
+        setExpandedRows((prev) => {
+            const next = new Set(prev);
+            if (next.has(rowKey)) {
+                next.delete(rowKey);
+            } else {
+                next.add(rowKey);
+            }
+            return next;
+        });
+    };
 
     if (rows.length === 0) {
         return (
@@ -148,75 +194,203 @@ const AttributesKeyValueList = memo(function AttributesKeyValueList({
     }
 
     return (
-        <div className="rounded-lg border border-border">
-            <table className="w-full text-sm">
-                <thead>
-                    <tr className="border-b border-border bg-muted/50">
-                        <th className="text-left font-medium text-muted-foreground px-2 py-2 w-[min(200px,35%)]">
-                            {t('trace.attrsKey')}
-                        </th>
-                        <th className="text-left font-medium text-muted-foreground px-2 py-2">
-                            {t('trace.attrsValue')}
-                        </th>
-                        {onCopy && (
-                            <th className="w-10 px-2 py-2" aria-label="Copy" />
-                        )}
-                    </tr>
-                </thead>
-                <tbody>
-                    {rows.map(({ key, value }, index) => {
-                        const displayValue = formatAttributeValue(value);
-                        const isLong =
-                            displayValue.length > 120 ||
-                            displayValue.includes('\n');
-                        return (
-                            <tr
-                                key={key}
-                                className={`group border-b border-border/60 last:border-b-0 hover:bg-muted/40 transition-colors ${
-                                    index % 2 === 1 ? 'bg-muted/20' : ''
-                                }`}
-                            >
-                                <td className="px-2 py-1.5 align-middle">
-                                    <code className="text-xs font-mono text-foreground/90 bg-muted/50 px-1.5 py-0.5 rounded break-all">
-                                        {key}
-                                    </code>
-                                </td>
-                                <td className="px-2 py-1.5 align-middle">
-                                    <pre
-                                        className={`m-0 font-sans text-foreground/85 whitespace-pre-wrap break-words ${
-                                            isLong ? 'text-[10px]' : 'text-xs'
-                                        }`}
-                                    >
-                                        {displayValue}
-                                    </pre>
-                                </td>
-                                {onCopy && (
+        <>
+            <div className="rounded-lg border border-border">
+                <table className="w-full text-sm">
+                    <thead>
+                        <tr className="border-b border-border bg-muted/50">
+                            <th className="text-left font-medium text-muted-foreground px-2 py-2 w-[min(200px,35%)]">
+                                {t('trace.attrsKey')}
+                            </th>
+                            <th className="text-left font-medium text-muted-foreground px-2 py-2">
+                                {t('trace.attrsValue')}
+                            </th>
+                            <th className="w-24 px-2 py-2" aria-label="Actions" />
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {rows.map(({ key, value }, index) => {
+                            const displayValue = formatAttributeValue(value);
+                            const lineCount =
+                                displayValue.split('\n').length;
+                            const exceedsLimit = lineCount > VALUE_LINE_LIMIT;
+                            const isExpanded = expandedRows.has(key);
+                            const isLong =
+                                displayValue.length > 120 ||
+                                displayValue.includes('\n');
+                            return (
+                                <tr
+                                    key={key}
+                                    className={`group border-b border-border/60 last:border-b-0 hover:bg-muted/40 transition-colors ${
+                                        index % 2 === 1 ? 'bg-muted/20' : ''
+                                    }`}
+                                >
                                     <td className="px-2 py-1.5 align-middle">
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon-sm"
-                                                    className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                    onClick={() =>
-                                                        onCopy(displayValue)
-                                                    }
-                                                >
-                                                    <CopyIcon className="size-3" />
-                                                </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                {t('trace.copyValue')}
-                                            </TooltipContent>
-                                        </Tooltip>
+                                        <code className="text-xs font-mono text-foreground/90 bg-muted/50 px-1.5 py-0.5 rounded break-all">
+                                            {key}
+                                        </code>
                                     </td>
-                                )}
-                            </tr>
-                        );
-                    })}
-                </tbody>
-            </table>
-        </div>
+                                    <td className="px-2 py-1.5 align-middle">
+                                        <div
+                                            className={`relative ${
+                                                exceedsLimit && !isExpanded
+                                                    ? 'line-clamp-5 overflow-hidden'
+                                                    : ''
+                                            }`}
+                                        >
+                                            <pre
+                                                className={`m-0 font-sans text-foreground/85 whitespace-pre-wrap break-words ${
+                                                    isLong ? 'text-[10px]' : 'text-xs'
+                                                }`}
+                                            >
+                                                {displayValue}
+                                            </pre>
+                                            {exceedsLimit && !isExpanded && (
+                                                <button
+                                                    type="button"
+                                                    className="absolute bottom-0 left-0 right-0 flex items-center justify-end gap-1.5 pt-3 bg-gradient-to-t from-background via-background/70 to-transparent cursor-pointer text-left hover:from-background/95"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        toggleExpand(key);
+                                                    }}
+                                                    title={t('trace.expandValue')}
+                                                >
+                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] text-muted-foreground bg-muted/80 border border-border/60 shrink-0 hover:bg-muted">
+                                                        {t('trace.collapsedHint', {
+                                                            count: lineCount - VALUE_LINE_LIMIT,
+                                                        })}
+                                                        <Expand className="size-2.5" />
+                                                    </span>
+                                                </button>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="px-2 py-1.5 align-middle">
+                                        <div className="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            {exceedsLimit && (
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon-sm"
+                                                            className="h-7 w-7 mr-auto"
+                                                            onClick={() =>
+                                                                toggleExpand(key)
+                                                            }
+                                                        >
+                                                            {isExpanded ? (
+                                                                <ChevronUpIcon className="size-3" />
+                                                            ) : (
+                                                                <Expand className="size-3" />
+                                                            )}
+                                                        </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        {isExpanded
+                                                            ? t(
+                                                                  'trace.collapseValue',
+                                                              )
+                                                            : t(
+                                                                  'trace.expandValue',
+                                                              )}
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            )}
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon-sm"
+                                                        className="h-7 w-7"
+                                                        onClick={() =>
+                                                            setModalValue({
+                                                                key,
+                                                                displayValue,
+                                                            })
+                                                        }
+                                                    >
+                                                        <Maximize2 className="size-3" />
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    {t(
+                                                        'trace.viewInModal',
+                                                    )}
+                                                </TooltipContent>
+                                            </Tooltip>
+                                            {onCopy && (
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon-sm"
+                                                            className="h-7 w-7"
+                                                            onClick={() =>
+                                                                onCopy(
+                                                                    displayValue,
+                                                                )
+                                                            }
+                                                        >
+                                                            <CopyIcon className="size-3" />
+                                                        </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        {t(
+                                                            'trace.copyValue',
+                                                        )}
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Value detail modal */}
+            <Dialog
+                open={!!modalValue}
+                onOpenChange={(open) =>
+                    !open && setModalValue(null)
+                }
+            >
+                <DialogContent className="sm:max-w-3xl max-h-[80vh] flex flex-col">
+                    <DialogHeader>
+                        <DialogTitle className="font-mono text-sm break-all">
+                            {modalValue?.key}
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="flex-1 overflow-auto min-h-0 rounded-md border border-border bg-muted/30 p-4">
+                        {modalValue && (
+                            <>
+                                {(() => {
+                                    const parsed = tryParseJson(
+                                        modalValue.displayValue,
+                                    );
+                                    if (parsed) {
+                                        return (
+                                            <JsonView
+                                                value={parsed}
+                                                displayDataTypes={false}
+                                                displayObjectSize={false}
+                                            />
+                                        );
+                                    }
+                                    return (
+                                        <pre className="m-0 text-xs font-sans whitespace-pre-wrap break-words">
+                                            {modalValue.displayValue}
+                                        </pre>
+                                    );
+                                })()}
+                            </>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </>
     );
 });
 
@@ -233,7 +407,7 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
         setSelectedTraceId,
     } = useTraceContext();
     const [selectedSpanId, setSelectedSpanId] = useState<string | null>(null);
-    const [idPanelOpen, setIdPanelOpen] = useState(false);
+    const [idPanelOpen, setIdPanelOpen] = useState(true);
     const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
     const [activeTab, setActiveTab] = useState<string>('metadata');
 
@@ -348,7 +522,6 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
         if (success) {
             // TODO: Add toast notification
             console.log(t('trace.message.copySuccess'));
-            setIdPanelOpen(false);
         } else {
             console.error(t('trace.message.copyFailed'));
         }
@@ -448,14 +621,38 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
         return (
             <div key={node.span.spanId} className="w-full">
                 <div
-                    className={`relative flex items-center gap-2 p-2 rounded-md cursor-pointer hover:bg-muted overflow-hidden ${
+                    className={`group relative flex items-center gap-2 p-2 rounded-md cursor-pointer hover:bg-muted overflow-hidden ${
                         isSelected ? 'bg-muted' : ''
                     }`}
                     style={{ paddingLeft: `${level * 16 + 8}px` }}
                     onClick={() => setSelectedSpanId(node.span.spanId)}
                 >
+                    {/* 火焰图条：作为 Span 行背景，条间留隙，选中/悬停时加深 */}
+                    {flameGraphTimeRange && (
+                        <div
+                            className="absolute top-1.5 bottom-1.5 z-0 bg-muted/20 overflow-hidden pointer-events-none rounded"
+                            style={{
+                                left: `${FLAME_BAR_LEFT_OFFSET_PX}px`,
+                                right: 8,
+                            }}
+                        >
+                            <div
+                                className={`absolute inset-y-0 rounded transition-opacity ${
+                                    isSelected ? 'opacity-75' : 'opacity-45'
+                                } group-hover:opacity-75`}
+                                style={{
+                                    left: `${flameStyle.left}%`,
+                                    width: `${flameStyle.width}%`,
+                                    backgroundColor: getFlameBarColor(
+                                        node.span,
+                                    ),
+                                }}
+                            />
+                        </div>
+                    )}
                     {hasChildren && (
                         <button
+                            className="relative z-10 p-0.5"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 const newExpanded = new Set(expandedNodes);
@@ -466,7 +663,6 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                                 }
                                 setExpandedNodes(newExpanded);
                             }}
-                            className="p-0.5"
                         >
                             {expandedNodes.has(node.span.spanId) ? (
                                 <ChevronDownIcon className="size-3" />
@@ -475,11 +671,11 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                             )}
                         </button>
                     )}
-                    {!hasChildren && <div className="w-4" />}
-                    {getSpanTypeIcon(node.span)}
+                    {!hasChildren && <div className="w-4 relative z-10" />}
+                    <span className="relative z-10">{getSpanTypeIcon(node.span)}</span>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <span className="flex-1 text-base truncate min-w-0">
+                            <span className="flex-1 text-base truncate min-w-0 relative z-10">
                                 {node.span.name}
                             </span>
                         </TooltipTrigger>
@@ -497,31 +693,10 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                             )}
                         </TooltipContent>
                     </Tooltip>
-                    <span className="text-xs text-muted-foreground shrink-0">
+                    <span className="text-xs text-muted-foreground shrink-0 relative z-10">
                         {formatDurationWithUnit(duration)}
                     </span>
-                    {getStatusIcon(node.span.status?.code || 0)}
-                    {/* 火焰图条：绝对定位，左边缘固定不随层级缩进 */}
-                    {flameGraphTimeRange && (
-                        <div
-                            className="absolute bottom-0 h-1 bg-muted overflow-hidden pointer-events-none"
-                            style={{
-                                left: `${FLAME_BAR_LEFT_OFFSET_PX}px`,
-                                right: 8,
-                            }}
-                        >
-                            <div
-                                className="absolute top-0 bottom-0 rounded-sm transition-colors"
-                                style={{
-                                    left: `${flameStyle.left}%`,
-                                    width: `${flameStyle.width}%`,
-                                    backgroundColor: getFlameBarColor(
-                                        node.span,
-                                    ),
-                                }}
-                            />
-                        </div>
-                    )}
+                    <span className="relative z-10">{getStatusIcon(node.span.status?.code || 0)}</span>
                 </div>
                 {hasChildren &&
                     expandedNodes.has(node.span.spanId) &&
@@ -601,9 +776,9 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
 
                         {/* ID Panel */}
                         {idPanelOpen && (
-                            <div className="mb-4 p-4 bg-muted rounded-md">
-                                <div className="flex flex-col gap-3">
-                                    <div className="flex justify-between items-center gap-2">
+                            <div className="mb-4 px-4 py-2.5 bg-muted rounded-md">
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex justify-between items-center gap-2 py-0.5">
                                         <span className="text-sm break-all min-w-0">
                                             {t('trace.spanId')}:{' '}
                                             {displaySpan.spanId}
@@ -620,7 +795,7 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                                         </Button>
                                     </div>
                                     <Separator />
-                                    <div className="flex justify-between items-center gap-2">
+                                    <div className="flex justify-between items-center gap-2 py-0.5">
                                         <span className="text-sm break-all min-w-0">
                                             {t('trace.traceId')}: {traceId}
                                         </span>
@@ -682,13 +857,13 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                         <Tabs
                             activeKey={activeTab}
                             onChange={setActiveTab}
-                            size="small"
+                            className="[&_.ant-tabs-tab]:text-base [&_.ant-tabs-tab]:font-medium"
                             items={[
                                 {
                                     key: 'metadata',
-                                    label: t('common.metadata'),
+                                    label: t('trace.tabChatHistory'),
                                     children: (
-                                        <div className="space-y-4">
+                                        <div className="space-y-4 pt-4">
                                             <div>
                                                 <div className="flex items-center justify-between mb-2">
                                                     <div className="text-sm font-medium">
@@ -751,9 +926,9 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                                 },
                                 {
                                     key: 'attributes',
-                                    label: t('common.attributes'),
+                                    label: t('trace.tabAttributes'),
                                     children: (
-                                        <div>
+                                        <div className="pt-4">
                                             <AttributesKeyValueList
                                                 attributes={
                                                     displaySpan.attributes as Record<

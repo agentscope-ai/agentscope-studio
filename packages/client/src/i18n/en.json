@@ -305,7 +305,11 @@
     "trace": {
         "attrsKey": "Key",
         "attrsValue": "Value",
+        "collapseValue": "Collapse",
+        "collapsedHint": "+{{count}} more lines",
         "copyValue": "Copy value",
+        "expandValue": "Expand",
+        "viewInModal": "View in modal",
         "detail": {
             "loading": "Loading..."
         },
@@ -314,7 +318,7 @@
             "copySuccess": "Copied to clipboard",
             "loadFailed": "Failed to load traces"
         },
-        "nodeDetails": "Node Details",
+        "nodeDetails": "Trace Details",
         "selectSpan": "Select a span to view details",
         "spanId": "Span ID",
         "status": {
@@ -327,6 +331,8 @@
             "month": "Last 30 days",
             "week": "Last 7 days"
         },
+        "tabAttributes": "Attributes",
+        "tabChatHistory": "Chat History",
         "traceId": "Trace ID"
     },
     "unit": {
