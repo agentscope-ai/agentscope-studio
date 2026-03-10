@@ -315,6 +315,8 @@
         "treeView": "Tree view",
         "reactRound": "Round",
         "reactFinishReason": "Finish reason",
+        "reactStep": "React Step",
+        "unknown": "—",
         "filterByOpType": "Filter by operation type",
         "filterOpAll": "Show all",
         "filterOpNone": "Other",

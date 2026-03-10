@@ -477,6 +477,10 @@ const TraceDetailPage = ({
     const [waterfallOpFilter, setWaterfallOpFilter] = useState<Set<string>>(
         new Set(),
     );
+    // 瀑布图：收起的 react step 组（Set 中的 id 为收起状态）
+    const [collapsedReactSteps, setCollapsedReactSteps] = useState<Set<string>>(
+        new Set(),
+    );
 
     // Sync traceId prop with context's selectedTraceId
     useEffect(() => {
@@ -1177,53 +1181,86 @@ const TraceDetailPage = ({
                                     key={group.reactStepId}
                                     className="mb-3 rounded-lg border border-border/80 bg-muted/5 overflow-hidden last:mb-0"
                                 >
-                                    {group.reactSpan && (() => {
-                                        const meta = getReactStepMeta(
-                                            group.reactSpan,
-                                        );
-                                        const hasMeta =
-                                            meta.round !== undefined ||
-                                            meta.finishReason !== undefined;
-                                        return hasMeta ? (
-                                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 px-3 py-1.5 text-xs border-b border-border/60 bg-muted/10">
-                                                {meta.round !== undefined && (
-                                                    <span className="inline-flex items-center gap-1 font-medium text-muted-foreground">
-                                                        <RefreshCw className="size-3 shrink-0" />
-                                                        {t('trace.reactRound')}{' '}
-                                                        <span className="font-semibold text-foreground">
-                                                            {meta.round}
+                                    <button
+                                        type="button"
+                                        className="flex w-full flex-wrap items-center gap-x-2 gap-y-1 px-3 py-1.5 text-xs border-b border-border/60 bg-muted/10 hover:bg-muted/20 transition-colors text-left cursor-pointer"
+                                        onClick={() => {
+                                            setCollapsedReactSteps((prev) => {
+                                                const next = new Set(prev);
+                                                if (next.has(group.reactStepId!)) {
+                                                    next.delete(group.reactStepId!);
+                                                } else {
+                                                    next.add(group.reactStepId!);
+                                                }
+                                                return next;
+                                            });
+                                        }}
+                                    >
+                                        <span className="shrink-0">
+                                            {collapsedReactSteps.has(
+                                                group.reactStepId,
+                                            ) ? (
+                                                <ChevronRightIcon className="size-3.5" />
+                                            ) : (
+                                                <ChevronDownIcon className="size-3.5" />
+                                            )}
+                                        </span>
+                                        {group.reactSpan ? (
+                                            (() => {
+                                                const meta = getReactStepMeta(
+                                                    group.reactSpan,
+                                                );
+                                                return (
+                                                    <>
+                                                        <span className="inline-flex items-center gap-1 font-medium text-muted-foreground">
+                                                            <RefreshCw className="size-3 shrink-0" />
+                                                            {t('trace.reactRound')}{' '}
+                                                            <span className="font-semibold text-foreground">
+                                                                {meta.round ??
+                                                                    t(
+                                                                        'trace.unknown',
+                                                                    )}
+                                                            </span>
                                                         </span>
-                                                    </span>
-                                                )}
-                                                {meta.round !== undefined &&
-                                                    meta.finishReason !==
-                                                        undefined && (
-                                                        <span className="text-border" aria-hidden>
+                                                        <span
+                                                            className="text-border"
+                                                            aria-hidden
+                                                        >
                                                             ·
                                                         </span>
-                                                    )}
-                                                {meta.finishReason !==
-                                                    undefined && (
-                                                    <span className="inline-flex items-center gap-1 text-muted-foreground">
-                                                        {t(
-                                                            'trace.reactFinishReason',
-                                                        )}
-                                                        :{' '}
-                                                        <span className="rounded bg-primary/10 px-1.5 py-0.5 font-medium text-primary">
-                                                            {formatFinishReason(
-                                                                meta.finishReason,
+                                                        <span className="inline-flex items-center gap-1 text-muted-foreground">
+                                                            {t(
+                                                                'trace.reactFinishReason',
                                                             )}
+                                                            :{' '}
+                                                            <span className="rounded bg-primary/10 px-1.5 py-0.5 font-medium text-primary">
+                                                                {meta.finishReason
+                                                                    ? formatFinishReason(
+                                                                          meta.finishReason,
+                                                                      )
+                                                                    : t(
+                                                                          'trace.unknown',
+                                                                      )}
+                                                            </span>
                                                         </span>
-                                                    </span>
-                                                )}
-                                            </div>
-                                        ) : null;
-                                    })()}
-                                    <div className="p-2">
-                                        {group.spans.map((span) =>
-                                            renderWaterfallRow(span),
+                                                    </>
+                                                );
+                                            })()
+                                        ) : (
+                                            <span className="text-muted-foreground">
+                                                {t('trace.reactStep')}
+                                            </span>
                                         )}
-                                    </div>
+                                    </button>
+                                    {!collapsedReactSteps.has(
+                                        group.reactStepId,
+                                    ) && (
+                                        <div className="p-2">
+                                            {group.spans.map((span) =>
+                                                renderWaterfallRow(span),
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             ) : (
                                 <div

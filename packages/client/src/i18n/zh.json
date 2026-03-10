@@ -309,6 +309,8 @@
         "treeView": "树状视图",
         "reactRound": "轮次",
         "reactFinishReason": "结束原因",
+        "reactStep": "React Step",
+        "unknown": "—",
         "filterByOpType": "按操作类型过滤",
         "filterOpAll": "全部显示",
         "filterOpNone": "其他",
