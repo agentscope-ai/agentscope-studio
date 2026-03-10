@@ -1,21 +1,26 @@
 import {
+    Bot,
+    Braces,
+    Brain,
     CheckCircle2Icon,
     ChevronDownIcon,
     ChevronRightIcon,
+    Circle,
     CopyIcon,
     EyeIcon,
+    FileText,
+    Layers,
+    Palette,
+    PhoneCall,
+    Wrench,
     XCircleIcon,
 } from 'lucide-react';
 import { memo, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { Tabs } from 'antd';
+
 import PageTitleSpan from '@/components/spans/PageTitleSpan';
-import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
-} from '@/components/ui/accordion.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { Separator } from '@/components/ui/separator.tsx';
 import {
@@ -30,7 +35,7 @@ import {
     formatDurationWithUnit,
 } from '@/utils/common';
 import { SpanData } from '@shared/types/trace';
-import { getNestedValue } from '@shared/utils/objectUtils';
+import { flattenObject, getNestedValue } from '@shared/utils/objectUtils';
 import JsonView from '@uiw/react-json-view';
 
 interface SpanTreeNode {
@@ -56,6 +61,41 @@ const getFlameBarColor = (span: SpanData): string => {
     return (op && GEN_AI_OPERATION_COLORS[op]) ?? 'hsl(0 0% 60% / 0.6)';
 };
 
+function getGenAiOperationName(span: SpanData): string | undefined {
+    const attrs = span.attributes || {};
+    return (getNestedValue(attrs, 'gen_ai.operation.name') ??
+        attrs['gen_ai.operation.name']) as string | undefined;
+}
+
+function getSpanTypeIcon(span: SpanData): React.ReactNode {
+    const op = getGenAiOperationName(span);
+    const iconClassName = 'size-3.5 shrink-0 text-muted-foreground';
+    if (!op) {
+        return <PhoneCall className={iconClassName} />;
+    }
+    switch (op) {
+        case 'chat':
+        case 'generate_content':
+        case 'text_completion':
+            return <Brain className={iconClassName} />;
+        case 'invoke_agent':
+        case 'create_agent':
+            return <Bot className={iconClassName} />;
+        case 'execute_tool':
+            return <Wrench className={iconClassName} />;
+        case 'retrieval':
+            return <FileText className={iconClassName} />;
+        case 'embeddings':
+            return <Layers className={iconClassName} />;
+        case 'format':
+            return <Palette className={iconClassName} />;
+        case 'invoke_generic_function':
+            return <Braces className={iconClassName} />;
+        default:
+            return <Circle className={iconClassName} />;
+    }
+}
+
 const getStatusIcon = (statusCode: number) => {
     if (statusCode === 2) {
         return <XCircleIcon className="size-4 text-destructive" />;
@@ -64,6 +104,121 @@ const getStatusIcon = (statusCode: number) => {
     }
     return null;
 };
+
+/** Flatten attributes to key-value pairs for list display */
+function flattenAttributes(
+    attrs: Record<string, unknown> | undefined,
+): Array<{ key: string; value: unknown }> {
+    if (!attrs || typeof attrs !== 'object') return [];
+    const flat = flattenObject(attrs);
+    return Object.entries(flat)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([key, value]) => ({ key, value }));
+}
+
+/** Format value for display in key-value list */
+function formatAttributeValue(value: unknown): string {
+    if (value === null || value === undefined) return '—';
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+    return JSON.stringify(value, null, 2);
+}
+
+interface AttributesKeyValueListProps {
+    attributes: Record<string, unknown> | undefined;
+    onCopy?: (text: string) => void;
+}
+
+const AttributesKeyValueList = memo(function AttributesKeyValueList({
+    attributes,
+    onCopy,
+}: AttributesKeyValueListProps) {
+    const { t } = useTranslation();
+    const rows = useMemo(
+        () => flattenAttributes(attributes),
+        [attributes],
+    );
+
+    if (rows.length === 0) {
+        return (
+            <div className="text-sm text-muted-foreground py-8 text-center">
+                —
+            </div>
+        );
+    }
+
+    return (
+        <div className="rounded-lg border border-border">
+            <table className="w-full text-sm">
+                <thead>
+                    <tr className="border-b border-border bg-muted/50">
+                        <th className="text-left font-medium text-muted-foreground px-2 py-2 w-[min(200px,35%)]">
+                            {t('trace.attrsKey')}
+                        </th>
+                        <th className="text-left font-medium text-muted-foreground px-2 py-2">
+                            {t('trace.attrsValue')}
+                        </th>
+                        {onCopy && (
+                            <th className="w-10 px-2 py-2" aria-label="Copy" />
+                        )}
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows.map(({ key, value }, index) => {
+                        const displayValue = formatAttributeValue(value);
+                        const isLong =
+                            displayValue.length > 120 ||
+                            displayValue.includes('\n');
+                        return (
+                            <tr
+                                key={key}
+                                className={`group border-b border-border/60 last:border-b-0 hover:bg-muted/40 transition-colors ${
+                                    index % 2 === 1 ? 'bg-muted/20' : ''
+                                }`}
+                            >
+                                <td className="px-2 py-1.5 align-middle">
+                                    <code className="text-xs font-mono text-foreground/90 bg-muted/50 px-1.5 py-0.5 rounded break-all">
+                                        {key}
+                                    </code>
+                                </td>
+                                <td className="px-2 py-1.5 align-middle">
+                                    <pre
+                                        className={`m-0 font-sans text-foreground/85 whitespace-pre-wrap break-words ${
+                                            isLong ? 'text-[10px]' : 'text-xs'
+                                        }`}
+                                    >
+                                        {displayValue}
+                                    </pre>
+                                </td>
+                                {onCopy && (
+                                    <td className="px-2 py-1.5 align-middle">
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon-sm"
+                                                    className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    onClick={() =>
+                                                        onCopy(displayValue)
+                                                    }
+                                                >
+                                                    <CopyIcon className="size-3" />
+                                                </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                {t('trace.copyValue')}
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </td>
+                                )}
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
+        </div>
+    );
+});
 
 interface TraceDetailPageProps {
     traceId: string;
@@ -80,6 +235,7 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
     const [selectedSpanId, setSelectedSpanId] = useState<string | null>(null);
     const [idPanelOpen, setIdPanelOpen] = useState(false);
     const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
+    const [activeTab, setActiveTab] = useState<string>('metadata');
 
     // Sync traceId prop with context's selectedTraceId
     useEffect(() => {
@@ -126,6 +282,23 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
 
         return rootNodes;
     }, [filteredSpans]);
+
+    // Default expand all nodes in the waterfall tree
+    useEffect(() => {
+        const collectExpandableIds = (nodes: SpanTreeNode[]): Set<string> => {
+            const ids = new Set<string>();
+            nodes.forEach((node) => {
+                if (node.children && node.children.length > 0) {
+                    ids.add(node.span.spanId);
+                    collectExpandableIds(node.children).forEach((id) =>
+                        ids.add(id),
+                    );
+                }
+            });
+            return ids;
+        };
+        setExpandedNodes(collectExpandableIds(treeData));
+    }, [treeData]);
 
     const selectedSpan = useMemo(() => {
         if (!selectedSpanId || !filteredSpans.length) return null;
@@ -303,9 +476,10 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                         </button>
                     )}
                     {!hasChildren && <div className="w-4" />}
+                    {getSpanTypeIcon(node.span)}
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <span className="flex-1 text-sm truncate min-w-0">
+                            <span className="flex-1 text-base truncate min-w-0">
                                 {node.span.name}
                             </span>
                         </TooltipTrigger>
@@ -504,110 +678,96 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                             </div>
                         </div>
 
-                        {/* Tabs using Accordion */}
-                        <Accordion
-                            type="single"
-                            collapsible
-                            defaultValue="info"
-                        >
-                            <AccordionItem value="info">
-                                <AccordionTrigger>
-                                    {t('common.metadata')}
-                                </AccordionTrigger>
-                                <AccordionContent>
-                                    <div className="space-y-4">
-                                        <div>
-                                            <div className="flex items-center justify-between mb-2">
-                                                <div className="text-sm font-medium">
-                                                    {t('common.input')}
-                                                </div>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon-sm"
-                                                    onClick={() =>
-                                                        handleCopy(
-                                                            JSON.stringify(
-                                                                extractInput(
-                                                                    displaySpan,
+                        {/* Metadata / Attributes Tabs */}
+                        <Tabs
+                            activeKey={activeTab}
+                            onChange={setActiveTab}
+                            size="small"
+                            items={[
+                                {
+                                    key: 'metadata',
+                                    label: t('common.metadata'),
+                                    children: (
+                                        <div className="space-y-4">
+                                            <div>
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <div className="text-sm font-medium">
+                                                        {t('common.input')}
+                                                    </div>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon-sm"
+                                                        onClick={() =>
+                                                            handleCopy(
+                                                                JSON.stringify(
+                                                                    extractInput(
+                                                                        displaySpan,
+                                                                    ),
+                                                                    null,
+                                                                    2,
                                                                 ),
-                                                                null,
-                                                                2,
-                                                            ),
-                                                        )
-                                                    }
-                                                    className="h-6 w-6"
-                                                >
-                                                    <CopyIcon className="size-3" />
-                                                </Button>
-                                            </div>
-                                            <div className="bg-muted p-3 rounded-md overflow-auto max-h-[300px] text-xs">
-                                                <JsonView value={(extractInput(displaySpan) ?? {}) as object} displayDataTypes={false} displayObjectSize={false} />
-                                            </div>
-                                        </div>
-                                        <Separator />
-                                        <div>
-                                            <div className="flex items-center justify-between mb-2">
-                                                <div className="text-sm font-medium">
-                                                    {t('common.output')}
+                                                            )
+                                                        }
+                                                        className="h-6 w-6"
+                                                    >
+                                                        <CopyIcon className="size-3" />
+                                                    </Button>
                                                 </div>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon-sm"
-                                                    onClick={() =>
-                                                        handleCopy(
-                                                            JSON.stringify(
-                                                                extractOutput(
-                                                                    displaySpan,
+                                                <div className="bg-muted p-3 rounded-md overflow-auto max-h-[300px] text-xs">
+                                                    <JsonView value={(extractInput(displaySpan) ?? {}) as object} displayDataTypes={false} displayObjectSize={false} />
+                                                </div>
+                                            </div>
+                                            <Separator />
+                                            <div>
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <div className="text-sm font-medium">
+                                                        {t('common.output')}
+                                                    </div>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon-sm"
+                                                        onClick={() =>
+                                                            handleCopy(
+                                                                JSON.stringify(
+                                                                    extractOutput(
+                                                                        displaySpan,
+                                                                    ),
+                                                                    null,
+                                                                    2,
                                                                 ),
-                                                                null,
-                                                                2,
-                                                            ),
-                                                        )
-                                                    }
-                                                    className="h-6 w-6"
-                                                >
-                                                    <CopyIcon className="size-3" />
-                                                </Button>
-                                            </div>
-                                            <div className="bg-muted p-3 rounded-md overflow-auto max-h-[300px] text-xs">
-                                                <JsonView value={(extractOutput(displaySpan) ?? {}) as object} displayDataTypes={false} displayObjectSize={false} />
+                                                            )
+                                                        }
+                                                        className="h-6 w-6"
+                                                    >
+                                                        <CopyIcon className="size-3" />
+                                                    </Button>
+                                                </div>
+                                                <div className="bg-muted p-3 rounded-md overflow-auto max-h-[300px] text-xs">
+                                                    <JsonView value={(extractOutput(displaySpan) ?? {}) as object} displayDataTypes={false} displayObjectSize={false} />
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </AccordionContent>
-                            </AccordionItem>
-                            <AccordionItem value="attributes">
-                                <AccordionTrigger>
-                                    {t('common.attributes')}
-                                </AccordionTrigger>
-                                <AccordionContent>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <div className="text-sm font-medium">
-                                            {t('common.attributes')}
+                                    ),
+                                },
+                                {
+                                    key: 'attributes',
+                                    label: t('common.attributes'),
+                                    children: (
+                                        <div>
+                                            <AttributesKeyValueList
+                                                attributes={
+                                                    displaySpan.attributes as Record<
+                                                        string,
+                                                        unknown
+                                                    >
+                                                }
+                                                onCopy={handleCopy}
+                                            />
                                         </div>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon-sm"
-                                            onClick={() =>
-                                                handleCopy(
-                                                    JSON.stringify(
-                                                        displaySpan.attributes,
-                                                        null,
-                                                        2,
-                                                    ),
-                                                )
-                                            }
-                                            className="h-6 w-6"
-                                        >
-                                            <CopyIcon className="size-3" />
-                                        </Button>
-                                    </div>
-                                    <div className="bg-muted p-3 rounded-md overflow-auto text-xs">
-                                        <JsonView value={(displaySpan.attributes ?? {}) as object} displayDataTypes={false} displayObjectSize={false} />
-                                    </div>
-                                </AccordionContent>
-                            </AccordionItem>
-                        </Accordion>
+                                    ),
+                                },
+                            ]}
+                        />
                     </>
                 ) : (
                     <div className="text-center p-12 text-muted-foreground">

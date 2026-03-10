@@ -297,6 +297,9 @@
         }
     },
     "trace": {
+        "attrsKey": "键",
+        "attrsValue": "值",
+        "copyValue": "复制值",
         "detail": {
             "loading": "加载中..."
         },

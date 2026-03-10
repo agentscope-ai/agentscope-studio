@@ -303,6 +303,9 @@
         }
     },
     "trace": {
+        "attrsKey": "Key",
+        "attrsValue": "Value",
+        "copyValue": "Copy value",
         "detail": {
             "loading": "Loading..."
         },
