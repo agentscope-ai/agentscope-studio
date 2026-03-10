@@ -745,13 +745,24 @@ const TraceDetailPage = ({
         const start = BigInt(span.startTimeUnixNano);
         const end = BigInt(span.endTimeUnixNano);
         const { min, range } = flameGraphTimeRange;
-        const leftPercent = Number(((start - min) * 10000n) / range) / 100;
-        const widthPercent = Number(((end - start) * 10000n) / range) / 100;
-        return { left: leftPercent, width: Math.max(widthPercent, 1) };
+        const rangeNum = Number(range);
+        const leftPercent = (Number(start - min) / rangeNum) * 100;
+        // 浮点计算避免 BigInt 整数除法吞掉短耗时 span 的宽度；右边界 +0.01s 保证最小可见
+        const durationNs = Number(end - start);
+        const widthPercent = Math.max(
+            (durationNs / rangeNum) * 100,
+            (10_000_000 / rangeNum) * 100, // 0.01s 对应的百分比
+            1,
+        );
+        return { left: leftPercent, width: widthPercent };
     };
 
     // 火焰图条左边缘与行内容区对齐，不随层级缩进，便于时间轴对比
     const FLAME_BAR_LEFT_OFFSET_PX = 8;
+    // 瀑布图：Span Name 最右边界（耗时+状态在此区域内）
+    const WATERFALL_NAME_RIGHT_PX = 70;
+    // 瀑布图：高亮条右边界（条在此结束，预留空间给 Span Name 展示）
+    const WATERFALL_BAR_RIGHT_PX = WATERFALL_NAME_RIGHT_PX + 120;
 
     const renderTreeNode = (node: SpanTreeNode, level = 0): React.ReactNode => {
         const duration =
@@ -772,10 +783,10 @@ const TraceDetailPage = ({
                     style={{ paddingLeft: `${level * 16 + 8}px` }}
                     onClick={() => setSelectedSpanId(node.span.spanId)}
                 >
-                    {/* 火焰图条：作为 Span 行背景，条间留隙，选中/悬停时加深 */}
+                    {/* 火焰图条：作为 Span 行背景 */}
                     {flameGraphTimeRange && (
                         <div
-                            className="absolute top-1.5 bottom-1.5 z-0 bg-muted/20 overflow-hidden pointer-events-none rounded"
+                            className="absolute top-1.5 bottom-1.5 z-0 bg-muted/20 overflow-visible pointer-events-none rounded"
                             style={{
                                 left: `${FLAME_BAR_LEFT_OFFSET_PX}px`,
                                 right: 8,
@@ -870,13 +881,13 @@ const TraceDetailPage = ({
                             }`}
                             onClick={() => setSelectedSpanId(span.spanId)}
                         >
-                            {/* 高亮条区域：Span Name 跟在高亮条起始位置后面，右侧预留空间避免最后几个 span 被裁切 */}
+                            {/* 高亮条区域：条 + Span Name（name 以 bar 为基准，延伸到右侧预留区） */}
                             {flameGraphTimeRange && (
                                 <div
                                     className="absolute top-1.5 bottom-1.5 z-0 overflow-visible pointer-events-none rounded"
                                     style={{
                                         left: `${FLAME_BAR_LEFT_OFFSET_PX}px`,
-                                        right: 80,
+                                        right: WATERFALL_BAR_RIGHT_PX,
                                     }}
                                 >
                                     <div
@@ -895,26 +906,27 @@ const TraceDetailPage = ({
                                             ),
                                         }}
                                     />
-                                    {/* Span Name 紧跟在高亮条起始位置后 */}
+                                    {/* Span Name：以 bar 容器为基准，从 bar 起始位置延伸到右侧预留区（overflow 出 bar 容器） */}
                                     <div
-                                        className="absolute inset-y-0 flex items-center gap-1.5 pl-1 min-w-0 max-w-full"
+                                        className="absolute inset-y-0 flex items-center gap-1.5 pl-1 min-w-0 overflow-hidden"
                                         style={{
                                             left: `${flameStyle.left}%`,
+                                            right: -(WATERFALL_BAR_RIGHT_PX - WATERFALL_NAME_RIGHT_PX),
                                         }}
                                     >
                                         <span className="relative z-10 shrink-0">
                                             {getSpanTypeIcon(span)}
                                         </span>
-                                        <span className="relative z-10 truncate text-base">
+                                        <span className="relative z-10 truncate text-base min-w-0">
                                             {span.name}
                                         </span>
                                     </div>
                                 </div>
                             )}
-                            <span className="text-xs text-muted-foreground shrink-0 relative z-10 ml-auto">
+                            <span className="text-xs text-muted-foreground shrink-0 relative z-10 ml-auto pl-2">
                                 {formatDurationWithUnit(duration)}
                             </span>
-                            <span className="relative z-10 ml-1">
+                            <span className="relative z-10 ml-1 shrink-0">
                                 {getStatusIcon(span.status?.code || 0)}
                             </span>
                         </div>
