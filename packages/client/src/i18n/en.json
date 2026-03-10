@@ -309,6 +309,15 @@
         "collapsedHint": "+{{count}} more lines",
         "copyValue": "Copy value",
         "expandValue": "Expand",
+        "exitFullScreen": "Exit full screen",
+        "fullScreen": "Full screen",
+        "waterfallView": "Waterfall view",
+        "treeView": "Tree view",
+        "reactRound": "Round",
+        "reactFinishReason": "Finish reason",
+        "filterByOpType": "Filter by operation type",
+        "filterOpAll": "Show all",
+        "filterOpNone": "Other",
         "viewInModal": "View in modal",
         "detail": {
             "loading": "Loading..."

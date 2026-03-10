@@ -2,7 +2,10 @@ import {
     Bot,
     Braces,
     Brain,
+    ChartGantt,
     CheckCircle2Icon,
+    ListFilter,
+    ListTree,
     ChevronDownIcon,
     ChevronRightIcon,
     ChevronUpIcon,
@@ -11,10 +14,15 @@ import {
     EyeIcon,
     Expand,
     FileText,
+    Fullscreen,
     Layers,
+    Link2,
+    LogIn,
     Maximize2,
+    Minimize2,
     Palette,
     PhoneCall,
+    RefreshCw,
     Wrench,
     XCircleIcon,
 } from 'lucide-react';
@@ -32,6 +40,14 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog.tsx';
 import { Separator } from '@/components/ui/separator.tsx';
+import {
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu.tsx';
 import {
     Tooltip,
     TooltipContent,
@@ -52,13 +68,18 @@ interface SpanTreeNode {
     children?: SpanTreeNode[];
 }
 
+const OP_NONE_KEY = '__none__';
+
 const GEN_AI_OPERATION_COLORS: Record<string, string> = {
-    invoke_agent: 'hsl(217 91% 60% / 0.8)',
+    chain: 'hsl(280 65% 55% / 0.8)',
     chat: 'hsl(142 71% 45% / 0.8)',
     create_agent: 'hsl(271 91% 65% / 0.8)',
     embeddings: 'hsl(25 95% 53% / 0.8)',
+    enter: 'hsl(195 90% 55% / 0.8)',
     execute_tool: 'hsl(174 72% 45% / 0.8)',
     generate_content: 'hsl(239 84% 67% / 0.8)',
+    invoke_agent: 'hsl(217 91% 60% / 0.8)',
+    react: 'hsl(160 90% 45% / 0.8)',
     retrieval: 'hsl(43 96% 56% / 0.8)',
     text_completion: 'hsl(350 89% 60% / 0.8)',
 };
@@ -74,6 +95,35 @@ function getGenAiOperationName(span: SpanData): string | undefined {
     const attrs = span.attributes || {};
     return (getNestedValue(attrs, 'gen_ai.operation.name') ??
         attrs['gen_ai.operation.name']) as string | undefined;
+}
+
+function getReactStepMeta(span: SpanData): {
+    round?: number;
+    finishReason?: string;
+} {
+    const attrs = span?.attributes ?? {};
+    const round = getNestedValue(attrs, 'gen_ai.react.round') ??
+        attrs['gen_ai.react.round'];
+    const finishReason = getNestedValue(attrs, 'gen_ai.react.finish_reason') ??
+        attrs['gen_ai.react.finish_reason'];
+    const roundNum =
+        typeof round === 'number'
+            ? round
+            : typeof round === 'string'
+              ? parseInt(round, 10)
+              : undefined;
+    return {
+        round: Number.isFinite(roundNum) ? roundNum : undefined,
+        finishReason: typeof finishReason === 'string' ? finishReason : undefined,
+    };
+}
+
+/** 将 finish_reason 转为可读标签，如 stop -> Stop, max_turns -> Max Turns */
+function formatFinishReason(reason: string): string {
+    return reason
+        .split(/[_\s]+/)
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(' ');
 }
 
 function getSpanTypeIcon(span: SpanData): React.ReactNode {
@@ -100,6 +150,12 @@ function getSpanTypeIcon(span: SpanData): React.ReactNode {
             return <Palette className={iconClassName} />;
         case 'invoke_generic_function':
             return <Braces className={iconClassName} />;
+        case 'enter':
+            return <LogIn className={iconClassName} />;
+        case 'react':
+            return <RefreshCw className={iconClassName} />;
+        case 'chain':
+            return <Link2 className={iconClassName} />;
         default:
             return <Circle className={iconClassName} />;
     }
@@ -195,17 +251,17 @@ const AttributesKeyValueList = memo(function AttributesKeyValueList({
 
     return (
         <>
-            <div className="rounded-lg border border-border">
+            <div className="rounded-lg border border-border overflow-hidden">
                 <table className="w-full text-sm">
                     <thead>
                         <tr className="border-b border-border bg-muted/50">
-                            <th className="text-left font-medium text-muted-foreground px-2 py-2 w-[min(200px,35%)]">
+                            <th className="text-left font-medium text-muted-foreground px-2 py-2 w-[180px] min-w-[140px]">
                                 {t('trace.attrsKey')}
                             </th>
                             <th className="text-left font-medium text-muted-foreground px-2 py-2">
                                 {t('trace.attrsValue')}
                             </th>
-                            <th className="w-24 px-2 py-2" aria-label="Actions" />
+                            <th className="px-2 py-2" aria-label="Actions" />
                         </tr>
                     </thead>
                     <tbody>
@@ -225,16 +281,16 @@ const AttributesKeyValueList = memo(function AttributesKeyValueList({
                                         index % 2 === 1 ? 'bg-muted/20' : ''
                                     }`}
                                 >
-                                    <td className="px-2 py-1.5 align-middle">
-                                        <code className="text-xs font-mono text-foreground/90 bg-muted/50 px-1.5 py-0.5 rounded break-all">
+                                    <td className="px-2 py-1.5 align-middle w-[180px] min-w-[140px]">
+                                        <code className="text-xs font-mono text-foreground/90 bg-muted/50 px-1.5 py-0.5 rounded break-all block">
                                             {key}
                                         </code>
                                     </td>
-                                    <td className="px-2 py-1.5 align-middle">
+                                    <td className="px-2 py-1.5 align-middle min-w-0">
                                         <div
-                                            className={`relative ${
+                                            className={`relative min-w-0 overflow-x-auto ${
                                                 exceedsLimit && !isExpanded
-                                                    ? 'line-clamp-5 overflow-hidden'
+                                                    ? 'line-clamp-5 overflow-y-hidden'
                                                     : ''
                                             }`}
                                         >
@@ -396,9 +452,15 @@ const AttributesKeyValueList = memo(function AttributesKeyValueList({
 
 interface TraceDetailPageProps {
     traceId: string;
+    isFullWidth?: boolean;
+    onToggleFullWidth?: () => void;
 }
 
-const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
+const TraceDetailPage = ({
+    traceId,
+    isFullWidth = false,
+    onToggleFullWidth,
+}: TraceDetailPageProps) => {
     const { t } = useTranslation();
     const {
         traceData,
@@ -410,6 +472,11 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
     const [idPanelOpen, setIdPanelOpen] = useState(true);
     const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
     const [activeTab, setActiveTab] = useState<string>('metadata');
+    const [isWaterfallView, setIsWaterfallView] = useState(false);
+    // 瀑布图操作类型过滤：空 Set 表示显示全部，非空则仅显示选中的类型
+    const [waterfallOpFilter, setWaterfallOpFilter] = useState<Set<string>>(
+        new Set(),
+    );
 
     // Sync traceId prop with context's selectedTraceId
     useEffect(() => {
@@ -500,6 +567,84 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
         const latestEnd = endTimes.reduce((a, b) => (a > b ? a : b));
         return Number(latestEnd - earliestStart) / 1e9;
     }, [filteredSpans]);
+
+    // 瀑布图视图：按开始时间排序的扁平 span 列表
+    const waterfallSortedSpans = useMemo(() => {
+        if (!filteredSpans.length) return [];
+        return [...filteredSpans].sort((a, b) => {
+            const ta = BigInt(a.startTimeUnixNano);
+            const tb = BigInt(b.startTimeUnixNano);
+            return ta < tb ? -1 : ta > tb ? 1 : 0;
+        });
+    }, [filteredSpans]);
+
+    // 瀑布图：当前 trace 中出现的所有 gen_ai.operation.name 类型
+    const waterfallUniqueOpTypes = useMemo(() => {
+        const set = new Set<string>();
+        filteredSpans.forEach((s) => {
+            const op = getGenAiOperationName(s);
+            set.add(op ?? OP_NONE_KEY);
+        });
+        return Array.from(set).sort((a, b) => {
+            if (a === OP_NONE_KEY) return 1;
+            if (b === OP_NONE_KEY) return -1;
+            return a.localeCompare(b);
+        });
+    }, [filteredSpans]);
+
+    // 瀑布图：根据操作类型过滤后的 span 列表（空过滤 = 显示全部）
+    const waterfallFilteredSpans = useMemo(() => {
+        if (!waterfallOpFilter.size) return waterfallSortedSpans;
+        return waterfallSortedSpans.filter((span) => {
+            const op = getGenAiOperationName(span) ?? OP_NONE_KEY;
+            return waterfallOpFilter.has(op);
+        });
+    }, [waterfallSortedSpans, waterfallOpFilter]);
+
+    // 瀑布图：按 react step 分组，用于渲染带边框的组（基于过滤后的 spans）
+    const waterfallReactStepGroups = useMemo(() => {
+        if (!waterfallFilteredSpans.length) return [];
+        const spanMap = new Map<string, SpanData>(
+            filteredSpans.map((s) => [s.spanId, s]),
+        );
+        const getReactStepId = (span: SpanData): string | null => {
+            let current: SpanData | undefined = span;
+            while (current) {
+                if (getGenAiOperationName(current) === 'react') {
+                    return current.spanId;
+                }
+                current = current.parentSpanId
+                    ? spanMap.get(current.parentSpanId)
+                    : undefined;
+            }
+            return null;
+        };
+        const groups: Array<{
+            reactStepId: string | null;
+            reactSpan?: SpanData;
+            spans: SpanData[];
+        }> = [];
+        let currentGroup: {
+            reactStepId: string | null;
+            reactSpan?: SpanData;
+            spans: SpanData[];
+        } | null = null;
+        for (const span of waterfallFilteredSpans) {
+            const rid = getReactStepId(span);
+            const reactSpan = rid ? spanMap.get(rid) : undefined;
+            if (currentGroup && currentGroup.reactStepId === rid) {
+                currentGroup.spans.push(span);
+            } else {
+                currentGroup = {
+                    reactStepId: rid,
+                    reactSpan,
+                    spans: [span],
+                };
+                groups.push(currentGroup);
+            }
+        }
+        return groups;
+    }, [waterfallFilteredSpans, filteredSpans]);
 
     // Time range for flame graph: min = earliest start, max = latest end
     const flameGraphTimeRange = useMemo(() => {
@@ -707,12 +852,276 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
         );
     };
 
+    const renderWaterfallRow = (span: SpanData): React.ReactNode => {
+        const duration =
+            Number(
+                BigInt(span.endTimeUnixNano) - BigInt(span.startTimeUnixNano),
+            ) / 1e9;
+        const isSelected = selectedSpanId === span.spanId;
+        const flameStyle = getFlameBarStyle(span);
+
+        return (
+            <div key={span.spanId} className="w-full">
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div
+                            className={`group relative flex items-center w-full p-2 rounded-md cursor-pointer hover:bg-muted overflow-hidden ${
+                                isSelected ? 'bg-muted' : ''
+                            }`}
+                            onClick={() => setSelectedSpanId(span.spanId)}
+                        >
+                            {/* 高亮条区域：Span Name 跟在高亮条起始位置后面，右侧预留空间避免最后几个 span 被裁切 */}
+                            {flameGraphTimeRange && (
+                                <div
+                                    className="absolute top-1.5 bottom-1.5 z-0 overflow-visible pointer-events-none rounded"
+                                    style={{
+                                        left: `${FLAME_BAR_LEFT_OFFSET_PX}px`,
+                                        right: 80,
+                                    }}
+                                >
+                                    <div
+                                        className="absolute inset-y-0 bg-muted/20 rounded"
+                                        style={{ left: 0, right: 0 }}
+                                    />
+                                    <div
+                                        className={`absolute inset-y-0 rounded transition-opacity ${
+                                            isSelected ? 'opacity-75' : 'opacity-45'
+                                        } group-hover:opacity-75`}
+                                        style={{
+                                            left: `${flameStyle.left}%`,
+                                            width: `${flameStyle.width}%`,
+                                            backgroundColor: getFlameBarColor(
+                                                span,
+                                            ),
+                                        }}
+                                    />
+                                    {/* Span Name 紧跟在高亮条起始位置后 */}
+                                    <div
+                                        className="absolute inset-y-0 flex items-center gap-1.5 pl-1 min-w-0 max-w-full"
+                                        style={{
+                                            left: `${flameStyle.left}%`,
+                                        }}
+                                    >
+                                        <span className="relative z-10 shrink-0">
+                                            {getSpanTypeIcon(span)}
+                                        </span>
+                                        <span className="relative z-10 truncate text-base">
+                                            {span.name}
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
+                            <span className="text-xs text-muted-foreground shrink-0 relative z-10 ml-auto">
+                                {formatDurationWithUnit(duration)}
+                            </span>
+                            <span className="relative z-10 ml-1">
+                                {getStatusIcon(span.status?.code || 0)}
+                            </span>
+                        </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <span className="text-xs break-all max-w-[400px]">
+                            {span.name}
+                        </span>
+                        <br />
+                        <span className="text-xs text-muted-foreground">
+                            {formatDurationWithUnit(duration)}
+                        </span>
+                    </TooltipContent>
+                </Tooltip>
+            </div>
+        );
+    };
+
     return (
         <div className="flex flex-col lg:flex-row h-full overflow-hidden">
-            {/* Sidebar */}
-            <div className="w-full lg:w-[400px] lg:min-w-[400px] bg-background border-b lg:border-b-0 lg:border-r border-border overflow-auto max-h-[40vh] lg:max-h-none">
+            {/* Sidebar / 瀑布图区域 */}
+            <div
+                className={`w-full bg-background border-b lg:border-b-0 lg:border-r border-border overflow-auto max-h-[40vh] lg:max-h-none ${
+                    isWaterfallView
+                        ? 'lg:w-[70%] lg:min-w-0'
+                        : 'lg:w-[400px] lg:min-w-[400px]'
+                }`}
+            >
                 <div className="p-4">
-                    <PageTitleSpan title={t('trace.nodeDetails')} />
+                    <div className="flex items-center justify-between gap-2">
+                        <PageTitleSpan title={t('trace.nodeDetails')} />
+                        <div className="flex items-center gap-1 shrink-0">
+                            {isWaterfallView && (
+                                <DropdownMenu>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button
+                                                    variant={
+                                                        waterfallOpFilter.size > 0
+                                                            ? 'secondary'
+                                                            : 'ghost'
+                                                    }
+                                                    size="sm"
+                                                >
+                                                    <ListFilter className="size-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            {t('trace.filterByOpType')}
+                                        </TooltipContent>
+                                    </Tooltip>
+                                    <DropdownMenuContent
+                                        align="end"
+                                        className="max-h-[280px] overflow-y-auto"
+                                    >
+                                        <DropdownMenuLabel>
+                                            {t('trace.filterByOpType')}
+                                        </DropdownMenuLabel>
+                                        <DropdownMenuCheckboxItem
+                                            checked={
+                                                waterfallOpFilter.size === 0
+                                            }
+                                            onCheckedChange={(checked) => {
+                                                if (checked) {
+                                                    setWaterfallOpFilter(
+                                                        new Set(),
+                                                    );
+                                                }
+                                            }}
+                                        >
+                                            {t('trace.filterOpAll')}
+                                        </DropdownMenuCheckboxItem>
+                                        <DropdownMenuSeparator />
+                                        {waterfallUniqueOpTypes.map((op) => {
+                                            const isChecked =
+                                                waterfallOpFilter.size === 0 ||
+                                                waterfallOpFilter.has(op);
+                                            return (
+                                                <DropdownMenuCheckboxItem
+                                                    key={op}
+                                                    checked={isChecked}
+                                                    onCheckedChange={(
+                                                        checked,
+                                                    ) => {
+                                                        setWaterfallOpFilter(
+                                                            (prev) => {
+                                                                const all =
+                                                                    waterfallUniqueOpTypes;
+                                                                if (checked) {
+                                                                    const next =
+                                                                        new Set(
+                                                                            prev,
+                                                                        );
+                                                                    next.add(op);
+                                                                    return next;
+                                                                }
+                                                                if (prev.size ===
+                                                                    0) {
+                                                                    return new Set(
+                                                                        all.filter(
+                                                                            (
+                                                                                x,
+                                                                            ) =>
+                                                                                x !==
+                                                                                op,
+                                                                        ),
+                                                                    );
+                                                                }
+                                                                const next =
+                                                                    new Set(prev);
+                                                                next.delete(op);
+                                                                return next.size >
+                                                                    0
+                                                                    ? next
+                                                                    : new Set();
+                                                            },
+                                                        );
+                                                    }}
+                                                >
+                                                    <span className="inline-flex items-center gap-1.5">
+                                                        {getSpanTypeIcon(
+                                                            op === OP_NONE_KEY
+                                                                ? ({
+                                                                      attributes:
+                                                                          {},
+                                                                  } as unknown as SpanData)
+                                                                : ({
+                                                                      attributes:
+                                                                          {
+                                                                              'gen_ai.operation.name':
+                                                                                  op,
+                                                                          },
+                                                                  } as unknown as SpanData),
+                                                        )}
+                                                        {op === OP_NONE_KEY
+                                                            ? t(
+                                                                  'trace.filterOpNone',
+                                                              )
+                                                            : op
+                                                                  .split('_')
+                                                                  .map(
+                                                                      (w) =>
+                                                                          w.charAt(
+                                                                              0,
+                                                                          ).toUpperCase() +
+                                                                          w.slice(
+                                                                              1,
+                                                                          ).toLowerCase(),
+                                                                  )
+                                                                  .join(' ')}
+                                                    </span>
+                                                </DropdownMenuCheckboxItem>
+                                            );
+                                        })}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            )}
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant={
+                                            isWaterfallView ? 'secondary' : 'ghost'
+                                        }
+                                        size="sm"
+                                        onClick={() =>
+                                            setIsWaterfallView(!isWaterfallView)
+                                        }
+                                    >
+                                        {isWaterfallView ? (
+                                            <ListTree className="size-4" />
+                                        ) : (
+                                            <ChartGantt className="size-4" />
+                                        )}
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    {isWaterfallView
+                                        ? t('trace.treeView')
+                                        : t('trace.waterfallView')}
+                                </TooltipContent>
+                            </Tooltip>
+                            {onToggleFullWidth && (
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={onToggleFullWidth}
+                                        >
+                                            {isFullWidth ? (
+                                                <Minimize2 className="size-4" />
+                                            ) : (
+                                                <Fullscreen className="size-4" />
+                                            )}
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        {isFullWidth
+                                            ? t('trace.exitFullScreen')
+                                            : t('trace.fullScreen')}
+                                    </TooltipContent>
+                                </Tooltip>
+                            )}
+                        </div>
+                    </div>
                     {rootSpan && (
                         <div className="mt-4 p-3 bg-muted rounded-md">
                             <div className="mb-2">
@@ -748,6 +1157,74 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                 </div>
                 {isLoading ? (
                     <div className="p-4">{t('trace.detail.loading')}</div>
+                ) : isWaterfallView ? (
+                    <div className="p-4 pt-0 pr-6">
+                        {waterfallReactStepGroups.map((group, gi) =>
+                            group.reactStepId ? (
+                                <div
+                                    key={group.reactStepId}
+                                    className="mb-3 rounded-lg border border-border/80 bg-muted/5 overflow-hidden last:mb-0"
+                                >
+                                    {group.reactSpan && (() => {
+                                        const meta = getReactStepMeta(
+                                            group.reactSpan,
+                                        );
+                                        const hasMeta =
+                                            meta.round !== undefined ||
+                                            meta.finishReason !== undefined;
+                                        return hasMeta ? (
+                                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 px-3 py-1.5 text-xs border-b border-border/60 bg-muted/10">
+                                                {meta.round !== undefined && (
+                                                    <span className="inline-flex items-center gap-1 font-medium text-muted-foreground">
+                                                        <RefreshCw className="size-3 shrink-0" />
+                                                        {t('trace.reactRound')}{' '}
+                                                        <span className="font-semibold text-foreground">
+                                                            {meta.round}
+                                                        </span>
+                                                    </span>
+                                                )}
+                                                {meta.round !== undefined &&
+                                                    meta.finishReason !==
+                                                        undefined && (
+                                                        <span className="text-border" aria-hidden>
+                                                            ·
+                                                        </span>
+                                                    )}
+                                                {meta.finishReason !==
+                                                    undefined && (
+                                                    <span className="inline-flex items-center gap-1 text-muted-foreground">
+                                                        {t(
+                                                            'trace.reactFinishReason',
+                                                        )}
+                                                        :{' '}
+                                                        <span className="rounded bg-primary/10 px-1.5 py-0.5 font-medium text-primary">
+                                                            {formatFinishReason(
+                                                                meta.finishReason,
+                                                            )}
+                                                        </span>
+                                                    </span>
+                                                )}
+                                            </div>
+                                        ) : null;
+                                    })()}
+                                    <div className="p-2">
+                                        {group.spans.map((span) =>
+                                            renderWaterfallRow(span),
+                                        )}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div
+                                    key={`ungrouped-${gi}`}
+                                    className="mb-3 last:mb-0"
+                                >
+                                    {group.spans.map((span) =>
+                                        renderWaterfallRow(span),
+                                    )}
+                                </div>
+                            ),
+                        )}
+                    </div>
                 ) : (
                     <div className="p-4 pt-0">
                         {treeData.map((node) => renderTreeNode(node))}
@@ -767,7 +1244,6 @@ const TraceDetailPage = ({ traceId }: TraceDetailPageProps) => {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setIdPanelOpen(!idPanelOpen)}
-                                className="shrink-0"
                             >
                                 <EyeIcon className="size-4 mr-2" />
                                 {t('common.id')}

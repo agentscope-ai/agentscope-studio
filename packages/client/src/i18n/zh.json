@@ -303,6 +303,15 @@
         "collapsedHint": "还有 {{count}} 行",
         "copyValue": "复制值",
         "expandValue": "展开",
+        "exitFullScreen": "退出全屏",
+        "fullScreen": "全屏",
+        "waterfallView": "瀑布图视图",
+        "treeView": "树状视图",
+        "reactRound": "轮次",
+        "reactFinishReason": "结束原因",
+        "filterByOpType": "按操作类型过滤",
+        "filterOpAll": "全部显示",
+        "filterOpNone": "其他",
         "viewInModal": "在弹窗中查看",
         "detail": {
             "loading": "加载中..."

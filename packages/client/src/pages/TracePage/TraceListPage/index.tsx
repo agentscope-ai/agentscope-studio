@@ -100,6 +100,7 @@ const TraceListPage = () => {
     } = useTraceContext();
 
     const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
+    const [isFullWidth, setIsFullWidth] = useState(false);
 
     // Filter the selected rows when traces data changes
     useEffect(() => {
@@ -350,14 +351,30 @@ const TraceListPage = () => {
             </div>
 
             {/* Trace Detail Sheet */}
-            <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+            <Sheet
+                open={drawerOpen}
+                onOpenChange={(open) => {
+                    setDrawerOpen(open);
+                    if (!open) setIsFullWidth(false);
+                }}
+            >
                 <SheetContent
                     side="right"
                     title={t('trace.nodeDetails')}
-                    className="w-full sm:w-[80%] sm:max-w-[80%] p-0"
+                    className={`p-0 transition-[width] duration-300 ease-in-out ${
+                        isFullWidth
+                            ? '!left-0 !right-0 !w-full !max-w-none sm:!max-w-none'
+                            : 'w-full sm:w-[80%] sm:max-w-[80%]'
+                    }`}
                 >
                     {selectedTraceId && (
-                        <TraceDetailPage traceId={selectedTraceId} />
+                        <TraceDetailPage
+                            traceId={selectedTraceId}
+                            isFullWidth={isFullWidth}
+                            onToggleFullWidth={() =>
+                                setIsFullWidth((v) => !v)
+                            }
+                        />
                     )}
                 </SheetContent>
             </Sheet>
