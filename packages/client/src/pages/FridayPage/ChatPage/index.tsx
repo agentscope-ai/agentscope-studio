@@ -1,15 +1,23 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { SettingsIcon, Trash2Icon } from 'lucide-react';
+import { SettingsIcon, Trash2Icon, Plug2Icon } from 'lucide-react';
 
 import { RouterPath } from '@/pages/RouterPath';
 import { useFridayAppRoom } from '@/context/FridayAppRoomContext.tsx';
+import { useFridaySettingRoom } from '@/context/FridaySettingRoomContext.tsx';
 import AsChat from '@/components/chat/AsChat';
 import { useMessageApi } from '@/context/MessageApiContext.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { Message, Reply } from '@shared/types';
 import { useTranslation } from 'react-i18next';
+import MCPManagementSheet from './MCPManagementSheet';
+import { MCPServer } from '@shared/config/friday';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip.tsx';
 
 const ChatPage = () => {
     const { t } = useTranslation();
@@ -21,8 +29,10 @@ const ChatPage = () => {
         cleaningHistory,
         cleanCurrentHistory,
     } = useFridayAppRoom();
+    const { fridayConfig, saveFridayConfig } = useFridaySettingRoom();
     const navigate = useNavigate();
     const { messageApi } = useMessageApi();
+    const [mcpSheetOpen, setMcpSheetOpen] = useState(false);
 
     // 判断下当前是早上、晚上、还是下午，获取morning，afternoon，evening 字段
     const hour = new Date().getHours();
@@ -54,6 +64,21 @@ const ChatPage = () => {
             ],
         } as Reply;
     });
+
+    const handleMcpSave = async (servers: MCPServer[]) => {
+        if (fridayConfig) {
+            const updatedConfig = {
+                ...fridayConfig,
+                mcpServers: servers,
+            };
+            const result = await saveFridayConfig(updatedConfig);
+            if (result.success) {
+                messageApi.success(t('message.friday.success-save-config'));
+            } else {
+                messageApi.error(result.message);
+            }
+        }
+    };
 
     return (
         <div className="flex flex-row w-full h-full flex-1 bg-[rgb(246,247,248)]">
@@ -96,7 +121,7 @@ const ChatPage = () => {
                     userAvatarRight={false}
                 />
             </div>
-            <div className="flex w-[48px] h-full border-l border-l-border py-2 justify-center gap-y-2 bg-white">
+            <div className="flex w-[48px] h-full border-l border-l-border py-2 items-start gap-y-2 bg-white flex-col">
                 <Button
                     variant="ghost"
                     size="icon-sm"
@@ -113,7 +138,31 @@ const ChatPage = () => {
                 >
                     <SettingsIcon width={15} height={15} />
                 </Button>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => setMcpSheetOpen(true)}
+                            className="flex flex-col items-center justify-center gap-0 hover:bg-accent p-1"
+                        >
+                            <Plug2Icon className="w-3 h-3 text-muted-foreground" />
+                            <span className="text-[10px] font-semibold tracking-tight text-foreground leading-none">
+                                MCP
+                            </span>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="left">
+                        <p>{t('tooltip.button.mcp-management')}</p>
+                    </TooltipContent>
+                </Tooltip>
             </div>
+            <MCPManagementSheet
+                open={mcpSheetOpen}
+                onOpenChange={setMcpSheetOpen}
+                mcpServers={fridayConfig?.mcpServers || []}
+                onSave={handleMcpSave}
+            />
         </div>
     );
 };

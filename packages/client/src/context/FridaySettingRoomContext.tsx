@@ -75,6 +75,10 @@ export function FridaySettingRoomContextProvider({ children }: Props) {
                     SocketEvents.client.saveFridayConfig,
                     config,
                     (response: ResponseBody) => {
+                        if (response.success) {
+                            // 保存成功后更新本地状态
+                            setFridayConfig(config);
+                        }
                         resolve(response);
                     },
                 );

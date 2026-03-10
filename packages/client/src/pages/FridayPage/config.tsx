@@ -93,3 +93,68 @@ export const booleanOptions: BooleanOption[] = [
     { label: 'True', value: 'true' },
     { label: 'False', value: 'false' },
 ];
+
+export const embeddingProviderOptions: LlmProviderOption[] = [
+    {
+        label: (
+            <ModelOption
+                logo={<QwenLogo width={17} height={17} />}
+                name="DashScope"
+            />
+        ),
+        value: 'dashscope',
+    },
+    {
+        label: (
+            <ModelOption
+                logo={<OpenAILogo width={17} height={17} />}
+                name="OpenAI"
+            />
+        ),
+        value: 'openai',
+    },
+    {
+        label: (
+            <ModelOption
+                logo={<OllamaLogo width={17} height={17} />}
+                name="Ollama"
+            />
+        ),
+        value: 'ollama',
+    },
+    {
+        label: (
+            <ModelOption
+                logo={<GoogleLogo width={17} height={17} />}
+                name="Google Gemini"
+            />
+        ),
+        value: 'gemini',
+    },
+];
+
+export const vectorStoreProviderOptions = [
+    { label: 'Qdrant', value: 'qdrant' },
+    { label: 'ChromaDB', value: 'chroma' },
+    { label: 'PGVector', value: 'pgvector' },
+    { label: 'Pinecone', value: 'pinecone' },
+    { label: 'MongoDB', value: 'mongodb' },
+    { label: 'Milvus', value: 'milvus' },
+    { label: 'Baidu', value: 'baidu' },
+    { label: 'Cassandra', value: 'cassandra' },
+    { label: 'Neptune Analytics', value: 'neptune' },
+    { label: 'Upstash Vector', value: 'upstash_vector' },
+    { label: 'Azure AI Search', value: 'azure_ai_search' },
+    { label: 'Azure MySQL', value: 'azure_mysql' },
+    { label: 'Redis', value: 'redis' },
+    { label: 'Valkey', value: 'valkey' },
+    { label: 'Databricks', value: 'databricks' },
+    { label: 'Elasticsearch', value: 'elasticsearch' },
+    { label: 'Vertex AI Vector Search', value: 'vertex_ai_vector_search' },
+    { label: 'OpenSearch', value: 'opensearch' },
+    { label: 'Supabase', value: 'supabase' },
+    { label: 'Weaviate', value: 'weaviate' },
+    { label: 'FAISS', value: 'faiss' },
+    { label: 'Langchain', value: 'langchain' },
+    { label: 'S3 Vectors', value: 's3_vectors' },
+];

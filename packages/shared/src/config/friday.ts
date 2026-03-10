@@ -5,6 +5,22 @@ import path from 'path';
 import { runPythonScript } from '../../../server/src/trpc/socket';
 import { execSync } from 'child_process';
 
+export interface MCPServer {
+    name: string;
+    type: 'local' | 'remote';
+    enabled: boolean;
+    // Local MCP configuration
+    config?: string; // JSON string for local MCP configuration
+    // Remote MCP configuration
+    remoteConfigMode?: 'simple' | 'advanced'; // Configuration mode
+    // Simple mode fields
+    url?: string;
+    transportType?: 'streamablehttp' | 'sse';
+    headers?: Record<string, string>; // Key-value pairs for headers
+    // Advanced mode field
+    remoteConfig?: string; // Complete JSON configuration (url, transport, headers, etc.)
+}
+
 export interface FridayConfig {
     pythonEnv: string;
     mainScriptPath?: string;
@@ -12,6 +28,19 @@ export interface FridayConfig {
     modelName: string;
     writePermission: boolean;
     baseUrl?: string;
+    mcpServers?: MCPServer[];
+    // Long-term memory configuration
+    longTermMemory?: boolean;
+    embeddingProvider?: string;
+    embeddingModelName?: string;
+    embeddingApiKey?: string;
+    embeddingKwargs?: { [key: string]: string | number | boolean };
+    // Vector store configuration
+    vectorStoreProvider?: string;
+    vectorStoreKwargs?: { [key: string]: string | number | boolean };
+    // Local storage configuration (for Qdrant only)
+    saveToLocal?: boolean;
+    localStoragePath?: string;
 }
 
 export class FridayConfigManager {
