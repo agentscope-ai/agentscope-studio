@@ -137,6 +137,8 @@
             "value-name": "值名称",
             "missing-value-name": "缺少值名称",
             "check-only-number": "只能输入数字",
+            "invalid-json": "无效的 JSON 格式",
+            "json-value-placeholder": "输入 JSON 格式的值，例如 {\"key\": \"value\"}",
             "add-form-list-btn": "添加关键字参数"
         }
     },
