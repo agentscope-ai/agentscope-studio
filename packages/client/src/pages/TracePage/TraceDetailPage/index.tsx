@@ -34,6 +34,11 @@ import { Tabs } from 'antd';
 import PageTitleSpan from '@/components/spans/PageTitleSpan';
 import { Button } from '@/components/ui/button.tsx';
 import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/collapsible.tsx';
+import {
     Dialog,
     DialogContent,
     DialogHeader,
@@ -55,12 +60,18 @@ import {
 } from '@/components/ui/tooltip.tsx';
 import { useTraceContext } from '@/context/TraceContext';
 import {
+    ChatMessagesList,
+    isChatOp,
+    parseMessages,
+    type ChatMessage,
+} from './ChatMessagesList';
+import {
     copyToClipboard,
     formatDateTime,
     formatDurationWithUnit,
 } from '@/utils/common';
 import { SpanData } from '@shared/types/trace';
-import { flattenObject, getNestedValue } from '@shared/utils/objectUtils';
+import { getNestedValue } from '@shared/utils/objectUtils';
 import JsonView from '@uiw/react-json-view';
 
 interface SpanTreeNode {
@@ -170,13 +181,12 @@ const getStatusIcon = (statusCode: number) => {
     return null;
 };
 
-/** Flatten attributes to key-value pairs for list display */
+/** Attributes 转 key-value 列表，不递归展开嵌套对象 */
 function flattenAttributes(
     attrs: Record<string, unknown> | undefined,
 ): Array<{ key: string; value: unknown }> {
     if (!attrs || typeof attrs !== 'object') return [];
-    const flat = flattenObject(attrs);
-    return Object.entries(flat)
+    return Object.entries(attrs)
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([key, value]) => ({ key, value }));
 }
@@ -206,6 +216,66 @@ function tryParseJson(str: string): object | null {
         }
     }
     return null;
+}
+
+/** 格式化用于复制的值：字符串原样返回，对象用 JSON 格式化 */
+function formatForCopy(value: unknown): string {
+    if (typeof value === 'string') return value;
+    return JSON.stringify(value ?? null, null, 2);
+}
+
+/** 根据值类型渲染：JSON 用 JsonView，否则用纯文本 */
+function ValueDisplay({
+    value,
+    className = '',
+}: {
+    value: unknown;
+    className?: string;
+}) {
+    if (value === undefined || value === null) {
+        return (
+            <div className={`text-sm text-muted-foreground ${className}`}>—</div>
+        );
+    }
+    if (typeof value === 'string') {
+        const parsed = tryParseJson(value);
+        if (parsed) {
+            return (
+                <div className={`rounded-md border border-border bg-muted/30 p-3 overflow-x-auto text-xs ${className}`}>
+                    <JsonView
+                        value={parsed}
+                        displayDataTypes={false}
+                        displayObjectSize={false}
+                        collapsed={false}
+                        shortenTextAfterLength={0}
+                    />
+                </div>
+            );
+        }
+        return (
+            <pre className={`m-0 text-sm whitespace-pre-wrap break-words font-sans ${className}`}>
+                {value}
+            </pre>
+        );
+    }
+    if (typeof value === 'object') {
+        return (
+            <div className={`rounded-md border border-border bg-muted/30 p-3 overflow-x-auto text-xs ${className}`}>
+                <JsonView
+                    value={value as object}
+                    displayDataTypes={false}
+                    displayObjectSize={false}
+                    collapsed={false}
+                    shortenTextAfterLength={0}
+                />
+            </div>
+        );
+    }
+    return (
+        <pre className={`m-0 text-sm font-sans ${className}`}>
+            {String(value)}
+        </pre>
+    );
 }
 
 interface AttributesKeyValueListProps {
@@ -432,6 +502,8 @@ const AttributesKeyValueList = memo(function AttributesKeyValueList({
                                                 value={parsed}
                                                 displayDataTypes={false}
                                                 displayObjectSize={false}
+                                                collapsed={false}
+                                                shortenTextAfterLength={0}
                                             />
                                         );
                                     }
@@ -471,7 +543,7 @@ const TraceDetailPage = ({
     const [selectedSpanId, setSelectedSpanId] = useState<string | null>(null);
     const [idPanelOpen, setIdPanelOpen] = useState(true);
     const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
-    const [activeTab, setActiveTab] = useState<string>('metadata');
+    const [activeTab, setActiveTab] = useState<string>('chatHistory');
     const [isWaterfallView, setIsWaterfallView] = useState(false);
     // 瀑布图操作类型过滤：空 Set 表示显示全部，非空则仅显示选中的类型
     const [waterfallOpFilter, setWaterfallOpFilter] = useState<Set<string>>(
@@ -481,6 +553,11 @@ const TraceDetailPage = ({
     const [collapsedReactSteps, setCollapsedReactSteps] = useState<Set<string>>(
         new Set(),
     );
+    // JSON 弹窗：用于在弹窗中查看 Input/Output/Message 的原始 JSON
+    const [jsonModalContent, setJsonModalContent] = useState<{
+        title: string;
+        value: unknown;
+    } | null>(null);
 
     // Sync traceId prop with context's selectedTraceId
     useEffect(() => {
@@ -666,6 +743,37 @@ const TraceDetailPage = ({
     // Display span (selected or root)
     const displaySpan = selectedSpan || rootSpan;
 
+    // 当 operation 为 react 或不存在时，切换到 Attributes 页签；当 Metadata 页签被隐藏时，若当前在 metadata 则切换
+    useEffect(() => {
+        if (!displaySpan?.attributes) return;
+        const op = (getNestedValue(
+            displaySpan.attributes,
+            'gen_ai.operation.name',
+        ) ??
+            displaySpan.attributes['gen_ai.operation.name']) as
+            | string
+            | undefined;
+        const hasAgentscopeMetadata =
+            getNestedValue(
+                displaySpan.attributes,
+                'agentscope.function.input',
+            ) !== undefined ||
+            getNestedValue(
+                displaySpan.attributes,
+                'agentscope.function.output',
+            ) !== undefined;
+        const hideChatHistory =
+            !op || op === 'react' || op === 'format';
+        if (hideChatHistory && activeTab === 'chatHistory') {
+            setActiveTab(hasAgentscopeMetadata ? 'metadata' : 'attributes');
+        } else if (
+            activeTab === 'metadata' &&
+            !hasAgentscopeMetadata
+        ) {
+            setActiveTab(hideChatHistory ? 'attributes' : 'chatHistory');
+        }
+    }, [displaySpan, activeTab]);
+
     const handleCopy = async (text: string) => {
         const success = await copyToClipboard(text);
         if (success) {
@@ -688,42 +796,44 @@ const TraceDetailPage = ({
         return 'bg-muted text-muted-foreground';
     };
 
+    const getGenAiOp = (span: SpanData): string | undefined =>
+        (getNestedValue(span.attributes ?? {}, 'gen_ai.operation.name') ??
+            (span.attributes ?? {})['gen_ai.operation.name']) as
+            | string
+            | undefined;
+
     const extractInput = (span: SpanData): unknown => {
         const attrs = span.attributes || {};
+        const op = getGenAiOp(span);
+        if (op === 'chain') {
+            const val = getNestedValue(attrs, 'gen_ai.input.value') ??
+                getNestedValue(attrs, 'input.value');
+            return val;
+        }
+        if (op === 'execute_tool') {
+            return getNestedValue(attrs, 'gen_ai.tool.call.arguments');
+        }
         const genAiMessages = getNestedValue(attrs, 'gen_ai.input.messages');
         if (genAiMessages !== undefined) {
             return genAiMessages;
         }
-        const agentscopeInput = getNestedValue(
-            attrs,
-            'agentscope.function.input',
-        );
-        if (agentscopeInput !== undefined) {
-            return agentscopeInput;
-        }
-        const directInput = getNestedValue(attrs, 'input');
-        if (directInput !== undefined) {
-            return directInput;
-        }
-        return attrs;
+        return undefined;
     };
 
     const extractOutput = (span: SpanData): unknown => {
         const attrs = span.attributes || {};
+        const op = getGenAiOp(span);
+        if (op === 'chain') {
+            const val = getNestedValue(attrs, 'gen_ai.output.value') ??
+                getNestedValue(attrs, 'output.value');
+            return val;
+        }
+        if (op === 'execute_tool') {
+            return getNestedValue(attrs, 'gen_ai.tool.call.result');
+        }
         const genAiMessages = getNestedValue(attrs, 'gen_ai.output.messages');
         if (genAiMessages !== undefined) {
             return genAiMessages;
-        }
-        const agentscopeOutput = getNestedValue(
-            attrs,
-            'agentscope.function.output',
-        );
-        if (agentscopeOutput !== undefined) {
-            return agentscopeOutput;
-        }
-        const directOutput = getNestedValue(attrs, 'output');
-        if (directOutput !== undefined) {
-            return directOutput;
         }
         return null;
     };
@@ -1380,94 +1490,490 @@ const TraceDetailPage = ({
 
                         {/* Metadata / Attributes Tabs */}
                         <Tabs
-                            activeKey={activeTab}
+                            activeKey={(() => {
+                                const op = displaySpan
+                                    ? getGenAiOp(displaySpan)
+                                    : undefined;
+                                const hideChatHistory =
+                                    !displaySpan ||
+                                    !op ||
+                                    op === 'react' ||
+                                    op === 'format';
+                                const hasMetadata =
+                                    displaySpan &&
+                                    (getNestedValue(
+                                        displaySpan.attributes ?? {},
+                                        'agentscope.function.input',
+                                    ) !== undefined ||
+                                        getNestedValue(
+                                            displaySpan.attributes ?? {},
+                                            'agentscope.function.output',
+                                        ) !== undefined);
+                                if (
+                                    activeTab === 'chatHistory' &&
+                                    hideChatHistory
+                                ) {
+                                    return hasMetadata
+                                        ? 'metadata'
+                                        : 'attributes';
+                                }
+                                if (
+                                    activeTab === 'metadata' &&
+                                    !hasMetadata
+                                ) {
+                                    return hideChatHistory
+                                        ? 'attributes'
+                                        : 'chatHistory';
+                                }
+                                return activeTab;
+                            })()}
                             onChange={setActiveTab}
                             className="[&_.ant-tabs-tab]:text-base [&_.ant-tabs-tab]:font-medium"
-                            items={[
-                                {
-                                    key: 'metadata',
-                                    label: t('trace.tabChatHistory'),
-                                    children: (
-                                        <div className="space-y-4 pt-4">
-                                            <div>
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <div className="text-sm font-medium">
-                                                        {t('common.input')}
+                            items={
+                                (() => {
+                                    const op = displaySpan
+                                        ? getGenAiOp(displaySpan)
+                                        : undefined;
+                                    const showChatHistoryTab =
+                                        !!op &&
+                                        op !== 'react' &&
+                                        op !== 'format';
+                                    const agentscopeInput = getNestedValue(
+                                        displaySpan.attributes ?? {},
+                                        'agentscope.function.input',
+                                    );
+                                    const agentscopeOutput = getNestedValue(
+                                        displaySpan.attributes ?? {},
+                                        'agentscope.function.output',
+                                    );
+                                    const showMetadataTab =
+                                        agentscopeInput !== undefined ||
+                                        agentscopeOutput !== undefined;
+                                    const chatHistoryTab = showChatHistoryTab
+                                        ? {
+                                              key: 'chatHistory',
+                                              label: t('trace.tabChatHistory'),
+                                              children: (() => {
+                                                  const opInner = getGenAiOp(
+                                                      displaySpan,
+                                                  );
+                                                  const showChainView =
+                                                      opInner === 'chain';
+                                                  const showValueView =
+                                                      showChainView ||
+                                                      opInner === 'execute_tool';
+                                        const useChatView = isChatOp(
+                                            displaySpan,
+                                        );
+                                        const inputMessages = useChatView
+                                            ? parseMessages(
+                                                  getNestedValue(
+                                                      displaySpan.attributes ??
+                                                          {},
+                                                      'gen_ai.input.messages',
+                                                  ),
+                                              )
+                                            : [];
+                                        const outputMessages = useChatView
+                                            ? parseMessages(
+                                                  getNestedValue(
+                                                      displaySpan.attributes ??
+                                                          {},
+                                                      'gen_ai.output.messages',
+                                                  ),
+                                              )
+                                            : [];
+                                        const showChatView =
+                                            useChatView &&
+                                            (inputMessages.length > 0 ||
+                                                outputMessages.length > 0);
+
+                                        return (
+                                            <div className="space-y-4 pt-4">
+                                                <Collapsible defaultOpen className="group">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <CollapsibleTrigger className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                                                            <ChevronDownIcon className="size-4 shrink-0 transition-transform group-data-[state=closed]:rotate-[-90deg]" />
+                                                            <span className="text-sm font-medium">
+                                                                {t('common.input')}
+                                                            </span>
+                                                            {showChatView &&
+                                                                !showValueView && (
+                                                                <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
+                                                                    {inputMessages.length}{' '}
+                                                                    {inputMessages.length === 1
+                                                                        ? t('common.message')
+                                                                        : t('common.messages')}
+                                                                </span>
+                                                            )}
+                                                        </CollapsibleTrigger>
+                                                        <div className="flex items-center gap-0.5">
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon-sm"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setJsonModalContent({
+                                                                                title: t('common.input'),
+                                                                                value:
+                                                                                    extractInput(
+                                                                                        displaySpan,
+                                                                                    ),
+                                                                            });
+                                                                        }}
+                                                                        className="h-6 w-6"
+                                                                    >
+                                                                        <Maximize2 className="size-3" />
+                                                                    </Button>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    {t(
+                                                                        'trace.viewInModal',
+                                                                    )}
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon-sm"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleCopy(
+                                                                        formatForCopy(
+                                                                            extractInput(
+                                                                                displaySpan,
+                                                                            ),
+                                                                        ),
+                                                                    );
+                                                                }}
+                                                                className="h-6 w-6"
+                                                            >
+                                                                <CopyIcon className="size-3" />
+                                                            </Button>
+                                                        </div>
                                                     </div>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon-sm"
-                                                        onClick={() =>
-                                                            handleCopy(
-                                                                JSON.stringify(
-                                                                    extractInput(
-                                                                        displaySpan,
-                                                                    ),
-                                                                    null,
-                                                                    2,
-                                                                ),
-                                                            )
-                                                        }
-                                                        className="h-6 w-6"
-                                                    >
-                                                        <CopyIcon className="size-3" />
-                                                    </Button>
-                                                </div>
-                                                <div className="bg-muted p-3 rounded-md overflow-auto max-h-[300px] text-xs">
-                                                    <JsonView value={(extractInput(displaySpan) ?? {}) as object} displayDataTypes={false} displayObjectSize={false} />
-                                                </div>
-                                            </div>
-                                            <Separator />
-                                            <div>
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <div className="text-sm font-medium">
-                                                        {t('common.output')}
+                                                    <CollapsibleContent>
+                                                        {showValueView ? (
+                                                            <ValueDisplay
+                                                                value={extractInput(
+                                                                    displaySpan,
+                                                                )}
+                                                                className="bg-muted p-3 rounded-md"
+                                                            />
+                                                        ) : showChatView ? (
+                                                            <ChatMessagesList
+                                                                messages={
+                                                                    inputMessages
+                                                                }
+                                                                onViewMessageJson={(
+                                                                    msg: ChatMessage,
+                                                                ) =>
+                                                                    setJsonModalContent(
+                                                                        {
+                                                                            title: `${t('common.input')} - ${msg.role}`,
+                                                                            value: msg,
+                                                                        },
+                                                                    )
+                                                                }
+                                                            />
+                                                        ) : (
+                                                            <ValueDisplay
+                                                                value={extractInput(
+                                                                    displaySpan,
+                                                                )}
+                                                                className="bg-muted p-3 rounded-md"
+                                                            />
+                                                        )}
+                                                    </CollapsibleContent>
+                                                </Collapsible>
+                                                <Separator />
+                                                <Collapsible defaultOpen className="group">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <CollapsibleTrigger className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                                                            <ChevronDownIcon className="size-4 shrink-0 transition-transform group-data-[state=closed]:rotate-[-90deg]" />
+                                                            <span className="text-sm font-medium">
+                                                                {t('common.output')}
+                                                            </span>
+                                                            {showChatView &&
+                                                                !showValueView && (
+                                                                <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
+                                                                    {outputMessages.length}{' '}
+                                                                    {outputMessages.length === 1
+                                                                        ? t('common.message')
+                                                                        : t('common.messages')}
+                                                                </span>
+                                                            )}
+                                                        </CollapsibleTrigger>
+                                                        <div className="flex items-center gap-0.5">
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon-sm"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setJsonModalContent({
+                                                                                title: t('common.output'),
+                                                                                value:
+                                                                                    extractOutput(
+                                                                                        displaySpan,
+                                                                                    ),
+                                                                            });
+                                                                        }}
+                                                                        className="h-6 w-6"
+                                                                    >
+                                                                        <Maximize2 className="size-3" />
+                                                                    </Button>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    {t(
+                                                                        'trace.viewInModal',
+                                                                    )}
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon-sm"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleCopy(
+                                                                        formatForCopy(
+                                                                            extractOutput(
+                                                                                displaySpan,
+                                                                            ),
+                                                                        ),
+                                                                    );
+                                                                }}
+                                                                className="h-6 w-6"
+                                                            >
+                                                                <CopyIcon className="size-3" />
+                                                            </Button>
+                                                        </div>
                                                     </div>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon-sm"
-                                                        onClick={() =>
-                                                            handleCopy(
-                                                                JSON.stringify(
-                                                                    extractOutput(
-                                                                        displaySpan,
-                                                                    ),
-                                                                    null,
-                                                                    2,
-                                                                ),
-                                                            )
-                                                        }
-                                                        className="h-6 w-6"
-                                                    >
-                                                        <CopyIcon className="size-3" />
-                                                    </Button>
-                                                </div>
-                                                <div className="bg-muted p-3 rounded-md overflow-auto max-h-[300px] text-xs">
-                                                    <JsonView value={(extractOutput(displaySpan) ?? {}) as object} displayDataTypes={false} displayObjectSize={false} />
-                                                </div>
+                                                    <CollapsibleContent>
+                                                        {showValueView ? (
+                                                            <ValueDisplay
+                                                                value={extractOutput(
+                                                                    displaySpan,
+                                                                )}
+                                                                className="bg-muted p-3 rounded-md"
+                                                            />
+                                                        ) : showChatView ? (
+                                                            <ChatMessagesList
+                                                                messages={
+                                                                    outputMessages
+                                                                }
+                                                                onViewMessageJson={(
+                                                                    msg: ChatMessage,
+                                                                ) =>
+                                                                    setJsonModalContent(
+                                                                        {
+                                                                            title: `${t('common.output')} - ${msg.role}`,
+                                                                            value: msg,
+                                                                        },
+                                                                    )
+                                                                }
+                                                            />
+                                                        ) : (
+                                                            <ValueDisplay
+                                                                value={extractOutput(
+                                                                    displaySpan,
+                                                                )}
+                                                                className="bg-muted p-3 rounded-md"
+                                                            />
+                                                        )}
+                                                    </CollapsibleContent>
+                                                </Collapsible>
                                             </div>
-                                        </div>
-                                    ),
-                                },
-                                {
-                                    key: 'attributes',
-                                    label: t('trace.tabAttributes'),
-                                    children: (
-                                        <div className="pt-4">
-                                            <AttributesKeyValueList
-                                                attributes={
-                                                    displaySpan.attributes as Record<
-                                                        string,
-                                                        unknown
-                                                    >
-                                                }
-                                                onCopy={handleCopy}
-                                            />
-                                        </div>
-                                    ),
-                                },
-                            ]}
+                                                        );
+                                              })(),
+                                          }
+                                        : null;
+                                    const metadataTab = showMetadataTab
+                                        ? {
+                                              key: 'metadata',
+                                              label: t('common.metadata'),
+                                              children: (
+                                                  <div className="space-y-4 pt-4">
+                                                      {agentscopeInput !==
+                                                      undefined && (
+                                                          <div>
+                                                              <div className="flex items-center justify-between mb-2">
+                                                                  <span className="text-sm font-medium">
+                                                                      {t(
+                                                                          'common.input',
+                                                                      )}
+                                                                  </span>
+                                                                  <div className="flex items-center gap-0.5">
+                                                                      <Tooltip>
+                                                                          <TooltipTrigger asChild>
+                                                                              <Button
+                                                                                  variant="ghost"
+                                                                                  size="icon-sm"
+                                                                                  onClick={() =>
+                                                                                      setJsonModalContent(
+                                                                                          {
+                                                                                              title: `${t('common.metadata')} - ${t('common.input')}`,
+                                                                                              value: agentscopeInput,
+                                                                                          },
+                                                                                      )
+                                                                                  }
+                                                                                  className="h-6 w-6"
+                                                                              >
+                                                                                  <Maximize2 className="size-3" />
+                                                                              </Button>
+                                                                          </TooltipTrigger>
+                                                                          <TooltipContent>
+                                                                              {t(
+                                                                                  'trace.viewInModal',
+                                                                              )}
+                                                                          </TooltipContent>
+                                                                      </Tooltip>
+                                                                      <Button
+                                                                          variant="ghost"
+                                                                          size="icon-sm"
+                                                                          onClick={() =>
+                                                                              handleCopy(
+                                                                                  formatForCopy(
+                                                                                      agentscopeInput,
+                                                                                  ),
+                                                                              )
+                                                                          }
+                                                                          className="h-6 w-6"
+                                                                      >
+                                                                          <CopyIcon className="size-3" />
+                                                                      </Button>
+                                                                  </div>
+                                                              </div>
+                                                              <ValueDisplay
+                                                                  value={
+                                                                      agentscopeInput
+                                                                  }
+                                                                  className="bg-muted p-3 rounded-md"
+                                                              />
+                                                          </div>
+                                                      )}
+                                                      {agentscopeInput !==
+                                                          undefined &&
+                                                          agentscopeOutput !==
+                                                              undefined && (
+                                                              <Separator />
+                                                          )}
+                                                      {agentscopeOutput !==
+                                                      undefined && (
+                                                          <div>
+                                                              <div className="flex items-center justify-between mb-2">
+                                                                  <span className="text-sm font-medium">
+                                                                      {t(
+                                                                          'common.output',
+                                                                      )}
+                                                                  </span>
+                                                                  <div className="flex items-center gap-0.5">
+                                                                      <Tooltip>
+                                                                          <TooltipTrigger asChild>
+                                                                              <Button
+                                                                                  variant="ghost"
+                                                                                  size="icon-sm"
+                                                                                  onClick={() =>
+                                                                                      setJsonModalContent(
+                                                                                          {
+                                                                                              title: `${t('common.metadata')} - ${t('common.output')}`,
+                                                                                              value: agentscopeOutput,
+                                                                                          },
+                                                                                      )
+                                                                                  }
+                                                                                  className="h-6 w-6"
+                                                                              >
+                                                                                  <Maximize2 className="size-3" />
+                                                                              </Button>
+                                                                          </TooltipTrigger>
+                                                                          <TooltipContent>
+                                                                              {t(
+                                                                                  'trace.viewInModal',
+                                                                              )}
+                                                                          </TooltipContent>
+                                                                      </Tooltip>
+                                                                      <Button
+                                                                          variant="ghost"
+                                                                          size="icon-sm"
+                                                                          onClick={() =>
+                                                                              handleCopy(
+                                                                                  formatForCopy(
+                                                                                      agentscopeOutput,
+                                                                                  ),
+                                                                              )
+                                                                          }
+                                                                          className="h-6 w-6"
+                                                                      >
+                                                                          <CopyIcon className="size-3" />
+                                                                      </Button>
+                                                                  </div>
+                                                              </div>
+                                                              <ValueDisplay
+                                                                  value={
+                                                                      agentscopeOutput
+                                                                  }
+                                                                  className="bg-muted p-3 rounded-md"
+                                                              />
+                                                          </div>
+                                                      )}
+                                                  </div>
+                                              ),
+                                          }
+                                        : null;
+                                    const attributesTab = {
+                                        key: 'attributes',
+                                        label: t('trace.tabAttributes'),
+                                        children: (
+                                            <div className="pt-4">
+                                                <AttributesKeyValueList
+                                                    attributes={
+                                                        displaySpan.attributes as Record<
+                                                            string,
+                                                            unknown
+                                                        >
+                                                    }
+                                                    onCopy={handleCopy}
+                                                />
+                                            </div>
+                                        ),
+                                    };
+                                    return [
+                                        ...(chatHistoryTab
+                                            ? [chatHistoryTab]
+                                            : []),
+                                        ...(metadataTab
+                                            ? [metadataTab]
+                                            : []),
+                                        attributesTab,
+                                    ];
+                                })()
+                            }
                         />
+
+                        {/* JSON 弹窗：查看 Input/Output/Message 原始数据 */}
+                        <Dialog
+                            open={!!jsonModalContent}
+                            onOpenChange={(open) =>
+                                !open && setJsonModalContent(null)
+                            }
+                        >
+                            <DialogContent className="sm:max-w-3xl max-h-[80vh] flex flex-col">
+                                <DialogHeader>
+                                    <DialogTitle className="font-mono text-sm break-all">
+                                        {jsonModalContent?.title}
+                                    </DialogTitle>
+                                </DialogHeader>
+                                <div className="flex-1 overflow-auto min-h-0 rounded-md border border-border bg-muted/30 p-4">
+                                    {jsonModalContent && (
+                                        <ValueDisplay
+                                            value={jsonModalContent.value}
+                                        />
+                                    )}
+                                </div>
+                            </DialogContent>
+                        </Dialog>
                     </>
                 ) : (
                     <div className="text-center p-12 text-muted-foreground">

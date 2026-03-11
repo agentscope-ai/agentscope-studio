@@ -14,13 +14,14 @@ export default defineConfig({
         },
     },
     server: {
+        host: '127.0.0.1', // FIXME: remove
         proxy: {
             '/socket.io': {
-                target: 'http://localhost:3000',
+                target: 'http://127.0.0.1:3000',  // FIXME: remove
                 ws: true,
             },
             '/trpc': {
-                target: 'http://localhost:3000',
+                target: 'http://127.0.0.1:3000',  // FIXME: remove
                 changeOrigin: true,
             },
         },
