@@ -49,6 +49,7 @@
         "distribution": "Distribution",
         "dingtalk": "DingTalk",
         "document": "Document",
+        "documents": "Documents",
         "evaluation": "Evaluation",
         "evaluation-history": "Evaluation History",
         "friday": "Friday",
@@ -317,6 +318,8 @@
         "reactFinishReason": "Finish reason",
         "reactStep": "React Step",
         "unknown": "—",
+        "exportAsOtlp": "Export as OTLP",
+        "exportAsOtlpTooltip": "Save the entire trace as OTLP JSON format to local file",
         "filterByOpType": "Filter by operation type",
         "filterOpAll": "Show all",
         "filterOpNone": "Other",
@@ -343,6 +346,7 @@
             "week": "Last 7 days"
         },
         "tabAttributes": "Attributes",
+        "tabResources": "Resources",
         "tabChatHistory": "Chat History",
         "traceId": "Trace ID"
     },

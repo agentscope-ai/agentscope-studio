@@ -4,13 +4,19 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * Attribute paths whose values are objects that should NOT be further flattened.
  *
  * These paths represent structured data (function inputs/outputs, tool call
- * arguments/results) that must be kept as-is.
+ * arguments/results/definitions, system instructions, chat messages) that must
+ * be kept as-is.
  */
 const PRESERVE_OBJECT_PATHS = new Set([
     'agentscope.function.input',
     'agentscope.function.output',
+    'gen_ai.system_instructions',
+    'gen_ai.input.messages',
+    'gen_ai.output.messages',
     'gen_ai.tool.call.arguments',
     'gen_ai.tool.call.result',
+    'gen_ai.tool.definitions',
+    'gen_ai.retrieval.documents',
 ]);
 
 // ---------------------------------------------------------------------------
@@ -119,8 +125,9 @@ const BATCH_SIZE = 1000;
  * (`{ "gen_ai.operation.name": "chat" }`).
  *
  * Certain attribute paths whose values are meaningful objects
- * (agentscope.function.input/output, gen_ai.tool.call.arguments/result) are
- * preserved as-is and not recursively flattened.
+ * (agentscope.function.input/output, gen_ai.system_instructions,
+ * gen_ai.input.messages, gen_ai.output.messages, gen_ai.tool.call.arguments/result,
+ * gen_ai.tool.definitions) are preserved as-is and not recursively flattened.
  */
 export class FlattenSpanAttributes1750000000000 implements MigrationInterface {
     name = 'FlattenSpanAttributes1750000000000';

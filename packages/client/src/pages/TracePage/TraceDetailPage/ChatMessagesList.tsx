@@ -165,15 +165,30 @@ function renderPart(part: MessagePart, index: number): React.ReactNode {
                                 <span className="text-muted-foreground text-xs block mb-1">
                                     arguments:
                                 </span>
-                                <pre className="text-xs bg-muted/50 p-2 rounded overflow-x-auto">
-                                    {typeof part.arguments === 'string'
-                                        ? part.arguments
-                                        : JSON.stringify(
-                                              part.arguments,
-                                              null,
-                                              2,
-                                          )}
-                                </pre>
+                                <div className="text-xs bg-muted/50 p-2 rounded overflow-x-auto">
+                                    <JsonView
+                                        value={
+                                            typeof part.arguments === 'string'
+                                                ? (() => {
+                                                      try {
+                                                          return JSON.parse(
+                                                              part.arguments!,
+                                                          ) as object;
+                                                      } catch {
+                                                          return {
+                                                              raw: part
+                                                                  .arguments,
+                                                          } as object;
+                                                      }
+                                                  })()
+                                                : (part.arguments ?? {}) as object
+                                        }
+                                        displayDataTypes={false}
+                                        displayObjectSize={false}
+                                        collapsed={false}
+                                        shortenTextAfterLength={0}
+                                    />
+                                </div>
                             </div>
                         )}
                     </div>
@@ -182,12 +197,45 @@ function renderPart(part: MessagePart, index: number): React.ReactNode {
         case 'tool_call_response':
             return (
                 <PartWithLabel key={index} type={type}>
-                    <div className="text-sm">
-                        <pre className="text-xs bg-muted/50 p-2 rounded overflow-x-auto">
-                            {typeof part.response === 'string'
-                                ? part.response
-                                : JSON.stringify(part.response ?? {}, null, 2)}
-                        </pre>
+                    <div className="text-sm space-y-1.5">
+                        {part.id != null && (
+                            <div>
+                                <span className="text-muted-foreground text-xs">
+                                    id:
+                                </span>{' '}
+                                <code className="text-xs bg-muted/50 px-1 rounded">
+                                    {String(part.id)}
+                                </code>
+                            </div>
+                        )}
+                        <div>
+                            <span className="text-muted-foreground text-xs block mb-1">
+                                response:
+                            </span>
+                            <div className="text-xs bg-muted/50 p-2 rounded overflow-x-auto">
+                                <JsonView
+                                    value={
+                                        typeof part.response === 'string'
+                                            ? (() => {
+                                                  try {
+                                                      return JSON.parse(
+                                                          part.response!,
+                                                      ) as object;
+                                                  } catch {
+                                                      return {
+                                                          raw: part.response,
+                                                      } as object;
+                                                  }
+                                              })()
+                                            : (part.response ?? {}) as object
+                                    }
+                                    displayDataTypes={false}
+                                    displayObjectSize={false}
+                                    collapsed={false}
+                                    shortenTextAfterLength={0}
+                                />
+                            </div>
+                        </div>
                     </div>
                 </PartWithLabel>
             );

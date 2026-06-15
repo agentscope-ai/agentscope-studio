@@ -49,6 +49,7 @@
         "distribution": "分布",
         "dingtalk": "钉钉",
         "document": "文档",
+        "documents": "文档",
         "evaluation": "评测",
         "evaluation-history": "评测历史",
         "friday": "Friday",
@@ -311,6 +312,8 @@
         "reactFinishReason": "结束原因",
         "reactStep": "React Step",
         "unknown": "—",
+        "exportAsOtlp": "导出为 OTLP",
+        "exportAsOtlpTooltip": "将整条 Trace 以 OTLP JSON 格式保存到本地文件",
         "filterByOpType": "按操作类型过滤",
         "filterOpAll": "全部显示",
         "filterOpNone": "其他",
@@ -337,6 +340,7 @@
             "week": "最近 7 天"
         },
         "tabAttributes": "属性",
+        "tabResources": "资源",
         "tabChatHistory": "对话历史",
         "traceId": "Trace ID"
     },

@@ -4,6 +4,7 @@ import {
     Brain,
     ChartGantt,
     CheckCircle2Icon,
+    Download,
     ListFilter,
     ListTree,
     ChevronDownIcon,
@@ -66,12 +67,17 @@ import {
     type ChatMessage,
 } from './ChatMessagesList';
 import {
+    RetrievalDocumentsList,
+    parseRetrievalDocuments,
+} from './RetrievalDocumentsList';
+import {
     copyToClipboard,
     formatDateTime,
     formatDurationWithUnit,
 } from '@/utils/common';
 import { SpanData } from '@shared/types/trace';
 import { getNestedValue } from '@shared/utils/objectUtils';
+import { spansToOtlpJson } from '@shared/utils/otlpExport';
 import JsonView from '@uiw/react-json-view';
 
 interface SpanTreeNode {
@@ -784,6 +790,19 @@ const TraceDetailPage = ({
         }
     };
 
+    const handleExportOtlp = () => {
+        if (!traceData?.spans?.length) return;
+        const otlp = spansToOtlpJson(traceData.spans);
+        const json = JSON.stringify(otlp, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `trace-${traceId ?? 'export'}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
     const getStatusText = (statusCode: number): string => {
         if (statusCode === 2) return t('trace.status.error');
         if (statusCode === 1) return t('trace.status.ok');
@@ -813,6 +832,9 @@ const TraceDetailPage = ({
         if (op === 'execute_tool') {
             return getNestedValue(attrs, 'gen_ai.tool.call.arguments');
         }
+        if (op === 'retrieval') {
+            return getNestedValue(attrs, 'gen_ai.retrieval.query.text');
+        }
         const genAiMessages = getNestedValue(attrs, 'gen_ai.input.messages');
         if (genAiMessages !== undefined) {
             return genAiMessages;
@@ -830,6 +852,9 @@ const TraceDetailPage = ({
         }
         if (op === 'execute_tool') {
             return getNestedValue(attrs, 'gen_ai.tool.call.result');
+        }
+        if (op === 'retrieval') {
+            return getNestedValue(attrs, 'gen_ai.retrieval.documents');
         }
         const genAiMessages = getNestedValue(attrs, 'gen_ai.output.messages');
         if (genAiMessages !== undefined) {
@@ -1280,6 +1305,26 @@ const TraceDetailPage = ({
                             </div>
                         </div>
                     )}
+                    {traceData?.spans?.length && (
+                        <div className="mt-4">
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleExportOtlp}
+                                        className="w-full justify-center h-8"
+                                    >
+                                        <Download className="size-3.5 mr-1.5" />
+                                        {t('trace.exportAsOtlp')}
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    {t('trace.exportAsOtlpTooltip')}
+                                </TooltipContent>
+                            </Tooltip>
+                        </div>
+                    )}
                 </div>
                 {isLoading ? (
                     <div className="p-4">{t('trace.detail.loading')}</div>
@@ -1562,6 +1607,16 @@ const TraceDetailPage = ({
                                                   const showValueView =
                                                       showChainView ||
                                                       opInner === 'execute_tool';
+                                                  const showRetrievalView =
+                                                      opInner === 'retrieval';
+                                                  const retrievalDocuments =
+                                                      showRetrievalView
+                                                          ? parseRetrievalDocuments(
+                                                                extractOutput(
+                                                                    displaySpan,
+                                                                ),
+                                                            )
+                                                          : [];
                                         const useChatView = isChatOp(
                                             displaySpan,
                                         );
@@ -1598,7 +1653,8 @@ const TraceDetailPage = ({
                                                                 {t('common.input')}
                                                             </span>
                                                             {showChatView &&
-                                                                !showValueView && (
+                                                                !showValueView &&
+                                                                !showRetrievalView && (
                                                                 <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
                                                                     {inputMessages.length}{' '}
                                                                     {inputMessages.length === 1
@@ -1654,7 +1710,21 @@ const TraceDetailPage = ({
                                                         </div>
                                                     </div>
                                                     <CollapsibleContent>
-                                                        {showValueView ? (
+                                                        {showRetrievalView ? (
+                                                            <div className="bg-muted p-3 rounded-md">
+                                                                <pre className="m-0 text-sm whitespace-pre-wrap break-words font-sans">
+                                                                    {(() => {
+                                                                        const v =
+                                                                            extractInput(
+                                                                                displaySpan,
+                                                                            );
+                                                                        return v != null
+                                                                            ? String(v)
+                                                                            : '—';
+                                                                    })()}
+                                                                </pre>
+                                                            </div>
+                                                        ) : showValueView ? (
                                                             <ValueDisplay
                                                                 value={extractInput(
                                                                     displaySpan,
@@ -1696,12 +1766,22 @@ const TraceDetailPage = ({
                                                                 {t('common.output')}
                                                             </span>
                                                             {showChatView &&
-                                                                !showValueView && (
+                                                                !showValueView &&
+                                                                !showRetrievalView && (
                                                                 <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
                                                                     {outputMessages.length}{' '}
                                                                     {outputMessages.length === 1
                                                                         ? t('common.message')
                                                                         : t('common.messages')}
+                                                                </span>
+                                                            )}
+                                                            {showRetrievalView &&
+                                                                retrievalDocuments.length > 0 && (
+                                                                <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
+                                                                    {retrievalDocuments.length}{' '}
+                                                                    {retrievalDocuments.length === 1
+                                                                        ? t('common.document')
+                                                                        : t('common.documents')}
                                                                 </span>
                                                             )}
                                                         </CollapsibleTrigger>
@@ -1752,7 +1832,13 @@ const TraceDetailPage = ({
                                                         </div>
                                                     </div>
                                                     <CollapsibleContent>
-                                                        {showValueView ? (
+                                                        {showRetrievalView ? (
+                                                            <RetrievalDocumentsList
+                                                                documents={
+                                                                    retrievalDocuments
+                                                                }
+                                                            />
+                                                        ) : showValueView ? (
                                                             <ValueDisplay
                                                                 value={extractOutput(
                                                                     displaySpan,
@@ -1939,6 +2025,24 @@ const TraceDetailPage = ({
                                             </div>
                                         ),
                                     };
+                                    const resourcesTab = {
+                                        key: 'resources',
+                                        label: t('trace.tabResources'),
+                                        children: (
+                                            <div className="pt-4">
+                                                <AttributesKeyValueList
+                                                    attributes={
+                                                        (displaySpan.resource
+                                                            ?.attributes ?? {}) as Record<
+                                                            string,
+                                                            unknown
+                                                        >
+                                                    }
+                                                    onCopy={handleCopy}
+                                                />
+                                            </div>
+                                        ),
+                                    };
                                     return [
                                         ...(chatHistoryTab
                                             ? [chatHistoryTab]
@@ -1947,6 +2051,7 @@ const TraceDetailPage = ({
                                             ? [metadataTab]
                                             : []),
                                         attributesTab,
+                                        resourcesTab,
                                     ];
                                 })()
                             }
