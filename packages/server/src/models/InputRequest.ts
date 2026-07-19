@@ -22,7 +22,16 @@ export class InputRequestTable extends BaseEntity {
     @Column('json', { nullable: true })
     structuredInput: Record<string, unknown> | null;
 
-    @ManyToOne(() => RunTable, { nullable: false, onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'run_id' })
+    // Keep the foreign-key value available without requiring the relation to
+    // be explicitly loaded. The previous model used `runId` as the relation
+    // property itself, so a normal findOne() returned runId as undefined.
+    @Column({ name: 'run_id' })
     runId: string;
+
+    @ManyToOne(() => RunTable, (run) => run.inputRequests, {
+        nullable: false,
+        onDelete: 'CASCADE',
+    })
+    @JoinColumn({ name: 'run_id' })
+    run: RunTable;
 }

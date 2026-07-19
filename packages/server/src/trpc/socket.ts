@@ -175,18 +175,25 @@ export class SocketManager {
 
             socket.on(
                 SocketEvents.client.joinRunRoom,
-                async (runId: string, callback) => {
+                async (
+                    runId: string,
+                    callback?: (response: ResponseBody) => void,
+                ) => {
                     const runExist = await RunDao.doesRunExist(runId);
                     if (!runExist) {
-                        callback({
+                        callback?.({
                             success: false,
                             message: `Run ${runId} not found`,
                         });
                     } else {
-                        socket.join(`run-${runId}`);
+                        await socket.join(`run-${runId}`);
                         console.debug(
                             `${socket.id}: joined room: run-${runId}`,
                         );
+                        callback?.({
+                            success: true,
+                            message: `Joined run ${runId}`,
+                        });
 
                         // Return run data, input requests and messages to this socket/client
                         RunDao.getRunData(runId)
@@ -246,47 +253,88 @@ export class SocketManager {
                     requestId: string,
                     blocksInput: ContentBlocks,
                     structuredInput: Record<string, unknown> | null,
-                    callback,
+                    callback?: (response: ResponseBody) => void,
                 ) => {
-                    const inputRequest =
-                        await InputRequestDao.getInputRequestByRequestId(
-                            requestId,
-                        );
+                    const respond = (response: ResponseBody) => {
+                        callback?.(response);
+                    };
 
-                    if (inputRequest === null) {
-                        callback({
-                            success: false,
-                            message: `Input request ${requestId} not found`,
-                        });
-                    } else {
-                        const runId = inputRequest.runId;
-                        await InputRequestDao.deleteInputRequest(requestId);
+                    try {
+                        const inputRequest =
+                            await InputRequestDao.getInputRequestByRequestId(
+                                requestId,
+                            );
 
-                        // If input requests are empty, change the run status to finished
-                        const res = await RunDao.getRunData(runId);
-                        if (res.inputRequests.length === 0) {
-                            this.changeRunStatusAndTriggerEvents(
-                                runId,
-                                Status.RUNNING,
-                            ).catch((error) => {
-                                console.error(error);
-                                throw error;
+                        if (inputRequest === null) {
+                            respond({
+                                success: false,
+                                message: `Input request ${requestId} not found`,
                             });
+                            return;
                         }
 
-                        // Emit the input to ONLY this run's Python client
-                        // (production change, Issue 3). Previously this was
-                        // .of('/python').emit(...) which broadcast every user's
-                        // input to every connected Python process.
-                        this.io
-                            .of('/python')
-                            .to(`run-${runId}`)
+                        const runId = inputRequest.runId;
+                        const pythonNamespace = this.io.of('/python');
+                        const runRoom = `run-${runId}`;
+                        const targetSockets = await pythonNamespace
+                            .in(runRoom)
+                            .fetchSockets();
+
+                        if (targetSockets.length === 0) {
+                            respond({
+                                success: false,
+                                message: `Python client for run ${runId} is not connected`,
+                            });
+                            return;
+                        }
+
+                        // Keep the request available for retry until its owning
+                        // Python room has been confirmed to have a receiver.
+                        await InputRequestDao.deleteInputRequest(requestId);
+
+                        pythonNamespace
+                            .to(runRoom)
                             .emit(
                                 SocketEvents.server.forwardUserInput,
                                 requestId,
                                 blocksInput,
                                 structuredInput,
                             );
+
+                        console.debug(
+                            `Forwarded input request ${requestId} to /python room ${runRoom}`,
+                        );
+                        respond({
+                            success: true,
+                            message: 'User input forwarded successfully',
+                        });
+
+                        // Delivery has succeeded. Refreshing run status is
+                        // ancillary and must not turn success into a retry.
+                        RunDao.getRunData(runId)
+                            .then((res) => {
+                                if (res.inputRequests.length === 0) {
+                                    return this.changeRunStatusAndTriggerEvents(
+                                        runId,
+                                        Status.RUNNING,
+                                    );
+                                }
+                            })
+                            .catch((error) => {
+                                console.error(
+                                    `Failed to refresh run ${runId} after forwarding input:`,
+                                    error,
+                                );
+                            });
+                    } catch (error) {
+                        console.error(
+                            `Failed to forward input request ${requestId}:`,
+                            error,
+                        );
+                        respond({
+                            success: false,
+                            message: 'Failed to forward user input',
+                        });
                     }
                 },
             );

@@ -35,6 +35,6 @@ export class RunTable extends BaseEntity {
     @OneToMany(() => SpanTable, (span) => span.conversationId)
     spans: SpanTable[];
 
-    @OneToMany(() => InputRequestTable, (inputRequest) => inputRequest.runId)
+    @OneToMany(() => InputRequestTable, (inputRequest) => inputRequest.run)
     inputRequests: InputRequestTable[];
 }

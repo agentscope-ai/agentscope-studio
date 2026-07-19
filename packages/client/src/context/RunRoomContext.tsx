@@ -979,24 +979,42 @@ export function RunRoomContextProvider({ children }: Props) {
         blocksInput: ContentBlocks,
         structuredInput: Record<string, unknown> | null,
     ) => {
-        if (!socket) {
+        if (!socket?.connected) {
             messageApi.error(
                 'Server is not connected, please refresh the page.',
             );
         } else {
             stopAllSpeech();
-            socket.emit(
-                SocketEvents.client.sendUserInputToServer,
-                requestId,
-                blocksInput,
-                structuredInput,
-            );
-            // Update the request queue
-            setInputRequests((prevRequests) =>
-                prevRequests.filter(
-                    (request) => request.requestId !== requestId,
-                ),
-            );
+            socket
+                .timeout(10_000)
+                .emit(
+                    SocketEvents.client.sendUserInputToServer,
+                    requestId,
+                    blocksInput,
+                    structuredInput,
+                    (error: Error | null, response: ResponseBody) => {
+                        if (error) {
+                            messageApi.error(
+                                'Timed out while forwarding user input.',
+                            );
+                            return;
+                        }
+
+                        if (!response?.success) {
+                            messageApi.error(
+                                response?.message ||
+                                    'Failed to forward user input.',
+                            );
+                            return;
+                        }
+
+                        setInputRequests((prevRequests) =>
+                            prevRequests.filter(
+                                (request) => request.requestId !== requestId,
+                            ),
+                        );
+                    },
+                );
         }
     };
 
