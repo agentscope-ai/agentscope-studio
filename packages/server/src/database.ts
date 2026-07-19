@@ -11,38 +11,62 @@ import { ReplyTable } from './models/Reply';
 import { RunTable } from './models/Run';
 import { RunView } from './models/RunView';
 import { SpanTable } from './models/Trace';
+import { RuntimeConfig } from '../../shared/src';
 
 export const initializeDatabase = async (
     databaseConfig: DataSourceOptions,
 ): Promise<void> => {
     try {
+        const isSqlite = databaseConfig.type === 'better-sqlite3';
+
+        // Portable tables (work on both sqlite and mysql).
+        const baseEntities = [
+            RunTable,
+            MessageTable,
+            ReplyTable,
+            InputRequestTable,
+            SpanTable,
+            FridayAppMessageTable,
+            FridayAppReplyTable,
+        ];
+
+        // These ViewEntities use SQLite-only SQL (strftime, recursive date(),
+        // json_group_array, ...). They power dashboard/analytics only and are
+        // NOT on the delivery path, so they are registered for sqlite only.
+        // On MySQL they are skipped so the server can boot.
+        const sqliteOnlyViews = [
+            RunView,
+            ModelInvocationView,
+            FridayAppReplyView,
+        ];
+
+        const entities = isSqlite
+            ? [...baseEntities, ...sqliteOnlyViews]
+            : baseEntities;
+
         const options = {
             ...databaseConfig,
-            entities: [
-                RunTable,
-                RunView,
-                MessageTable,
-                ReplyTable,
-                InputRequestTable,
-                SpanTable,
-                ModelInvocationView,
-                FridayAppMessageTable,
-                FridayAppReplyTable,
-                FridayAppReplyView,
-            ],
-            synchronize: true,
-            migrations: migrations,
-            migrationsRun: true, // Run migrations automatically
+            entities,
+            // synchronize/migrations are driven by RuntimeConfig. The bundled
+            // migrations are SQLite-oriented, so they run for sqlite only.
+            synchronize: RuntimeConfig.dbSynchronize,
+            migrations: RuntimeConfig.dbRunMigrations ? migrations : [],
+            migrationsRun: RuntimeConfig.dbRunMigrations,
             logging: false,
         };
 
-        const dataSource = new DataSource(options);
+        const dataSource = new DataSource(options as DataSourceOptions);
         await dataSource.initialize();
 
         const printingOptions = {
             ...options,
             entities: undefined,
             migrations: undefined,
+            // Never expose database credentials in terminal or service logs.
+            password:
+                'password' in options && options.password
+                    ? '<redacted>'
+                    : undefined,
         };
         console.debug(
             `Database initialized with options: ${JSON.stringify(printingOptions, null, 2)}`,

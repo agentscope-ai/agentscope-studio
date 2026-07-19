@@ -15,7 +15,12 @@ export function SocketContextProvider({ children }: { children: ReactNode }) {
     const [socket, setSocket] = useState<Socket | null>(null);
 
     useEffect(() => {
-        const newSocket = io(ClientConfig.socketPath);
+        // The server defaults to WebSocket-only operation so horizontally
+        // scaled deployments do not require sticky sessions. Socket.IO
+        // otherwise starts with polling, which the server correctly rejects.
+        const newSocket = io(ClientConfig.socketPath, {
+            transports: ['websocket'],
+        });
         setSocket(newSocket);
 
         return () => {

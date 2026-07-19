@@ -1,6 +1,9 @@
 import { spawn } from 'child_process';
 import { Server as HttpServer } from 'http';
 import { Server } from 'socket.io';
+import { createAdapter } from '@socket.io/redis-adapter';
+import { createClient } from 'redis';
+import { RuntimeConfig } from '../../../shared/src/config/server';
 import {
     AudioBlock,
     ContentBlocks,
@@ -45,13 +48,41 @@ export class SocketManager {
         this.io.of('/friday').emit(SocketEvents.server.interruptReply);
     }
 
-    static init(httpServer: HttpServer) {
+    static async init(httpServer: HttpServer) {
         this.io = new Server(httpServer, {
             cors: {
-                origin: '*',
+                origin: RuntimeConfig.corsOrigin,
             },
-            maxHttpBufferSize: Infinity,
+            // Cap the per-message buffer (was Infinity) to prevent trivial
+            // memory-exhaustion. Tune via SOCKET_MAX_BUFFER_BYTES.
+            maxHttpBufferSize: RuntimeConfig.socketMaxHttpBufferSize,
+            // websocket-only by default => no sticky sessions needed when
+            // running multiple instances behind a load balancer.
+            transports: RuntimeConfig.socketTransports as (
+                'websocket' | 'polling'
+            )[],
         });
+
+        // Redis adapter: when REDIS_URL is set, room broadcasts fan out across
+        // every Studio instance, enabling horizontal scaling. Without it, the
+        // server runs single-instance exactly as before.
+        if (RuntimeConfig.redisUrl) {
+            try {
+                const pubClient = createClient({ url: RuntimeConfig.redisUrl });
+                const subClient = pubClient.duplicate();
+                await Promise.all([pubClient.connect(), subClient.connect()]);
+                this.io.adapter(createAdapter(pubClient, subClient));
+                console.debug(
+                    `Socket.IO Redis adapter connected at ${RuntimeConfig.redisUrl}`,
+                );
+            } catch (error) {
+                console.error(
+                    'Failed to initialize Socket.IO Redis adapter. ' +
+                        'Falling back to single-instance in-memory adapter.',
+                    error,
+                );
+            }
+        }
 
         const fridayNamespace = this.io.of('/friday');
         fridayNamespace.on('connection', (socket) => {
@@ -67,6 +98,14 @@ export class SocketManager {
         pythonNamespace.on('connection', (socket) => {
             const runId = socket.handshake.auth.run_id;
             console.debug(`${socket.id}: Python client connected`);
+
+            // Production change (Issue 3): join a per-run room so user input can
+            // be routed to ONLY this run's Python process instead of being
+            // broadcast to every connected Python client. This removes the
+            // cross-tenant data transit and the O(N) fan-out.
+            if (runId) {
+                socket.join(`run-${runId}`);
+            }
 
             socket.on('disconnect', async () => {
                 // Delete the input requests
@@ -184,12 +223,19 @@ export class SocketManager {
                             });
 
                         // Return model invocation data
-                        SpanDao.getModelInvocationData(runId).then((data) => {
-                            socket.emit(
-                                SocketEvents.server.pushModelInvocationData,
-                                data,
-                            );
-                        });
+                        SpanDao.getModelInvocationData(runId)
+                            .then((data) => {
+                                socket.emit(
+                                    SocketEvents.server.pushModelInvocationData,
+                                    data,
+                                );
+                            })
+                            .catch((error) => {
+                                console.error(
+                                    `Failed to load model invocation data for run ${runId}:`,
+                                    error,
+                                );
+                            });
                     }
                 },
             );
@@ -228,9 +274,13 @@ export class SocketManager {
                             });
                         }
 
-                        // Emit the input to the python client
+                        // Emit the input to ONLY this run's Python client
+                        // (production change, Issue 3). Previously this was
+                        // .of('/python').emit(...) which broadcast every user's
+                        // input to every connected Python process.
                         this.io
                             .of('/python')
+                            .to(`run-${runId}`)
                             .emit(
                                 SocketEvents.server.forwardUserInput,
                                 requestId,
@@ -676,6 +726,9 @@ export class SocketManager {
     }
 
     static broadcastOverviewDataToDashboardRoom() {
+        // Production change: the overview/dashboard uses SQLite-only views that
+        // are not registered on MySQL. This is not on the delivery path, so a
+        // failure here must never break run registration / message delivery.
         this._getOverViewData()
             .then((res) => {
                 this.io
@@ -684,8 +737,10 @@ export class SocketManager {
                     .emit(SocketEvents.server.pushOverviewData, res);
             })
             .catch((error) => {
-                console.error(error);
-                throw error;
+                console.warn(
+                    'Skipping overview broadcast (dashboard views unavailable on this DB):',
+                    error instanceof Error ? error.message : error,
+                );
             });
     }
 

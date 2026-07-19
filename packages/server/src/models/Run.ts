@@ -24,7 +24,9 @@ export class RunTable extends BaseEntity {
     @Column()
     pid: number;
 
-    @Column({ type: 'varchar', enum: Status, default: Status.DONE })
+    // Keep this as a portable varchar. Combining `type: 'varchar'` with
+    // `enum` makes TypeORM generate invalid MySQL syntax (`varchar (...)`).
+    @Column({ type: 'varchar', default: Status.DONE })
     status: Status;
 
     @OneToMany(() => ReplyTable, (reply) => reply.runId)

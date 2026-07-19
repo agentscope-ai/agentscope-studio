@@ -8,9 +8,11 @@ import {
     TableRequestParams,
 } from '../../../shared/src';
 import { RunTable } from '../models/Run';
-import { RunView } from '../models/RunView';
 import { checkProcessByPid } from '../utils';
 import { SpanDao } from './Trace';
+
+const toSqlTimestamp = (date: Date) =>
+    date.toISOString().slice(0, 19).replace('T', ' ');
 
 export class RunDao {
     static async doesProjectExist(project: string) {
@@ -385,8 +387,73 @@ export class RunDao {
     }
 
     static async getRunViewData() {
-        // Get run view data
-        const runViewData = await RunView.find();
+        const now = new Date();
+        const weekAgo = new Date(now);
+        weekAgo.setUTCDate(weekAgo.getUTCDate() - 7);
+        const monthAgo = new Date(now);
+        monthAgo.setUTCMonth(monthAgo.getUTCMonth() - 1);
+        const yearAgo = new Date(now);
+        yearAgo.setUTCFullYear(yearAgo.getUTCFullYear() - 1);
+        const firstChartMonth = new Date(
+            Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 11, 1),
+        );
+
+        // Use portable aggregates rather than the SQLite-only RunView. Run
+        // timestamps are stored as sortable YYYY-MM-DD HH:mm:ss strings.
+        const runStats = await RunTable.createQueryBuilder('run')
+            .select('COUNT(DISTINCT run.project)', 'totalProjects')
+            .addSelect('COUNT(*)', 'totalRuns')
+            .addSelect(
+                'COUNT(DISTINCT CASE WHEN run.timestamp > :weekAgo THEN run.project ELSE NULL END)',
+                'projectsWeekAgo',
+            )
+            .addSelect(
+                'SUM(CASE WHEN run.timestamp > :weekAgo THEN 1 ELSE 0 END)',
+                'runsWeekAgo',
+            )
+            .addSelect(
+                'COUNT(DISTINCT CASE WHEN run.timestamp > :monthAgo THEN run.project ELSE NULL END)',
+                'projectsMonthAgo',
+            )
+            .addSelect(
+                'SUM(CASE WHEN run.timestamp > :monthAgo THEN 1 ELSE 0 END)',
+                'runsMonthAgo',
+            )
+            .addSelect(
+                'COUNT(DISTINCT CASE WHEN run.timestamp > :yearAgo THEN run.project ELSE NULL END)',
+                'projectsYearAgo',
+            )
+            .addSelect(
+                'SUM(CASE WHEN run.timestamp > :yearAgo THEN 1 ELSE 0 END)',
+                'runsYearAgo',
+            )
+            .setParameters({
+                weekAgo: toSqlTimestamp(weekAgo),
+                monthAgo: toSqlTimestamp(monthAgo),
+                yearAgo: toSqlTimestamp(yearAgo),
+            })
+            .getRawOne();
+
+        const monthlyRows = await RunTable.createQueryBuilder('run')
+            .select('SUBSTR(run.timestamp, 1, 7)', 'month')
+            .addSelect('COUNT(*)', 'count')
+            .where('run.timestamp >= :firstChartMonth', {
+                firstChartMonth: toSqlTimestamp(firstChartMonth),
+            })
+            .groupBy('SUBSTR(run.timestamp, 1, 7)')
+            .getRawMany();
+
+        const monthlyCounts = new Map<string, number>(
+            monthlyRows.map((row) => [row.month, Number(row.count)]),
+        );
+        const monthlyRuns = Array.from({ length: 12 }, (_, index) => {
+            const monthDate = new Date(
+                Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - index, 1),
+            );
+            const month = monthDate.toISOString().slice(0, 7);
+            return { month, count: monthlyCounts.get(month) || 0 };
+        });
+
         // Search four projects that are updated most recently
         const recentProjects = await RunTable.createQueryBuilder('run')
             .select('run.project', 'project')
@@ -401,7 +468,15 @@ export class RunDao {
             .getRawMany();
 
         return {
-            ...runViewData[0],
+            totalProjects: Number(runStats?.totalProjects) || 0,
+            totalRuns: Number(runStats?.totalRuns) || 0,
+            projectsWeekAgo: Number(runStats?.projectsWeekAgo) || 0,
+            runsWeekAgo: Number(runStats?.runsWeekAgo) || 0,
+            projectsMonthAgo: Number(runStats?.projectsMonthAgo) || 0,
+            runsMonthAgo: Number(runStats?.runsMonthAgo) || 0,
+            projectsYearAgo: Number(runStats?.projectsYearAgo) || 0,
+            runsYearAgo: Number(runStats?.runsYearAgo) || 0,
+            monthlyRuns: JSON.stringify(monthlyRuns),
             recentProjects: recentProjects.map((project) => ({
                 name: project.project,
                 lastUpdateTime: project.lastUpdateTime,

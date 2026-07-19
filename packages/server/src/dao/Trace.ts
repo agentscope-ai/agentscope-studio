@@ -14,8 +14,10 @@ import {
     TableRequestParams,
 } from '../../../shared/src/types/trpc';
 import { getNestedValue } from '../../../shared/src/utils/objectUtils';
-import { ModelInvocationView } from '../models/ModelInvocationView';
 import { SpanTable } from '../models/Trace';
+
+const toUnixNano = (date: Date) =>
+    (BigInt(date.getTime()) * BigInt(1_000_000)).toString();
 
 export class SpanDao {
     static async saveSpans(dataArray: SpanData[]): Promise<SpanTable[]> {
@@ -222,12 +224,74 @@ export class SpanDao {
     }
 
     static async getModelInvocationViewData() {
-        const res = await ModelInvocationView.find();
-        if (res.length > 0) {
-            return res[0];
-        } else {
-            throw new Error('ModelInvocationView data not found');
-        }
+        const now = new Date();
+        const weekAgo = new Date(now);
+        weekAgo.setUTCDate(weekAgo.getUTCDate() - 7);
+        const monthAgo = new Date(now);
+        monthAgo.setUTCMonth(monthAgo.getUTCMonth() - 1);
+        const yearAgo = new Date(now);
+        yearAgo.setUTCFullYear(yearAgo.getUTCFullYear() - 1);
+
+        // Portable MySQL/SQLite aggregates replacing ModelInvocationView,
+        // whose date expressions use SQLite-only strftime().
+        const result = await SpanTable.createQueryBuilder('span')
+            .select(
+                "SUM(CASE WHEN span.operationName IN ('chat', 'chat_model') THEN 1 ELSE 0 END)",
+                'totalModelInvocations',
+            )
+            .addSelect(
+                "COALESCE(SUM(CASE WHEN span.operationName IN ('chat', 'chat_model') AND span.totalTokens IS NOT NULL THEN span.totalTokens ELSE 0 END), 0)",
+                'totalTokens',
+            )
+            .addSelect(
+                "SUM(CASE WHEN span.operationName IN ('chat', 'chat_model') AND span.totalTokens IS NOT NULL THEN 1 ELSE 0 END)",
+                'chatModelInvocations',
+            )
+            .addSelect(
+                "COALESCE(SUM(CASE WHEN span.operationName IN ('chat', 'chat_model') AND span.totalTokens IS NOT NULL AND span.startTimeUnixNano > :weekAgo THEN span.totalTokens ELSE 0 END), 0)",
+                'tokensWeekAgo',
+            )
+            .addSelect(
+                "COALESCE(SUM(CASE WHEN span.operationName IN ('chat', 'chat_model') AND span.totalTokens IS NOT NULL AND span.startTimeUnixNano > :monthAgo THEN span.totalTokens ELSE 0 END), 0)",
+                'tokensMonthAgo',
+            )
+            .addSelect(
+                "COALESCE(SUM(CASE WHEN span.operationName IN ('chat', 'chat_model') AND span.totalTokens IS NOT NULL AND span.startTimeUnixNano > :yearAgo THEN span.totalTokens ELSE 0 END), 0)",
+                'tokensYearAgo',
+            )
+            .addSelect(
+                "SUM(CASE WHEN span.operationName IN ('chat', 'chat_model') AND span.startTimeUnixNano > :weekAgo THEN 1 ELSE 0 END)",
+                'modelInvocationsWeekAgo',
+            )
+            .addSelect(
+                "SUM(CASE WHEN span.operationName IN ('chat', 'chat_model') AND span.startTimeUnixNano > :monthAgo THEN 1 ELSE 0 END)",
+                'modelInvocationsMonthAgo',
+            )
+            .addSelect(
+                "SUM(CASE WHEN span.operationName IN ('chat', 'chat_model') AND span.startTimeUnixNano > :yearAgo THEN 1 ELSE 0 END)",
+                'modelInvocationsYearAgo',
+            )
+            .setParameters({
+                weekAgo: toUnixNano(weekAgo),
+                monthAgo: toUnixNano(monthAgo),
+                yearAgo: toUnixNano(yearAgo),
+            })
+            .getRawOne();
+
+        return {
+            totalModelInvocations: Number(result?.totalModelInvocations) || 0,
+            totalTokens: Number(result?.totalTokens) || 0,
+            chatModelInvocations: Number(result?.chatModelInvocations) || 0,
+            tokensWeekAgo: Number(result?.tokensWeekAgo) || 0,
+            tokensMonthAgo: Number(result?.tokensMonthAgo) || 0,
+            tokensYearAgo: Number(result?.tokensYearAgo) || 0,
+            modelInvocationsWeekAgo:
+                Number(result?.modelInvocationsWeekAgo) || 0,
+            modelInvocationsMonthAgo:
+                Number(result?.modelInvocationsMonthAgo) || 0,
+            modelInvocationsYearAgo:
+                Number(result?.modelInvocationsYearAgo) || 0,
+        };
     }
 
     static async getModelInvocationData(conversationId: string) {
@@ -261,7 +325,7 @@ export class SpanDao {
                     CASE WHEN (span.operationName = 'chat'
                              OR span.operationName = 'chat_model')
                          AND span.totalTokens IS NOT NULL
-                    THEN CAST(COALESCE(span.inputTokens, 0) AS INTEGER)
+                    THEN COALESCE(span.inputTokens, 0)
                     ELSE 0 END
                 ), 0) as totalPromptTokens`,
                 // Total - output tokens
@@ -269,7 +333,7 @@ export class SpanDao {
                     CASE WHEN (span.operationName = 'chat'
                              OR span.operationName = 'chat_model')
                          AND span.totalTokens IS NOT NULL
-                    THEN CAST(COALESCE(span.outputTokens, 0) AS INTEGER)
+                    THEN COALESCE(span.outputTokens, 0)
                     ELSE 0 END
                 ), 0) as totalCompletionTokens`,
                 // Total - total tokens
@@ -277,44 +341,44 @@ export class SpanDao {
                     CASE WHEN (span.operationName = 'chat'
                              OR span.operationName = 'chat_model')
                          AND span.totalTokens IS NOT NULL
-                    THEN CAST(COALESCE(span.totalTokens, 0) AS INTEGER)
+                    THEN COALESCE(span.totalTokens, 0)
                     ELSE 0 END
                 ), 0) as totalTokens`,
                 // Average - input tokens
                 `COALESCE(
-                    CAST(SUM(
+                    1.0 * SUM(
                         CASE WHEN (span.operationName = 'chat'
                                  OR span.operationName = 'chat_model')
                              AND span.totalTokens IS NOT NULL
-                        THEN CAST(COALESCE(span.inputTokens, 0) AS INTEGER)
+                        THEN COALESCE(span.inputTokens, 0)
                         ELSE 0 END
-                    ) AS FLOAT) /
+                    ) /
                     NULLIF(COUNT(CASE WHEN (span.operationName = 'chat'
                                          OR span.operationName = 'chat_model')
                                      AND span.totalTokens IS NOT NULL THEN 1 END), 0)
                 , 0) as avgPromptTokens`,
                 // Average - output tokens
                 `COALESCE(
-                    CAST(SUM(
+                    1.0 * SUM(
                         CASE WHEN (span.operationName = 'chat'
                                  OR span.operationName = 'chat_model')
                              AND span.totalTokens IS NOT NULL
-                        THEN CAST(COALESCE(span.outputTokens, 0) AS INTEGER)
+                        THEN COALESCE(span.outputTokens, 0)
                         ELSE 0 END
-                    ) AS FLOAT) /
+                    ) /
                     NULLIF(COUNT(CASE WHEN (span.operationName = 'chat'
                                          OR span.operationName = 'chat_model')
                                      AND span.totalTokens IS NOT NULL THEN 1 END), 0)
                 , 0) as avgCompletionTokens`,
                 // Average - total tokens
                 `COALESCE(
-                    CAST(SUM(
+                    1.0 * SUM(
                         CASE WHEN (span.operationName = 'chat'
                                  OR span.operationName = 'chat_model')
                              AND span.totalTokens IS NOT NULL
-                        THEN CAST(COALESCE(span.totalTokens, 0) AS INTEGER)
+                        THEN COALESCE(span.totalTokens, 0)
                         ELSE 0 END
-                    ) AS FLOAT) /
+                    ) /
                     NULLIF(COUNT(CASE WHEN (span.operationName = 'chat'
                                          OR span.operationName = 'chat_model')
                                      AND span.totalTokens IS NOT NULL THEN 1 END), 0)
@@ -339,13 +403,13 @@ export class SpanDao {
             .select([
                 'span.model as modelName',
                 // Total
-                `SUM(CAST(COALESCE(span.inputTokens, 0) AS INTEGER)) as totalPromptTokens`,
-                `SUM(CAST(COALESCE(span.outputTokens, 0) AS INTEGER)) as totalCompletionTokens`,
-                `SUM(CAST(COALESCE(span.totalTokens, 0) AS INTEGER)) as totalTokens`,
+                `SUM(COALESCE(span.inputTokens, 0)) as totalPromptTokens`,
+                `SUM(COALESCE(span.outputTokens, 0)) as totalCompletionTokens`,
+                `SUM(COALESCE(span.totalTokens, 0)) as totalTokens`,
                 // Average
-                `CAST(SUM(CAST(COALESCE(span.inputTokens, 0) AS INTEGER)) AS FLOAT) / COUNT(*) as avgPromptTokens`,
-                `CAST(SUM(CAST(COALESCE(span.outputTokens, 0) AS INTEGER)) AS FLOAT) / COUNT(*) as avgCompletionTokens`,
-                `CAST(SUM(CAST(COALESCE(span.totalTokens, 0) AS INTEGER)) AS FLOAT) / COUNT(*) as avgTotalTokens`,
+                `1.0 * SUM(COALESCE(span.inputTokens, 0)) / COUNT(*) as avgPromptTokens`,
+                `1.0 * SUM(COALESCE(span.outputTokens, 0)) / COUNT(*) as avgCompletionTokens`,
+                `1.0 * SUM(COALESCE(span.totalTokens, 0)) / COUNT(*) as avgTotalTokens`,
             ])
             .where('span.conversationId = :conversationId', { conversationId })
             .andWhere(

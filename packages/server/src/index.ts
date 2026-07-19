@@ -122,8 +122,8 @@ async function initializeServer() {
             otelRouter,
         );
 
-        // Initialize SocketManager
-        SocketManager.init(httpServer);
+        // Initialize SocketManager (async: may connect a Redis adapter)
+        await SocketManager.init(httpServer);
 
         // Initialize and start OTEL gRPC server on a separate port
         const actualGrpcPort = configManager.getConfig().otelGrpcPort;

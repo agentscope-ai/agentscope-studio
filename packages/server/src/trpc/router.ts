@@ -229,7 +229,6 @@ export const appRouter = t.router({
         )
         .mutation(async ({ input }) => {
             const runExist = await RunDao.doesRunExist(input.runId);
-            console.log('Received pushMessage:', input);
             if (!runExist) {
                 throw new TRPCError({
                     code: 'BAD_REQUEST',
