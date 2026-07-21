@@ -12,5 +12,12 @@ docker
 # User data
 data
 
+# Local environment files may contain database credentials. Compose reads
+# them on the host; they must never be sent into the image build context.
+.env
+.env.*
+!.env.example
+!.env.docker.example
+
 # Database
 *.sqlite

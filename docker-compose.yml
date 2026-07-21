@@ -1,0 +1,52 @@
+name: agentscope-studio
+
+services:
+    studio:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        image: agentscope-studio:local
+        init: true
+        restart: unless-stopped
+        network_mode: host
+        environment:
+            NODE_ENV: production
+            PORT: 3001
+            OTEL_GRPC_PORT: 4317
+            HOME: /app/data
+            OPEN_BROWSER: 'false'
+
+            DB_TYPE: mysql
+            # Use the DNS name/IP of your externally deployed database. With
+            # host networking, use 127.0.0.1 when MySQL runs on this host.
+            DB_HOST: ${DB_HOST:?Set DB_HOST to the external MySQL hostname}
+            DB_PORT: ${DB_PORT:-3306}
+            DB_USERNAME: ${DB_USERNAME:?Set DB_USERNAME}
+            DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
+            DB_DATABASE: ${DB_DATABASE:-agentscope_studio}
+            DB_POOL_SIZE: ${DB_POOL_SIZE:-50}
+            DB_SYNCHRONIZE: ${DB_SYNCHRONIZE:-false}
+
+            # Leave empty for a single Studio replica, or provide the URL of
+            # the externally deployed Redis service for horizontal scaling.
+            REDIS_URL: ${REDIS_URL:-}
+            SOCKET_TRANSPORTS: ${SOCKET_TRANSPORTS:-websocket,polling}
+            SOCKET_MAX_BUFFER_BYTES: ${SOCKET_MAX_BUFFER_BYTES:-26214400}
+            CORS_ORIGIN: ${CORS_ORIGIN:-*}
+        volumes:
+            - studio_data:/app/data
+        healthcheck:
+            test:
+                [
+                    'CMD',
+                    'node',
+                    '-e',
+                    "fetch('http://127.0.0.1:3001/').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))",
+                ]
+            interval: 15s
+            timeout: 5s
+            retries: 10
+            start_period: 30s
+
+volumes:
+    studio_data:

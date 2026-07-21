@@ -158,8 +158,7 @@ async function initializeServer() {
             const actualPort = configManager.getConfig().port;
             const config = configManager.getConfig();
             const mode = (process.env.NODE_ENV || 'production') as
-                | 'development'
-                | 'production';
+                'development' | 'production';
 
             // Display startup banner
             displayBanner(
@@ -171,7 +170,10 @@ async function initializeServer() {
                 mode,
             );
 
-            if (process.env.NODE_ENV === 'production') {
+            if (
+                process.env.NODE_ENV === 'production' &&
+                process.env.OPEN_BROWSER !== 'false'
+            ) {
                 opener(`http://localhost:${actualPort}/home`);
             }
         });

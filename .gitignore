@@ -9,6 +9,7 @@ node_modules
 .DS_Store
 .env
 .env.*
+!.env.docker.example
 __pycache__/
 *.db
 *.sqlite
