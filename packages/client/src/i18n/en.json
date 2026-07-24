@@ -6,6 +6,7 @@
         "compare": "Compare",
         "confirm": "Confirm",
         "delete": "Delete",
+        "export-trace": "Export Trace",
         "focus-on-latest-run": "Focus on latest",
         "ok": "OK",
         "search": "Search",

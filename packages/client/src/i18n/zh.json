@@ -6,6 +6,7 @@
         "compare": "比较",
         "confirm": "确认",
         "delete": "删除",
+        "export-trace": "导出对话记录",
         "focus-on-latest-run": "自动切换到最新运行",
         "ok": "确认",
         "search": "搜索",

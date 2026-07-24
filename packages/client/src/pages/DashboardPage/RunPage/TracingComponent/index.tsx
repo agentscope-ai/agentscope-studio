@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { Tabs } from 'antd';
+import { Button, Tabs } from 'antd';
+import { DownloadOutlined } from '@ant-design/icons';
 
 import ReplyPanel from './ReplyPanel';
 import TracePanel from './TracePanel';
@@ -7,6 +8,8 @@ import StatisticsPanel from './StatisticsPanel';
 
 import { useTranslation } from 'react-i18next';
 import { useTour } from '@/context/TourContext.tsx';
+import { useRunRoom } from '@/context/RunRoomContext.tsx';
+import { repliesToMarkdown, downloadTextFile } from '@/utils/exportTrace.ts';
 import { Reply } from '@shared/types';
 
 interface Props {
@@ -18,7 +21,13 @@ interface Props {
 const TracingComponent = ({ activateTab, onTabChange, reply }: Props) => {
     const { t } = useTranslation();
     const { registerRunPageTourStep } = useTour();
+    const { replies, runData } = useRunRoom();
     const refView = useRef(null);
+
+    const onExportTrace = () => {
+        const markdown = repliesToMarkdown(replies, runData?.name);
+        downloadTextFile(`${runData?.name ?? 'run'}-trace.md`, markdown);
+    };
 
     useEffect(() => {
         registerRunPageTourStep({
@@ -57,11 +66,21 @@ const TracingComponent = ({ activateTab, onTabChange, reply }: Props) => {
 
     return (
         <div className="flex flex-col h-full w-full">
-            <div className="text-sm font-medium p-4">
-                {t('common.data-view')}
-                <div className="text-[12px] text-muted-foreground truncate break-all">
-                    {t('common.data-view-description')}
+            <div className="flex items-start justify-between p-4">
+                <div className="text-sm font-medium">
+                    {t('common.data-view')}
+                    <div className="text-[12px] text-muted-foreground truncate break-all">
+                        {t('common.data-view-description')}
+                    </div>
                 </div>
+                <Button
+                    size="small"
+                    icon={<DownloadOutlined />}
+                    disabled={replies.length === 0}
+                    onClick={onExportTrace}
+                >
+                    {t('action.export-trace')}
+                </Button>
             </div>
             <div ref={refView} className="w-full overflow-hidden flex-1">
                 <Tabs

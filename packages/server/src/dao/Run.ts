@@ -300,6 +300,7 @@ export class RunDao {
             const result = await RunTable.findOne({
                 where: { id: runId },
                 relations: ['replies', 'replies.messages', 'inputRequests'],
+                order: { replies: { createdAt: 'ASC' } },
             });
 
             const spans = await SpanDao.getSpansByConversationId(runId);
