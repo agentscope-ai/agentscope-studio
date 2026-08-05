@@ -177,26 +177,50 @@ export class SocketManager {
                 SocketEvents.client.joinRunRoom,
                 async (
                     runId: string,
+                    optionsOrCallback?:
+                        | { includeTraceData?: boolean }
+                        | ((response: ResponseBody) => void),
                     callback?: (response: ResponseBody) => void,
                 ) => {
+                    // Keep the old `joinRunRoom(runId, callback)` signature
+                    // working while allowing newer clients to choose whether
+                    // they receive trace-derived data.
+                    const options =
+                        typeof optionsOrCallback === 'function'
+                            ? undefined
+                            : optionsOrCallback;
+                    const respond =
+                        typeof optionsOrCallback === 'function'
+                            ? optionsOrCallback
+                            : callback;
+                    const includeTraceData = options?.includeTraceData ?? true;
+                    const runRoom = `run-${runId}`;
+                    const traceRoom = `trace-${runRoom}`;
                     const runExist = await RunDao.doesRunExist(runId);
                     if (!runExist) {
-                        callback?.({
+                        respond?.({
                             success: false,
                             message: `Run ${runId} not found`,
                         });
                     } else {
-                        await socket.join(`run-${runId}`);
+                        await socket.join(runRoom);
+                        if (includeTraceData) {
+                            await socket.join(traceRoom);
+                        } else {
+                            // Also supports changing the preference by joining
+                            // the same run again on an existing connection.
+                            await socket.leave(traceRoom);
+                        }
                         console.debug(
-                            `${socket.id}: joined room: run-${runId}`,
+                            `${socket.id}: joined room: ${runRoom} (trace data: ${includeTraceData})`,
                         );
-                        callback?.({
+                        respond?.({
                             success: true,
                             message: `Joined run ${runId}`,
                         });
 
                         // Return run data, input requests and messages to this socket/client
-                        RunDao.getRunData(runId)
+                        RunDao.getRunData(runId, includeTraceData)
                             .then((data) => {
                                 socket.emit(
                                     SocketEvents.server.pushRunData,
@@ -219,30 +243,36 @@ export class SocketManager {
                                     SocketEvents.server.pushMessages,
                                     data.replies,
                                 );
-                                socket.emit(
-                                    SocketEvents.server.pushSpans,
-                                    data.spans,
-                                );
+                                if (includeTraceData) {
+                                    socket.emit(
+                                        SocketEvents.server.pushSpans,
+                                        data.spans,
+                                    );
+                                }
                             })
                             .catch((error) => {
                                 console.error(error);
                                 throw error;
                             });
 
-                        // Return model invocation data
-                        SpanDao.getModelInvocationData(runId)
-                            .then((data) => {
-                                socket.emit(
-                                    SocketEvents.server.pushModelInvocationData,
-                                    data,
-                                );
-                            })
-                            .catch((error) => {
-                                console.error(
-                                    `Failed to load model invocation data for run ${runId}:`,
-                                    error,
-                                );
-                            });
+                        if (includeTraceData) {
+                            // Model invocation metrics are derived from spans,
+                            // so they follow the same client preference.
+                            SpanDao.getModelInvocationData(runId)
+                                .then((data) => {
+                                    socket.emit(
+                                        SocketEvents.server
+                                            .pushModelInvocationData,
+                                        data,
+                                    );
+                                })
+                                .catch((error) => {
+                                    console.error(
+                                        `Failed to load model invocation data for run ${runId}:`,
+                                        error,
+                                    );
+                                });
+                        }
                     }
                 },
             );
@@ -711,11 +741,11 @@ export class SocketManager {
             groupedSpans[spanData.conversationId].push(spanData);
         });
 
-        // Send grouped spans to each run room
+        // Send trace-derived data only to clients that opted in when joining.
         for (const runId in groupedSpans) {
             this.io
                 .of('/client')
-                .to(`run-${runId}`)
+                .to(`trace-run-${runId}`)
                 .emit(SocketEvents.server.pushSpans, groupedSpans[runId]);
             this.broadcastModelInvocationDataToRunRoom(runId);
         }
@@ -806,7 +836,7 @@ export class SocketManager {
         SpanDao.getModelInvocationData(runId).then((data) => {
             this.io
                 .of('/client')
-                .to(`run-${runId}`)
+                .to(`trace-run-${runId}`)
                 .emit(SocketEvents.server.pushModelInvocationData, data);
         });
     }

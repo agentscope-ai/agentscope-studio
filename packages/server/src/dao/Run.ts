@@ -295,7 +295,7 @@ export class RunDao {
         }
     }
 
-    static async getRunData(runId: string) {
+    static async getRunData(runId: string, includeSpans: boolean = true) {
         try {
             const result = await RunTable.findOne({
                 where: { id: runId },
@@ -303,7 +303,9 @@ export class RunDao {
                 order: { replies: { createdAt: 'ASC' } },
             });
 
-            const spans = await SpanDao.getSpansByConversationId(runId);
+            const spans = includeSpans
+                ? await SpanDao.getSpansByConversationId(runId)
+                : [];
 
             if (result) {
                 return {
