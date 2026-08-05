@@ -461,12 +461,12 @@ export class MigrateSpanTable1740000000000 implements MigrationInterface {
                     },
                     {
                         name: 'startTimeUnixNano',
-                        type: 'varchar',
+                        type: 'bigint',
                         isNullable: false,
                     },
                     {
                         name: 'endTimeUnixNano',
-                        type: 'varchar',
+                        type: 'bigint',
                         isNullable: false,
                     },
                     {

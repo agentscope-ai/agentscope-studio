@@ -20,6 +20,41 @@ const toUnixNano = (date: Date) =>
     (BigInt(date.getTime()) * BigInt(1_000_000)).toString();
 
 export class SpanDao {
+    /**
+     * better-sqlite3 returns INTEGER values as JavaScript numbers by default,
+     * which would truncate nanosecond timestamps. Casting only these two
+     * columns to text lets the entity transformer create exact bigints without
+     * changing how the driver hydrates the application's other integer fields.
+     */
+    private static createSpanEntityQuery(alias: string = 'span') {
+        const queryBuilder = SpanTable.createQueryBuilder(alias);
+        const databaseType =
+            SpanTable.getRepository().manager.connection.options.type;
+
+        if (databaseType === 'better-sqlite3') {
+            queryBuilder
+                .addSelect(
+                    `CAST(${alias}.startTimeUnixNano AS TEXT)`,
+                    `${alias}_startTimeUnixNano`,
+                )
+                .addSelect(
+                    `CAST(${alias}.endTimeUnixNano AS TEXT)`,
+                    `${alias}_endTimeUnixNano`,
+                );
+        }
+
+        return queryBuilder;
+    }
+
+    private static exactTimestampAggregate(expression: string): string {
+        const databaseType =
+            SpanTable.getRepository().manager.connection.options.type;
+
+        return databaseType === 'better-sqlite3'
+            ? `CAST(${expression} AS TEXT)`
+            : expression;
+    }
+
     static async saveSpans(dataArray: SpanData[]): Promise<SpanTable[]> {
         try {
             // Create SpanTable instances with embedded resource and scope data
@@ -53,8 +88,8 @@ export class SpanDao {
                     flags: data.flags,
                     name: data.name,
                     kind: data.kind, // Now it's a number (OpenTelemetry API enum)
-                    startTimeUnixNano: data.startTimeUnixNano,
-                    endTimeUnixNano: data.endTimeUnixNano,
+                    startTimeUnixNano: BigInt(data.startTimeUnixNano),
+                    endTimeUnixNano: BigInt(data.endTimeUnixNano),
                     attributes: data.attributes,
                     droppedAttributesCount: data.droppedAttributesCount,
                     events: data.events,
@@ -93,10 +128,12 @@ export class SpanDao {
         conversationId: string,
     ): Promise<SpanData[]> {
         try {
-            const spans = await SpanTable.find({
-                where: { conversationId },
-                order: { startTimeUnixNano: 'ASC' },
-            });
+            const spans = await this.createSpanEntityQuery()
+                .where('span.conversationId = :conversationId', {
+                    conversationId,
+                })
+                .orderBy('span.startTimeUnixNano', 'ASC')
+                .getMany();
 
             return spans.map(
                 (span) =>
@@ -108,8 +145,8 @@ export class SpanDao {
                         flags: span.flags,
                         name: span.name,
                         kind: span.kind,
-                        startTimeUnixNano: span.startTimeUnixNano,
-                        endTimeUnixNano: span.endTimeUnixNano,
+                        startTimeUnixNano: span.startTimeUnixNano.toString(),
+                        endTimeUnixNano: span.endTimeUnixNano.toString(),
                         attributes: span.attributes as SpanAttributes,
                         droppedAttributesCount:
                             span.droppedAttributesCount || 0,
@@ -204,23 +241,23 @@ export class SpanDao {
 
     // Trace listing and filtering methods
     static async getLatestTraces(limit: number = 10): Promise<SpanTable[]> {
-        return await SpanTable.find({
-            order: { startTimeUnixNano: 'DESC' },
-            take: limit,
-        });
+        return await this.createSpanEntityQuery()
+            .orderBy('span.startTimeUnixNano', 'DESC')
+            .take(limit)
+            .getMany();
     }
 
     static async getTracesByTraceId(traceId: string): Promise<SpanTable[]> {
-        return await SpanTable.find({
-            where: { traceId },
-            order: { startTimeUnixNano: 'ASC' },
-        });
+        return await this.createSpanEntityQuery()
+            .where('span.traceId = :traceId', { traceId })
+            .orderBy('span.startTimeUnixNano', 'ASC')
+            .getMany();
     }
 
     static async getSpanById(spanId: string): Promise<SpanTable | null> {
-        return await SpanTable.findOne({
-            where: { spanId },
-        });
+        return await this.createSpanEntityQuery()
+            .where('span.spanId = :spanId', { spanId })
+            .getOne();
     }
 
     static async getModelInvocationViewData() {
@@ -519,8 +556,14 @@ export class SpanDao {
 
             const queryBuilder = SpanTable.createQueryBuilder('span')
                 .select('span.traceId', 'traceId')
-                .addSelect('MIN(span.startTimeUnixNano)', 'startTime')
-                .addSelect('MAX(span.endTimeUnixNano)', 'endTime')
+                .addSelect(
+                    this.exactTimestampAggregate('MIN(span.startTimeUnixNano)'),
+                    'startTime',
+                )
+                .addSelect(
+                    this.exactTimestampAggregate('MAX(span.endTimeUnixNano)'),
+                    'endTime',
+                )
                 .addSelect('MAX(span.statusCode)', 'status')
                 .addSelect(nameSubquery, 'name')
                 .addSelect(spanCountSubquery, 'spanCount')
@@ -643,8 +686,8 @@ export class SpanDao {
             const traces = results.map((row) => ({
                 traceId: row.traceId || '',
                 traceName: row.name || 'Unknown',
-                startTime: row.startTime || '0',
-                endTime: row.endTime || '0',
+                startTime: String(row.startTime ?? 0),
+                endTime: String(row.endTime ?? 0),
                 status: Number(row.status) || 0,
                 spanCount: Number(row.spanCount) || 0,
                 totalTokens:
@@ -709,8 +752,8 @@ export class SpanDao {
                         flags: span.flags,
                         name: span.name,
                         kind: span.kind,
-                        startTimeUnixNano: span.startTimeUnixNano,
-                        endTimeUnixNano: span.endTimeUnixNano,
+                        startTimeUnixNano: span.startTimeUnixNano.toString(),
+                        endTimeUnixNano: span.endTimeUnixNano.toString(),
                         attributes: span.attributes as SpanAttributes,
                         droppedAttributesCount:
                             span.droppedAttributesCount || 0,
@@ -797,8 +840,14 @@ export class SpanDao {
             const durationQuery = await queryBuilder
                 .clone()
                 .select('span.traceId', 'traceId')
-                .addSelect('MIN(span.startTimeUnixNano)', 'startTime')
-                .addSelect('MAX(span.endTimeUnixNano)', 'endTime')
+                .addSelect(
+                    this.exactTimestampAggregate('MIN(span.startTimeUnixNano)'),
+                    'startTime',
+                )
+                .addSelect(
+                    this.exactTimestampAggregate('MAX(span.endTimeUnixNano)'),
+                    'endTime',
+                )
                 .groupBy('span.traceId')
                 .getRawMany();
 

@@ -1,5 +1,10 @@
 import { BaseEntity, Column, Entity, Index, PrimaryColumn } from 'typeorm';
 
+const bigintTransformer = {
+    to: (value: bigint) => value.toString(),
+    from: (value: string) => BigInt(value),
+};
+
 // Span table - optimized for trace listing and filtering
 @Entity()
 @Index(['traceId'])
@@ -41,11 +46,11 @@ export class SpanTable extends BaseEntity {
     @Column()
     kind: number; // SpanKind enum value (OpenTelemetry API enum)
 
-    @Column()
-    startTimeUnixNano: string;
+    @Column({ type: 'bigint', transformer: bigintTransformer })
+    startTimeUnixNano: bigint;
 
-    @Column()
-    endTimeUnixNano: string;
+    @Column({ type: 'bigint', transformer: bigintTransformer })
+    endTimeUnixNano: bigint;
 
     @Column('json')
     attributes: Record<string, unknown>;
