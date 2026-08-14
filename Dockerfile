@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-FROM dev-registry.f1soft.com/fonenext/node:22.18.0 AS build
+FROM node:22.18.0 AS build
 
 WORKDIR /app
 
@@ -10,8 +10,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends python3 make g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# The lockfile is maintained with npm 11. Keep CI and container resolution on
-# the same npm major while retaining Node 22 as the production LTS runtime.
+# The lockfile is maintained with npm 11.
 RUN npm install --global npm@11.13.0
 
 # Copy manifests first to keep dependency installation cacheable.
@@ -29,7 +28,7 @@ RUN npm run build \
     && npm cache clean --force
 
 
-FROM dev-registry.f1soft.com/fonenext/node:22.18.0 AS runtime
+FROM node:22.18.0 AS runtime
 
 ENV NODE_ENV=production \
     PORT=3000 \
@@ -43,7 +42,8 @@ COPY --from=build --chown=node:node /app/package.json ./package.json
 COPY --from=build --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/dist ./dist
 
-RUN mkdir -p /app/data && chown -R node:node /app/data
+RUN mkdir -p /app/data \
+    && chown -R node:node /app/data
 
 USER node
 
