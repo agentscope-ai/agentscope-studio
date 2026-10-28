@@ -4,7 +4,8 @@ import BubbleBlock, {
     CollapsibleBlockDiv,
 } from '@/components/chat/bubbles/BubbleBlock';
 import SpeechBar from '@/components/chat/bubbles/SpeechBar';
-import { CircleAlertIcon } from 'lucide-react';
+import { CircleAlertIcon, BracesIcon } from 'lucide-react';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { useTranslation } from 'react-i18next';
 import { ReplySpeechState } from '@/context/RunRoomContext';
 
@@ -61,6 +62,30 @@ const AsBubble = ({
         ));
     };
 
+    const hasStructuredOutput = (metadata: object): boolean => {
+        if (!metadata || typeof metadata !== 'object') return false;
+        return Object.keys(metadata).length > 0;
+    };
+
+    const renderStructuredOutput = (metadata: object) => (
+        <CollapsibleBlockDiv
+            title={t('chat.title-structured-output')}
+            icon={<BracesIcon size={12} />}
+            content={
+                <SyntaxHighlighter
+                    language="json"
+                    customStyle={{
+                        background: 'transparent',
+                        fontSize: 12,
+                        margin: 0,
+                    }}
+                >
+                    {JSON.stringify(metadata, null, 2)}
+                </SyntaxHighlighter>
+            }
+        />
+    );
+
     const showSpeechBar = useMemo(() => {
         if (!speechState) return false;
         return (
@@ -105,7 +130,13 @@ const AsBubble = ({
                                     />
                                 );
                             }
-                            return renderBlock(msg.content, markdown);
+                            return (
+                                <div className="flex flex-col w-full gap-y-2">
+                                    {renderBlock(msg.content, markdown)}
+                                    {hasStructuredOutput(msg.metadata) &&
+                                        renderStructuredOutput(msg.metadata)}
+                                </div>
+                            );
                         })}
                     </div>
                 </div>

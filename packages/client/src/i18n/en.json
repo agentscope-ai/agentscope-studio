@@ -26,6 +26,7 @@
         "title-attachment": "Total {{length}} URL is attached",
         "title-attachments": "Total {{length}} URLs are attached",
         "title-hint-message": "Hint message",
+        "title-structured-output": "Structured output",
         "title-using-tool": "Using tool ",
         "title-time-total": "Total time: {{totalTime}}s",
         "title-tool-result": "Tool result of"

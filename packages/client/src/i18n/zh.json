@@ -26,6 +26,7 @@
         "title-attachment": "总计 {{length}} 个 URL 附件",
         "title-attachments": "总计 {{length}} 个 URL 附件",
         "title-hint-message": "提示消息",
+        "title-structured-output": "结构化输出",
         "title-using-tool": "调用工具 ",
         "title-time-total": "总耗时: {{totalTime}}s",
         "title-tool-result": "运行结果"
