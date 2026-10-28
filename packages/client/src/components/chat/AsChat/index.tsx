@@ -119,6 +119,12 @@ interface Props {
     globalVolume?: number;
     autoPlayNext?: boolean;
     setAutoPlayNext?: (value: boolean) => void;
+    /**
+     * Optional mapping from agent/user name to a custom avatar image URL.
+     * When a name has an entry here, its avatar overrides the auto-assigned
+     * SVG avatar. Image URLs (data URIs included) are supported.
+     */
+    avatars?: Record<string, string>;
 }
 const playbackRateOptions = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
 const volumeOptions = [0, 0.25, 0.5, 0.75, 1.0];
@@ -165,6 +171,7 @@ const AsChat = ({
     globalVolume,
     autoPlayNext = true,
     setAutoPlayNext,
+    avatars,
 }: Props) => {
     // Load renderMarkdown from localStorage or use default
     const [renderMarkdown, setRenderMarkdown] = useState<boolean>(() => {
@@ -496,6 +503,7 @@ const AsChat = ({
                                         avatarPath={avatarAssignmentMap.get(
                                             reply.replyName,
                                         )}
+                                        avatarImage={avatars?.[reply.replyName]}
                                     />
                                 }
                                 key={reply.replyId}

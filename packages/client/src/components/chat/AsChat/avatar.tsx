@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Avatar } from '@/components/ui/avatar.tsx';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
 import SystemAvatar from '@/assets/svgs/avatar-system.svg?react';
 import { FC, SVGProps } from 'react';
 
@@ -118,10 +118,13 @@ export const AsAvatar = ({
     name,
     role,
     avatarPath,
+    avatarImage,
 }: {
     name: string;
     role: string;
     avatarPath?: string;
+    /** An image URL to render as the avatar. Takes precedence over `avatarPath`. */
+    avatarImage?: string;
 }) => {
     const [AvatarComponent, setAvatarComponent] = useState<FC<
         SVGProps<SVGSVGElement>
@@ -148,6 +151,16 @@ export const AsAvatar = ({
     let avatarComponent;
     if (role.toLowerCase() === 'system') {
         avatarComponent = <SystemAvatar />;
+    } else if (avatarImage) {
+        // Custom image provided by the developer via the `avatars` prop.
+        avatarComponent = (
+            <>
+                <AvatarImage src={avatarImage} alt={name} />
+                <AvatarFallback>
+                    {name.slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+            </>
+        );
     } else if (AvatarComponent) {
         avatarComponent = <AvatarComponent />;
     } else {
